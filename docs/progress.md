@@ -17,3 +17,11 @@ Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issu
 - Verified: API typecheck/build, lint, twelve tests (including PostgreSQL preview atomicity/cancellation), exact German cents, invalid dates/rows/quoting/size limits, separate identical purchases, and missing-bank-configuration failure.
 - External FinTS compatibility remains **blocked**: no registered product ID, confirmed bank endpoint, real credentials, or approval was supplied. No live bank call was attempted. See banking.md for the required acceptance procedure and unsupported challenge formats.
 - Preview-to-final commit and import reconciliation are T3; CSV preview does not claim final ledger persistence yet.
+
+## T3 — Ledger, reconciliation, and reports
+
+- T2 commit: `bf52941`. The external FinTS gate remains open; the implementation continues through the specified CSV fallback.
+- Added confirmed CSV commit, per-account locks, exact identities, manual ambiguity review with incoming/candidate data, preserved categories, transfer linking, monthly reports, bank-run leases/cancellation/recovery, and private ledger APIs.
+- Existing CSV accounts with an IBAN can be explicitly reassigned to a FinTS connection through the account patch contract; the bank importer refuses to silently duplicate an IBAN under another connection.
+- Verified: eighteen tests including repeat/parallel imports, true duplicate-looking purchases, invalid-row consent, transactional rollback, preserved annotations, cursor pagination, month boundaries/refunds/pending/own transfers, and synthetic bank partial success/lease conflict. Contracts/API typecheck, lint, and API build passed.
+- No real bank access or Docker execution claimed.

@@ -11,15 +11,22 @@ import { createDb, type Db } from './db.js';
 import { SafeErrors } from './errors.js';
 import { ImportController } from './import-controller.js';
 import { ImportService } from './imports.js';
+import { LedgerController } from './ledger-controller.js';
+import { LedgerService } from './ledger.js';
+import { SyncService } from './sync.js';
+import { startBank } from './bank.js';
 
 /** Create an application with injectable persistence for integration tests. */
 export async function createApp(db: Db = createDb()) {
   @Module({
-    controllers: [RootController, ImportController],
+    controllers: [RootController, ImportController, LedgerController],
     providers: [
       { provide: 'DB', useValue: db },
       AuthService,
       ImportService,
+      LedgerService,
+      SyncService,
+      { provide: 'BANK_FACTORY', useValue: startBank },
       { provide: APP_GUARD, useClass: AuthGuard },
     ],
   })
@@ -48,6 +55,7 @@ export async function createApp(db: Db = createDb()) {
       },
     );
   await app.init();
+  await app.get(SyncService).recover();
   const openapi = cleanupOpenApiDoc(
     SwaggerModule.createDocument(
       app,

@@ -55,6 +55,7 @@ export const connectionInputSchema = z.object({
   username: z.string().trim().max(100).optional(),
 });
 export const connectionSchema = connectionInputSchema.extend({
+  username: z.string().nullable(),
   id: idSchema,
   status: z.enum(['ACTIVE', 'DISABLED', 'BLOCKED']),
 });
@@ -69,6 +70,7 @@ export const accountInputSchema = z.object({
   accountType: z.enum(['CHECKING', 'SAVINGS', 'OTHER']).default('CHECKING'),
 });
 export const accountPatchSchema = z.object({
+  bankConnectionId: idSchema.optional(),
   name: z.string().trim().min(1).max(100).optional(),
   isActive: z.boolean().optional(),
 });
@@ -166,6 +168,11 @@ export const issueSchema = z.object({
   code: z.string(),
   message: z.string(),
   candidateIds: z.array(idSchema),
+  incoming: transactionSchema
+    .omit({ id: true, categoryId: true, isTransfer: true, transferGroupId: true })
+    .nullable()
+    .optional(),
+  candidates: z.array(transactionSchema).optional(),
 });
 export const runSchema = z.object({
   id: idSchema,

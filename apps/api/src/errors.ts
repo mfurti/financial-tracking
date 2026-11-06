@@ -21,6 +21,11 @@ export class AppError extends HttpException {
 export class SafeErrors implements ExceptionFilter {
   /** Only public application errors and field paths may leave the API. */
   catch(error: unknown, host: ArgumentsHost) {
+    if (error && typeof error === 'object' && 'code' in error) {
+      if (error.code === 'P2025') error = new AppError('NOT_FOUND', 'Datensatz nicht gefunden.', 404);
+      else if (error.code === 'P2002' || error.code === 'P2034')
+        error = new AppError('DATA_CONFLICT', 'Datenkonflikt. Ansicht neu laden und erneut prüfen.', 409);
+    }
     const reply = host.switchToHttp().getResponse<FastifyReply>();
     const status = error instanceof HttpException ? error.getStatus() : error instanceof ZodError ? 400 : 500;
     const details =

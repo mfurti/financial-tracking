@@ -104,6 +104,7 @@ export class AuthService {
       if (
         typeof csrf !== 'string' ||
         csrf.length !== session.csrfToken.length ||
+        Buffer.byteLength(csrf) !== Buffer.byteLength(session.csrfToken) ||
         !timingSafeEqual(Buffer.from(csrf), Buffer.from(session.csrfToken))
       )
         throw new AppError('CSRF_INVALID', 'Sicherheitsprüfung fehlgeschlagen.', 403);
