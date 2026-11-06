@@ -9,12 +9,19 @@ import { AuthGuard, AuthService } from './auth.js';
 import { RootController } from './controller.js';
 import { createDb, type Db } from './db.js';
 import { SafeErrors } from './errors.js';
+import { ImportController } from './import-controller.js';
+import { ImportService } from './imports.js';
 
 /** Create an application with injectable persistence for integration tests. */
 export async function createApp(db: Db = createDb()) {
   @Module({
-    controllers: [RootController],
-    providers: [{ provide: 'DB', useValue: db }, AuthService, { provide: APP_GUARD, useClass: AuthGuard }],
+    controllers: [RootController, ImportController],
+    providers: [
+      { provide: 'DB', useValue: db },
+      AuthService,
+      ImportService,
+      { provide: APP_GUARD, useClass: AuthGuard },
+    ],
   })
   class AppModule {}
   const app = await NestFactory.create<NestFastifyApplication>(

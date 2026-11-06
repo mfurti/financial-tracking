@@ -9,3 +9,11 @@ Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issu
 - Verified: contracts/API/web typechecks; lint; API/web production builds; seven tests including actual PostgreSQL session persistence, CSRF/logout and migration execution. PostgreSQL tests use disposable instances, never DATABASE_URL.
 - Documentation coverage reviewed manually. Docker execution is unavailable on this workstation and is not claimed as verified.
 - The UI is a shell at this boundary; the interactive ledger is T4. Bank compatibility remains T2.
+
+## T2 — Source boundaries
+
+- T1 commit: `af4ed79`.
+- Added bounded CSV parsing/mapping, normalized PostgreSQL staging, preview/status/diagnostics/cancellation APIs, and isolated FinTS worker with safe output handling and authorization continuation.
+- Verified: API typecheck/build, lint, twelve tests (including PostgreSQL preview atomicity/cancellation), exact German cents, invalid dates/rows/quoting/size limits, separate identical purchases, and missing-bank-configuration failure.
+- External FinTS compatibility remains **blocked**: no registered product ID, confirmed bank endpoint, real credentials, or approval was supplied. No live bank call was attempted. See banking.md for the required acceptance procedure and unsupported challenge formats.
+- Preview-to-final commit and import reconciliation are T3; CSV preview does not claim final ledger persistence yet.

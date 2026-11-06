@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../apps/api/src/app.js';
 import { passwordHash } from '../apps/api/src/auth.js';
 import { testDatabase } from './database.js';
+import { ImportService } from '../apps/api/src/imports.js';
 
 describe('private API authentication', /** Exercise sessions with real persisted token hashes. */ () => {
   let resource: Awaited<ReturnType<typeof testDatabase>>;
@@ -80,5 +81,24 @@ describe('private API authentication', /** Exercise sessions with real persisted
   it('publishes the login/session schemas in OpenAPI', /** Documentation must include actual route contracts. */ () => {
     expect(service.openapi.paths['/api/v1/auth/login']?.post?.requestBody).toBeDefined();
     expect(service.openapi.paths['/api/v1/auth/session']?.get?.responses['200']).toBeDefined();
+  });
+  it('stages previews without financial writes and cancels staged rows', /** CSV previews remain separate from final records. */ async () => {
+    const connection = await resource.db.bankConnection.create({
+      data: { name: 'CSV', bankCode: '69050001', connectorType: 'CSV' },
+    });
+    const account = await resource.db.account.create({ data: { name: 'Test', bankConnectionId: connection.id } });
+    const imports = new ImportService(resource.db);
+    const preview = await imports.preview({
+      accountId: account.id,
+      content: 'Datum;Betrag;Text\n01.11.2026;-49,90;Test\n31.02.2026;bad;Fehler',
+      encoding: 'utf-8',
+      delimiter: ';',
+      mapping: { bookingDate: 'Datum', amount: 'Betrag', description: 'Text' },
+    });
+    expect(preview.invalidRows).toBe(1);
+    expect(await resource.db.transaction.count()).toBe(0);
+    expect(await resource.db.stagedRow.count()).toBe(1);
+    expect((await imports.cancel(preview.run.id)).status).toBe('CANCELLED');
+    expect(await resource.db.stagedRow.count()).toBe(0);
   });
 });
