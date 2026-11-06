@@ -1,15 +1,15 @@
 # Implementation checklist
 
-Planning artifact only. All implementation items intentionally remain unchecked.
+Implementation approved for [issue #1](https://github.com/mfurti/financial-tracking/issues/1) in the current checkout. Unchecked items remain pending; task completion evidence is recorded separately below.
 See [plan.md](plan.md) for scope, architecture, defaults, and acceptance criteria.
 
 ## Before implementation
 
-- [ ] Obtain explicit approval for the plan.
-- [ ] Inspect existing remote tasks/PRs; create or reuse the task record required by the coding workflow without duplicates.
-- [ ] Show the task record and obtain implementation approval; agree on current checkout versus worktree.
-- [ ] Inspect the remote base before creating the implementation branch; preserve unrelated work.
-- [ ] Resolve dependency versions against current official documentation and record the supported runtime/package manager.
+- [x] Obtain explicit approval for the plan.
+- [x] Inspect existing remote tasks/PRs; create or reuse the task record required by the coding workflow without duplicates.
+- [x] Show the task record and obtain implementation approval; agree on current checkout versus worktree.
+- [x] Inspect the remote base before creating the implementation branch; preserve unrelated work.
+- [x] Resolve dependency versions against current official documentation and record the supported runtime/package manager.
 - [ ] Keep bank credentials out of chat, issues, fixtures, source files, and commits.
 
 ## T1 — Workspace, contracts, and application foundation
