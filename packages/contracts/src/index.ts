@@ -31,6 +31,10 @@ export const loginSchema = z.object({
   username: z.string().trim().min(1).max(100),
   password: z.string().min(1).max(256),
 });
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1).max(256),
+  newPassword: z.string().min(12).max(256),
+});
 export const sessionSchema = z.object({ username: z.string(), csrfToken: z.string(), expiresAt: timeSchema });
 export const categoryInputSchema = z.object({
   name: z.string().trim().min(1).max(80),

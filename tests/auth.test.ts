@@ -101,4 +101,33 @@ describe('private API authentication', /** Exercise sessions with real persisted
     expect((await imports.cancel(preview.run.id)).status).toBe('CANCELLED');
     expect(await resource.db.stagedRow.count()).toBe(0);
   });
+  it('requires reauthentication and revokes sessions on password change', /** Existing cookies must stop working after a credential rotation. */ async () => {
+    const login = await service.app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { username: 'max', password: 'test-only-long-password' },
+      headers: { origin: 'http://localhost:3000' },
+    });
+    const loginCookie = String(login.headers['set-cookie']).split(';')[0]!;
+    const headers = { cookie: loginCookie, origin: 'http://localhost:3000', 'x-csrf-token': login.json().csrfToken };
+    const rejected = await service.app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/password',
+      headers,
+      payload: { currentPassword: 'wrong', newPassword: 'replacement-test-password' },
+    });
+    expect(rejected.statusCode).toBe(401);
+    const changed = await service.app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/password',
+      headers,
+      payload: { currentPassword: 'test-only-long-password', newPassword: 'replacement-test-password' },
+    });
+    expect(changed.statusCode).toBe(201);
+    expect(await resource.db.session.count()).toBe(0);
+    expect(
+      (await service.app.inject({ method: 'GET', url: '/api/v1/auth/session', headers: { cookie: loginCookie } }))
+        .statusCode,
+    ).toBe(401);
+  });
 });

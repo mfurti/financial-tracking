@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Inject, Post, Req, Res } from '@nestjs/common';
 import { ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { createZodDto } from 'nestjs-zod';
-import { loginSchema, sessionSchema } from '@financial-tracking/contracts';
+import { loginSchema, sessionSchema, passwordChangeSchema } from '@financial-tracking/contracts';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.js';
 
@@ -36,6 +36,14 @@ export class RootController {
   @ApiOkResponse({ type: SessionDto })
   session(@Req() req: FastifyRequest) {
     return sessionSchema.parse(req.authSession);
+  }
+
+  /** Revoke server-side session before the browser cookie is removed. */
+  @Post('auth/password')
+  async password(@Body() body: unknown, @Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
+    const input = passwordChangeSchema.parse(body);
+    await this.auth.changePassword(req, reply, input.currentPassword, input.newPassword);
+    return { ok: true };
   }
 
   /** Revoke server-side session before the browser cookie is removed. */

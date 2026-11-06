@@ -5,7 +5,6 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   telemetry: false,
   css: ['~/assets/main.css'],
-  runtimeConfig: { public: { apiBase: '/api/v1' } },
-  nitro: { routeRules: { '/api/**': { proxy: `${process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:3001'}/api/**` } } },
+  runtimeConfig: { apiInternalUrl: 'http://127.0.0.1:3001', public: { apiBase: '/api/v1' } },
   app: { head: { htmlAttrs: { lang: 'de' }, title: 'Haushaltsbuch' } },
 });

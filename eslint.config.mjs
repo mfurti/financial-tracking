@@ -23,6 +23,8 @@ export default ts.config(
     files: ['**/*.vue'],
     languageOptions: { parserOptions: { parser: ts.parser } },
     rules: {
+      // TypeScript checks identifiers in Vue scripts, including Nuxt auto-imports and DOM types.
+      'no-undef': 'off',
       'vue/block-order': ['error', { order: ['script', 'template', 'style'] }],
       'vue/multi-word-component-names': 'off',
       'vue/attributes-order': 'error',

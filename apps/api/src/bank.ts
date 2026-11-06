@@ -1,4 +1,5 @@
 import { Worker } from 'node:worker_threads';
+import { existsSync } from 'node:fs';
 import { z } from 'zod';
 import { AppError } from './errors.js';
 import { normalizedSchema } from './csv.js';
@@ -58,7 +59,9 @@ export function startBank(input: BankInput, onChallenge: (challenge: BankChallen
       'BANK_UNSUPPORTED',
       'Nur der konfigurierte HTTPS-Endpunkt der Sparkasse Bodensee ist freigegeben.',
     );
-  const worker = new Worker(new URL('./bank-worker.js', import.meta.url), {
+  const compiled = new URL('./bank-worker.js', import.meta.url);
+  const worker = new Worker(existsSync(compiled) ? compiled : new URL('./bank-worker.ts', import.meta.url), {
+    ...(existsSync(compiled) ? {} : { execArgv: ['--import', 'tsx'] }),
     workerData: { ...input, endpoint: endpoint.href, productId: process.env.FINTS_PRODUCT_ID },
     stdout: true,
     stderr: true,
@@ -74,26 +77,32 @@ export function startBank(input: BankInput, onChallenge: (challenge: BankChallen
       worker.on(
         'message',
         /** Ignore arbitrary messages and never pass through worker exceptions. */ (message: unknown) => {
-          const envelope = z.object({ kind: z.string(), data: z.unknown().optional() }).parse(message);
-          if (envelope.kind === 'challenge') onChallenge(bankChallengeSchema.parse(envelope.data));
-          if (envelope.kind === 'running') onChallenge(null);
-          if (envelope.kind === 'done') {
+          if (settled) return;
+          try {
+            const envelope = z.object({ kind: z.string(), data: z.unknown().optional() }).parse(message);
+            if (envelope.kind === 'challenge') onChallenge(bankChallengeSchema.parse(envelope.data));
+            if (envelope.kind === 'running') onChallenge(null);
+            if (envelope.kind === 'done') {
+              settled = true;
+              resolve(bankBundleSchema.parse(envelope.data));
+            }
+            if (envelope.kind === 'error') {
+              settled = true;
+              const code = z
+                .enum([
+                  'BANK_INVALID_CREDENTIALS',
+                  'BANK_AUTH_REJECTED',
+                  'BANK_UNAVAILABLE',
+                  'BANK_INVALID_RESPONSE',
+                  'BANK_UNSUPPORTED',
+                ])
+                .catch('BANK_INVALID_RESPONSE')
+                .parse(envelope.data);
+              reject(new AppError(code, 'Bankabruf fehlgeschlagen. Zugang und Freigabe prüfen.', 502));
+            }
+          } catch {
             settled = true;
-            resolve(bankBundleSchema.parse(envelope.data));
-          }
-          if (envelope.kind === 'error') {
-            settled = true;
-            const code = z
-              .enum([
-                'BANK_INVALID_CREDENTIALS',
-                'BANK_AUTH_REJECTED',
-                'BANK_UNAVAILABLE',
-                'BANK_INVALID_RESPONSE',
-                'BANK_UNSUPPORTED',
-              ])
-              .catch('BANK_INVALID_RESPONSE')
-              .parse(envelope.data);
-            reject(new AppError(code, 'Bankabruf fehlgeschlagen. Zugang und Freigabe prüfen.', 502));
+            reject(new AppError('BANK_INVALID_RESPONSE', 'Unvollständige Bankantwort verworfen.', 502));
           }
         },
       );

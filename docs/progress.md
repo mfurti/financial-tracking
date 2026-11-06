@@ -25,3 +25,12 @@ Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issu
 - Existing CSV accounts with an IBAN can be explicitly reassigned to a FinTS connection through the account patch contract; the bank importer refuses to silently duplicate an IBAN under another connection.
 - Verified: eighteen tests including repeat/parallel imports, true duplicate-looking purchases, invalid-row consent, transactional rollback, preserved annotations, cursor pagination, month boundaries/refunds/pending/own transfers, and synthetic bank partial success/lease conflict. Contracts/API typecheck, lint, and API build passed.
 - No real bank access or Docker execution claimed.
+
+## T4 — Responsive application
+
+- T3 commit: `8f4d00b`.
+- Implemented German authenticated navigation, dashboard, accounts, transaction detail/filter/categorization/bulk actions, categories, transfer controls, CSV wizard, duplicate review/history, bank refresh/challenge UI, and password reauthentication/rotation.
+- Verified the real browser/API/PostgreSQL journey in Chromium at 1440×1000 and 360×800: login, populated/unknown-balance dashboard, category creation, CSV preview/commit, filtered transaction, category persistence, transfer marking, navigation, logout, no uncaught browser errors, and no dashboard horizontal overflow.
+- Both Playwright projects passed. Synthetic screenshots: `.local/dashboard-desktop.png` and `.local/dashboard-mobile.png` (not committed). Desktop screenshot visually inspected. Runtime proxy configuration uses `NUXT_API_INTERNAL_URL`; the browser only calls the same origin.
+- Contracts/API/web typechecks and production builds passed. Vue TypeScript identifier checks are owned by vue-tsc (ESLint no-undef is disabled only for Vue's TypeScript scripts to support Nuxt auto-imports).
+- Remaining operational/live-bank checks are tracked in T5 and banking.md.

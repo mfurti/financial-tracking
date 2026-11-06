@@ -9,6 +9,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "csv-parse": "6.1.0",
     "@financial-tracking/contracts": "workspace:*",
     "@nuxt/ui": "4.12.0",
     "nuxt": "4.6.4",

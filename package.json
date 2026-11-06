@@ -1,13 +1,14 @@
 {
   "name": "financial-tracking",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@11.25.0",
   "engines": {
     "node": ">=24.22.1 <25"
   },
   "scripts": {
     "build": "pnpm --filter @financial-tracking/contracts build && pnpm --filter api build && pnpm --filter web build",
-    "typecheck": "pnpm --filter @financial-tracking/contracts build && pnpm -r typecheck",
+    "typecheck": "pnpm --filter @financial-tracking/contracts build && pnpm -r typecheck && tsc --noEmit -p tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

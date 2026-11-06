@@ -3,13 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsc && node --watch dist/main.js",
+    "dev:compile": "tsc --watch",
     "build": "tsc",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "admin:create": "tsx src/admin.ts"
+    "admin:create": "node dist/admin.js"
   },
   "dependencies": {
     "@financial-tracking/contracts": "workspace:*",

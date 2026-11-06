@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { SwaggerModule, DocumentBuilder, type OpenAPIObject } from '@nestjs/swagger';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { AuthGuard, AuthService } from './auth.js';
 import { RootController } from './controller.js';
@@ -17,7 +17,9 @@ import { SyncService } from './sync.js';
 import { startBank } from './bank.js';
 
 /** Create an application with injectable persistence for integration tests. */
-export async function createApp(db: Db = createDb()) {
+export async function createApp(
+  db: Db = createDb(),
+): Promise<{ app: NestFastifyApplication; db: Db; openapi: OpenAPIObject }> {
   @Module({
     controllers: [RootController, ImportController, LedgerController],
     providers: [

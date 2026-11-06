@@ -119,6 +119,21 @@ export class AuthService {
   }
 
   /** Invalidate the persisted token and remove the cookie. */
+  async changePassword(req: FastifyRequest, reply: FastifyReply, currentPassword: string, newPassword: string) {
+    const user = await this.db.user.findUnique({ where: { username: req.authSession!.username } });
+    if (!user || !(await verify(user.passwordHash, currentPassword)))
+      throw new AppError('INVALID_LOGIN', 'Aktuelles Passwort ungültig.', 401);
+    const updatedHash = await passwordHash(newPassword);
+    await this.db.$transaction(
+      /** Rotate the credential and revoke all existing sessions atomically. */ async (tx) => {
+        await tx.user.update({ where: { id: user.id }, data: { passwordHash: updatedHash } });
+        await tx.session.deleteMany({ where: { userId: user.id } });
+      },
+    );
+    reply.header('set-cookie', this.cookie('', 0));
+  }
+
+  /** Invalidate the persisted token and remove the cookie. */
   async logout(req: FastifyRequest, reply: FastifyReply) {
     await this.db.session.deleteMany({ where: { tokenHash: req.sessionHash } });
     reply.header('set-cookie', this.cookie('', 0));
