@@ -1,0 +1,49 @@
+<script setup lang="ts">
+import { loginSchema, sessionSchema } from '@financial-tracking/contracts';
+
+definePageMeta({ layout: false });
+const api = useApi();
+const form = reactive({ username: '', password: '' });
+const error = ref('');
+const busy = ref(false);
+/** Validate using the shared contract and erase the password after every attempt. */
+async function login() {
+  busy.value = true;
+  error.value = '';
+  try {
+    api.session.value = await api.request('/auth/login', sessionSchema, {
+      method: 'POST',
+      body: loginSchema.parse(form),
+    });
+    await navigateTo('/');
+  } catch (cause) {
+    error.value = (cause as Error).message;
+  } finally {
+    form.password = '';
+    busy.value = false;
+  }
+}
+</script>
+
+<template>
+  <main class="login-page">
+    <section class="login-card">
+      <div class="brand-mark">H</div>
+      <p class="eyebrow mt-6">DEIN PRIVATER FINANZBEREICH</p>
+      <h1>Willkommen zurück.</h1>
+      <p class="muted mb-7">Alles im Blick. In deinem Haushaltsbuch.</p>
+      <UAlert v-if="error" color="error" :description="error" class="mb-4" /><UForm
+        :schema="loginSchema"
+        :state="form"
+        class="space-y-5"
+        @submit="login"
+        ><UFormField label="Benutzername" name="username"
+          ><UInput v-model="form.username" autocomplete="username" class="w-full" /></UFormField
+        ><UFormField label="Passwort" name="password"
+          ><UInput v-model="form.password" type="password" autocomplete="current-password" class="w-full" /></UFormField
+        ><UButton type="submit" :loading="busy" block size="lg">Anmelden</UButton></UForm
+      >
+      <p class="muted text-xs mt-6">Zugang ausschließlich über dein Heimnetz oder VPN.</p>
+    </section>
+  </main>
+</template>

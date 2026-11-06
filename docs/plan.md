@@ -1,6 +1,10 @@
 # Personal finance tracker: implementation plan
 
-Status: planning only. No application implementation authorized by this document.
+Status: implementation approved for issue #1 in the current checkout, branch `codex/1-household-ledger`.
+
+## Implementation precedence
+
+The user-provided detailed specification supplements this plan. Shared Zod contracts remain binding instead of class-validator or a generated competing client. Follow the newer specification for PostgreSQL BIGINT cents serialized as decimal strings, cursor pagination, CSV limits, sessions, synchronization leases, staging, and transfer linking. Vue uses the specification's script/template/style block order. Task IDs below remain stable; the specification's FinTS feasibility T1 maps to this plan's T2.
 
 ## Product and acceptance criteria
 
@@ -16,11 +20,11 @@ Excluded from version 1: payments, transfers initiated through the app, investme
 
 Use a pnpm workspace with three packages:
 
-| Location | Responsibility |
-| --- | --- |
-| `apps/api` | NestJS with Fastify; authentication, authorization, imports, reporting, bank integration, and Prisma persistence |
-| `apps/web` | Nuxt with Nuxt UI; forms, dashboards, transactions, and bank authorization interactions |
-| `packages/contracts` | `@financial-tracking/contracts`: shared Zod schemas and inferred TypeScript types |
+| Location             | Responsibility                                                                                                   |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `apps/api`           | NestJS with Fastify; authentication, authorization, imports, reporting, bank integration, and Prisma persistence |
+| `apps/web`           | Nuxt with Nuxt UI; forms, dashboards, transactions, and bank authorization interactions                          |
+| `packages/contracts` | `@financial-tracking/contracts`: shared Zod schemas and inferred TypeScript types                                |
 
 Use PostgreSQL and Prisma migrations. Pin mutually compatible supported dependency versions and the package manager during project setup; commit the lockfile. No particular dependency version has been installed or validated yet.
 
@@ -31,7 +35,7 @@ Use PostgreSQL and Prisma migrations. Pin mutually compatible supported dependen
 - Use `nestjs-zod` for request validation, response serialization, and OpenAPI generation. Nest-specific DTO adapters belong in the API package.
 - Reuse the schemas for frontend forms and runtime response validation in a small typed `$fetch` wrapper. Do not generate a second competing set of API types.
 - Keep Prisma records and FinTS protocol types internal. Map them explicitly to public response schemas.
-- Use safe integer cent amounts, `YYYY-MM-DD` booking/value dates, and ISO-8601 timestamps with a timezone. EUR is the only accepted currency in version 1.
+- Use PostgreSQL BIGINT cent amounts serialized as decimal integer strings, `YYYY-MM-DD` booking/value dates, and ISO-8601 timestamps with a timezone. EUR is the only accepted currency in version 1.
 - Return field paths for validation errors without echoing submitted secrets. Bound request bodies, pagination, search inputs, and upload sizes.
 
 ### API surface
@@ -70,13 +74,13 @@ Provide a monthly dashboard, transaction search with pagination and account/date
 
 ## Delivery sequence
 
-| Task | Depends on | Deliverable and completion condition |
-| --- | --- | --- |
-| T1 | None | Workspace, contracts, persistence, authentication, and local Docker foundation; both applications can consume the built contracts package |
-| T2 | T1 | FinTS compatibility proof or a documented blocker with a working CSV fallback |
-| T3 | T2 | Durable import pipeline, reconciliation, categories, and correct monthly reporting |
-| T4 | T3 | Complete responsive German interface and end-to-end user flows |
-| T5 | T4 | Required CI checks, production deployment, verified backup restoration, and operating documentation |
+| Task | Depends on | Deliverable and completion condition                                                                                                      |
+| ---- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| T1   | None       | Workspace, contracts, persistence, authentication, and local Docker foundation; both applications can consume the built contracts package |
+| T2   | T1         | FinTS compatibility proof or a documented blocker with a working CSV fallback                                                             |
+| T3   | T2         | Durable import pipeline, reconciliation, categories, and correct monthly reporting                                                        |
+| T4   | T3         | Complete responsive German interface and end-to-end user flows                                                                            |
+| T5   | T4         | Required CI checks, production deployment, verified backup restoration, and operating documentation                                       |
 
 Each task includes its relevant tests and documentation and ends with its own coherent commit. Add CI checks as tools and packages are introduced; T5 consolidates the final acceptance gate. Keep implementation within the approved feature scope.
 
