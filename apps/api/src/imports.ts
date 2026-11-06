@@ -66,15 +66,25 @@ export class ImportService {
     });
   }
 
-  /** Read bounded unresolved diagnostics. */
+  /** Read a bounded window with actionable reviews before non-actionable diagnostics. */
   async issues(runId: string) {
     await this.run(runId);
-    const issues = await this.db.importIssue.findMany({
-      where: { runId, resolved: false },
+    const reviews = await this.db.importIssue.findMany({
+      where: { runId, resolved: false, stagedRowId: { not: null } },
       include: { stagedRow: true },
-      orderBy: { rowNumber: 'asc' },
+      orderBy: [{ rowNumber: 'asc' }, { id: 'asc' }],
       take: 1000,
     });
+    const diagnostics =
+      reviews.length < 1000
+        ? await this.db.importIssue.findMany({
+            where: { runId, resolved: false, stagedRowId: null },
+            include: { stagedRow: true },
+            orderBy: [{ rowNumber: 'asc' }, { id: 'asc' }],
+            take: 1000 - reviews.length,
+          })
+        : [];
+    const issues = [...reviews, ...diagnostics];
     const candidates = await this.db.transaction.findMany({
       where: { id: { in: issues.flatMap(/** Collect offered candidate IDs only. */ (issue) => issue.candidateIds) } },
     });

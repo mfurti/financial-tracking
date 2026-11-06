@@ -58,6 +58,119 @@ describe('durable household ledger', /** Integration proof against PostgreSQL co
     expect((await ledger.transaction(row.id)).categoryId).toBe(category.id);
     expect(await resource.db.transaction.count({ where: { accountId: target.id } })).toBe(1);
   });
+  it('preserves both transfer sides when a patch references a missing category', /** Rejected annotations must leave financial classifications unchanged. */ async () => {
+    const a = await account(),
+      b = await account();
+    const outgoing = await resource.db.transaction.create({
+      data: {
+        accountId: a.id,
+        amountCents: -1000n,
+        bookingDate: new Date('2026-11-01'),
+        description: 'Transfer patch regression',
+      },
+    });
+    const incoming = await resource.db.transaction.create({
+      data: {
+        accountId: b.id,
+        amountCents: 1000n,
+        bookingDate: new Date('2026-11-01'),
+        description: 'Transfer patch regression',
+      },
+    });
+    const group = await ledger.createTransfer({ transactionIds: [outgoing.id, incoming.id] });
+    const before = await ledger.monthly('2026-11', a.id);
+    await expect(ledger.patchTransaction(outgoing.id, { isTransfer: false, categoryId: randomUUID() })).rejects.toThrow(
+      'Kategorie nicht gefunden',
+    );
+    expect(await resource.db.transferGroup.findUnique({ where: { id: group.id } })).not.toBeNull();
+    for (const id of [outgoing.id, incoming.id])
+      expect(await ledger.transaction(id)).toMatchObject({
+        isTransfer: true,
+        transferGroupId: group.id,
+        categoryId: null,
+      });
+    expect(await ledger.monthly('2026-11', a.id)).toEqual(before);
+    const category = await ledger.createCategory({ name: `Transfer patch ${randomUUID()}`, kind: 'EXPENSE' });
+    expect(await ledger.patchTransaction(outgoing.id, { isTransfer: false, categoryId: category.id })).toMatchObject({
+      isTransfer: false,
+      transferGroupId: null,
+      categoryId: category.id,
+    });
+    expect(await ledger.transaction(incoming.id)).toMatchObject({ isTransfer: false, transferGroupId: null });
+    expect(await resource.db.transferGroup.findUnique({ where: { id: group.id } })).toBeNull();
+  });
+  it('rolls back transfer removal if the final annotation update fails', /** A database write failure must roll back the entire compound patch. */ async () => {
+    const a = await account(),
+      b = await account();
+    const outgoing = await resource.db.transaction.create({
+      data: {
+        accountId: a.id,
+        amountCents: -1000n,
+        bookingDate: new Date('2026-11-01'),
+        description: 'Force patch rollback',
+      },
+    });
+    const incoming = await resource.db.transaction.create({
+      data: {
+        accountId: b.id,
+        amountCents: 1000n,
+        bookingDate: new Date('2026-11-01'),
+        description: 'Counterpart rollback',
+      },
+    });
+    const group = await ledger.createTransfer({ transactionIds: [outgoing.id, incoming.id] });
+    const category = await ledger.createCategory({ name: `Rollback ${randomUUID()}`, kind: 'EXPENSE' });
+    await resource.db
+      .$executeRaw`CREATE FUNCTION reject_review_patch() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.description = 'Force patch rollback' AND NEW."categoryId" IS NOT NULL THEN RAISE EXCEPTION 'Synthetic annotation failure'; END IF; RETURN NEW; END $$`;
+    await resource.db
+      .$executeRaw`CREATE TRIGGER reject_review_patch BEFORE UPDATE ON "Transaction" FOR EACH ROW EXECUTE FUNCTION reject_review_patch()`;
+    try {
+      await expect(
+        ledger.patchTransaction(outgoing.id, { isTransfer: false, categoryId: category.id }),
+      ).rejects.toThrow();
+      expect(await resource.db.transferGroup.findUnique({ where: { id: group.id } })).not.toBeNull();
+      for (const id of [outgoing.id, incoming.id])
+        expect(await ledger.transaction(id)).toMatchObject({
+          isTransfer: true,
+          transferGroupId: group.id,
+          categoryId: null,
+        });
+    } finally {
+      await resource.db.$executeRaw`DROP TRIGGER reject_review_patch ON "Transaction"`;
+      await resource.db.$executeRaw`DROP FUNCTION reject_review_patch()`;
+    }
+  });
+  it('keeps actionable reviews reachable behind more than 1000 CSV diagnostics', /** Non-actionable row errors cannot permanently fill the review window. */ async () => {
+    const target = await account();
+    const invalidRows = Array.from(
+      { length: 1001 },
+      /** Produce safe invalid CSV fixtures. */ () => 'bad-date;bad-amount;Invalid;',
+    ).join('\n');
+    const staged = await preview(
+      target.id,
+      `${invalidRows}\n01.11.2026;-1,00;Brot;NONREF\n01.11.2026;-1,00;Brot;NONREF\n`,
+    );
+    expect(staged.invalidRows).toBe(1001);
+    const committed = await imports.commit(staged.run.id, true);
+    expect(committed.reviewRequiredCount).toBe(1);
+    const visible = await imports.issues(committed.id);
+    expect(visible).toHaveLength(1000);
+    expect(visible[0]!.code).toBe('REVIEW_REQUIRED');
+    expect(visible[0]!.incoming?.description).toBe('Brot');
+    expect(
+      visible.some(
+        /** Preserve ordinary CSV diagnostics alongside reviews. */ (issue) => issue.code === 'CSV_INVALID_ROW',
+      ),
+    ).toBe(true);
+    await imports.resolve(committed.id, [{ issueId: visible[0]!.id, action: 'NEW' }]);
+    expect((await imports.run(committed.id)).reviewRequiredCount).toBe(0);
+    expect(await resource.db.transaction.count({ where: { accountId: target.id } })).toBe(2);
+    expect(
+      (await imports.issues(committed.id)).every(
+        /** After resolution, diagnostics remain available. */ (issue) => issue.code === 'CSV_INVALID_ROW',
+      ),
+    ).toBe(true);
+  });
   it('keeps ambiguous duplicate-looking purchases for explicit review', /** Similarity alone cannot merge financial records. */ async () => {
     const target = await account();
     const staged = await preview(target.id, '01.11.2026;-1,20;Brot;NONREF\n01.11.2026;-1,20;Brot;NONREF\n');

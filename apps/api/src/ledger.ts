@@ -178,13 +178,25 @@ export class LedgerService {
   }
   /** Preserve transfer group consistency when annotations change. */
   async patchTransaction(id: string, input: z.infer<typeof transactionPatchSchema>) {
-    const previous = await this.transaction(id);
-    if (input.isTransfer === false && previous.transferGroupId) await this.removeTransfer(previous.transferGroupId);
-    if (input.categoryId) {
-      const category = await this.db.category.findUnique({ where: { id: input.categoryId } });
-      if (!category) throw new AppError('NOT_FOUND', 'Kategorie nicht gefunden.', 404);
-    }
-    return publicTransaction(await this.db.transaction.update({ where: { id }, data: input }));
+    return this.db.$transaction(
+      /** Validate and update the group, counterpart, and annotation as one atomic change. */ async (tx) => {
+        const previous = await tx.transaction.findUnique({ where: { id } });
+        if (!previous) throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden.', 404);
+        if (input.categoryId) {
+          const category = await tx.category.findUnique({ where: { id: input.categoryId } });
+          if (!category) throw new AppError('NOT_FOUND', 'Kategorie nicht gefunden.', 404);
+        }
+        if (input.isTransfer === false && previous.transferGroupId) {
+          await tx.transaction.updateMany({
+            where: { transferGroupId: previous.transferGroupId },
+            data: { transferGroupId: null, isTransfer: false },
+          });
+          await tx.transferGroup.delete({ where: { id: previous.transferGroupId } });
+        }
+        return publicTransaction(await tx.transaction.update({ where: { id }, data: input }));
+      },
+      { isolationLevel: 'Serializable' },
+    );
   }
   /** Apply one manual category to a bounded, explicit list atomically. */
   async bulkCategory(ids: string[], categoryId: string | null) {

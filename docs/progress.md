@@ -43,7 +43,14 @@ Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issu
 - Docker is unavailable locally. The Linux [CI run 42299354331](https://github.com/mfurti/financial-tracking/actions/runs/42299354331) passed both verify and operations on `d9af458`: production images built, trusted private HTTPS and unauthenticated denial passed, and an age-encrypted backup was decrypted/restored into a separate empty PostgreSQL container. The restored amount, transfer flag, and category matched the synthetic source data.
 - Real Sparkasse product registration, endpoint/TAN compatibility, and target-home/VPN reachability/certificate trust remain operator-dependent acceptance items, not mocked passes.
 
-## Delivery state
+## Review follow-up — Atomic annotations and reachable duplicate reviews
+
+- Reproduced both review findings on disposable PostgreSQL before editing: a failed category/transfer patch removed the group, and 1,000 CSV errors hid a staged duplicate review.
+- Added three regression tests that failed on the original code: invalid-category preservation, rollback after a database-triggered final-write failure, and an actionable review behind 1,001 invalid CSV rows. The first test also checks the valid combined category/transfer update.
+- Fixed compound transaction patches with category validation and all group/counterpart/annotation writes inside one serializable transaction. The bounded issue list now prioritizes staged actionable reviews and fills remaining capacity with diagnostics, without changing the public response schema.
+- All 26 local tests passed, including the three new PostgreSQL regressions; lint, format check, strict typechecks, and the API build also passed. Latest-head remote CI must pass before the correction is reported complete. No merge or production deployment authorized.
+
+## Initial delivery state
 
 - T5 implementation commit: `6ad379d`; validation/delivery tracking: `d9af458`.
 - After explicit publication approval, remote main was initialized with the original documentation commit `49bba21`, and `codex/1-household-ledger` was pushed. [PR #2](https://github.com/mfurti/financial-tracking/pull/2) targets main and links issue #1.
