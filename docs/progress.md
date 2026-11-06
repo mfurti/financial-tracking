@@ -42,3 +42,9 @@ Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issu
 - Verified locally: twenty-three tests; lint/format/typechecks; contracts/API/web production builds; both real desktop/mobile browser journeys; Bash syntax for backup, restore, and CI operations scripts. The isolated production API package also generated OpenAPI without database access.
 - Docker is unavailable locally. The GitHub operations job builds the images, checks private trusted HTTPS and unauthenticated denial, backs up synthetic category/transaction data, and decrypts/restores it into a separate empty PostgreSQL container. Its result must be checked before claiming Docker/restore acceptance.
 - Real Sparkasse product registration, endpoint/TAN compatibility, and target-home/VPN reachability/certificate trust remain operator-dependent acceptance items, not mocked passes.
+
+## Delivery state
+
+- T5 implementation commit: `6ad379d`. Local main remains the original documentation commit `49bba21`; application changes exist only on `codex/1-household-ledger`.
+- Publication was rejected by automatic approval review: pushing the default/feature branches needs explicit user approval for the external Git history change. No push, PR, merge, deployment, or remote CI run occurred.
+- Docker/age restoration is implemented as an isolated CI acceptance job, but cannot be claimed passed until publication/CI execution is authorized and succeeds.

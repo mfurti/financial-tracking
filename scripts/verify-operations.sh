@@ -9,6 +9,7 @@ restore_name="${project}-restore"
 mkdir -p "$ops_dir/backups"
 umask 077
 openssl rand -hex 32 > "$ops_dir/db_password"
+: > "$ops_dir/recipients.txt"
 cat > "$ops_dir/config.env" <<EOF
 PRIVATE_BIND_IP=127.0.0.1
 APP_HOST=localhost

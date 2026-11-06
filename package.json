@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "pnpm --filter @financial-tracking/contracts build && pnpm --filter api build && pnpm --filter web build",
-    "typecheck": "pnpm --filter @financial-tracking/contracts build && pnpm -r typecheck && tsc --noEmit -p tsconfig.json",
+    "typecheck": "pnpm --filter @financial-tracking/contracts build && pnpm -r typecheck && pnpm --filter api build && tsc --noEmit -p tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
