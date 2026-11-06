@@ -18,3 +18,5 @@ Use the backup image with `--entrypoint bash` when starting the one-shot restore
 6. Record archive timestamp, target, application revision, and observed checks. Only switch the private hostname after verification. Remove the temporary identity mount and restore container.
 
 Local PostgreSQL schema/import tests are not proof that the Docker backup/age/restore procedure works. Production acceptance requires an actual encrypted backup restoration on the target environment. No such Docker execution is claimed on the Windows workstation.
+
+The isolated Linux operations job passed in [CI run 42299354331](https://github.com/mfurti/financial-tracking/actions/runs/42299354331): custom-format dump, age encryption/decryption, fresh-database restore, and exact synthetic amount/transfer/category checks. This verifies the container procedure; restoration of the operator's own backup and private-network setup remains a target-host acceptance step.

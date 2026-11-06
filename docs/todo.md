@@ -146,7 +146,7 @@ Dependencies: T3. Outcome: complete browser workflow on desktop and phone.
 
 Dependencies: T4. Outcome: recoverable private deployment with documented validation.
 
-- [ ] Build production Docker images with the contracts package available to both consumers.
+- [x] Build production Docker images with the contracts package available to both consumers.
 - [ ] Bind HTTPS ingress only to the intended home/VPN interface; keep API/database services internal.
 - [x] Configure production secrets outside version control and image layers.
 - [ ] Verify persistent volumes, health checks, and restart behavior without exposing financial details.
@@ -155,12 +155,12 @@ Dependencies: T4. Outcome: recoverable private deployment with documented valida
 - [x] Document recovery for a failed update using a pre-update backup; do not promise automatic down-migrations.
 - [ ] Restore a backup into an isolated environment and verify accounts, transactions, categories, and reports.
 - [ ] Verify no PIN/TAN appears in database records, logs, error responses, or backup contents.
-- [ ] Run full lint, format check, strict typecheck, unit/integration tests, Playwright tests, and production builds in CI.
+- [x] Run full lint, format check, strict typecheck, unit/integration tests, Playwright tests, and production builds in CI.
 - [x] Review contract compatibility across Zod schemas, backend validation/serialization, OpenAPI, and frontend consumers.
 - [ ] Complete desktop/mobile acceptance and separate real-bank verification or document the outstanding blocker.
 - [x] Record exact commands/results and operational limitations in the task record and documentation.
 - [x] Commit T5 and record its SHA and validation results.
-- [ ] Open/update the feature PR and follow the required review/merge approval workflow; do not deploy or merge without applicable authorization.
+- [x] Open/update the feature PR and follow the required review/merge approval workflow; do not deploy or merge without applicable authorization.
 
 ## Stop conditions
 

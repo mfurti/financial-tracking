@@ -40,11 +40,11 @@ Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issu
 - T4 commit: `53a6010`.
 - Added production API/web images, private HTTPS Compose deployment, database secret bootstrap with privilege drop, daily age-encrypted backups/seven-archive retention, guarded empty-target restore, deployment/recovery/API documentation, and full OpenAPI/response contracts.
 - Verified locally: twenty-three tests; lint/format/typechecks; contracts/API/web production builds; both real desktop/mobile browser journeys; Bash syntax for backup, restore, and CI operations scripts. The isolated production API package also generated OpenAPI without database access.
-- Docker is unavailable locally. The GitHub operations job builds the images, checks private trusted HTTPS and unauthenticated denial, backs up synthetic category/transaction data, and decrypts/restores it into a separate empty PostgreSQL container. Its result must be checked before claiming Docker/restore acceptance.
+- Docker is unavailable locally. The Linux [CI run 42299354331](https://github.com/mfurti/financial-tracking/actions/runs/42299354331) passed both verify and operations on `d9af458`: production images built, trusted private HTTPS and unauthenticated denial passed, and an age-encrypted backup was decrypted/restored into a separate empty PostgreSQL container. The restored amount, transfer flag, and category matched the synthetic source data.
 - Real Sparkasse product registration, endpoint/TAN compatibility, and target-home/VPN reachability/certificate trust remain operator-dependent acceptance items, not mocked passes.
 
 ## Delivery state
 
-- T5 implementation commit: `6ad379d`. Local main remains the original documentation commit `49bba21`; application changes exist only on `codex/1-household-ledger`.
-- Publication was rejected by automatic approval review: pushing the default/feature branches needs explicit user approval for the external Git history change. No push, PR, merge, deployment, or remote CI run occurred.
-- Docker/age restoration is implemented as an isolated CI acceptance job, but cannot be claimed passed until publication/CI execution is authorized and succeeds.
+- T5 implementation commit: `6ad379d`; validation/delivery tracking: `d9af458`.
+- After explicit publication approval, remote main was initialized with the original documentation commit `49bba21`, and `codex/1-household-ledger` was pushed. [PR #2](https://github.com/mfurti/financial-tracking/pull/2) targets main and links issue #1.
+- Both remote CI jobs passed for `d9af458`. Documentation follow-ups also require green checks on their own head. No merge or production deployment is authorized or performed.
