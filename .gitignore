@@ -9,5 +9,6 @@ coverage/
 playwright-report/
 test-results/
 .local/
+**/secrets/
 apps/api/src/generated/
 *.tsbuildinfo

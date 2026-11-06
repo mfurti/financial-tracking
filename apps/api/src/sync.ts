@@ -156,7 +156,7 @@ export class SyncService implements OnModuleDestroy {
             completed = 0;
           for (const account of bundle.accounts) {
             try {
-              await this.imports.bankAccount(run.id, connectionId, account, toDate);
+              await this.imports.bankAccount(run.id, connectionId, account, toDate, leaseUntil);
               completed++;
             } catch {
               failed++;

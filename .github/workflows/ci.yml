@@ -31,3 +31,12 @@ jobs:
       - run: pnpm --filter api exec prisma validate
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+  operations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: mkdir -p .local
+      - run: bash scripts/verify-operations.sh

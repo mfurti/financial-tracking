@@ -3,6 +3,7 @@ import { createApp } from '../apps/api/src/app.js';
 import { passwordHash } from '../apps/api/src/auth.js';
 import { testDatabase } from './database.js';
 import { ImportService } from '../apps/api/src/imports.js';
+import { apiContracts } from '../packages/contracts/src/index.js';
 
 describe('private API authentication', /** Exercise sessions with real persisted token hashes. */ () => {
   let resource: Awaited<ReturnType<typeof testDatabase>>;
@@ -81,6 +82,13 @@ describe('private API authentication', /** Exercise sessions with real persisted
   it('publishes the login/session schemas in OpenAPI', /** Documentation must include actual route contracts. */ () => {
     expect(service.openapi.paths['/api/v1/auth/login']?.post?.requestBody).toBeDefined();
     expect(service.openapi.paths['/api/v1/auth/session']?.get?.responses['200']).toBeDefined();
+    for (const [operationId, contract] of Object.entries(apiContracts)) {
+      const operation = service.openapi.paths[`/api/v1${contract.path}`]?.[contract.method];
+      expect(operation?.operationId).toBe(operationId);
+      expect(operation?.responses[String(contract.status)]).toBeDefined();
+      if (contract.request) expect(operation?.requestBody).toBeDefined();
+      if (!contract.public) expect(operation?.security).toEqual([{ cookie: [] }]);
+    }
   });
   it('stages previews without financial writes and cancels staged rows', /** CSV previews remain separate from final records. */ async () => {
     const connection = await resource.db.bankConnection.create({

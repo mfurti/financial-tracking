@@ -320,9 +320,15 @@ export class ImportService {
       rows: Omit<NormalizedRow, 'accountId'>[];
     },
     toDate: string,
+    leaseUntil: Date,
   ) {
     await this.db.$transaction(
       /** No network calls occur while account data is locked. */ async (tx) => {
+        const owned = await tx.bankConnection.updateMany({
+          where: { id: connectionId, leaseUntil: { equals: leaseUntil, gt: new Date() } },
+          data: { leaseUntil },
+        });
+        if (!owned.count) throw new AppError('SYNC_LEASE_LOST', 'Abruf besitzt keine gültige Sperre mehr.', 409);
         const conflictingAccount = account.iban
           ? await tx.account.findFirst({ where: { iban: account.iban, bankConnectionId: { not: connectionId } } })
           : null;

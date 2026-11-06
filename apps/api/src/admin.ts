@@ -2,6 +2,7 @@ import { createInterface, Interface } from 'node:readline';
 import { Writable } from 'node:stream';
 import { createDb } from './db.js';
 import { passwordHash } from './auth.js';
+import { defaultCategories } from './default-categories.js';
 
 /** Read one prompt; hidden input is suppressed rather than echoed. */
 async function prompt(label: string, hidden = false): Promise<string> {
@@ -38,7 +39,13 @@ try {
   if (!username || username.length > 100) throw new Error('Invalid username');
   const password = await prompt('Passwort (mindestens 12 Zeichen): ', true);
   if (password !== (await prompt('Passwort wiederholen: ', true))) throw new Error('Passwords differ');
-  await db.user.create({ data: { username, passwordHash: await passwordHash(password), singleton: 1 } });
+  const hashed = await passwordHash(password);
+  await db.$transaction(
+    /** Provision the only user and starter categories together. */ async (tx) => {
+      await tx.user.create({ data: { username, passwordHash: hashed, singleton: 1 } });
+      await tx.category.createMany({ data: defaultCategories, skipDuplicates: true });
+    },
+  );
   process.stdout.write('Benutzer angelegt.\n');
 } catch {
   process.stderr.write('Benutzeranlage fehlgeschlagen. Eingaben und vorhandenen Benutzer prüfen.\n');

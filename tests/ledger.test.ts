@@ -6,6 +6,8 @@ import { LedgerService } from '../apps/api/src/ledger.js';
 import { SyncService, type BankFactory } from '../apps/api/src/sync.js';
 import type { BankBundle } from '../apps/api/src/bank.js';
 import { transactionQuerySchema } from '../packages/contracts/src/index.js';
+import { AppError } from '../apps/api/src/errors.js';
+import type { BankChallenge } from '../apps/api/src/bank.js';
 
 describe('durable household ledger', /** Integration proof against PostgreSQL constraints and transactions. */ () => {
   let resource: Awaited<ReturnType<typeof testDatabase>>;
@@ -169,6 +171,81 @@ describe('durable household ledger', /** Integration proof against PostgreSQL co
     expect((await sync.status(run.id)).status).toBe('PARTIAL_SUCCESS');
     const bankAccount = await resource.db.account.findFirstOrThrow({ where: { bankConnectionId: connection.id } });
     expect((await ledger.account(bankAccount.id)).balances[0]!.amountCents).toBe('12345');
+    await sync.onModuleDestroy();
+  });
+  it('handles rejected authorization without committing data or persisting secrets', /** Bank failure codes remain safe at the persistence boundary. */ async () => {
+    const connection = await ledger.createConnection({
+      name: 'Rejected TAN',
+      bankCode: '69050001',
+      connectorType: 'FINTS',
+      username: 'test',
+    });
+    let rejectRun: (error: Error) => void = () => {};
+    let notify: (challenge: BankChallenge | null) => void = () => {};
+    const factory: BankFactory = /** Emit authorization separately from constructing the connector. */ (
+      _input,
+      challenge,
+    ) => {
+      notify = challenge;
+      return {
+        result: new Promise(
+          /** Capture a controlled rejection. */ (_resolve, reject) => {
+            rejectRun = reject;
+          },
+        ),
+        continue() {
+          rejectRun(new AppError('BANK_AUTH_REJECTED', 'Freigabe abgelehnt.', 502));
+        },
+        async cancel() {
+          rejectRun(new AppError('SYNC_CANCELLED', 'Abbruch.', 409));
+        },
+      };
+    };
+    const sync = new SyncService(resource.db, imports, factory);
+    const run = await sync.start(connection.id, { pin: 'synthetic-pin' });
+    notify({ type: 'APP_APPROVAL', message: 'Synthetische Freigabe' });
+    for (let i = 0; i < 100 && (await sync.status(run.id)).status !== 'WAITING_FOR_AUTH'; i++)
+      await new Promise(/** Wait for challenge persistence. */ (resolve) => setTimeout(resolve, 10));
+    expect((await sync.status(run.id)).challenge?.type).toBe('APP_APPROVAL');
+    await sync.challenge(run.id, {});
+    for (let i = 0; i < 100 && (await sync.status(run.id)).status !== 'FAILED'; i++)
+      await new Promise(/** Wait for safe error persistence. */ (resolve) => setTimeout(resolve, 10));
+    const stored = await resource.db.importRun.findUniqueOrThrow({ where: { id: run.id } });
+    expect(stored.errorCode).toBe('BANK_AUTH_REJECTED');
+    expect(JSON.stringify(stored)).not.toContain('synthetic-pin');
+    expect(await resource.db.account.count({ where: { bankConnectionId: connection.id } })).toBe(0);
+    await sync.onModuleDestroy();
+  });
+  it('cancels workers and recovers abandoned run records after restart', /** No authorization state survives a process boundary. */ async () => {
+    const connection = await ledger.createConnection({
+      name: 'Cancel',
+      bankCode: '69050001',
+      connectorType: 'FINTS',
+      username: 'test',
+    });
+    let rejectRun: (error: Error) => void = () => {};
+    const factory: BankFactory = /** Keep the synthetic operation pending until cancellation. */ () => ({
+      result: new Promise(
+        /** Capture the cancellation rejection. */ (_resolve, reject) => {
+          rejectRun = reject;
+        },
+      ),
+      continue() {},
+      async cancel() {
+        rejectRun(new AppError('SYNC_CANCELLED', 'Abbruch.', 409));
+      },
+    });
+    const sync = new SyncService(resource.db, imports, factory);
+    const run = await sync.start(connection.id, { pin: 'synthetic-pin' });
+    expect((await sync.cancel(run.id)).status).toBe('CANCELLED');
+    const orphan = await resource.db.importRun.create({
+      data: { bankConnectionId: connection.id, source: 'FINTS', status: 'WAITING_FOR_AUTH' },
+    });
+    await sync.recover();
+    expect((await imports.run(orphan.id)).errorCode).toBe('SYNC_INTERRUPTED');
+    expect(
+      (await resource.db.bankConnection.findUniqueOrThrow({ where: { id: connection.id } })).leaseUntil,
+    ).toBeNull();
     await sync.onModuleDestroy();
   });
 });

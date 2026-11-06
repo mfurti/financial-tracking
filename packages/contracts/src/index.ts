@@ -256,3 +256,166 @@ export type ImportRun = z.infer<typeof runSchema>;
 export type CsvMapping = z.infer<typeof csvMappingSchema>;
 /** Exact monthly amounts and category aggregation. */
 export type Monthly = z.infer<typeof monthlySchema>;
+
+/** One public operation; schemas remain the only transport field definitions. */
+export interface ApiContract {
+  method: 'get' | 'post' | 'patch' | 'delete';
+  path: string;
+  request?: z.ZodType;
+  query?: z.ZodType;
+  response: z.ZodType;
+  status: number;
+  public?: boolean;
+}
+const okSchema = z.object({ ok: z.boolean() });
+/** Operation inventory shared with generated OpenAPI and contract tests. */
+export const apiContracts: Record<string, ApiContract> = {
+  health: {
+    method: 'get',
+    path: '/health',
+    response: z.object({ status: z.literal('ok') }),
+    status: 200,
+    public: true,
+  },
+  login: {
+    method: 'post',
+    path: '/auth/login',
+    request: loginSchema,
+    response: sessionSchema,
+    status: 201,
+    public: true,
+  },
+  session: { method: 'get', path: '/auth/session', response: sessionSchema, status: 200 },
+  logout: { method: 'post', path: '/auth/logout', response: okSchema, status: 201 },
+  password: { method: 'post', path: '/auth/password', request: passwordChangeSchema, response: okSchema, status: 201 },
+  connections: { method: 'get', path: '/bank-connections', response: z.array(connectionSchema), status: 200 },
+  createConnection: {
+    method: 'post',
+    path: '/bank-connections',
+    request: connectionInputSchema,
+    response: connectionSchema,
+    status: 201,
+  },
+  patchConnection: {
+    method: 'patch',
+    path: '/bank-connections/{id}',
+    request: connectionInputSchema.partial().extend({ status: z.enum(['ACTIVE', 'DISABLED', 'BLOCKED']).optional() }),
+    response: connectionSchema,
+    status: 200,
+  },
+  accounts: { method: 'get', path: '/accounts', response: z.array(accountSchema), status: 200 },
+  createAccount: {
+    method: 'post',
+    path: '/accounts',
+    request: accountInputSchema,
+    response: accountSchema,
+    status: 201,
+  },
+  account: { method: 'get', path: '/accounts/{id}', response: accountSchema, status: 200 },
+  patchAccount: {
+    method: 'patch',
+    path: '/accounts/{id}',
+    request: accountPatchSchema,
+    response: accountSchema,
+    status: 200,
+  },
+  balances: { method: 'get', path: '/accounts/{id}/balances', response: z.array(balanceSchema), status: 200 },
+  transactions: {
+    method: 'get',
+    path: '/transactions',
+    query: transactionQuerySchema,
+    response: transactionPageSchema,
+    status: 200,
+  },
+  transaction: { method: 'get', path: '/transactions/{id}', response: transactionSchema, status: 200 },
+  patchTransaction: {
+    method: 'patch',
+    path: '/transactions/{id}',
+    request: transactionPatchSchema,
+    response: transactionSchema,
+    status: 200,
+  },
+  bulkCategory: {
+    method: 'post',
+    path: '/transactions/bulk-category',
+    request: bulkCategorySchema,
+    response: z.object({ updated: z.number().int() }),
+    status: 201,
+  },
+  categories: { method: 'get', path: '/categories', response: z.array(categorySchema), status: 200 },
+  createCategory: {
+    method: 'post',
+    path: '/categories',
+    request: categoryInputSchema,
+    response: categorySchema,
+    status: 201,
+  },
+  patchCategory: {
+    method: 'patch',
+    path: '/categories/{id}',
+    request: categoryInputSchema.partial(),
+    response: categorySchema,
+    status: 200,
+  },
+  deleteCategory: {
+    method: 'delete',
+    path: '/categories/{id}',
+    request: z.object({ confirm: z.literal(true) }),
+    response: okSchema,
+    status: 200,
+  },
+  monthly: {
+    method: 'get',
+    path: '/analytics/monthly',
+    query: monthlyQuerySchema,
+    response: monthlySchema,
+    status: 200,
+  },
+  createTransfer: {
+    method: 'post',
+    path: '/transfers',
+    request: transferSchema,
+    response: z.object({ id: idSchema }),
+    status: 201,
+  },
+  deleteTransfer: { method: 'delete', path: '/transfers/{id}', response: okSchema, status: 200 },
+  imports: { method: 'get', path: '/imports', response: z.array(runSchema), status: 200 },
+  previewCsv: {
+    method: 'post',
+    path: '/imports/csv/preview',
+    request: csvPreviewInputSchema,
+    response: csvPreviewSchema,
+    status: 201,
+  },
+  commitCsv: {
+    method: 'post',
+    path: '/imports/csv/{id}/commit',
+    request: csvCommitSchema,
+    response: runSchema,
+    status: 201,
+  },
+  importRun: { method: 'get', path: '/import-runs/{id}', response: runSchema, status: 200 },
+  importIssues: { method: 'get', path: '/imports/{id}/issues', response: z.array(issueSchema), status: 200 },
+  resolveImport: {
+    method: 'post',
+    path: '/imports/{id}/resolutions',
+    request: resolutionSchema,
+    response: runSchema,
+    status: 201,
+  },
+  sync: {
+    method: 'post',
+    path: '/bank-connections/{id}/sync',
+    request: syncInputSchema,
+    response: runSchema,
+    status: 202,
+  },
+  challenge: {
+    method: 'post',
+    path: '/import-runs/{id}/challenge',
+    request: challengeInputSchema,
+    response: runSchema,
+    status: 201,
+  },
+  cancel: { method: 'post', path: '/import-runs/{id}/cancel', response: runSchema, status: 201 },
+};

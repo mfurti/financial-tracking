@@ -1,0 +1,113 @@
+name: household-ledger
+services:
+  postgres:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ledger
+      POSTGRES_DB: ledger
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    networks: [private]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ledger -d ledger']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  migrate:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile
+      target: api
+    command: [migrate]
+    environment: &api_environment
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      DB_HOST: postgres
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:?Set a private HTTPS URL}
+      FINTS_PRODUCT_ID: ${FINTS_PRODUCT_ID:-}
+      FINTS_BANK_URL: ${FINTS_BANK_URL:-}
+    secrets: [db_password]
+    networks: [private]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  api:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile
+      target: api
+    restart: unless-stopped
+    environment: *api_environment
+    secrets: [db_password]
+    networks: [private]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  web:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile
+      target: web
+    restart: unless-stopped
+    environment:
+      NUXT_API_INTERNAL_URL: http://api:3001
+    networks: [private]
+    depends_on:
+      api:
+        condition: service_healthy
+  proxy:
+    image: caddy:2.10
+    restart: unless-stopped
+    environment:
+      APP_HOST: ${APP_HOST:?Set a private hostname}
+    ports:
+      - '${PRIVATE_BIND_IP:?Set the home or VPN interface IP}:443:443'
+    volumes:
+      - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [private]
+    depends_on: [web]
+  backup:
+    build:
+      context: ./backup
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: ledger
+      PGDATABASE: ledger
+    secrets: [db_password, backup_recipients]
+    volumes:
+      - ${BACKUP_DIRECTORY:?Set the encrypted backup directory}:/backups
+    networks: [private]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'test -f /tmp/backup-success && test -z "$$(find /tmp/backup-success -mmin +1500 -print)"']
+      interval: 30s
+      timeout: 5s
+      retries: 1
+networks:
+  private:
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+secrets:
+  db_password:
+    file: ${DB_PASSWORD_FILE:-./secrets/db_password}
+  backup_recipients:
+    file: ${BACKUP_RECIPIENTS_FILE:-./secrets/backup_recipients}

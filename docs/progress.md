@@ -34,3 +34,11 @@ Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issu
 - Both Playwright projects passed. Synthetic screenshots: `.local/dashboard-desktop.png` and `.local/dashboard-mobile.png` (not committed). Desktop screenshot visually inspected. Runtime proxy configuration uses `NUXT_API_INTERNAL_URL`; the browser only calls the same origin.
 - Contracts/API/web typechecks and production builds passed. Vue TypeScript identifier checks are owned by vue-tsc (ESLint no-undef is disabled only for Vue's TypeScript scripts to support Nuxt auto-imports).
 - Remaining operational/live-bank checks are tracked in T5 and banking.md.
+
+## T5 — Packaging and operational acceptance
+
+- T4 commit: `53a6010`.
+- Added production API/web images, private HTTPS Compose deployment, database secret bootstrap with privilege drop, daily age-encrypted backups/seven-archive retention, guarded empty-target restore, deployment/recovery/API documentation, and full OpenAPI/response contracts.
+- Verified locally: twenty-three tests; lint/format/typechecks; contracts/API/web production builds; both real desktop/mobile browser journeys; Bash syntax for backup, restore, and CI operations scripts. The isolated production API package also generated OpenAPI without database access.
+- Docker is unavailable locally. The GitHub operations job builds the images, checks private trusted HTTPS and unauthenticated denial, backs up synthetic category/transaction data, and decrypts/restores it into a separate empty PostgreSQL container. Its result must be checked before claiming Docker/restore acceptance.
+- Real Sparkasse product registration, endpoint/TAN compatibility, and target-home/VPN reachability/certificate trust remain operator-dependent acceptance items, not mocked passes.

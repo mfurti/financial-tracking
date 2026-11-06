@@ -15,10 +15,13 @@ import { LedgerController } from './ledger-controller.js';
 import { LedgerService } from './ledger.js';
 import { SyncService } from './sync.js';
 import { startBank } from './bank.js';
+import { completeApiDocument } from './api-document.js';
+import { ContractInterceptor } from './contract-interceptor.js';
 
 /** Create an application with injectable persistence for integration tests. */
 export async function createApp(
   db: Db = createDb(),
+  recover = true,
 ): Promise<{ app: NestFastifyApplication; db: Db; openapi: OpenAPIObject }> {
   @Module({
     controllers: [RootController, ImportController, LedgerController],
@@ -40,6 +43,7 @@ export async function createApp(
   );
   app.setGlobalPrefix('api/v1');
   app.useGlobalFilters(new SafeErrors());
+  app.useGlobalInterceptors(new ContractInterceptor());
   app
     .getHttpAdapter()
     .getInstance()
@@ -57,7 +61,7 @@ export async function createApp(
       },
     );
   await app.init();
-  await app.get(SyncService).recover();
+  if (recover) await app.get(SyncService).recover();
   const openapi = cleanupOpenApiDoc(
     SwaggerModule.createDocument(
       app,
@@ -65,5 +69,5 @@ export async function createApp(
     ),
   );
   // The document is generated for validation/export; no unauthenticated Swagger route is exposed.
-  return { app, db, openapi };
+  return { app, db, openapi: completeApiDocument(openapi) };
 }
