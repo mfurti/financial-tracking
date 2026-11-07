@@ -1,6 +1,6 @@
 import EmbeddedPostgres from 'embedded-postgres';
 import { Client } from 'pg';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { createServer } from 'node:net';
@@ -26,7 +26,7 @@ async function freePort(): Promise<number> {
 }
 
 /** Create a disposable real PostgreSQL database, never using DATABASE_URL. */
-export async function testDatabase() {
+export async function testDatabase(options: { initialOnly?: boolean; isolated?: boolean } = {}) {
   const external = process.env.TEST_DATABASE_URL;
   if (external && !new URL(external).pathname.endsWith('_test'))
     throw new Error('TEST_DATABASE_URL must name a disposable *_test database');
@@ -50,20 +50,70 @@ export async function testDatabase() {
     await embedded.start();
     await embedded.createDatabase('ledger_test');
   }
-  const url = external ?? `postgresql://postgres:test-only-password@127.0.0.1:${port}/ledger_test`;
+  let url = external ?? `postgresql://postgres:test-only-password@127.0.0.1:${port}/ledger_test`;
+  let ownedDatabase: string | null = null;
+  if (external && options.isolated) {
+    ownedDatabase = `ledger_browser_${randomUUID().replaceAll('-', '')}_test`;
+    const management = new Client({ connectionString: external });
+    await management.connect();
+    try {
+      await management.query(`CREATE DATABASE "${ownedDatabase}"`);
+    } finally {
+      await management.end();
+    }
+    const isolatedUrl = new URL(external);
+    isolatedUrl.pathname = `/${ownedDatabase}`;
+    url = isolatedUrl.toString();
+  }
   const client = new Client({ connectionString: url });
   await client.connect();
   await client.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
-  await client.query(await readFile('apps/api/prisma/migrations/202611060001_initial/migration.sql', 'utf8'));
   await client.end();
+  const migrationRoot = 'apps/api/prisma/migrations';
+  const migrations = (await readdir(migrationRoot))
+    .filter(/** Exclude the migration-provider metadata file. */ (name) => /^\d+_/.test(name))
+    .sort();
+  let applied = 0;
+  /** Apply every remaining migration in order, including upgrades over populated initial fixtures. */
+  async function applyMigrations(initialOnly = false) {
+    const connection = new Client({ connectionString: url });
+    await connection.connect();
+    try {
+      const limit = initialOnly ? 1 : migrations.length;
+      while (applied < limit) {
+        await connection.query('BEGIN');
+        try {
+          await connection.query(await readFile(resolve(migrationRoot, migrations[applied]!, 'migration.sql'), 'utf8'));
+          await connection.query('COMMIT');
+          applied++;
+        } catch (error) {
+          await connection.query('ROLLBACK');
+          throw error;
+        }
+      }
+    } finally {
+      await connection.end();
+    }
+  }
+  await applyMigrations(options.initialOnly ?? false);
   const db = createDb(url);
   return {
     db,
     url,
+    applyMigrations,
     /** Disconnect Prisma before terminating the isolated server. */
     async close() {
       await db.$disconnect();
       if (embedded) await embedded.stop();
+      if (external && ownedDatabase) {
+        const management = new Client({ connectionString: external });
+        await management.connect();
+        try {
+          await management.query(`DROP DATABASE "${ownedDatabase}" WITH (FORCE)`);
+        } finally {
+          await management.end();
+        }
+      }
     },
   };
 }

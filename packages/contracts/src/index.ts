@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const idSchema = z.uuid();
+export const idSchema = z.uuid().toLowerCase();
 export const dateSchema = z.iso.date();
 export const timeSchema = z.iso.datetime();
 export const centsSchema = z
@@ -94,7 +94,7 @@ export const accountSchema = accountInputSchema.extend({
 });
 export const transactionSchema = z.object({
   id: idSchema,
-  accountId: idSchema,
+  accountId: idSchema.nullable(),
   amountCents: centsSchema,
   currency: z.literal('EUR'),
   bookingDate: dateSchema,
@@ -115,6 +115,7 @@ export const bulkCategorySchema = z.object({ ids: z.array(idSchema).min(1).max(1
 export const transactionQuerySchema = z
   .object({
     accountId: idSchema.optional(),
+    unassigned: z.enum(['true', 'false']).optional(),
     from: dateSchema.optional(),
     to: dateSchema.optional(),
     categoryId: idSchema.optional(),
@@ -126,6 +127,11 @@ export const transactionQuerySchema = z
     cursor: idSchema.optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
   })
+  .refine(
+    /** A specific account and the unassigned-only view are mutually exclusive. */
+    (query) => !(query.accountId && query.unassigned === 'true'),
+    'Konto und Ohne-Konto-Filter nicht gleichzeitig auswählen.',
+  )
   .refine(
     /** Reject inverted date ranges. */
     (query) => !query.from || !query.to || query.from <= query.to,
@@ -177,6 +183,11 @@ export const issueSchema = z.object({
     .nullable()
     .optional(),
   candidates: z.array(transactionSchema).optional(),
+  candidateVersions: z.record(idSchema, timeSchema).optional(),
+  incomingSource: z.enum(['CSV', 'FINTS']).optional(),
+  incomingReference: z.string().nullable().optional(),
+  candidateSources: z.record(idSchema, z.array(z.enum(['CSV', 'FINTS', 'LEGACY']))).optional(),
+  candidateReferences: z.record(idSchema, z.array(z.string())).optional(),
 });
 export const runSchema = z.object({
   id: idSchema,
@@ -207,7 +218,7 @@ export const csvMappingSchema = z.object({
   currency: z.string().optional(),
 });
 export const csvPreviewInputSchema = z.object({
-  accountId: idSchema,
+  accountId: idSchema.nullable().optional().default(null),
   content: z.string().max(10485760),
   encoding: z.enum(['utf-8', 'windows-1252']).default('utf-8'),
   delimiter: z.enum([';', ',']).default(';'),
@@ -225,10 +236,64 @@ export const csvCommitSchema = z.object({ allowPartial: z.boolean().default(fals
 export const resolutionSchema = z.object({
   resolutions: z
     .array(
-      z.object({ issueId: idSchema, action: z.enum(['NEW', 'MATCH', 'SKIP']), transactionId: idSchema.optional() }),
+      z.object({
+        issueId: idSchema,
+        action: z.enum(['NEW', 'MATCH', 'SKIP', 'EXISTING', 'INCOMING']),
+        transactionId: idSchema.optional(),
+        candidateVersion: timeSchema.optional(),
+      }),
     )
     .min(1)
     .max(100),
+});
+export const assignmentPreviewInputSchema = z.object({
+  accountId: idSchema,
+  transactionIds: z
+    .array(idSchema)
+    .min(1)
+    .max(100)
+    .refine(
+      /** Repeated IDs cannot be applied twice in a batch. */ (ids) => new Set(ids).size === ids.length,
+      'Umsatz mehrfach ausgewählt.',
+    ),
+});
+export const assignmentRecordSchema = z.object({
+  transaction: transactionSchema,
+  accountName: z.string().nullable(),
+  references: z.array(z.object({ type: z.string(), value: z.string(), source: z.enum(['CSV', 'FINTS', 'LEGACY']) })),
+});
+export const assignmentPreviewSchema = z.object({
+  accountId: idSchema,
+  items: z.array(
+    z.object({
+      incoming: assignmentRecordSchema,
+      candidates: z.array(assignmentRecordSchema),
+      token: z.string().regex(/^[a-f0-9]{64}$/),
+      hasMoreCandidates: z.boolean(),
+    }),
+  ),
+});
+export const assignmentInputSchema = z.object({
+  requestId: idSchema,
+  accountId: idSchema,
+  decisions: z
+    .array(
+      z.object({
+        transactionId: idSchema,
+        token: z.string().regex(/^[a-f0-9]{64}$/),
+        action: z.enum(['BANK', 'CSV', 'SEPARATE', 'SKIP']),
+        candidateId: idSchema.optional(),
+        categoryChoice: z.enum(['BANK', 'CSV']).optional(),
+      }),
+    )
+    .min(1)
+    .max(100),
+});
+export const assignmentResultSchema = z.object({
+  assigned: z.number().int(),
+  merged: z.number().int(),
+  skipped: z.number().int(),
+  results: z.array(z.object({ transactionId: idSchema, resultingId: idSchema.nullable() })),
 });
 export const transferSchema = z.object({ transactionIds: z.array(idSchema).min(1).max(2) });
 export const errorSchema = z.object({
@@ -333,6 +398,20 @@ export const apiContracts: Record<string, ApiContract> = {
     query: transactionQuerySchema,
     response: transactionPageSchema,
     status: 200,
+  },
+  assignmentPreview: {
+    method: 'post',
+    path: '/transactions/assignment-preview',
+    request: assignmentPreviewInputSchema,
+    response: assignmentPreviewSchema,
+    status: 201,
+  },
+  assignTransactions: {
+    method: 'post',
+    path: '/transactions/assign',
+    request: assignmentInputSchema,
+    response: assignmentResultSchema,
+    status: 201,
   },
   transaction: { method: 'get', path: '/transactions/{id}', response: transactionSchema, status: 200 },
   patchTransaction: {

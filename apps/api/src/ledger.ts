@@ -140,7 +140,7 @@ export class LedgerService {
   /** Search transactions with a stable date/id cursor and bounded pages. */
   async transactions(query: z.infer<typeof transactionQuerySchema>) {
     const where: Prisma.TransactionWhereInput = {
-      accountId: query.accountId,
+      accountId: query.unassigned === 'true' ? null : query.accountId,
       categoryId: query.uncategorized === 'true' ? null : query.categoryId,
       status: query.status,
       isTransfer: query.excludeTransfers === 'true' ? false : undefined,

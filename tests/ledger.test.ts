@@ -171,6 +171,27 @@ describe('durable household ledger', /** Integration proof against PostgreSQL co
       ),
     ).toBe(true);
   });
+  it('reviews a changed source purpose even when cents and dates are unchanged', /** Exact references do not authorize silent financial-field replacement. */ async () => {
+    const target = await account();
+    const first = await preview(target.id, '01.11.2026;-2,00;Original purpose;changed-reference\n');
+    await imports.commit(first.run.id, false);
+    const changed = await preview(target.id, '01.11.2026;-2,00;Corrected purpose;changed-reference\n');
+    expect((await imports.commit(changed.run.id, false)).reviewRequiredCount).toBe(1);
+    const issue = (await imports.issues(changed.run.id))[0]!;
+    expect(issue.code).toBe('SOURCE_CHANGED');
+    expect(issue.candidates![0]!.description).toBe('Original purpose');
+    await imports.resolve(changed.run.id, [
+      {
+        issueId: issue.id,
+        action: 'INCOMING',
+        transactionId: issue.candidateIds[0],
+        candidateVersion: issue.candidateVersions![issue.candidateIds[0]!],
+      },
+    ]);
+    expect((await ledger.transaction(issue.candidateIds[0]!)).description).toBe('Corrected purpose');
+    expect(await resource.db.transaction.count({ where: { accountId: target.id } })).toBe(1);
+  });
+
   it('keeps ambiguous duplicate-looking purchases for explicit review', /** Similarity alone cannot merge financial records. */ async () => {
     const target = await account();
     const staged = await preview(target.id, '01.11.2026;-1,20;Brot;NONREF\n01.11.2026;-1,20;Brot;NONREF\n');

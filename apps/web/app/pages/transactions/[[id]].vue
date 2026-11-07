@@ -7,6 +7,7 @@ import {
   transactionPageSchema,
   transactionQuerySchema,
   bulkCategorySchema,
+  assignmentResultSchema,
   type Account,
   type Category,
   type Transaction,
@@ -25,7 +26,7 @@ const nextCursor = ref<string | null>(null);
 const error = ref('');
 const busy = ref(false);
 const filter = reactive({
-  accountId: String(route.query.accountId ?? ''),
+  accountId: route.query.unassigned === 'true' ? 'UNASSIGNED' : String(route.query.accountId ?? ''),
   from: String(route.query.from ?? ''),
   to: String(route.query.to ?? ''),
   search: String(route.query.search ?? ''),
@@ -35,10 +36,28 @@ const filter = reactive({
   uncategorized: route.query.uncategorized === 'true',
   excludeTransfers: route.query.excludeTransfers === 'true',
 });
+const unassignedSelection = computed(
+  /** Only genuinely unassigned selected transactions enter the explicit assignment workflow. */ () =>
+    rows.value
+      .filter(
+        /** Never move an already assigned bank transaction implicitly. */ (row) =>
+          row.accountId === null && selected.value.includes(row.id),
+      )
+      .map(/** Preserve transaction identity across a bulk selection. */ (row) => row.id),
+);
+/** Label genuine accountless records without inventing an account entry. */
+function accountLabel(id: string | null) {
+  return (
+    accounts.value.find(/** Match only a real account UUID. */ (account) => account.id === id)?.name ?? 'Ohne Konto'
+  );
+}
 /** Serialize only nonempty filter values before schema validation. */
 function query(cursor?: string) {
   const value: Record<string, string | undefined> = {};
-  for (const [key, field] of Object.entries(filter)) if (field) value[key] = String(field);
+  for (const [key, field] of Object.entries(filter)) {
+    if (key === 'accountId' && field === 'UNASSIGNED') value.unassigned = 'true';
+    else if (field) value[key] = String(field);
+  }
   if (cursor) value.cursor = cursor;
   return transactionQuerySchema.parse(value);
 }
@@ -129,6 +148,19 @@ function categoryName(id: string | null) {
     categories.value.find(/** Match by stable ID. */ (category) => category.id === id)?.name ?? 'Nicht kategorisiert'
   );
 }
+/** Follow the surviving logical transaction after a merge, or refresh the current list. */
+async function assigned(result: z.infer<typeof assignmentResultSchema>) {
+  if (detail.value) {
+    const destination = result.results.find(
+      /** Resolve the reviewed detail's final identity. */ (entry) => entry.transactionId === detail.value?.id,
+    )?.resultingId;
+    if (destination && destination !== detail.value.id) {
+      await navigateTo(`/transactions/${destination}`);
+      return;
+    }
+  }
+  await load();
+}
 onMounted(
   /** Load reference choices and the initial financial view. */ async () => {
     try {
@@ -163,6 +195,8 @@ onMounted(
     <dl class="detail-list">
       <dt>Buchungsdatum</dt>
       <dd>{{ calendarDate(detail.bookingDate) }}</dd>
+      <dt>Konto</dt>
+      <dd>{{ accountLabel(detail.accountId) }}</dd>
       <dt>Wertstellung</dt>
       <dd>{{ detail.valueDate ? calendarDate(detail.valueDate) : 'Nicht geliefert' }}</dd>
       <dt>Gegenpartei</dt>
@@ -188,6 +222,20 @@ onMounted(
       }}</UButton>
     </div>
   </section>
+  <AccountAssignment
+    v-if="detail?.accountId === null"
+    :transaction-ids="[detail.id]"
+    :accounts="accounts"
+    :categories="categories"
+    @complete="assigned"
+  />
+  <AccountAssignment
+    v-if="!route.params.id"
+    :transaction-ids="unassignedSelection"
+    :accounts="accounts"
+    :categories="categories"
+    @complete="assigned"
+  />
   <template v-if="!route.params.id"
     ><section class="panel mb-5">
       <form class="filter-grid" @submit.prevent="search">
@@ -199,6 +247,7 @@ onMounted(
         ><label
           >Konto<select v-model="filter.accountId" class="control">
             <option value="">Alle Konten</option>
+            <option value="UNASSIGNED">Ohne Konto</option>
             <option v-for="account in accounts" :key="account.id" :value="account.id">{{ account.name }}</option>
           </select></label
         ><label>Von<UInput v-model="filter.from" type="date" aria-label="Von" /></label
@@ -253,7 +302,7 @@ onMounted(
           ><strong>{{ row.description }}</strong
           ><small
             >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || 'Keine Gegenpartei'
-            }}<span v-if="row.isTransfer"> · Umbuchung</span
+            }}<span v-if="row.isTransfer"> · Umbuchung</span><span v-if="row.accountId === null"> · Ohne Konto</span
             ><span v-if="row.status === 'PENDING'"> · Vorgemerkt</span></small
           ></NuxtLink
         ><select
