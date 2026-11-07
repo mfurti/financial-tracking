@@ -16,7 +16,19 @@ This record separates implemented source from external/live acceptance. Stage 2 
 
 The CI publisher intentionally skips feature branches. Green feature CI does not mean production images were published or the server was updated.
 
-Source review: [PR #4](https://github.com/mfurti/financial-tracking/pull/4), still open and unmerged. The parallel push run at `78f3371` exposed an intermittent detail-navigation failure despite the green PR run. Investigation reproduced a stale list response rewriting a detail URL. The correction `7754522` passed both [push CI](https://github.com/mfurti/financial-tracking/actions/runs/42386882489) and [PR CI](https://github.com/mfurti/financial-tracking/actions/runs/42386886259), including 61 tests, eight browser cases and expanded Linux operations. The final documentation-only head is verified separately before handoff.
+Source review: [PR #4](https://github.com/mfurti/financial-tracking/pull/4) and [publisher correction #5](https://github.com/mfurti/financial-tracking/pull/5) merged after approved green CI. [Main CI 42389714786](https://github.com/mfurti/financial-tracking/actions/runs/42389714786) passed verify, operations and publication at `be3d8ab`: 67 tests, eight browser cases and populated isolated PostgreSQL 17 recovery. The earlier detail-navigation regression and correction remain recorded in progress.md.
+
+## Approved target rollout, 2026-11-07
+
+- User approved the maintenance/write pause and confirmed `.33` is unassigned. Their router screenshot shows DHCP `.200–.254`. Actual other Compose files, Docker assignments and three unanswered ARP probes were checked before allocation.
+- Three private GHCR images were pulled by immutable digest on rocky; all OCI revision labels match `be3d8ab`. The pinned PostgreSQL 17.11 image is exactly the previously running image. Existing protected registry credentials worked; their minimum scopes were not inspected.
+- Old runtime configuration was encrypted and copied off-server. Old web/API/backup writers were stopped. Fresh archive `ledger-20261107T163720-11179.dump.age`, SHA256 `ea714c927a7f62ca3e407c5ee016133003ff4e47058c859d96bee3e6a22ea411`, was copied off-server and passed the isolated verifier in **24 seconds**: decryption, migration, row preservation, disposable password rotation/login, reports and responsive UI. It still contains no financial transactions; populated financial recovery is separately proven in CI.
+- Production migration exited zero. Counts and hashes of all original fields in all 12 original application tables matched before/after migration, including existing users/password hashes. No production password changed. The original database volume and backup storage were preserved.
+- PostgreSQL, API, web and backup are healthy; migration exited zero. Web now has `.33`; API/database have no LAN assignment or published ports. PostgreSQL and web were recreated using the persistent volume/configuration.
+- A real multi-network DNS issue initially rejected legitimate HTTPS: unqualified `traefik` resolved to LAN `.27`, while proxy traffic arrived from bridge `172.19.0.10`. Production Compose now uses `traefik.traefik-public`, verified to resolve the bridge endpoint. Images remain the exact published revision; this is a documented Compose-only correction, also prepared in source/CI.
+- Windows verified trusted TLS: `/login`, `/health` and `/api/v1/health/ready` return 200; anonymous `/api/v1/accounts` returns 401. Direct `.33:3000` requests return 403 with and without spoofed forwarding headers.
+- The new backup service completed a fresh automatic encrypted archive and is healthy. Final runtime configuration was encrypted and copied off-server. Server project root now contains only `compose.yaml`, `.env`, `.env.example`, `README.md`, `REVISION` and `secrets/`; old source/build files and the two obsolete `/opt` SELinux rules were removed after technical checks. No volume/backups were deleted.
+- User login and joint UI/CSV acceptance are still required; no production credentials were requested. No host reboot, real bank access or Stage 2/3 work occurred.
 
 ## Target backup recovery, 2026-11-07
 
@@ -40,11 +52,11 @@ The verifier rejects CI and externally supplied `TEST_DATABASE_URL`, creates its
 
 ## Required external decisions and work
 
-1. Review the feature PR and approve its merge separately. CI must pass for its current head before merge.
-2. After the approved main merge, verify private GHCR visibility/permissions, published digests and the exact deployment-only bundle. Give rocky read-only package access through protected Docker credentials.
-3. Before assigning `.33`, verify DHCP reservation/exclusion and non-Docker conflicts; recheck the existing `FRITZBOX`/Traefik networks. Prepared Compose is not an allocated/reserved IP.
-4. Obtain a separate production window: record old image/config revisions, take/verify a fresh encrypted backup, pause writes, deploy the matching digest-pinned API/web/migrator, validate data/HTTPS/private access/readiness/backup health, then reopen writes.
-5. After successful transition, remove only obsolete server source/build material and the old project-specific `/opt` SELinux path rules. Preserve Compose/env/secrets, the existing database volume and backup storage. No cleanup has happened yet.
+1. Review and merge the source follow-up for bridge-qualified proxy DNS after its own CI; the production Compose correction is already active and documented above.
+2. Confirm/restrict the existing protected GHCR credential to read-only package access. Publication and actual target pulls are complete; minimal credential scope was not inspected.
+3. Keep the current `.33` allocation outside DHCP and document future router/static-address changes. Existing networks were reused without modification.
+4. User signs in with the existing password and performs joint CSV/layout/workflow acceptance. Technical rollout, fresh recovery proof, migration and data preservation are complete.
+5. Keep runtime-only server layout, persistent volume, secrets and backups intact. Old source and obsolete `/opt` rules have been removed; do not reintroduce a repository or server builds.
 6. Use the [registration guide](fints-registration.md) to apply for the application's own FinTS product ID and obtain the bank-confirmed endpoint/access. Then separately approve an accompanied live account/balance/history/TAN test. Synthetic success does not close this item.
 7. Shared-host reboot acceptance requires a separate approved window. No reboot is included in ordinary feature CI or rollout approval.
 8. Jointly accept Stage 1: layout, workflow, exact totals, reconciliation, operations and explicit real-bank limitations. Start neither Stage 2 nor Stage 3 without their separate approvals.

@@ -22,6 +22,7 @@ describe('private deployment boundaries', /** Static configuration proof; does n
     expect(config.services.api.healthcheck.test.join(' ')).toContain('/health/ready');
     expect(config.services.web.healthcheck.test.join(' ')).toContain('/health');
     expect(config.services.web.environment.NUXT_REQUIRE_TRUSTED_PROXY).toBe('true');
+    expect(config.services.web.environment.NUXT_TRUSTED_PROXY_HOST).toBe(`traefik.${config.networks.edge.name}`);
     expect(config.services.web.networks.lan.ipv4_address).toContain('192.168.178.33');
     expect(config.services.api.networks).not.toHaveProperty('lan');
     expect(config.services.postgres.networks).toEqual(['private']);
