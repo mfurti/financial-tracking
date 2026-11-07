@@ -6,6 +6,8 @@
 
 ## Neuer Nutzerauftrag: Finanzfluss, Nuxt UI und verständliche Auswertungen
 
+**Nachfolgende Freigabe:** Der Nutzer hat den vollständigen Plan nach dem Planmodus ausdrücklich zur Umsetzung beauftragt. [finanzfluss-umsetzungsplan.md](finanzfluss-umsetzungsplan.md) konkretisiert den aktuellen Auftrag; F0–F6 in todo.md dokumentieren dessen tatsächlichen Fortschritt. Die folgenden Hinweise auf noch nötige Planung beschreiben den vorherigen Audit-Stand.
+
 Der Nutzer verlangt die Prüfung der offenen Aufgaben und sagt Go zum beschriebenen Ausbau: alle Bedienelemente konsistent aus Nuxt UI; Datumswahl nach dem offiziellen InputDate-Beispiel; Theme-Kacheln wie im lokalen Habit Tracker und alle sechs Ayu-Varianten; klare Importklärung und Kategorienregeln; Analysen mit Durchschnitt, Trend und Aufteilung; echte Vertrags-/Abo-/Mietübersicht. Finanzfluss ersetzt Finanzguru als Hauptreferenz für den nächsten Ausbau. Das ist kein Auftrag zum Wechsel auf eine andere UI-Bibliothek.
 
 Die Anforderungen N1–N8 in todo.md beschreiben den geprüften fehlenden Umfang. Für neue Auswertungssemantik, gemeinsame Zod/API-Verträge und Vertragspersistenz ist vor der Umsetzung ein detaillierter Plan im Planmodus nach coding-workflow nötig. Der bisherige Budget-Zwischenschritt ist keine Voraussetzung für den jetzt ausdrücklich gewünschten Vertragsausbau; Budgets selbst bleiben eigener Rückstand. Keine neue Serveränderung, kein Merge/Rollout, Bankzugriff oder Neustart ist allein mit diesem Dokumentationsabgleich freigegeben.

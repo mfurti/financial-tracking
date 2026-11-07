@@ -1,5 +1,17 @@
 # Expansion implementation checklist
 
+## Active approved implementation — F0–F6
+
+The user explicitly requested implementation of the reviewed [Finanzfluss implementation plan](finanzfluss-umsetzungsplan.md) in the current checkout. Preserve audit commit `392d988`. Branch: `codex/3-finanzfluss-experience`; issue #3. Current deployment remains the last verified `1e33afa`; no new merge/rollout/bank/reboot approval is implied.
+
+- [x] F0: save the approved plan and synchronize the existing task record/checklist; relevant Markdown checks pass before commit.
+- [ ] F1: consistent Nuxt UI controls, dates/months, clarification and existing keyboard/mobile journeys.
+- [ ] F2: theme tiles, six Ayu variants, circular Nuxt UI toggle and compatible early persistence.
+- [ ] F3: category templates/rules, manual provenance and fixed/variable metadata with additive migration, API/UI and preservation tests.
+- [ ] F4: confirmed contracts, versioned recurrence, unique payment matches, history/marking and next-due ordering with additive migration/API/UI/tests.
+- [ ] F5: exact multi-month analytics, valid average/trend denominators, breakdown/drill-down and final navigation/dashboard.
+- [ ] F6: guide/evidence/checklist, full local checks and visual review, one PR and current Linux CI; request this PR's merge/rollout approvals.
+
 Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). [Issue #3](https://github.com/mfurti/financial-tracking/issues/3) remains open. PRs #4–#9 are merged; the last verified deployment is `1e33afa517c968edf6ef969c1e3f841a2db16c20`, web `.33`, runtime-only server. The new user instruction selects Finanzfluss Copilot as the primary reference and requests Nuxt UI consistency, analyses, contracts and theme tiles. The source audit below separates these missing features from earlier delivery. Budgets remain separate backlog; real-bank access, host reboot and any new rollout retain their own gates.
 
 The previous checklist, including the audited delivery evidence and remaining baseline checks, is preserved in [initial-implementation-checklist.md](initial-implementation-checklist.md). Its open work is carried into the tasks below; checked historical implementation is not proof of expansion acceptance.
@@ -22,7 +34,7 @@ The previous checklist, including the audited delivery evidence and remaining ba
 - [ ] N7 — Finanzfluss-inspired navigation: Overview, Transactions, Analyses, Contracts, More. Put category analysis under Analyses and make import a reachable action. Replace vague import “checks” with specific “bookings to clarify,” showing the reason, candidates and consequences; known duplicates remain automatic, uncertain matches remain explicit.
 - [ ] N8 — Detailed implementation plan/task record, API/shared-Zod/OpenAPI review, reviewed additive migration where needed, preservation tests, complete UI journeys and synthetic visual acceptance. Scoped commits and PR; new merge/rollout approval applies only to that concrete revision. No real bank access or server source checkout.
 
-The user explicitly said Go for this expansion. A decision-complete plan for its new analysis/API/contract persistence is still required by coding-workflow before feature implementation; the list above records requested outcomes and audited gaps. It does not claim implementation, blanket Stage 1 acceptance or deployment approval.
+The subsequent Plan-mode review and explicit implementation request approved finanzfluss-umsetzungsplan.md. N1–N8 remain the requirement inventory; F0–F6 above track implementation. Approval does not claim completed features, blanket Stage 1 acceptance or production deployment approval.
 
 ## Current baseline and gates
 

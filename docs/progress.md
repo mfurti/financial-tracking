@@ -1,5 +1,10 @@
 # Implementation evidence
 
+## F0 — Approved Finanzfluss implementation (2026-11-07)
+
+- User explicitly approved implementation of the complete reviewed plan in the current checkout. Saved finanzfluss-umsetzungsplan.md with the decisions, ordered commit boundaries, API/data/recurrence/average semantics, checks and delivery gates. Audit commit 392d988 is retained on codex/3-finanzfluss-experience; issue #3 reused.
+- Synchronized active F0–F6 checklist and earlier plan references. This increment changes documentation only; no source/migration/server change or new application-test claim. New feature PR merge and production rollout remain separately approved actions.
+
 ## Checklist audit and new Finanzfluss requirements (2026-11-07)
 
 - Audited source, routes/schema, theme catalog, the local Habit Tracker tile reference, recorded PR #8/#9 delivery and issue #3. Corrected stale a2ea737/held-rollout headers to the recorded 1e33afa deployment. No fresh server check, original-file acceptance or application test is claimed.
