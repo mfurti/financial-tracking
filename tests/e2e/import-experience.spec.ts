@@ -18,7 +18,7 @@ test('upload alone opens full-period analytics and recovers a lost commit respon
   const rows = Array.from(
     { length: 22 },
     /** Keep each synthetic payment financially distinct. */ (_, index) =>
-      `TEST;${index === 21 ? '20.12.2026' : '01.10.2026'};;SEPA;${label} ${index};Testladen;DE89370400440532013000;-${index + 1},00;EUR;auto-${info.project.name}-${index}`,
+      `TEST;${index === 21 ? '20.12.26' : '01.10.26'};${index === 21 ? '20.12.26' : '01.10.26'};SEPA;${label} ${index};Testladen;DE89370400440532013000;-${index + 1},00;EUR;auto-${info.project.name}-${index}`,
   );
   let commits = 0;
   await page.route(

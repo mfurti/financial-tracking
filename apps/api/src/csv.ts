@@ -34,14 +34,15 @@ export function germanCents(input: string) {
   return centsSchema.parse(String(sign * (BigInt(whole!) * 100n + BigInt(fraction.padEnd(2, '0')))));
 }
 
-/** Normalize a supported calendar date and reject impossible dates. */
+/** Normalize bank calendar dates; short years explicitly denote 2000–2099, never a clock-dependent pivot. */
 export function csvDate(value: string, label = 'Datum') {
-  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value.trim());
-  const result = dateSchema.safeParse(match ? `${match[3]}-${match[2]}-${match[1]}` : value.trim());
+  const match = /^(\d{2})\.(\d{2})\.(\d{4}|\d{2})$/.exec(value.trim());
+  const year = match?.[3]?.length === 2 ? `20${match[3]}` : match?.[3];
+  const result = dateSchema.safeParse(match ? `${year}-${match[2]}-${match[1]}` : value.trim());
   if (!result.success)
     throw new AppError(
       'CSV_INVALID_DATE',
-      `${label} ungültig. Erwartet wird ein gültiger Kalendertag im Format TT.MM.JJJJ oder JJJJ-MM-TT.`,
+      `${label} ungültig. Verwende TT.MM.JJ, TT.MM.JJJJ oder JJJJ-MM-TT mit einem gültigen Kalendertag. Zweistellige Jahre stehen für 2000–2099.`,
     );
   return result.data;
 }

@@ -135,6 +135,12 @@ Delivery rule: recheck full CI for any subsequent head before merging; await suc
 
 Still external: real-file/joint acceptance, own FinTS registration plus bank-confirmed endpoint/live test, registry minimum-scope review and separately approved shared-host reboot. These are not silently marked done by this UI revision.
 
+### Confirmed short-year import follow-up
+
+- [x] D1: support the user's confirmed Sparkasse `TT.MM.JJ` dates (booking and value date, explicit 2000–2099), retain strict calendar checks and existing formats; update guidance and parser/real-upload regression evidence. All 95 tests and four focused desktop/mobile import cases passed; format/lint/types/build passed.
+
+D2 delivery gate: the narrow correction needs full CI and its own PR merge/rollout approval. PR #8 is merged as `f1b3e78`; its target switch is held before the maintenance pause until this confirmed normal-import blocker is corrected. The current open/completed delivery checklist and actual target revision are maintained in [issue #3](https://github.com/mfurti/financial-tracking/issues/3), including publication, fresh write-stopped backup/recovery and all-table preservation. Source completion is not rollout proof.
+
 ## Stage 2 — Monthly category budgets
 
 Dependencies: explicit Stage 1 acceptance and separate implementation approval.

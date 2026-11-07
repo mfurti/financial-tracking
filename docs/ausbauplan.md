@@ -20,6 +20,10 @@ Die neue Nutzeranweisung verfeinert Stufe 1. Die bisherige manuelle Vorschau ist
 
 Referenzen: [Finanzguru](https://finanzguru.de/) und dessen öffentliche Ausgabenansicht für Gestaltung/Informationshierarchie; [VS Code Themes](https://code.visualstudio.com/docs/configure/themes), [Dracula](https://draculatheme.com/spec) und [Nord](https://www.nordtheme.com/ports/visual-studio-code/) für Farbwelten. Gestaltung und Paletten werden auf die App übertragen; fremde Produktbilder werden nicht als App-Assets eingebaut.
 
+## Bestätigte Sparkasse-Korrektur vor dem Rollout von PR #8
+
+Der Nutzer bestätigt zweistellige Jahreszahlen in Buchungsdatum und Wertstellung (`07.11.26`). D1 ergänzt den vorhandenen Parser um `TT.MM.JJ` mit der festen, sichtbaren Bedeutung 2000–2099; historische Jahre benötigen vier Stellen. Strenge Kalenderprüfung, ISO/vierstellige Daten, exakte Beträge, Importidentität und Zustimmung bei ungültigen Zeilen bleiben bestehen. Derselbe echte Upload-Browsertest verwendet künftig kurze Buchungs- und Wertstellungsdaten. D2 prüft die Korrektur, liefert einen kleinen Folge-PR und erfordert dessen eigene Merge-/Rollout-Freigabe. Der Serverwechsel wartet darauf; vor dem Wechsel erneut frisches verschlüsseltes Backup mit gestoppten Schreibern und isolierter Wiederherstellung prüfen. Kein neuer Datenbankumbau oder Bankzugriff.
+
 ## Bestehende Ziele und Grenzen
 
 - Retain the pnpm monorepo, Nuxt UI frontend, NestJS backend, PostgreSQL/Prisma, and shared browser-safe Zod contracts. Keep EUR integer cents internally and decimal strings over the API.

@@ -56,7 +56,7 @@ const requiredFields = [
   {
     key: 'bookingDate',
     label: 'Buchungsdatum',
-    help: 'Tag der Buchung; bestimmt den Monat der Auswertung. Format: TT.MM.JJJJ oder JJJJ-MM-TT.',
+    help: 'Tag der Buchung; bestimmt den Monat der Auswertung. TT.MM.JJ, TT.MM.JJJJ oder JJJJ-MM-TT. Zweistellige Jahre bedeuten 2000–2099.',
   },
   {
     key: 'amount',
