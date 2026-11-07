@@ -58,7 +58,7 @@ services:
     environment:
       NUXT_API_INTERNAL_URL: http://ledger-api:3001
       NUXT_REQUIRE_TRUSTED_PROXY: 'true'
-      NUXT_TRUSTED_PROXY_HOST: traefik
+      NUXT_TRUSTED_PROXY_HOST: traefik.traefik-public
     networks:
       private:
       edge:

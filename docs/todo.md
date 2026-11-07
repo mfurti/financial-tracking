@@ -1,6 +1,6 @@
 # Expansion implementation checklist
 
-Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). Stage 1 of [issue #3](https://github.com/mfurti/financial-tracking/issues/3) is explicitly approved in the current checkout, branch `codex/3-complete-ledger-stage-one`. Production rollout, real-bank acceptance, and host reboot require separate approval. Stages 2/3 remain gated.
+Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). Stage 1 of [issue #3](https://github.com/mfurti/financial-tracking/issues/3) is approved; PRs #4/#5 are merged. User separately approved the production rollout on 2026-11-07 and confirmed `.33` is unassigned. The deployed revision is `be3d8ab` with the bridge-qualified proxy hostname correction. Real-bank acceptance and host reboot still require separate approval. Stages 2/3 remain gated.
 
 The previous checklist, including the audited delivery evidence and remaining baseline checks, is preserved in [initial-implementation-checklist.md](initial-implementation-checklist.md). Its open work is carried into the tasks below; checked historical implementation is not proof of expansion acceptance.
 
@@ -32,10 +32,11 @@ Ongoing rules: develop source locally only; never store real PIN/TAN in chat, so
 
 - [x] Add CI image builds for API, web, and backup; keep migration execution in the matching API image. Label images with source/revision and use commit tags.
 - [x] Gate GHCR publication on successful checks for the same revision; keep PR validation separate from production publication.
-- [ ] Configure private package publication with CI credentials and server-side read-only pulls without committing registry secrets.
+- [x] Verify private GHCR publication and successful exact-digest pulls on rocky through protected Docker credentials without exposing registry secrets.
+- [ ] Confirm or restrict the existing server credential to read-only package access; successful pulls do not prove minimal token scope.
 - [x] Create one production `compose.yaml` containing digest-pinned `image:` references, no `build:`, no Dockerfile dependency, and no source mounts. Keep backup/restore scripts inside the image.
 - [x] Reinspect the other actual Compose files and `FRITZBOX` / `traefik-public` networks during implementation. Compare static addressing and Traefik conventions rather than guessing.
-- [ ] Verify DHCP reservation/exclusion and non-Docker address conflicts before assigning `192.168.178.33`; planning proved only that Docker had no container assigned there.
+- [x] Verify `.33` is outside the user-confirmed DHCP pool `.200–.254`, absent from inspected Docker assignments and unanswered by ARP probes; obtain the user's confirmation that it is unassigned before allocation.
 - [x] Prepare web `.33` on external `FRITZBOX`, plus Traefik/backend networking. Retain the canonical domain, existing TLS resolver, LAN middleware, and security headers. Publish no application host ports; keep API/database off the LAN.
 - [x] Prevent direct Macvlan requests bypassing Traefik protections; assess actual peer addresses and reject spoofed forwarding headers instead of trusting them as evidence of proxy traversal.
 - [x] Put PostgreSQL, API database-readiness, web-readiness, and backup-freshness healthchecks directly in Compose. Gate API startup on successful migration.
@@ -43,10 +44,10 @@ Ongoing rules: develop source locally only; never store real PIN/TAN in chat, so
 - [x] Fix backup retention to preserve at least seven calendar days despite extra manual snapshots; keep independent keys and document manual off-host copies accurately.
 - [x] Test isolated image-only installation, readiness failure/recovery and runtime source exclusions in Linux CI. Registry publication/pull on the target host remains open.
 - [x] Produce a versioned downloadable deployment bundle containing Compose/config templates/instructions only; prove missing-secret, registry-unavailable, and failed-migration behavior without touching production.
-- [ ] After successful production transition and verification, remove the old source tree and obsolete project path rules. Retain only deployment configuration/secrets and required data; do not delete volumes or backups.
+- [x] After successful production transition and verification, remove the old server source tree and the two obsolete `/opt/financial-tracking` path rules. Preserve Compose/env/secrets, database volume and backups.
 - [x] Update deployment/recovery documentation, record actual checks, and commit P1.1. Production rollout still requires its applicable approval.
 
-P1.1 code/CI evidence: `4af2e65`, `8512215`; [green CI](https://github.com/mfurti/financial-tracking/actions/runs/42367331141). Prepared networking is not an allocated IP or completed rollout.
+P1.1 initial code/CI evidence: `4af2e65`, `8512215`. Actual approved rollout: 2026-11-07, revision `be3d8ab`, web `192.168.178.33`, four healthy runtime services, successful migrator, HTTPS 200 and direct/spoofed-header denial 403. See [stage-one-acceptance.md](stage-one-acceptance.md) for backup and preservation evidence.
 
 ### P1.2 — CSV without an account or bank connection
 
@@ -101,12 +102,12 @@ P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verif
 - [x] Confirm image-only CI startup, readiness/dependency recovery, private API/database, direct-access denial, volume recreation and backup health for tested source candidate `7754522`. Actual target rollout remains open below.
 - [x] Verify seven-calendar-day retention with extra manual-run fixtures; retain the separately held recovery identity and prove actual archive decryption.
 - [x] Document schema-compatible image rollback versus backup recovery, with no automatic down-migration promise.
-- [x] Create and attach [source PR #4](https://github.com/mfurti/financial-tracking/pull/4); P1.5 commit `86f7b89`, transfer correction `78f3371`. Final current-head CI remains a separate gate above; PR is unmerged.
-- [ ] After approved main merge, verify actual private GHCR publication, exact immutable digests, deployment bundle and target read-only registry pulls.
+- [x] Merge approved [source PR #4](https://github.com/mfurti/financial-tracking/pull/4) and [publisher PR #5](https://github.com/mfurti/financial-tracking/pull/5) after green current-head CI; main `be3d8ab` passed verify/operations/publication in run 42389714786.
+- [x] Verify private GHCR publication, exact immutable digests, deployment-only bundle and successful target pulls. Existing credential minimum-scope review remains separately open above.
 - [x] Implement the publisher correction in [PR #5](https://github.com/mfurti/financial-tracking/pull/5): resolve registry manifest metadata, retain revision/main gates, and pass six publisher/two bundle regressions. Actual main publication and target pulls remain part of the registry gate above; current CI controls merge readiness.
-- [ ] Recheck DHCP/exclusion/non-Docker conflicts before allocating `.33`; prepared Compose is not a live reservation.
-- [ ] Obtain production-rollout approval/window, record existing image/config state, verify a fresh pre-update backup, pause writes, run reviewed migrations and validate data/HTTPS/private access/readiness/backups before reopening.
-- [ ] Only after successful transition, remove obsolete server source/build files and old project path rules; preserve deployment files, secrets, database volume and backups.
+- [x] Recheck DHCP/exclusion/ARP and obtain user confirmation that `.33` is unassigned before allocating it during the approved rollout.
+- [x] Obtain rollout approval, record old image/config state, pause writes, verify a fresh encrypted backup off-server, migrate and validate preserved data/HTTPS/private access/readiness/automatic backup. Existing production password was not changed; the user's renewed login/UI acceptance remains open below.
+- [x] Remove obsolete server source/build files and the two old `/opt` rules after successful technical transition; preserve runtime configuration, secrets, database volume and backups.
 - [ ] Perform shared-host reboot acceptance only in a separately approved window.
 - [ ] Complete user-assisted real-bank compatibility after the user's own registration and confirmed endpoint; record history/TAN/media restrictions without credentials.
 - [ ] Review Stage 1 jointly: layout, workflow, exact totals, CSV decisions, operations and explicit real-bank limitations. See [stage-one-acceptance.md](stage-one-acceptance.md).

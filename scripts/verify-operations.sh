@@ -38,14 +38,17 @@ import json,sys
 from pathlib import Path
 p=Path(sys.argv[1]); root=Path(sys.argv[2])
 d=json.loads((p/'resolved.json').read_text())
-d['networks']={'private':{},'edge':{}}
+d['networks']={'private':{},'edge':{},'alternate':{}}
 d['volumes']={'postgres_data':{},'caddy_data':{},'caddy_config':{}}
-d['services']['web']['networks']={'private':{},'edge':{}}
+d['services']['web']['networks']={'private':{},'edge':{},'alternate':{}}
+d['services']['web']['environment']['NUXT_TRUSTED_PROXY_HOST']='traefik.'+d['name']+'_edge'
 d['services']['web'].pop('labels',None)
+# Both peers share two networks, as on rocky. Force proxy transport and trust to the same bridge.
+(p/'Caddyfile').write_text((root/'infrastructure/proxy/Caddyfile').read_text().replace('web:3000','web.'+d['name']+'_edge:3000'))
 d['services']['proxy']={
  'image':'caddy:2.10','environment':{'APP_HOST':'localhost'},'ports':['127.0.0.1:443:443'],
- 'volumes':[str(root/'infrastructure/proxy/Caddyfile')+':/etc/caddy/Caddyfile:ro','caddy_data:/data','caddy_config:/config'],
- 'networks':{'edge':{'aliases':['traefik']}},'depends_on':{'web':{'condition':'service_healthy'}}}
+ 'volumes':[str(p/'Caddyfile')+':/etc/caddy/Caddyfile:ro','caddy_data:/data','caddy_config:/config'],
+ 'networks':{'edge':{'aliases':['traefik']},'alternate':{'aliases':['traefik']}},'depends_on':{'web':{'condition':'service_healthy'}}}
 # Compose config already re-escapes literal dollars for round trips. Do not escape them twice.
 (p/'compose.json').write_text(json.dumps(d))
 bad=json.loads(json.dumps(d)); bad['services']['migrate']['entrypoint']=['node','-e','process.exit(1)']; bad['services']['migrate']['command']=[]
