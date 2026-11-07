@@ -1,6 +1,6 @@
-# Personal finance tracker: implementation plan
+# Personal finance tracker: initial implementation plan
 
-Status: implementation approved for issue #1 in the current checkout, branch `codex/1-household-ledger`.
+Historical baseline for issue #1, delivered through merged PR #2. The current agreed expansion plan is [ausbauplan.md](ausbauplan.md), with the executable checklist in [todo.md](todo.md). Where requirements differ, the expansion plan takes precedence. Its approval currently covers planning/documentation only; no expansion implementation or deployment is authorized.
 
 ## Implementation precedence
 
