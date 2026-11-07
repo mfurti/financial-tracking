@@ -1,5 +1,11 @@
 # Implementation evidence
 
+## D1 — Confirmed Sparkasse short-year dates (2026-11-07)
+
+- Read-only aggregate diagnostics showed 74 invalid booking dates; no source values were exposed. The user confirmed `TT.MM.JJ`. Added explicit 2000–2099 normalization to the existing shared booking/value-date parser, preserving strict calendar validation, four-digit historical/ISO input, exact money, financial identity and CSV_INVALID_ROW partial-consent classification. Help and safe errors explain the supported formats/century.
+- All 95 tests passed, including short-year/leap/century and invalid-calendar boundaries. Four real desktop/mobile import journeys passed with short booking/value dates, Windows-1252 Sparkasse headings, full-file report month beyond the first 20 records, one POST despite a lost commit response, and existing format/mapping/partial/unmount behavior. Format, lint, strict types and production build passed.
+- PR #8 is merged as `f1b3e78`; main CI 42415845381 successfully published its verified images, but that intermediate version is not installed. Maintenance was held before stopping any writers so the confirmed import blocker can be corrected first. The follow-up PR, action-specific approval, current CI and actual rollout evidence are tracked in issue #3.
+
 ## U5 — Integrated source verification (2026-11-07)
 
 - [PR #8](https://github.com/mfurti/financial-tracking/pull/8): PR CI 42414991656 and push CI 42414959543 passed full verification plus Linux operations at `0a87b70`. User subsequently approved this PR's merge and rollout after green CI. Subsequent heads, main publication and the actual deployment are separately verified in issue #3.

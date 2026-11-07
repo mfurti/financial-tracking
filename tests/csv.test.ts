@@ -1,10 +1,44 @@
 import { describe, expect, it } from 'vitest';
-import { germanCents, previewCsv, stableReference } from '../apps/api/src/csv.js';
+import { csvDate, germanCents, previewCsv, stableReference } from '../apps/api/src/csv.js';
 import { startBank } from '../apps/api/src/bank.js';
 
 const accountId = 'cb3f6dc6-4e89-42b8-9391-7d8d0c348d1a';
 const mapping = { bookingDate: 'Datum', amount: 'Betrag', description: 'Text', reference: 'Referenz' };
 describe('CSV and bank boundaries', /** Validate sources before financial persistence. */ () => {
+  it('normalizes short Sparkasse years with strict calendar and explicit century boundaries', /** Modern short years do not depend on the machine date or an implicit pivot. */ () => {
+    for (const [input, expected] of [
+      ['07.11.26', '2026-11-07'],
+      ['29.02.00', '2000-02-29'],
+      ['31.12.99', '2099-12-31'],
+      ['01.01.1970', '1970-01-01'],
+      ['2026-11-07', '2026-11-07'],
+    ])
+      expect(csvDate(input!)).toBe(expected);
+    for (const invalid of [
+      '29.02.26',
+      '29.02.1900',
+      '29.02.2100',
+      '31.04.26',
+      '07.13.26',
+      '00.11.26',
+      '07.11.6',
+      '07.11.026',
+    ])
+      expect(/** Reject impossible dates without altering import identity. */ () => csvDate(invalid)).toThrow();
+    const parsed = previewCsv(
+      null,
+      'Datum;Wertstellung;Betrag;Text\n07.11.26;06.11.26;-12,34;Beispiel\n29.02.26;;-1,00;Ungültig\n',
+      ';',
+      { bookingDate: 'Datum', valueDate: 'Wertstellung', amount: 'Betrag', description: 'Text' },
+    );
+    expect(parsed.rows[0]!.data).toMatchObject({
+      bookingDate: '2026-11-07',
+      valueDate: '2026-11-06',
+      amountCents: '-1234',
+    });
+    expect(parsed.issues).toHaveLength(1);
+    expect(parsed.issues[0]!.code).toBe('CSV_INVALID_ROW');
+  });
   it('parses German cents without precision loss', /** BIGINT cents remain exact. */ () => {
     expect(germanCents('9.223.372.036.854.775,07')).toBe('922337203685477507');
     expect(germanCents('-49,90')).toBe('-4990');
