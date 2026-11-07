@@ -63,14 +63,26 @@ export const connectionSchema = connectionInputSchema.extend({
   id: idSchema,
   status: z.enum(['ACTIVE', 'DISABLED', 'BLOCKED']),
 });
+/** Validate a German account IBAN using streaming ISO 13616 mod-97 without numeric precision loss. */
+export const ibanSchema = z
+  .string()
+  .overwrite(
+    /** Normalize pasted display spacing and country case. */ (value) => value.replace(/\s/g, '').toUpperCase(),
+  )
+  .refine(
+    /** Check both the German length and checksum; accept no inferred account number. */ (value) => {
+      if (!/^DE\d{20}$/.test(value)) return false;
+      const rearranged = `${value.slice(4)}1314${value.slice(2, 4)}`;
+      let remainder = 0;
+      for (const digit of rearranged) remainder = (remainder * 10 + Number(digit)) % 97;
+      return remainder === 1;
+    },
+    'Bitte eine gültige deutsche IBAN eingeben.',
+  );
 export const accountInputSchema = z.object({
   bankConnectionId: idSchema,
   name: z.string().trim().min(1).max(100),
-  iban: z
-    .string()
-    .regex(/^DE\d{20}$/)
-    .nullable()
-    .optional(),
+  iban: ibanSchema.nullable().optional(),
   accountType: z.enum(['CHECKING', 'SAVINGS', 'OTHER']).default('CHECKING'),
 });
 export const accountPatchSchema = z.object({

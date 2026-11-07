@@ -3,9 +3,11 @@ import { z } from 'zod';
 import { categorySchema, categoryInputSchema, type Category } from '@financial-tracking/contracts';
 
 const api = useApi();
+const { validation, formError } = useFormFeedback();
 const categories = ref<Category[]>([]);
 const error = ref('');
 const busy = ref(false);
+const loading = ref(true);
 const form = reactive({ name: '', kind: 'EXPENSE' as 'INCOME' | 'EXPENSE' | 'BOTH' });
 const kinds = [
   { label: 'Ausgaben', value: 'EXPENSE' },
@@ -14,7 +16,15 @@ const kinds = [
 ];
 /** Reload persisted categories after an edit. */
 async function load() {
-  categories.value = await api.request('/categories', z.array(categorySchema));
+  loading.value = true;
+  error.value = '';
+  try {
+    categories.value = await api.request('/categories', z.array(categorySchema));
+  } catch (cause) {
+    error.value = formError(cause);
+  } finally {
+    loading.value = false;
+  }
 }
 /** Create a category with shared input validation. */
 async function create() {
@@ -25,7 +35,7 @@ async function create() {
     form.name = '';
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   } finally {
     busy.value = false;
   }
@@ -40,7 +50,7 @@ async function save(category: Category) {
     });
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   }
 }
 /** Require explicit confirmation before clearing existing assignments. */
@@ -53,7 +63,7 @@ async function remove(category: Category) {
     });
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   }
 }
 onMounted(
@@ -61,7 +71,7 @@ onMounted(
     try {
       await load();
     } catch (cause) {
-      error.value = (cause as Error).message;
+      error.value = formError(cause);
     }
   },
 );
@@ -74,11 +84,12 @@ onMounted(
       <h1>Kategorien</h1>
       <p class="muted">Ordne deine Buchungen so, wie es für dich passt.</p>
     </div>
+    <UButton variant="soft" :loading="loading" @click="load">Aktualisieren</UButton>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <section class="panel mb-6">
     <h2 class="mb-4">Kategorie anlegen</h2>
-    <UForm :schema="categoryInputSchema" :state="form" class="form-row" @submit="create"
+    <UForm ref="validation" :schema="categoryInputSchema" :state="form" class="form-row" @submit="create"
       ><UFormField label="Name" name="name"
         ><UInput v-model="form.name" placeholder="Zum Beispiel Lebensmittel" /></UFormField
       ><UFormField label="Art" name="kind"><USelect v-model="form.kind" :items="kinds" /></UFormField
@@ -86,7 +97,10 @@ onMounted(
     >
   </section>
   <section class="panel">
-    <p v-if="!categories.length" class="empty-copy">Noch keine Kategorien. Lege oben deine erste Kategorie an.</p>
+    <p v-if="loading" role="status" class="muted">Kategorien werden geladen …</p>
+    <p v-else-if="!categories.length && !error" class="empty-copy">
+      Noch keine Kategorien. Lege oben deine erste Kategorie an.
+    </p>
     <div v-for="category in categories" :key="category.id" class="editable-row">
       <UInput v-model="category.name" aria-label="Kategoriename" /><USelect
         v-model="category.kind"

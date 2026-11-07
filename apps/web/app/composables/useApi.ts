@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { errorSchema, type Session } from '@financial-tracking/contracts';
+import { type Session } from '@financial-tracking/contracts';
+import { publicApiError } from '../utils/api-error';
 
 /** Typed same-origin API transport with shared runtime response validation. */
 export function useApi() {
@@ -32,8 +33,7 @@ export function useApi() {
         session.value = null;
         if (route.path !== '/login') await router.push('/login');
       }
-      const safe = errorSchema.safeParse(details.data);
-      throw new Error(safe.success ? safe.data.error.message : 'Anfrage fehlgeschlagen. Bitte erneut versuchen.');
+      throw publicApiError(details.data, details.statusCode);
     }
   }
   return { request, session };

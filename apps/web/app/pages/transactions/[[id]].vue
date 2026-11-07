@@ -187,7 +187,7 @@ onMounted(
       route.params.id ? 'Alle Umsätze' : 'CSV importieren'
     }}</UButton>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <section v-if="detail" class="panel">
     <p class="eyebrow">{{ detail.status === 'PENDING' ? 'VORGEMERKT' : 'GEBUCHT' }}</p>
     <h2 class="mt-3">{{ detail.description }}</h2>

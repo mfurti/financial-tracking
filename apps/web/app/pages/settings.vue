@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { passwordChangeSchema } from '@financial-tracking/contracts';
 const api = useApi();
+const { validation, formError } = useFormFeedback();
 const form = reactive({ currentPassword: '', newPassword: '' });
 const busy = ref(false);
 const error = ref('');
@@ -17,7 +18,7 @@ async function changePassword() {
     api.session.value = null;
     await navigateTo('/login');
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   } finally {
     form.currentPassword = '';
     form.newPassword = '';
@@ -63,7 +64,8 @@ onBeforeUnmount(
   </section>
   <section class="panel mt-6">
     <h2 class="mb-5">Passwort ändern</h2>
-    <UAlert v-if="error" color="error" :description="error" class="mb-4" /><UForm
+    <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><UForm
+      ref="validation"
       :schema="passwordChangeSchema"
       :state="form"
       class="form-row"

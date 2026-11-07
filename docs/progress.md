@@ -56,6 +56,23 @@ Status: local implementation, strict typechecks, production builds and all four 
 - Desktop/mobile journeys use both populated and zero-account fixtures, isolated databases and real HTTP validation. The final populated desktop/mobile and zero-account desktop/mobile journeys all passed (four projects), including import review and subsequent bank-value consolidation. Lint, formatting and strict typechecks passed; API/web production builds passed. Documentation coverage and script/template/style conventions reviewed.
 - Reviewed the coordinated deployment requirement in [api.md](api.md): pause writes, migrate using the matching API image, update API/web together and refresh clients. Old importers are incompatible with required identity scopes; schema/data recovery requires the verified backup rather than an assumed down-migration.
 
+## P1.3 — Responsive interface and device themes
+
+Status: local implementation and acceptance passed; scoped commit follows this evidence. No production rollout. P1.2 is committed as `07ebc21`; [CI run 42370494493](https://github.com/mfurti/financial-tracking/actions/runs/42370494493) passed verify and Linux operations, with publication intentionally skipped.
+
+- Reworked the shared application shell, semantic light/dark surfaces, spacing, typography and mobile navigation/cards across all ledger pages. Added device-persisted system/light/dark controls on login and authenticated pages, German Nuxt UI labels, visible focus and a keyboard skip link.
+- Dashboard explicitly distinguishes bank-provided balances from transaction totals, shows unassigned/review entry points and rejects stale parallel month responses. Failed refreshes clear the prior report instead of presenting it as current. Accounts explain that CSV needs no account; category/account loads have pending and retry states.
+- Shared IBAN normalization/checksum runs in browser and API. Public client errors retain code/status/request identity and field paths, mark the existing Nuxt UI fields and focus the first affected input. Server errors retain ordinary drafts; credential inputs remain transient. Added [user-guide.md](user-guide.md).
+- Forty-four unit/integration tests passed, including schema/OpenAPI generation and safe field errors. Strict types, lint and production builds passed. Initial browser checks found test synchronization problems: keyboard interaction preceded SPA readiness, and a debounced validation message moved the retry button. Assertions now wait for the actual heading/error disappearance. The final six browser cases passed on the current source: desktop/mobile interface acceptance, populated ledger and zero-account CSV/assignment flows. A real focus timing regression was fixed by waiting for Nuxt UI to re-enable inputs before focusing the first server-invalid field. Light desktop/dark mobile screenshots were visually reviewed; custom theme foreground/background pairs were reviewed for readable contrast. Shared panel spacing and dark brand-mark contrast were corrected before the final build.
+
+| Surface                                       | Acceptance scenario                                                                   | Fixture / locale / viewport                                                        |
+| --------------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Login and shell                               | System default; explicit light/dark; reload persistence; keyboard skip and focus      | Synthetic `e2e`, German, 1440×1000 / 360×800                                       |
+| Dashboard                                     | Actual month totals, unknown balance, both themes, no page overflow                   | Real isolated API/PostgreSQL fixtures                                              |
+| Accounts/categories                           | Shared IBAN checksum; HTTP field errors; retained draft and real retry persistence    | Invalid synthetic IBAN and injected rejection only; successful writes use real API |
+| Transactions/imports/CSV/connections/settings | Both themes, heading and viewport checks; existing populated and accountless journeys | All eight primary routes; real fixtures, no live bank credentials                  |
+| Session expiry                                | Missing cookie redirects to login; explicit theme survives                            | Cookie removed in synthetic browser context                                        |
+
 ## Historical initial delivery evidence
 
 Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issues/1).

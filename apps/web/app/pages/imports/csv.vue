@@ -164,7 +164,7 @@ onBeforeUnmount(
     </div>
     <UButton to="/imports" variant="ghost">Importhistorie</UButton>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <div class="stepper">
     <span :class="{ selected: !headers.length }">1 · Datei</span
     ><span :class="{ selected: headers.length && !preview }">2 · Spalten</span

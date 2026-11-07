@@ -84,6 +84,8 @@ async function select(id: string) {
 }
 /** Apply a deliberate duplicate decision to one staged row. */
 async function resolve(issueId: string, action: 'NEW' | 'MATCH' | 'SKIP' | 'EXISTING' | 'INCOMING') {
+  if (busy.value) return;
+  busy.value = true;
   error.value = '';
   try {
     await api.request(`/imports/${selectedRun.value}/resolutions`, runSchema, {
@@ -104,6 +106,8 @@ async function resolve(issueId: string, action: 'NEW' | 'MATCH' | 'SKIP' | 'EXIS
     await load();
   } catch (cause) {
     error.value = (cause as Error).message;
+  } finally {
+    busy.value = false;
   }
 }
 onMounted(load);
@@ -121,7 +125,7 @@ onMounted(load);
       ><UButton to="/imports/csv">CSV importieren</UButton>
     </div>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <section class="panel mb-6">
     <p v-if="!runs.length" class="empty-copy">
       Noch keine Importe. Starte mit einer CSV-Datei oder deiner Bankverbindung.

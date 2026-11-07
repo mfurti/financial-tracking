@@ -10,6 +10,7 @@ import {
 } from '@financial-tracking/contracts';
 
 const api = useApi();
+const { validation, formError } = useFormFeedback();
 const route = useRoute();
 const router = useRouter();
 const connections = ref<Connection[]>([]);
@@ -56,7 +57,7 @@ async function save() {
     editing.value = '';
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   } finally {
     busy.value = false;
   }
@@ -80,7 +81,7 @@ async function toggle(connection: Connection) {
     });
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   }
 }
 /** Poll an existing run; reloading this page never starts another bank request. */
@@ -90,7 +91,7 @@ async function poll() {
     activeRun.value = await api.request(`/import-runs/${activeRun.value.id}`, runSchema);
     if (!finished.value && !stopped) timer = setTimeout(poll, Date.now() - started > 30_000 ? 5000 : 2000);
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   }
 }
 /** Start a manual refresh and erase the PIN after the request completes. */
@@ -107,7 +108,7 @@ async function start() {
     await router.replace({ query: { run: activeRun.value.id } });
     await poll();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   } finally {
     pin.value = '';
     busy.value = false;
@@ -124,7 +125,7 @@ async function approve() {
       body: { tan: tan.value || undefined, tanMethodId: method.value, tanMediaName: medium.value || undefined },
     });
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   } finally {
     tan.value = '';
     busy.value = false;
@@ -140,7 +141,7 @@ async function cancel() {
     });
     if (timer) clearTimeout(timer);
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   } finally {
     pin.value = '';
     tan.value = '';
@@ -155,7 +156,7 @@ onMounted(
         await poll();
       }
     } catch (cause) {
-      error.value = (cause as Error).message;
+      error.value = formError(cause);
     }
   },
 );
@@ -177,7 +178,7 @@ onBeforeUnmount(
       <p class="muted">Manueller FinTS-Abruf oder CSV – die Kontrolle bleibt bei dir.</p>
     </div>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" /><UAlert
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" /><UAlert
     color="info"
     title="FinTS-Kompatibilität noch nachzuweisen"
     description="Für Sparkasse Bodensee sind registrierte Produkt-ID, bestätigter Bankendpunkt und eine erfolgreiche Konto-/TAN-Prüfung nötig. CSV funktioniert unabhängig davon."
@@ -185,7 +186,7 @@ onBeforeUnmount(
   />
   <section class="panel mb-6">
     <h2 class="mb-4">{{ editing ? 'Verbindung bearbeiten' : 'Verbindung anlegen' }}</h2>
-    <UForm :schema="connectionInputSchema" :state="form" class="form-row" @submit="save"
+    <UForm ref="validation" :schema="connectionInputSchema" :state="form" class="form-row" @submit="save"
       ><UFormField label="Name" name="name"><UInput v-model="form.name" /></UFormField
       ><UFormField label="Bankleitzahl" name="bankCode"><UInput v-model="form.bankCode" maxlength="8" /></UFormField
       ><UFormField label="Verfahren" name="connectorType"

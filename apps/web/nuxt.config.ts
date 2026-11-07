@@ -4,6 +4,7 @@ export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: false },
   telemetry: false,
+  colorMode: { preference: 'system', fallback: 'light', storageKey: 'haushaltsbuch-theme', classSuffix: '' },
   css: ['~/assets/main.css'],
   runtimeConfig: {
     apiInternalUrl: 'http://127.0.0.1:3001',

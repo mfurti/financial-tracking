@@ -63,21 +63,21 @@ P1.1 code/CI evidence: `4af2e65`, `8512215`; [green CI](https://github.com/mfurt
 - [x] Test cent-exact totals before/after assignment/consolidation, month/year boundaries, refunds, transfer exclusion, and pending-to-booked reconciliation.
 - [x] Document compatibility and coordinated migration/client rollout; record checks and commit P1.2.
 
-P1.2 implementation and all checks passed locally; scoped commit recorded in Git. No production migration executed.
+P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verify/operations passed. No production migration executed.
 
 ### P1.3 — Calm, responsive interface and themes
 
-- [ ] Redesign the application shell/navigation and all ledger pages with consistent Nuxt UI components, typography, spacing, and feedback.
-- [ ] Redesign dashboard month selection, income/expense/net, category breakdown, recent activity, and outstanding reviews. Distinguish authoritative balances from incomplete transaction totals.
-- [ ] Make "Ohne Konto", later assignment, and reconciliation choices clear in normal/empty/first-run workflows.
-- [ ] Improve transaction filters and bulk actions; use mobile lists/cards instead of page-wide overflowing tables.
-- [ ] Add light/dark toggles on login and authenticated pages; default to system preference and preserve explicit device-local choices across reloads.
-- [ ] Replace hardcoded custom colors with shared semantic theme variables across all pages and interaction states.
-- [ ] Preserve API error codes/field paths in the client and map safe errors to form controls; complete shared-schema validation including account IBAN input.
-- [ ] Cover loading, empty, stale/partial data, failed imports, expired sessions, and recoverable errors without losing necessary user input.
-- [ ] Verify keyboard navigation, accessible labels, contrast, focus transitions, and responsive behavior across all pages; do not rely on color alone.
-- [ ] Add desktop/mobile browser assertions for unassigned CSV, assignment/reconciliation, exact monthly amounts, transfer exclusion, and both themes including reload persistence.
-- [ ] Record page/state acceptance and commit P1.3.
+- [x] Redesign the application shell/navigation and all ledger pages with consistent Nuxt UI components, typography, spacing, and feedback.
+- [x] Redesign dashboard month selection, income/expense/net, category breakdown, recent activity, and outstanding reviews. Distinguish authoritative balances from incomplete transaction totals.
+- [x] Make "Ohne Konto", later assignment, and reconciliation choices clear in normal/empty/first-run workflows.
+- [x] Improve transaction filters and bulk actions; use mobile lists/cards instead of page-wide overflowing tables.
+- [x] Add light/dark toggles on login and authenticated pages; default to system preference and preserve explicit device-local choices across reloads.
+- [x] Replace hardcoded custom colors with shared semantic theme variables across all pages and interaction states.
+- [x] Preserve API error codes/field paths in the client and map safe errors to form controls; complete shared-schema validation including account IBAN input.
+- [x] Cover loading, empty, stale/partial data, failed imports, expired sessions, and recoverable errors without losing necessary user input.
+- [x] Verify keyboard navigation, accessible labels, contrast, focus transitions, and responsive behavior across all pages; do not rely on color alone.
+- [x] Add desktop/mobile browser assertions for unassigned CSV, assignment/reconciliation, exact monthly amounts, transfer exclusion, and both themes including reload persistence.
+- [x] Record page/state acceptance and commit P1.3.
 
 ### P1.4 — Manual live Sparkasse queries
 
