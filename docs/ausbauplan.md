@@ -1,6 +1,8 @@
 # Household ledger expansion plan
 
-Agreed on 2026-11-07. This document records the three-stage plan and user decisions. Current authorization: save the plan, revise the checklist, and commit documentation only. No expansion implementation, image publication, server changes, or bank access is authorized by this documentation commit.
+Agreed on 2026-11-07. Stage 1 implementation is now explicitly approved for [issue #3](https://github.com/mfurti/financial-tracking/issues/3) in the current checkout, branch `codex/3-complete-ledger-stage-one`. Complete P0 before feature changes. Production rollout, real bank access, and shared-host reboot remain separate gates; Stages 2/3 remain unauthorized.
+
+The user-provided [binding Codex plan](HAUSHALTSBUCH_CODEX_PLAN.md) refines this plan. Its initial planning-only warning describes its authoring context; the subsequent explicit implementation request and issue approval authorize P0 and Stage 1. Preserve the original plan's meaning. Its stricter requirements take precedence: direct-Macvlan bypass protection, an image-only downloadable deployment bundle, idempotent/concurrent reconciliation, IBAN normalization/checksum, and stage acceptance stops.
 
 Execution checklist: [todo.md](todo.md). Initial delivery evidence and unresolved baseline checks: [initial-implementation-checklist.md](initial-implementation-checklist.md). The original [plan.md](plan.md) and detailed specification remain historical inputs; this plan takes precedence for changed requirements.
 
@@ -85,9 +87,9 @@ Dependencies: P1.1–P1.4 and all remaining baseline checks mapped into the chec
 
 Dependencies: explicit Stage 1 acceptance and separate implementation approval.
 
-- Create/edit monthly budgets per expense category, with explicit copying from the previous month and no automatic rollover.
+- Create/edit/delete monthly budgets per expense category with a database uniqueness constraint, explicit copying from the previous month, and no automatic rollover or silent replacement of existing destination budgets.
 - Show budget, consumed amount, remainder, and overspending. Include booked unassigned transactions; exclude own transfers and pending transactions.
-- Calculate consumption from category expenses minus categorized refunds, with a minimum of zero. Retain exact cent arithmetic.
+- Calculate consumption from category expenses minus explicitly identified refunds, with a minimum of zero. Ordinary income must not be treated as a refund just because it shares a category. Refund identification is a Stage 2 decision; do not implement budget-specific schema in Stage 1. Retain exact cent arithmetic.
 - Add shared contracts, persistence/migration, API, theme-aware UI, and tests for month boundaries, refunds, category changes, and unassigned/assigned equivalence.
 - Complete separate acceptance before starting Stage 3.
 
@@ -98,7 +100,7 @@ Dependencies: explicit Stage 2 acceptance and separate implementation approval.
 - Manage recurring expenses with amount, category, start, optional end, and monthly/quarterly/yearly intervals.
 - Display upcoming due dates and planned amounts actually due in the selected month. Separately show the monthly average; round only its displayed fractional-cent equivalent.
 - Clamp unavailable monthly due days to the last day of that month without permanently shifting the original day. Respect start/end dates and leap years.
-- Planning entries never create real transactions, initiate payments, or change actual monthly results. Allow explicit matching to real transactions and prevent duplicate matching of one planned occurrence.
+- Planning entries never create real transactions, initiate payments, or change actual monthly results. Default to explicit 1:1 matching between an occurrence and a real transaction; prevent duplicate matching. Inclusive/exclusive end-date semantics and partial/combined payments must be decided before Stage 3 implementation, not invented during Stage 1.
 - Add shared contracts, persistence/migration, API, theme-aware UI, and tests for month ends, leap years, ending a series, and duplicate matching.
 
 ## Delivery and proof

@@ -1,6 +1,6 @@
 # Expansion implementation checklist
 
-Plan and decisions: [ausbauplan.md](ausbauplan.md). Agreed on 2026-11-07. Current authorization covers documentation and its commit only; no expansion implementation, deployment, image publication, or bank access has started.
+Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). Stage 1 of [issue #3](https://github.com/mfurti/financial-tracking/issues/3) is explicitly approved in the current checkout, branch `codex/3-complete-ledger-stage-one`. Production rollout, real-bank acceptance, and host reboot require separate approval. Stages 2/3 remain gated.
 
 The previous checklist, including the audited delivery evidence and remaining baseline checks, is preserved in [initial-implementation-checklist.md](initial-implementation-checklist.md). Its open work is carried into the tasks below; checked historical implementation is not proof of expansion acceptance.
 
@@ -11,10 +11,20 @@ The previous checklist, including the audited delivery evidence and remaining ba
 - [x] Record initial target-host schema restoration, separate synthetic financial-data restoration in CI, encrypted backups, and private backup identity held off-server.
 - [x] Audit old checklist and preserve its evidence without claiming new test or server results.
 - [x] Agree on three-stage expansion, account-independent CSV, per-candidate reconciliation decisions, `.33` container address, and complete light/dark interface redesign.
-- [ ] Record/reuse the expansion task and obtain implementation approval, with checkout/worktree choice.
+- [x] Record issue #3 and obtain explicit Stage 1 implementation approval in the current checkout after showing its link.
 - [ ] Before each implementation task, confirm prerequisites and preserve unrelated work. Complete its relevant source, tests, documentation, validation, and commit together.
 
 Ongoing rules: develop source locally only; never store real PIN/TAN in chat, source, fixtures, database, logs, backups, or browser persistence. No server repository or builds. Never count fixture bank results as real compatibility proof.
+
+## P0 — Inventory and baseline
+
+- [x] Inspect branch, commits, worktree, source/migrations, scripts, CI, tests, and all three plans; preserve the untracked user document and its original SHA-256 in `.local/p0`.
+- [x] Fetch the remote base and retain local documentation commit `621c979` on the issue branch; no reset, clean, stash, or server connection performed.
+- [x] Use existing Node 24.22.1 runtime and pnpm 11.25.0 without changing system Node 26 or package pins.
+- [x] Run baseline lint, all 26 tests on disposable PostgreSQL, strict typechecks, production builds, and both desktop/mobile browser profiles. Record the pre-existing user-plan formatting failure separately.
+- [x] Consolidate stricter user-plan requirements, Stage 2 refund semantics, and later recurrence decisions without implementing later-stage features.
+- [x] Record the prioritized file/dependency/check matrix and baseline evidence in [progress.md](progress.md#p0--expansion-baseline-2026-11-07).
+- [ ] Commit the validated P0 documentation before feature implementation.
 
 ## Stage 1 — Complete and validate the ledger
 
@@ -27,10 +37,12 @@ Ongoing rules: develop source locally only; never store real PIN/TAN in chat, so
 - [ ] Reinspect the other actual Compose files and `FRITZBOX` / `traefik-public` networks during implementation. Compare static addressing and Traefik conventions rather than guessing.
 - [ ] Verify DHCP reservation/exclusion and non-Docker address conflicts before assigning `192.168.178.33`; planning proved only that Docker had no container assigned there.
 - [ ] Give web `.33` on external `FRITZBOX`, plus Traefik/backend networking. Retain the canonical domain, existing TLS resolver, LAN middleware, and security headers. Publish no application host ports; keep API/database off the LAN.
+- [ ] Prevent direct Macvlan requests bypassing Traefik protections; assess actual peer addresses and reject spoofed forwarding headers instead of trusting them as evidence of proxy traversal.
 - [ ] Put PostgreSQL, API database-readiness, web-readiness, and backup-freshness healthchecks directly in Compose. Gate API startup on successful migration.
 - [ ] Preserve Compose project name, `household-ledger_postgres_data`, secrets, and backup storage; compare data before/after recreation.
 - [ ] Fix backup retention to preserve at least seven calendar days despite extra manual snapshots; keep independent keys and document manual off-host copies accurately.
 - [ ] Test clean installation from deployment files and registry images without a repository/build tools; verify readiness failure/recovery and absence of secret/source leakage in runtime artifacts.
+- [ ] Produce a versioned downloadable deployment bundle containing Compose/config templates/instructions only; prove missing-secret, registry-unavailable, and failed-migration behavior without touching production.
 - [ ] After successful production transition and verification, remove the old source tree and obsolete project path rules. Retain only deployment configuration/secrets and required data; do not delete volumes or backups.
 - [ ] Update deployment/recovery documentation, record actual checks, and commit P1.1. Production rollout still requires its applicable approval.
 
@@ -43,6 +55,7 @@ Ongoing rules: develop source locally only; never store real PIN/TAN in chat, so
 - [ ] Support later assignment of individual/selected transactions with candidate comparison against existing CSV/live records.
 - [ ] Offer bank values, CSV values, a separate transaction, or skipping assignment per candidate; show conflicting values before overwrite confirmation.
 - [ ] Make consolidation/identity updates atomic; preserve provenance and manual categories/transfer annotations by default. Ensure one resulting transaction is counted once.
+- [ ] Make repeated confirmations idempotent and detect concurrent assignment/merge conflicts. Show source/date/amount/text/account/category/status differences before resolving each candidate.
 - [ ] Keep unassigned identities import-scoped; use explicit review for possible cross-file duplicates instead of trusting globally repeated bank references or nullable unique keys.
 - [ ] Test old-data migration, repeated/partially overlapping CSVs, genuine equal-looking purchases, CSV/FinTS overlap, conflicting references, preservation of categories/transfer flags, rollback, and each reconciliation decision.
 - [ ] Test cent-exact totals before/after assignment/consolidation, month/year boundaries, refunds, transfer exclusion, and pending-to-booked reconciliation.
@@ -96,7 +109,7 @@ Dependencies: explicit Stage 1 acceptance and separate implementation approval.
 
 - [ ] Define shared contracts/persistence and a reviewed migration for monthly expense-category budgets, with exact cent amounts.
 - [ ] Implement create/edit and explicit copy from the previous month; no automatic rollover.
-- [ ] Calculate consumption as category expenses less categorized refunds, floored at zero; include booked unassigned data and exclude pending transactions/own transfers.
+- [ ] Define explicit refund identification and calculate consumption as expenses less those refunds, floored at zero; ordinary category income is not automatically a refund. Include booked unassigned data and exclude pending transactions/own transfers.
 - [ ] Show budget, consumption, remainder, and overspending in responsive light/dark UI with field validation.
 - [ ] Test month boundaries, refunds, category changes, unassigned/assigned equivalence, exact totals, and budget-copy behavior.
 - [ ] Complete applicable checks, documentation, scoped commits, and approved delivery.
@@ -107,6 +120,7 @@ Dependencies: explicit Stage 1 acceptance and separate implementation approval.
 Dependencies: explicit Stage 2 acceptance and separate implementation approval.
 
 - [ ] Define shared contracts/persistence and reviewed migration for amount, category, start, optional end, and monthly/quarterly/yearly intervals.
+- [ ] Decide end-date inclusivity and handling of partial/combined payments; default to explicit 1:1 matching, without implementing these features during Stage 1.
 - [ ] Implement create/edit/end and next-due-date calculation, preserving the intended monthly day across short months and leap years.
 - [ ] Show upcoming payments, the amounts actually due in the selected month, and a separately labeled monthly average; round only displayed fractional-cent equivalents.
 - [ ] Keep planning entries out of real transactions and actual reports; do not initiate payments or create real bookings automatically.
