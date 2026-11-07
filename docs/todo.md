@@ -1,6 +1,6 @@
 # Expansion implementation checklist
 
-Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). Stage 1 of [issue #3](https://github.com/mfurti/financial-tracking/issues/3) is approved; PRs #4–#7 are merged. Current separately approved deployment: `a2ea737`, web `.33`, runtime-only server. The user explicitly requested the U1–U5 experience revision below. Real-bank acceptance, new rollout and host reboot retain separate approvals. Stages 2/3 remain gated.
+Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). Stage 1 of [issue #3](https://github.com/mfurti/financial-tracking/issues/3) is approved; PRs #4–#7 are merged. Deployment checkpoint before PR #8: `a2ea737`, web `.33`, runtime-only server. The user explicitly requested the U1–U5 experience revision below and authorized PR #8 merge/rollout after green CI. Current delivery, image publication and target verification are recorded in issue #3. Real-bank acceptance and host reboot retain separate approvals. Stages 2/3 remain gated.
 
 The previous checklist, including the audited delivery evidence and remaining baseline checks, is preserved in [initial-implementation-checklist.md](initial-implementation-checklist.md). Its open work is carried into the tasks below; checked historical implementation is not proof of expansion acceptance.
 
@@ -129,8 +129,9 @@ P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verif
 - [x] U3: 18 adapted theme families in Settings, build-time palette CSS/early allowlisted preference, device-local persistence and one 44×44 circular mode control. Passed 19 palette/bootstrap tests and four real desktop/mobile appearance/interface journeys, including every family/mode, reload/logout and reduced motion.
 - [x] U4: new Finanzguru-inspired cards/dashboard/compact mobile navigation; category purpose, real monthly totals/counts and secondary management, with empty/error/loading/uncategorized states. Verified real assignments, failed-month retry, mobile disclosure/focus and synthetic responsive views; separate browser test instances preserve production login limits.
 - [x] U5 source checks: update user guide/evidence, pass all 94 tests and 16 browser cases, format/lint/types/production build. U1 `52525a6`, U2 `5772824`, U3 `79e0413`, U4 `4fdc508`.
-- [ ] U5 delivery: open this revision's feature PR and verify its full CI. Current remote status is recorded in issue #3.
-- [ ] Obtain new action-specific merge/rollout approvals and separately verify any approved production change; current production remains `a2ea737`.
+- [x] U5 delivery: [PR #8](https://github.com/mfurti/financial-tracking/pull/8) opened; [PR CI 42414991656](https://github.com/mfurti/financial-tracking/actions/runs/42414991656) and push CI 42414959543 passed verification plus Linux container/backup/restore operations for `0a87b70`. User authorized this PR's merge and rollout after green CI.
+
+Delivery rule: recheck full CI for any subsequent head before merging; await successful main image publication, fresh encrypted backup/recovery and target checks before claiming rollout complete. Current delivery evidence is maintained in issue #3. Approval is not proof of execution.
 
 Still external: real-file/joint acceptance, own FinTS registration plus bank-confirmed endpoint/live test, registry minimum-scope review and separately approved shared-host reboot. These are not silently marked done by this UI revision.
 
