@@ -44,11 +44,48 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
   await page.getByLabel('Umsätze durchsuchen').fill(label);
   await page.getByRole('button', { name: 'Filtern', exact: true }).click();
   await expect(page.getByRole('link', { name: new RegExp(label) })).toBeVisible();
-  await page
-    .getByLabel(`Kategorie für ${label}`, { exact: true })
-    .selectOption({ label: `Lebensmittel ${info.project.name}` });
-  await page.getByRole('link', { name: new RegExp(label) }).click();
-  await expect(page.getByRole('heading', { name: 'Umsatzdetails' })).toBeVisible();
+  let releaseRefresh: () => void = () => {};
+  let refreshStarted: () => void = () => {};
+  const held = new Promise<void>(
+    /** Hold only the list response, allowing real detail navigation meanwhile. */ (resolve) => {
+      releaseRefresh = resolve;
+    },
+  );
+  const started = new Promise<void>(
+    /** Observe the actual post-save list request before clicking its detail. */ (resolve) => {
+      refreshStarted = resolve;
+    },
+  );
+  await page.route(
+    '**/api/v1/transactions?**',
+    /** Keep real response data but deliver it after the user enters a detail. */ async (route) => {
+      const response = await route.fetch();
+      refreshStarted();
+      await held;
+      await route.fulfill({ response });
+    },
+  );
+  try {
+    await page
+      .getByLabel(`Kategorie für ${label}`, { exact: true })
+      .selectOption({ label: `Lebensmittel ${info.project.name}` });
+    await started;
+    const link = page.getByRole('link', { name: new RegExp(label) });
+    const href = await link.getAttribute('href');
+    await link.click();
+    await expect(page.getByRole('heading', { name: 'Umsatzdetails' })).toBeVisible();
+    const delivered = page.waitForResponse(
+      /** Observe completion of the old list response without arbitrary delays. */ (response) =>
+        new URL(response.url()).pathname === '/api/v1/transactions',
+    );
+    releaseRefresh();
+    await delivered;
+    await page.waitForLoadState('networkidle');
+    expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe(href);
+  } finally {
+    releaseRefresh();
+    await page.unroute('**/api/v1/transactions?**');
+  }
   await expect(page.getByText(`Lebensmittel ${info.project.name}`, { exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Als Umbuchung markieren' }).click();
   await expect(page.getByRole('button', { name: 'Umbuchung aufheben' })).toBeVisible();

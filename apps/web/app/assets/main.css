@@ -478,6 +478,9 @@ small {
 .ledger-description {
   overflow-wrap: anywhere;
 }
+.ledger-load-status {
+  min-height: 1.5rem;
+}
 .ledger-description small {
   display: block;
   color: var(--muted);

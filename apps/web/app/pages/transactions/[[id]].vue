@@ -25,6 +25,8 @@ const bulkCategory = ref('');
 const nextCursor = ref<string | null>(null);
 const error = ref('');
 const busy = ref(false);
+let loadGeneration = 0;
+let disposed = false;
 const filter = reactive({
   accountId: route.query.unassigned === 'true' ? 'UNASSIGNED' : String(route.query.accountId ?? ''),
   from: String(route.query.from ?? ''),
@@ -63,34 +65,45 @@ function query(cursor?: string) {
 }
 /** Fetch one stable page or a selected transaction detail. */
 async function load(append = false) {
+  if (disposed) return;
+  const generation = ++loadGeneration;
+  const requestedPath = route.path;
   busy.value = true;
   error.value = '';
   try {
-    if (route.params.id) detail.value = await api.request(`/transactions/${route.params.id}`, transactionSchema);
-    else {
+    if (route.params.id) {
+      const transaction = await api.request(`/transactions/${route.params.id}`, transactionSchema);
+      if (!disposed && generation === loadGeneration && route.path === requestedPath) detail.value = transaction;
+    } else {
       const q = query(append ? (nextCursor.value ?? undefined) : undefined);
       const page = await api.request('/transactions', transactionPageSchema, { query: q });
+      if (disposed || generation !== loadGeneration || route.path !== requestedPath) return;
       rows.value = append ? [...rows.value, ...page.items] : page.items;
       nextCursor.value = page.nextCursor;
       if (!append) selected.value = [];
-      await router.replace({
-        query: Object.fromEntries(
-          Object.entries(q).filter(
-            /** Keep persistent filters, not pagination position. */ ([key, value]) =>
-              key !== 'limit' && key !== 'cursor' && value !== undefined,
-          ),
-        ),
-      });
     }
   } catch (cause) {
-    error.value = (cause as Error).message;
+    if (!disposed && generation === loadGeneration) error.value = (cause as Error).message;
   } finally {
-    busy.value = false;
+    if (!disposed && generation === loadGeneration) busy.value = false;
   }
 }
 /** Start a fresh filtered page from a form submission. */
 async function search() {
-  await load(false);
+  try {
+    const q = query();
+    await router.replace({
+      query: Object.fromEntries(
+        Object.entries(q).filter(
+          /** Only an explicit filter submission changes the current URL. */ ([key, value]) =>
+            key !== 'limit' && key !== 'cursor' && value !== undefined,
+        ),
+      ),
+    });
+    await load(false);
+  } catch {
+    error.value = 'Bitte Filter und Zeitraum prüfen.';
+  }
 }
 /** Request the next cursor page without resetting existing rows. */
 async function more() {
@@ -172,6 +185,12 @@ onMounted(
     } catch (cause) {
       error.value = (cause as Error).message;
     }
+  },
+);
+onBeforeUnmount(
+  /** Ignore results owned by the previous list/detail after the user navigates away. */ () => {
+    disposed = true;
+    loadGeneration++;
   },
 );
 </script>
@@ -288,7 +307,7 @@ onMounted(
         ><UButton @click="bulk">Kategorie zuweisen</UButton
         ><UButton :disabled="selected.length > 2" variant="soft" @click="transfer">Umbuchung verknüpfen</UButton>
       </div>
-      <p v-if="busy" role="status">Umsätze werden geladen …</p>
+      <p role="status" class="ledger-load-status">{{ busy ? 'Umsätze werden geladen …' : '' }}</p>
       <p v-if="!busy && !rows.length" class="empty-copy">
         Keine Umsätze gefunden. Passe deine Filter an oder importiere Buchungen.
       </p>

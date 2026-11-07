@@ -4,16 +4,19 @@ This record separates implemented source from external/live acceptance. Stage 2 
 
 ## Source increments
 
-| Increment                           | Commit                | Evidence                                                                                                                       |
-| ----------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| P0 baseline                         | `e2e4963`             | Preserved user plan/local documentation; 26 baseline tests and both initial browser profiles                                   |
-| P1.1 image-only operations          | `4af2e65`, `8512215`  | [CI 42367331141](https://github.com/mfurti/financial-tracking/actions/runs/42367331141): verify and Linux operations passed    |
-| P1.2 accountless CSV                | `07ebc21`             | 42 tests/four browser projects; [CI 42370494493](https://github.com/mfurti/financial-tracking/actions/runs/42370494493) passed |
-| P1.3 interface/themes               | `f0ace1c`             | 44 tests/six browser cases; [CI 42371818775](https://github.com/mfurti/financial-tracking/actions/runs/42371818775) passed     |
-| P1.4 authorization and setup        | `d6d6c2c`, `7f01161`  | 56 tests/eight browser cases; [CI 42373191575](https://github.com/mfurti/financial-tracking/actions/runs/42373191575) passed   |
-| P1.5 final recovery/auth acceptance | Pending scoped commit | New auth boundaries passed; final source/CI evidence recorded in progress.md                                                   |
+| Increment                           | Commit               | Evidence                                                                                                                                                       |
+| ----------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0 baseline                         | `e2e4963`            | Preserved user plan/local documentation; 26 baseline tests and both initial browser profiles                                                                   |
+| P1.1 image-only operations          | `4af2e65`, `8512215` | [CI 42367331141](https://github.com/mfurti/financial-tracking/actions/runs/42367331141): verify and Linux operations passed                                    |
+| P1.2 accountless CSV                | `07ebc21`            | 42 tests/four browser projects; [CI 42370494493](https://github.com/mfurti/financial-tracking/actions/runs/42370494493) passed                                 |
+| P1.3 interface/themes               | `f0ace1c`            | 44 tests/six browser cases; [CI 42371818775](https://github.com/mfurti/financial-tracking/actions/runs/42371818775) passed                                     |
+| P1.4 authorization and setup        | `d6d6c2c`, `7f01161` | 56 tests/eight browser cases; [CI 42373191575](https://github.com/mfurti/financial-tracking/actions/runs/42373191575) passed                                   |
+| P1.5 final recovery/auth acceptance | `86f7b89`            | [CI 42374488764](https://github.com/mfurti/financial-tracking/actions/runs/42374488764) passed; actual initialized target archive recovered locally            |
+| Final transfer correction           | `78f3371`            | [PR CI 42374808449](https://github.com/mfurti/financial-tracking/actions/runs/42374808449): 61 tests, eight browser cases and expanded Linux operations passed |
 
 The CI publisher intentionally skips feature branches. Green feature CI does not mean production images were published or the server was updated.
+
+Source review: [PR #4](https://github.com/mfurti/financial-tracking/pull/4), still open and unmerged. The parallel push run at `78f3371` exposed an intermittent detail-navigation failure despite the green PR run. Investigation reproduced a stale list response rewriting a detail URL. Its scoped fix/regression requires fresh current-head CI; the green historical run is not substituted for that proof.
 
 ## Target backup recovery, 2026-11-07
 

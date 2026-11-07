@@ -101,6 +101,12 @@ Status: local final checks and new Linux CI acceptance in progress; production d
 
 The final source review found an additional P1.2 reconciliation boundary: an unassigned source and a target could already be opposite members of the same transfer group, while a reused bank reference made the target visible. The existing guard rejected two different groups but allowed this same-group pair to collapse. A real PostgreSQL regression failed before the fix. Reconciliation now rejects any merge where both selected records already own transfer-group annotations, requiring an explicit prior review/unlink. The test verifies rejection preserves both members and their opposite exact amounts. This is a scoped Stage 1 correction, not a change to ordinary CSV imports or standalone transfer markers.
 
+## CI review — Stale transaction refresh/navigation
+
+[PR #4](https://github.com/mfurti/financial-tracking/pull/4) is open and attached to the task; no merge or deployment occurred. Extended recovery operations passed on `86f7b89` and `78f3371`. The latter's PR run [42374808449](https://github.com/mfurti/financial-tracking/actions/runs/42374808449) passed all 61 tests, eight browser cases and Linux operations, while its parallel push run failed once entering transaction details after categorization.
+
+Investigation found two related reload hazards: the pending list response could mutate the URL after navigation, and inserting/removing a loading paragraph moved the clicked row. A delayed real-response browser regression deterministically failed before the fix: the detail URL acquired the previous list's search query. List/detail reads now check ownership/generation and never rewrite route queries after completion; only explicit filter submission changes them. Loading feedback reserves its space. All eight local browser cases passed with the delayed-response regression on desktop/mobile; production build, strict types, lint and formatting passed. The final candidate requires fresh CI after this correction.
+
 ## Historical initial delivery evidence
 
 Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issues/1).
