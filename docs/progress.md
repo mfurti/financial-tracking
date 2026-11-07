@@ -1,5 +1,13 @@
 # Implementation evidence
 
+## U2 — Upload directly to actual analytics (2026-11-07)
+
+- U1 plan/audit commit: `52525a6`. The user explicitly replaced routine confirmation with upload-and-analyze. Valid recognized CSV now stages server validation, commits with allowPartial=false and opens actual monthly analytics. Existing financial identity/reconciliation and cent precision are unchanged.
+- Known Sparkasse purpose takes precedence over the generic booking-type column. Unknown/ambiguous required headings still ask for a mapping; invalid rows require explicit partial consent; possible duplicates remain staged decisions. No hidden account is created. Expert format/account options are collapsed by default.
+- Added optional valid full-file period to shared Zod/HTTP/OpenAPI response, calculated from every valid row rather than the first 20 preview rows. Existing defaults/fields remain intact and old responses without the period remain accepted by the client fallback. No database migration.
+- Recover lost commit responses by reading the existing run, not creating another preview/automatic POST. In-flight saves are not cancelled on unmount; late previews are cancelled and cannot redirect a different page. Raw file bytes stay transient until completion/cancellation/unmount, allowing correction during this view.
+- Passed 27 byte/CSV/database/HTTP checks and all 12 real browser cases on desktop/mobile, including upload-only long-period analysis, genuine Windows-1252 bank headings, no account creation, one commit despite lost response, encoding correction without reselection, missing mapping, explicit partial consent, abandoned-preview ownership, duplicate decisions and prior bank fixtures. Production build, lint and strict types passed. Server unchanged.
+
 ## User acceptance: CSV encoding, import guidance and public errors (2026-11-07)
 
 - User's Sparkasse Bodensee export stopped at the strict UTF-8 decoder. Reproduced that rejection with synthetic Windows-1252 bytes containing umlauts/euro; the real bank file was neither requested nor uploaded. Added local UTF-8/Windows-1252 detection, UTF-16 BOM detection and explicit UTF-8/Windows-1252/Latin-9/UTF-16 LE/BE overrides. Raw bytes remain transient and are released on successful preview/unmount; changing format reuses the selected bytes.

@@ -11,7 +11,7 @@ describe('bank CSV file recovery', /** Exercise real byte decoding and heading p
     const decoded = decodeCsv(bytes, 'auto');
     expect(decoded.encoding).toBe('windows-1252');
     expect(decoded.content).toContain('Müller €');
-    expect(() => decodeCsv(bytes, 'utf-8')).toThrow('Die gewählte Zeichenkodierung');
+    expect(() => decodeCsv(bytes, 'utf-8')).toThrow('anderen Textformat');
     expect(decodeCsv(bytes, 'windows-1252').content).toBe(decoded.content);
   });
   it('handles UTF-8, both UTF-16 BOMs and explicit Latin-9', /** Shared formats cover extra encodings without pretending legacy code pages are distinguishable. */ () => {
@@ -43,6 +43,9 @@ describe('bank CSV file recovery', /** Exercise real byte decoding and heading p
       counterpartyName: 'Begünstigter / Zahlungspflichtiger',
     });
     expect(suggestCsvMapping(['Datum', 'Buchungstag', 'Betrag', 'Text']).bookingDate).toBe('');
+    expect(
+      suggestCsvMapping(['Buchungstag', 'Betrag', 'Buchungstext', 'Verwendungszweck', 'Kontonummer/IBAN']),
+    ).toMatchObject({ description: 'Verwendungszweck', counterpartyIban: 'Kontonummer/IBAN' });
   });
   it('uses the same additive format enums at browser and API boundaries', /** Existing UTF-8/Windows-1252 requests keep their defaults; new formats remain constrained. */ () => {
     for (const encoding of csvEncodingSchema.options)

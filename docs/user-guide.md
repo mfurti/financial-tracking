@@ -2,7 +2,9 @@
 
 ## Erste Buchungen
 
-Unter **CSV importieren** kannst du sofort eine Datei auswählen. **Ohne Konto** ist die Voreinstellung; eine Bankverbindung ist dafür nicht nötig. Kodierung und Trennzeichen werden zunächst automatisch ermittelt. Prüfe anschließend Spaltenzuordnung und Vorschau. Fehlerhafte Zeilen werden nur nach ausdrücklicher Zustimmung übersprungen. Ein abgebrochener Import übernimmt keine Buchungen.
+Unter **CSV importieren** wählst du deine Datei aus. Die App erkennt Format und bekannte Spalten, übernimmt vollständig gültige Buchungen automatisch und öffnet die echte Monatsauswertung. Eine Bankverbindung oder Kontoanlage ist nicht nötig. Bei Dateien mit mehreren Monaten wird der letzte enthaltene Monat geöffnet; die übrigen Buchungen bleiben in ihren tatsächlichen Monaten sichtbar. Die Erfolgsmeldung zeigt neue und bereits bekannte Buchungen.
+
+Nur bei unklaren Spalten, fehlerhaften Zeilen oder möglichen Dubletten ist eine Entscheidung nötig. Unter **Importoptionen** kannst du bei Bedarf ein bestehendes Zielkonto oder ein anderes Dateiformat wählen. Ohne Konto zählen Buchungen trotzdem sofort; eine spätere Zuordnung bleibt möglich. Es werden keine Platzhalterkonten angelegt.
 
 **Kodierung** beschreibt, wie Dateibytes zu Buchstaben und Sonderzeichen werden. Eine Bankdatei kann beispielsweise Windows-1252 statt UTF-8 verwenden; der bisherige UTF-8-Fehler bedeutet nicht, dass deine Buchungen kaputt sind. Die automatische Erkennung prüft UTF-8 und UTF-16 mit Erkennungsmarkierung; andernfalls versucht sie Windows-1252. Ältere Einbyte-Kodierungen sind nicht immer eindeutig unterscheidbar. Prüfe daher die angezeigten Umlaute. Unter **Dateiformat anpassen** kannst du UTF-8, Windows-1252/ANSI, ISO-8859-15/Latin-9 und UTF-16 LE/BE auswählen. Latin-9 kann bei einem falsch dargestellten Eurozeichen helfen. Eine Änderung liest dieselbe Datei erneut; du musst sie nicht noch einmal auswählen.
 
@@ -10,7 +12,9 @@ Unter **CSV importieren** kannst du sofort eine Datei auswählen. **Ohne Konto**
 
 Für den Import brauchst du **Buchungsdatum**, **Betrag** und **Buchungstext**. Verwende gültige Daten als TT.MM.JJJJ oder JJJJ-MM-TT und Beträge mit Dezimalkomma; negative Beträge sind Ausgaben. Unter **Weitere Angaben zuordnen** findest du optionale Informationen mit Erklärungen. Eine Bankreferenz darf nur genau eine Buchung identifizieren; Mandats- oder Kundenreferenzen besser leer lassen. Ohne Währungsspalte wird EUR angenommen; es findet keine Währungsumrechnung statt.
 
-**Vorschau erstellen** speichert noch keine Buchungen. Die Zeilenhinweise benennen das konkrete Problem, etwa ungültiges Datum, Betrag oder fehlenden Text. Korrigiere den Export und wähle ihn erneut oder bestätige ausdrücklich, nur gültige Zeilen zu übernehmen. Erst **Import bestätigen** übernimmt diese Buchungen. Ohne gesetzte Zustimmung bleibt ein Teilimport gesperrt.
+Bei ungültigen Zeilen bleibt die Übernahme stehen und zeigt das konkrete Problem, etwa Datum, Betrag oder fehlenden Text. Korrigiere den Export oder bestätige ausdrücklich, nur gültige Buchungen zu übernehmen. Ohne diese Zustimmung wird kein Teilimport ausgeführt. Mögliche Dubletten landen bei den offenen Prüfungen und werden nicht still doppelt gezählt.
+
+Fehlt nach der Übernahme die Serverantwort, prüft die App denselben Importstatus. Es wird nicht automatisch eine zweite Übernahme erzeugt. Mit **Importstatus prüfen** lässt sich der bestehende Vorgang erneut lesen. Beim Verlassen einer noch nicht übernommenen Vorschau wird sie abgebrochen; eine bereits laufende Übernahme wird nicht durch einen späten Seitenwechsel zurückgesetzt.
 
 Gebuchte kontolose Umsätze zählen sofort in der Monatsübersicht. Unter **Umsätze → Konto → Ohne Konto** findest du sie wieder und kannst Kategorien vergeben. Der Filter für ein bestimmtes Konto enthält sie erst nach einer Zuordnung.
 

@@ -23,12 +23,12 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
-      testMatch: ['ledger.spec.ts', 'interface.spec.ts', 'bank.spec.ts'],
+      testMatch: ['ledger.spec.ts', 'interface.spec.ts', 'bank.spec.ts', 'import-experience.spec.ts'],
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },
     },
     {
       name: 'mobile',
-      testMatch: ['ledger.spec.ts', 'interface.spec.ts', 'bank.spec.ts'],
+      testMatch: ['ledger.spec.ts', 'interface.spec.ts', 'bank.spec.ts', 'import-experience.spec.ts'],
       use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 800 }, isMobile: true, hasTouch: true },
     },
     {

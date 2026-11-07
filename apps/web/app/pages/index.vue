@@ -9,6 +9,7 @@ import {
   type Account,
   type Monthly,
   type Transaction,
+  type ImportRun,
 } from '@financial-tracking/contracts';
 
 const api = useApi();
@@ -26,6 +27,7 @@ const error = ref('');
 const busy = ref(true);
 const reviews = ref(0);
 const unassigned = ref(false);
+const importResult = ref<ImportRun | null>(null);
 let loadVersion = 0;
 const balances = computed(
   /** Only source-provided active booked balances contribute to the known total. */ () =>
@@ -53,6 +55,7 @@ const activeCount = computed(
 async function load() {
   const version = ++loadVersion;
   const selectedMonth = month.value;
+  const requestedImport = typeof route.query.import === 'string' ? route.query.import : null;
   busy.value = true;
   error.value = '';
   try {
@@ -76,6 +79,11 @@ async function load() {
     accounts.value = a;
     report.value = r;
     recent.value = t.items;
+    importResult.value =
+      runs.find(
+        /** Only persisted completed runs can produce a success message. */ (run) =>
+          run.id === requestedImport && ['COMPLETED', 'PARTIAL_SUCCESS'].includes(run.status),
+      ) ?? null;
     reviews.value = runs.reduce(
       /** Include actionable duplicate reviews across the visible import history. */ (total, run) =>
         total + run.reviewRequiredCount,
@@ -111,6 +119,14 @@ onMounted(load);
     </div>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
+  <UAlert
+    v-if="importResult"
+    role="status"
+    color="success"
+    title="Datei ausgewertet"
+    :description="`${importResult.importedCount} neue Buchungen übernommen · ${importResult.knownCount} bereits bekannt. Deine Monatszahlen sind aktualisiert.`"
+    class="mb-5"
+  />
   <p v-if="busy" role="status" class="muted">Übersicht wird geladen …</p>
   <template v-else-if="report">
     <div v-if="reviews || unassigned" class="review-summary" aria-label="Nächste Schritte">

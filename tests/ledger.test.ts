@@ -58,6 +58,19 @@ describe('durable household ledger', /** Integration proof against PostgreSQL co
     expect((await ledger.transaction(row.id)).categoryId).toBe(category.id);
     expect(await resource.db.transaction.count({ where: { accountId: target.id } })).toBe(1);
   });
+  it('returns the full valid import period beyond its bounded preview', /** The automatic analysis month must not depend on the first twenty displayed records. */ async () => {
+    const target = await account();
+    const rows = Array.from(
+      { length: 22 },
+      /** Place the latest date outside the preview window. */ (_, index) =>
+        `${index === 21 ? '20.12.2026' : '01.10.2026'};-${index + 1},00;Period ${index};period-${index}`,
+    ).join('\n');
+    const result = await preview(target.id, rows);
+    expect(result.rows).toHaveLength(20);
+    expect(result.period).toEqual({ from: '2026-10-01', to: '2026-12-20' });
+    const invalid = await preview(target.id, 'bad;bad;Invalid;\n');
+    expect(invalid.period).toBeNull();
+  });
   it('preserves both transfer sides when a patch references a missing category', /** Rejected annotations must leave financial classifications unchanged. */ async () => {
     const a = await account(),
       b = await account();

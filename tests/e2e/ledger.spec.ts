@@ -38,31 +38,14 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
       'latin1',
     ),
   });
-  await expect(page.getByRole('status').filter({ hasText: 'Dateiformat: Windows-1252' })).toBeVisible();
-  await page.getByText('Dateiformat anpassen (optional)', { exact: true }).click();
-  await page.getByLabel('Kodierung', { exact: false }).selectOption('utf-8');
-  await expect(page.getByRole('alert')).toContainText('passt nicht zu den Dateibytes');
-  await page.getByLabel('Kodierung', { exact: false }).selectOption('windows-1252');
-  await expect(page.getByRole('alert')).not.toBeVisible();
-  await expect(page.getByLabel('Kodierung', { exact: false })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Vorschau erstellen' })).toBeEnabled();
-  expect(
-    await page.evaluate(
-      /** Import help must fit the supported narrow viewport. */ () =>
-        document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
-  await expect(page.getByRole('link', { name: 'Zum Inhalt springen', exact: true })).not.toBeFocused();
-  await page.evaluate(
-    /** Capture fixed controls at the actual page top, not the browser's last auto-scroll position. */ () =>
-      window.scrollTo(0, 0),
-  );
-  await page.screenshot({ path: `.local/csv-columns-${info.project.name}.png`, fullPage: true });
-  await page.getByRole('button', { name: 'Vorschau erstellen' }).click();
-  await expect(page.getByRole('heading', { name: 'Vorschau prüfen' })).toBeVisible();
-  await expect(page.getByText(label, { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Import bestätigen' }).click();
-  await expect(page.getByRole('heading', { name: 'Importe & Prüfungen' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(
+    page
+      .getByRole('alert')
+      .filter({ hasText: 'Datei ausgewertet' })
+      .or(page.getByRole('status').filter({ hasText: 'Datei ausgewertet' })),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/month=2026-11/);
   await page.goto('/transactions');
   await page.getByLabel('Umsätze durchsuchen').fill(label);
   await page.getByRole('button', { name: 'Filtern', exact: true }).click();

@@ -516,6 +516,34 @@ small {
   color: var(--muted);
   font-size: 13px;
 }
+.quick-upload {
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  text-align: center;
+  cursor: pointer;
+}
+.quick-upload:focus-within {
+  outline: 2px solid var(--green);
+  outline-offset: 4px;
+}
+.quick-upload strong {
+  font-size: 22px;
+}
+.upload-zone .upload-action {
+  padding: 12px 22px;
+  border-radius: 12px;
+  background: var(--green);
+  color: var(--ui-text-inverted);
+  font-weight: 600;
+}
+.upload-disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+.upload-progress p {
+  margin-top: 8px;
+}
 .stepper {
   display: flex;
   gap: 20px;

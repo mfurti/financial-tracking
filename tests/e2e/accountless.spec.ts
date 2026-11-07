@@ -16,15 +16,14 @@ test('CSV without accounts, later assignment and explicit overlap review', /** E
   /** Import an explicitly selected CSV without choosing or creating an account. */
   async function upload(amount = '-10,00') {
     await page.goto('/imports/csv');
-    await expect(page.getByLabel('Zielkonto (optional)', { exact: true })).toHaveValue('');
+
     await page.getByLabel('CSV-Datei', { exact: true }).setInputFiles({
       name: 'standalone.csv',
       mimeType: 'text/csv',
       buffer: Buffer.from(`Datum;Betrag;Text;Bankreferenz\n01.11.2026;${amount};${label};${reference}\n`),
     });
-    await page.getByRole('button', { name: 'Vorschau erstellen' }).click();
-    await expect(page.getByRole('heading', { name: 'Vorschau prüfen' })).toBeVisible();
-    await page.getByRole('button', { name: 'Import bestätigen' }).click();
+    await expect(page).not.toHaveURL(/imports\/csv/);
+    if (new URL(page.url()).pathname !== '/imports') await page.goto('/imports');
     await expect(page.getByRole('heading', { name: 'Importe & Prüfungen' })).toBeVisible();
   }
   await upload();

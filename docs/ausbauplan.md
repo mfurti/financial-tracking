@@ -6,8 +6,6 @@ The user-provided [binding Codex plan](HAUSHALTSBUCH_CODEX_PLAN.md) refines this
 
 Execution checklist: [todo.md](todo.md). Initial delivery evidence and unresolved baseline checks: [initial-implementation-checklist.md](initial-implementation-checklist.md). The original [plan.md](plan.md) and detailed specification remain historical inputs; this plan takes precedence for changed requirements.
 
-## Goal and constraints
-
 ## Aktuelle Erlebnis-Überarbeitung — 2026-11-07
 
 Die neue Nutzeranweisung verfeinert Stufe 1. Die bisherige manuelle Vorschau ist im fehlerfreien Import kein Pflichtschritt mehr. Umsetzung in geordneten, jeweils geprüften Commits:
