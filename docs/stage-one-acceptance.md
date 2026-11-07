@@ -2,6 +2,12 @@
 
 This record separates implemented source from external/live acceptance. Stage 2 budgets and Stage 3 recurring expenses remain unauthorized.
 
+## Current deployed baseline and new review
+
+PRs #4–#7 are merged. Current approved runtime is `a2ea7371b181ebbf92c17006b827ba2ec35289a7`; [main CI 42397313981](https://github.com/mfurti/financial-tracking/actions/runs/42397313981) passed 74 tests, eight browser cases, isolated operations/recovery and publication. The PR #7 rollout preserved all 14 tables and migration state with no new schema migration; four services healthy, 31-second pause/start, trusted HTTPS 200, anonymous accounts 401 and direct/spoofed-header denial 403. The fresh initialized encrypted archive recovered off-server in 9 seconds; it contained no financial transactions. Original bank-file and joint everyday-use acceptance remain open.
+
+The user's next review requests automatic upload/analysis, a Finanzguru-inspired redesign, a circular mode control, Settings theme families and understandable categories. These U1–U5 tasks are planned in ausbauplan.md and tracked in todo.md; they are not delivered merely because earlier UI tests passed. The records below preserve earlier rollout evidence.
+
 ## Source increments
 
 | Increment                           | Commit               | Evidence                                                                                                                                                       |

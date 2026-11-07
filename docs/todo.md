@@ -1,6 +1,6 @@
 # Expansion implementation checklist
 
-Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). Stage 1 of [issue #3](https://github.com/mfurti/financial-tracking/issues/3) is approved; PRs #4/#5 are merged. User separately approved the production rollout on 2026-11-07 and confirmed `.33` is unassigned. The deployed revision is `be3d8ab` with the bridge-qualified proxy hostname correction. Real-bank acceptance and host reboot still require separate approval. Stages 2/3 remain gated.
+Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). Stage 1 of [issue #3](https://github.com/mfurti/financial-tracking/issues/3) is approved; PRs #4–#7 are merged. Current separately approved deployment: `a2ea737`, web `.33`, runtime-only server. The user explicitly requested the U1–U5 experience revision below. Real-bank acceptance, new rollout and host reboot retain separate approvals. Stages 2/3 remain gated.
 
 The previous checklist, including the audited delivery evidence and remaining baseline checks, is preserved in [initial-implementation-checklist.md](initial-implementation-checklist.md). Its open work is carried into the tasks below; checked historical implementation is not proof of expansion acceptance.
 
@@ -12,7 +12,7 @@ The previous checklist, including the audited delivery evidence and remaining ba
 - [x] Audit old checklist and preserve its evidence without claiming new test or server results.
 - [x] Agree on three-stage expansion, account-independent CSV, per-candidate reconciliation decisions, `.33` container address, and complete light/dark interface redesign.
 - [x] Record issue #3 and obtain explicit Stage 1 implementation approval in the current checkout after showing its link.
-- [ ] Before each implementation task, confirm prerequisites and preserve unrelated work. Complete its relevant source, tests, documentation, validation, and commit together.
+      Per-task rule: confirm prerequisites and preserve unrelated work; complete relevant source, tests, documentation, validation and a scoped commit together. This is an ongoing rule rather than unfinished feature work.
 
 Ongoing rules: develop source locally only; never store real PIN/TAN in chat, source, fixtures, database, logs, backups, or browser persistence. No server repository or builds. Never count fixture bank results as real compatibility proof.
 
@@ -42,7 +42,7 @@ Ongoing rules: develop source locally only; never store real PIN/TAN in chat, so
 - [x] Put PostgreSQL, API database-readiness, web-readiness, and backup-freshness healthchecks directly in Compose. Gate API startup on successful migration.
 - [x] Preserve in the deployment definition the Compose project name, `household-ledger_postgres_data`, secrets, and backup storage; compare data before/after recreation.
 - [x] Fix backup retention to preserve at least seven calendar days despite extra manual snapshots; keep independent keys and document manual off-host copies accurately.
-- [x] Test isolated image-only installation, readiness failure/recovery and runtime source exclusions in Linux CI. Registry publication/pull on the target host remains open.
+- [x] Test isolated image-only installation, readiness failure/recovery and runtime source exclusions in Linux CI; verify actual private publication and target pulls through PR #7 rollout.
 - [x] Produce a versioned downloadable deployment bundle containing Compose/config templates/instructions only; prove missing-secret, registry-unavailable, and failed-migration behavior without touching production.
 - [x] After successful production transition and verification, remove the old server source tree and the two obsolete `/opt/financial-tracking` path rules. Preserve Compose/env/secrets, database volume and backups.
 - [x] Update deployment/recovery documentation, record actual checks, and commit P1.1. Production rollout still requires its applicable approval.
@@ -119,7 +119,18 @@ P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verif
 - [x] Replace raw local exception/validation text with safe actionable German messages and concrete CSV row diagnostics; preserve field paths, request IDs, drafts, financial identities and partial-import consent.
 - [x] Replace three theme controls with one animated accessible light/dark button; retain initial system preference and persisted explicit choice, honor reduced motion.
 - [x] Verify 74 tests and eight desktop/mobile import/error/theme/bank-state journeys, including keyboard/reload/reduced-motion behavior. Recheck both import journeys after final focus/layout corrections; inspect synthetic screenshots.
-- [ ] Review/merge the follow-up PR after green CI and separately approve its image-only rollout. The user's actual CSV remains unverified until tested; no real financial rows were requested.
+- [x] Merge PR #7 after both green current-head runs and perform separately approved rollout of `a2ea737` after main CI 42397313981 publication. Fresh encrypted recovery passed in 9 seconds; 14 tables/migration state preserved, 31-second pause/start, four healthy services and productive browser/proxy checks.
+- [ ] Obtain acceptance of the user's actual CSV and everyday workflow; synthetic success and deployment do not replace that check.
+
+## Current experience revision — U1–U5
+
+- [x] U1: incorporate the user's latest direction into both plans, audit stale implementation/deployment entries and preserve genuine external gates.
+- [ ] U2: upload-and-analyze happy path, known Sparkasse mapping precedence, actual full-file period and monthly analytics; retain explicit exception/partial/duplicate handling, safe response-loss/unmount behavior and integration/browser evidence.
+- [ ] U3: 18 theme families in Settings with light/dark adaptation, early device-local persistence and contrast checks; one genuinely circular mode button with keyboard/reduced-motion behavior.
+- [ ] U4: new Finanzguru-inspired cards/dashboard/compact mobile navigation; make category purpose, real monthly totals/counts and management clear, with empty/error/loading/uncategorized states.
+- [ ] U5: update user guide/evidence, finish feature checks, open PR and verify full CI; obtain new action-specific merge/rollout approvals.
+
+Still external: real-file/joint acceptance, own FinTS registration plus bank-confirmed endpoint/live test, registry minimum-scope review and separately approved shared-host reboot. These are not silently marked done by this UI revision.
 
 ## Stage 2 — Monthly category budgets
 
