@@ -1,0 +1,38 @@
+# Haushaltsbuch bedienen
+
+## Erste Buchungen
+
+Unter **CSV importieren** kannst du sofort eine Datei auswählen. **Ohne Konto** ist die Voreinstellung; eine Bankverbindung ist dafür nicht nötig. Wähle Kodierung und Trennzeichen, prüfe die Spaltenzuordnung und anschließend die Vorschau. Fehlerhafte Zeilen werden nur nach ausdrücklicher Zustimmung übersprungen. Ein abgebrochener Import übernimmt keine Buchungen.
+
+Gebuchte kontolose Umsätze zählen sofort in der Monatsübersicht. Unter **Umsätze → Konto → Ohne Konto** findest du sie wieder und kannst Kategorien vergeben. Der Filter für ein bestimmtes Konto enthält sie erst nach einer Zuordnung.
+
+## Später einem Konto zuordnen
+
+Wähle einzelne Buchungen oder mehrere Kontrollkästchen und anschließend das Zielkonto. Prüfe bei möglichen Überschneidungen Datum, Betrag, Text, Quelle, Referenzen, Status und Kategorie.
+
+- **Bank-/Zieldaten übernehmen:** eine bestehende Buchung mit den ausgewählten Zieldaten behalten; die zusätzliche CSV-Buchung geht darin auf.
+- **CSV-Daten übernehmen:** zusammenführen und die finanziellen Daten aus der CSV behalten.
+- **Separat behalten:** beide tatsächlichen Buchungen erhalten. Beide zählen weiterhin, sofern sie gebucht und keine eigenen Umbuchungen sind.
+- **Überspringen:** die Buchung bleibt ohne Konto und kann später zugeordnet werden.
+
+Abweichende manuelle Kategorien musst du ausdrücklich auswählen. Veränderte Vergleichsdaten erfordern eine neue Vorschau. Eine wiederholte identische Bestätigung zählt die Buchung nicht erneut.
+
+Die Importhistorie zeigt zusätzliche Prüfungen aus wiederholten oder überlappenden Dateien. Dort kannst du vorhandene Daten behalten, Importdaten übernehmen, separat behalten oder die neue Zeile überspringen. Ähnliche Buchungen werden nicht allein wegen ihres Aussehens zusammengeführt.
+
+## Zahlen richtig lesen
+
+**Bekannte Kontostände** stammen aus einer Bankabfrage. Fehlende oder alte Salden sind entsprechend gekennzeichnet; CSV-Umsätze ergeben keinen verlässlichen Kontostand.
+
+**Einnahmen, Ausgaben und Monatssaldo** beziehen sich auf das Buchungsdatum im ausgewählten Monat, einschließlich gebuchter Umsätze ohne Konto. Vorgemerkte Umsätze und als eigene Umbuchungen markierte Buchungen bleiben außerhalb dieser Auswertung. Erstattungen mit positivem Betrag erscheinen als Einnahmen. Alle Beträge werden centgenau berechnet.
+
+## Darstellung und Fehler
+
+**Hell**, **Dunkel** und **System** stehen auf der Anmeldeseite und in der Anwendung bereit. System folgt deinem Gerät; eine ausdrückliche Auswahl bleibt auf diesem Gerät nach Neuladen erhalten.
+
+Fehlerhafte Formularfelder werden markiert. Bei Servervalidierung springt der Tastaturfokus zum ersten betroffenen Feld. Korrigiere die Eingabe und sende erneut; gewöhnliche Formulare behalten ihren Entwurf. Passwörter, PIN und TAN werden nach einem Versuch gelöscht. Bei abgelaufener Sitzung ist eine neue Anmeldung erforderlich.
+
+Der Link **Zum Inhalt springen** ist per Tabulator erreichbar. Er überspringt die Navigation und setzt den Fokus auf den Seiteninhalt.
+
+## Bankabruf
+
+CSV bleibt jederzeit unabhängig nutzbar. Ein echter Sparkasse-Abruf benötigt zunächst die eigene FinTS-Produktregistrierung, einen bestätigten Bankendpunkt und die separate Prüfung deines Zugangs. Die aktuelle Anleitung und der belegte Kompatibilitätsstatus stehen in [banking.md](banking.md). Eine synthetische Prüfung bestätigt keine reale Bankkompatibilität.

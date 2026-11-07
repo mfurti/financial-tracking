@@ -4,6 +4,7 @@ import {
   accountSchema,
   monthlySchema,
   transactionPageSchema,
+  runSchema,
   type Account,
   type Monthly,
   type Transaction,
@@ -22,6 +23,9 @@ const report = ref<Monthly | null>(null);
 const recent = ref<Transaction[]>([]);
 const error = ref('');
 const busy = ref(true);
+const reviews = ref(0);
+const unassigned = ref(false);
+let loadVersion = 0;
 const balances = computed(
   /** Only source-provided active booked balances contribute to the known total. */ () =>
     accounts.value
@@ -46,31 +50,44 @@ const activeCount = computed(
 );
 /** Fetch dashboard data for the selected month and keep it bookmarkable. */
 async function load() {
+  const version = ++loadVersion;
+  const selectedMonth = month.value;
   busy.value = true;
   error.value = '';
   try {
-    const [a, r, t] = await Promise.all([
+    const [a, r, t, runs, standalone] = await Promise.all([
       api.request('/accounts', z.array(accountSchema)),
-      api.request('/analytics/monthly', monthlySchema, { query: { month: month.value } }),
+      api.request('/analytics/monthly', monthlySchema, { query: { month: selectedMonth } }),
       api.request('/transactions', transactionPageSchema, {
         query: {
           status: 'BOOKED',
           limit: 10,
-          from: `${month.value}-01`,
-          to: new Date(Date.UTC(Number(month.value.slice(0, 4)), Number(month.value.slice(5, 7)), 0))
+          from: `${selectedMonth}-01`,
+          to: new Date(Date.UTC(Number(selectedMonth.slice(0, 4)), Number(selectedMonth.slice(5, 7)), 0))
             .toISOString()
             .slice(0, 10),
         },
       }),
+      api.request('/imports', z.array(runSchema)),
+      api.request('/transactions', transactionPageSchema, { query: { unassigned: 'true', limit: 1 } }),
     ]);
+    if (version !== loadVersion) return;
     accounts.value = a;
     report.value = r;
     recent.value = t.items;
-    await router.replace({ query: { month: month.value } });
+    reviews.value = runs.reduce(
+      /** Include actionable duplicate reviews across the visible import history. */ (total, run) =>
+        total + run.reviewRequiredCount,
+      0,
+    );
+    unassigned.value = standalone.items.length > 0;
+    await router.replace({ query: { month: selectedMonth } });
   } catch (cause) {
+    if (version !== loadVersion) return;
+    report.value = null;
     error.value = (cause as Error).message;
   } finally {
-    busy.value = false;
+    if (version === loadVersion) busy.value = false;
   }
 }
 onMounted(load);
@@ -84,24 +101,32 @@ onMounted(load);
       <p class="muted">Klarheit über das, was reinkommt und rausgeht.</p>
     </div>
     <div class="toolbar">
-      <UInput v-model="month" aria-label="Monat" type="month" @change="load" /><UButton to="/imports/csv"
-        >CSV importieren <span aria-hidden="true">↗</span></UButton
-      >
+      <UInput v-model="month" aria-label="Monat" type="month" @change="load" /><UButton
+        variant="soft"
+        :loading="busy"
+        @click="load"
+        >Aktualisieren</UButton
+      ><UButton to="/imports/csv">CSV importieren <span aria-hidden="true">↗</span></UButton>
     </div>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <p v-if="busy" role="status" class="muted">Übersicht wird geladen …</p>
   <template v-else-if="report">
+    <div v-if="reviews || unassigned" class="review-summary" aria-label="Nächste Schritte">
+      <NuxtLink v-if="reviews" to="/imports">{{ reviews }} offene Importprüfungen</NuxtLink>
+      <NuxtLink v-if="unassigned" to="/transactions?unassigned=true">Ohne Konto · später zuordnen</NuxtLink>
+    </div>
     <div class="stats-grid">
       <section class="stat-card balance-card">
         <p>Bekannte Kontostände</p>
         <strong>{{ balances.length ? money(knownBalance) : 'Noch kein Saldo' }}</strong
-        ><small>{{ balances.length }} von {{ activeCount }} aktiven Konten · gebucht</small>
+        ><small>{{ balances.length }} von {{ activeCount }} aktiven Konten · gebucht</small
+        ><small>Bankgemeldet · keine Summe deiner CSV-Umsätze</small>
       </section>
       <section class="stat-card">
         <p>Einnahmen</p>
         <strong class="positive">{{ money(report.incomeCents) }}</strong
-        ><small>Gebuchte Eingänge im Monat</small>
+        ><small>Gebuchte Eingänge · inklusive Ohne Konto</small>
       </section>
       <section class="stat-card">
         <p>Ausgaben</p>
@@ -139,7 +164,9 @@ onMounted(load);
           <h2>Deine Konten</h2>
           <NuxtLink to="/accounts" class="text-link">Verwalten ↗</NuxtLink>
         </div>
-        <p v-if="!accounts.length" class="empty-copy">Lege dein erstes Konto unter „Konten“ an.</p>
+        <p v-if="!accounts.length" class="empty-copy">
+          CSV funktioniert auch ohne Konto. Ein Konto kannst du später anlegen und zuordnen.
+        </p>
         <NuxtLink v-for="account in accounts" :key="account.id" :to="`/accounts/${account.id}`" class="account-row"
           ><span class="account-icon">▣</span>
           <div>

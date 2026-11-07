@@ -7,6 +7,7 @@ import {
   transactionPageSchema,
   transactionQuerySchema,
   bulkCategorySchema,
+  assignmentResultSchema,
   type Account,
   type Category,
   type Transaction,
@@ -24,8 +25,10 @@ const bulkCategory = ref('');
 const nextCursor = ref<string | null>(null);
 const error = ref('');
 const busy = ref(false);
+let loadGeneration = 0;
+let disposed = false;
 const filter = reactive({
-  accountId: String(route.query.accountId ?? ''),
+  accountId: route.query.unassigned === 'true' ? 'UNASSIGNED' : String(route.query.accountId ?? ''),
   from: String(route.query.from ?? ''),
   to: String(route.query.to ?? ''),
   search: String(route.query.search ?? ''),
@@ -35,43 +38,72 @@ const filter = reactive({
   uncategorized: route.query.uncategorized === 'true',
   excludeTransfers: route.query.excludeTransfers === 'true',
 });
+const unassignedSelection = computed(
+  /** Only genuinely unassigned selected transactions enter the explicit assignment workflow. */ () =>
+    rows.value
+      .filter(
+        /** Never move an already assigned bank transaction implicitly. */ (row) =>
+          row.accountId === null && selected.value.includes(row.id),
+      )
+      .map(/** Preserve transaction identity across a bulk selection. */ (row) => row.id),
+);
+/** Label genuine accountless records without inventing an account entry. */
+function accountLabel(id: string | null) {
+  return (
+    accounts.value.find(/** Match only a real account UUID. */ (account) => account.id === id)?.name ?? 'Ohne Konto'
+  );
+}
 /** Serialize only nonempty filter values before schema validation. */
 function query(cursor?: string) {
   const value: Record<string, string | undefined> = {};
-  for (const [key, field] of Object.entries(filter)) if (field) value[key] = String(field);
+  for (const [key, field] of Object.entries(filter)) {
+    if (key === 'accountId' && field === 'UNASSIGNED') value.unassigned = 'true';
+    else if (field) value[key] = String(field);
+  }
   if (cursor) value.cursor = cursor;
   return transactionQuerySchema.parse(value);
 }
 /** Fetch one stable page or a selected transaction detail. */
 async function load(append = false) {
+  if (disposed) return;
+  const generation = ++loadGeneration;
+  const requestedPath = route.path;
   busy.value = true;
   error.value = '';
   try {
-    if (route.params.id) detail.value = await api.request(`/transactions/${route.params.id}`, transactionSchema);
-    else {
+    if (route.params.id) {
+      const transaction = await api.request(`/transactions/${route.params.id}`, transactionSchema);
+      if (!disposed && generation === loadGeneration && route.path === requestedPath) detail.value = transaction;
+    } else {
       const q = query(append ? (nextCursor.value ?? undefined) : undefined);
       const page = await api.request('/transactions', transactionPageSchema, { query: q });
+      if (disposed || generation !== loadGeneration || route.path !== requestedPath) return;
       rows.value = append ? [...rows.value, ...page.items] : page.items;
       nextCursor.value = page.nextCursor;
       if (!append) selected.value = [];
-      await router.replace({
-        query: Object.fromEntries(
-          Object.entries(q).filter(
-            /** Keep persistent filters, not pagination position. */ ([key, value]) =>
-              key !== 'limit' && key !== 'cursor' && value !== undefined,
-          ),
-        ),
-      });
     }
   } catch (cause) {
-    error.value = (cause as Error).message;
+    if (!disposed && generation === loadGeneration) error.value = (cause as Error).message;
   } finally {
-    busy.value = false;
+    if (!disposed && generation === loadGeneration) busy.value = false;
   }
 }
 /** Start a fresh filtered page from a form submission. */
 async function search() {
-  await load(false);
+  try {
+    const q = query();
+    await router.replace({
+      query: Object.fromEntries(
+        Object.entries(q).filter(
+          /** Only an explicit filter submission changes the current URL. */ ([key, value]) =>
+            key !== 'limit' && key !== 'cursor' && value !== undefined,
+        ),
+      ),
+    });
+    await load(false);
+  } catch {
+    error.value = 'Bitte Filter und Zeitraum prüfen.';
+  }
 }
 /** Request the next cursor page without resetting existing rows. */
 async function more() {
@@ -129,6 +161,19 @@ function categoryName(id: string | null) {
     categories.value.find(/** Match by stable ID. */ (category) => category.id === id)?.name ?? 'Nicht kategorisiert'
   );
 }
+/** Follow the surviving logical transaction after a merge, or refresh the current list. */
+async function assigned(result: z.infer<typeof assignmentResultSchema>) {
+  if (detail.value) {
+    const destination = result.results.find(
+      /** Resolve the reviewed detail's final identity. */ (entry) => entry.transactionId === detail.value?.id,
+    )?.resultingId;
+    if (destination && destination !== detail.value.id) {
+      await navigateTo(`/transactions/${destination}`);
+      return;
+    }
+  }
+  await load();
+}
 onMounted(
   /** Load reference choices and the initial financial view. */ async () => {
     try {
@@ -140,6 +185,12 @@ onMounted(
     } catch (cause) {
       error.value = (cause as Error).message;
     }
+  },
+);
+onBeforeUnmount(
+  /** Ignore results owned by the previous list/detail after the user navigates away. */ () => {
+    disposed = true;
+    loadGeneration++;
   },
 );
 </script>
@@ -155,7 +206,7 @@ onMounted(
       route.params.id ? 'Alle Umsätze' : 'CSV importieren'
     }}</UButton>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <section v-if="detail" class="panel">
     <p class="eyebrow">{{ detail.status === 'PENDING' ? 'VORGEMERKT' : 'GEBUCHT' }}</p>
     <h2 class="mt-3">{{ detail.description }}</h2>
@@ -163,6 +214,8 @@ onMounted(
     <dl class="detail-list">
       <dt>Buchungsdatum</dt>
       <dd>{{ calendarDate(detail.bookingDate) }}</dd>
+      <dt>Konto</dt>
+      <dd>{{ accountLabel(detail.accountId) }}</dd>
       <dt>Wertstellung</dt>
       <dd>{{ detail.valueDate ? calendarDate(detail.valueDate) : 'Nicht geliefert' }}</dd>
       <dt>Gegenpartei</dt>
@@ -188,6 +241,20 @@ onMounted(
       }}</UButton>
     </div>
   </section>
+  <AccountAssignment
+    v-if="detail?.accountId === null"
+    :transaction-ids="[detail.id]"
+    :accounts="accounts"
+    :categories="categories"
+    @complete="assigned"
+  />
+  <AccountAssignment
+    v-if="!route.params.id"
+    :transaction-ids="unassignedSelection"
+    :accounts="accounts"
+    :categories="categories"
+    @complete="assigned"
+  />
   <template v-if="!route.params.id"
     ><section class="panel mb-5">
       <form class="filter-grid" @submit.prevent="search">
@@ -199,6 +266,7 @@ onMounted(
         ><label
           >Konto<select v-model="filter.accountId" class="control">
             <option value="">Alle Konten</option>
+            <option value="UNASSIGNED">Ohne Konto</option>
             <option v-for="account in accounts" :key="account.id" :value="account.id">{{ account.name }}</option>
           </select></label
         ><label>Von<UInput v-model="filter.from" type="date" aria-label="Von" /></label
@@ -239,7 +307,7 @@ onMounted(
         ><UButton @click="bulk">Kategorie zuweisen</UButton
         ><UButton :disabled="selected.length > 2" variant="soft" @click="transfer">Umbuchung verknüpfen</UButton>
       </div>
-      <p v-if="busy" role="status">Umsätze werden geladen …</p>
+      <p role="status" class="ledger-load-status">{{ busy ? 'Umsätze werden geladen …' : '' }}</p>
       <p v-if="!busy && !rows.length" class="empty-copy">
         Keine Umsätze gefunden. Passe deine Filter an oder importiere Buchungen.
       </p>
@@ -253,7 +321,7 @@ onMounted(
           ><strong>{{ row.description }}</strong
           ><small
             >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || 'Keine Gegenpartei'
-            }}<span v-if="row.isTransfer"> · Umbuchung</span
+            }}<span v-if="row.isTransfer"> · Umbuchung</span><span v-if="row.accountId === null"> · Ohne Konto</span
             ><span v-if="row.status === 'PENDING'"> · Vorgemerkt</span></small
           ></NuxtLink
         ><select

@@ -5,7 +5,7 @@ import { centsSchema, csvMappingSchema, dateSchema } from '@financial-tracking/c
 import { AppError } from './errors.js';
 
 export const normalizedSchema = z.object({
-  accountId: z.uuid(),
+  accountId: z.uuid().nullable(),
   amountCents: centsSchema,
   currency: z.literal('EUR'),
   bookingDate: dateSchema,
@@ -45,7 +45,7 @@ export function stableReference(value?: string | null) {
 
 /** Parse bounded Sparkasse CSV with explicit column mapping. */
 export function previewCsv(
-  accountId: string,
+  accountId: string | null,
   content: string,
   delimiter: ';' | ',',
   mapping: z.infer<typeof csvMappingSchema>,

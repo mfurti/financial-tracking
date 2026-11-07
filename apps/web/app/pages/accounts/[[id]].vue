@@ -4,17 +4,20 @@ import {
   accountSchema,
   accountInputSchema,
   connectionSchema,
+  ibanSchema,
   type Account,
   type Connection,
 } from '@financial-tracking/contracts';
 
 const api = useApi();
+const { validation, formError } = useFormFeedback();
 const route = useRoute();
 const accounts = ref<Account[]>([]);
 const connections = ref<Connection[]>([]);
 const error = ref('');
 const busy = ref(false);
 const loading = ref(true);
+const formSchema = accountInputSchema.extend({ iban: ibanSchema.or(z.literal('')) });
 const form = reactive({ bankConnectionId: '', name: '', iban: '', accountType: 'CHECKING' as const });
 const account = computed(
   /** Resolve optional account detail from the same source list. */ () =>
@@ -28,6 +31,7 @@ const options = computed(
 );
 /** Load accounts and connection choices together. */
 async function load() {
+  error.value = '';
   loading.value = true;
   try {
     [accounts.value, connections.value] = await Promise.all([
@@ -35,6 +39,8 @@ async function load() {
       api.request('/bank-connections', z.array(connectionSchema)),
     ]);
     if (!form.bankConnectionId) form.bankConnectionId = connections.value[0]?.id ?? '';
+  } catch (cause) {
+    error.value = formError(cause);
   } finally {
     loading.value = false;
   }
@@ -52,7 +58,7 @@ async function create() {
     form.iban = '';
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   } finally {
     busy.value = false;
   }
@@ -67,7 +73,7 @@ async function save(row: Account) {
     });
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   }
 }
 onMounted(
@@ -75,7 +81,7 @@ onMounted(
     try {
       await load();
     } catch (cause) {
-      error.value = (cause as Error).message;
+      error.value = formError(cause);
     }
   },
 );
@@ -88,16 +94,20 @@ onMounted(
       <h1>{{ account ? account.name : 'Deine Konten' }}</h1>
       <p class="muted">Echte Banksalden und importierte Buchungen getrennt im Blick.</p>
     </div>
-    <UButton to="/connections" variant="soft">Bankverbindungen</UButton>
+    <div class="toolbar">
+      <UButton variant="soft" :loading="loading" @click="load">Aktualisieren</UButton
+      ><UButton to="/connections" variant="soft">Bankverbindungen</UButton>
+    </div>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <p v-if="loading" role="status">Konten werden geladen …</p>
   <section v-if="!route.params.id" class="panel mb-6">
-    <h2 class="mb-4">Konto für CSV-Import anlegen</h2>
+    <h2 class="mb-4">Konto optional anlegen</h2>
+    <p class="muted mb-4">Du kannst CSV-Dateien sofort ohne Konto importieren und später zuordnen.</p>
     <p v-if="!connections.length" class="empty-copy">
       Lege zuerst eine <NuxtLink to="/connections" class="text-link">Bankverbindung</NuxtLink> an.
     </p>
-    <UForm v-else :schema="accountInputSchema.omit({ iban: true })" :state="form" class="form-row" @submit="create"
+    <UForm v-else ref="validation" :schema="formSchema" :state="form" class="form-row" @submit="create"
       ><UFormField label="Name" name="name"><UInput v-model="form.name" placeholder="Mein Girokonto" /></UFormField
       ><UFormField label="Bankverbindung" name="bankConnectionId"
         ><USelect v-model="form.bankConnectionId" :items="options" /></UFormField

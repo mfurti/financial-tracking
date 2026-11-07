@@ -4,6 +4,7 @@ import { createZodDto } from 'nestjs-zod';
 import { csvPreviewInputSchema, csvPreviewSchema, idSchema, runSchema } from '@financial-tracking/contracts';
 import { ImportService } from './imports.js';
 import { SyncService } from './sync.js';
+import { bankSetup } from './bank.js';
 import {
   csvCommitSchema,
   resolutionSchema,
@@ -21,6 +22,11 @@ class RunDto extends createZodDto(runSchema) {}
 /** CSV preview and import status routes. */
 @Controller()
 export class ImportController {
+  /** Expose only safe setup requirements to the authenticated application. */
+  @Get('bank-setup')
+  setup() {
+    return bankSetup();
+  }
   /** Receive durable import state management. */
   constructor(
     @Inject(ImportService) private readonly imports: ImportService,

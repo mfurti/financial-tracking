@@ -3,7 +3,7 @@
 Restore into a **new empty PostgreSQL database**, never over an existing database. Keep the running server and its volumes intact until the replacement has been verified. The restore script checks that the public schema has no tables and refuses a nonempty target.
 
 1. Prepare an isolated Linux/Docker environment with PostgreSQL 17 and a new empty database. Use a distinct Compose project/volume, private bind address, and backup output directory; do not point it at production services.
-2. Recover the database password/configuration, chosen encrypted archive, and private age identity. Mount the archive and identity read-only into a temporary container built from `infrastructure/backup/Dockerfile`; mount the target's password at `/run/secrets/db_password`.
+2. Recover the database password/configuration, chosen encrypted archive, private age identity, and the recorded compatible deployment bundle/image digests. Pull the backup image from that bundle; never clone/build a repository on the recovery server. Mount the archive and identity read-only into its temporary container, with the empty target's password at `/run/secrets/db_password`.
 3. Set PGHOST, PGUSER, and PGDATABASE to that explicitly empty target. Execute:
 
 ```sh
@@ -20,3 +20,5 @@ Use the backup image with `--entrypoint bash` when starting the one-shot restore
 Local PostgreSQL schema/import tests are not proof that the Docker backup/age/restore procedure works. Production acceptance requires an actual encrypted backup restoration on the target environment. No such Docker execution is claimed on the Windows workstation.
 
 The isolated Linux operations job passed in [CI run 42299354331](https://github.com/mfurti/financial-tracking/actions/runs/42299354331): custom-format dump, age encryption/decryption, fresh-database restore, and exact synthetic amount/transfer/category checks. This verifies the container procedure; restoration of the operator's own backup and private-network setup remains a target-host acceptance step.
+
+Stage 1 also verifies the operator's actual initialized encrypted archive on an isolated local API/web/PostgreSQL stack using [verify-target-backup.ts](../scripts/verify-target-backup.ts). It rejects CI/external test databases, streams decryption without a plaintext dump, compares preserved fields before/after migration and tests login with a password rotated only in the disposable copy. See [the dated recovery record](stage-one-acceptance.md) for duration, tool versions, archive hash and the explicit absence of financial transactions in that archive. Actual target-host switching, production-version compatibility and the controlled rollout remain separate acceptance gates.

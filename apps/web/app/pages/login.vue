@@ -3,6 +3,7 @@ import { loginSchema, sessionSchema } from '@financial-tracking/contracts';
 
 definePageMeta({ layout: false });
 const api = useApi();
+const { validation, formError } = useFormFeedback();
 const form = reactive({ username: '', password: '' });
 const error = ref('');
 const busy = ref(false);
@@ -17,7 +18,7 @@ async function login() {
     });
     await navigateTo('/');
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = formError(cause);
   } finally {
     form.password = '';
     busy.value = false;
@@ -27,12 +28,14 @@ async function login() {
 
 <template>
   <main class="login-page">
+    <div class="login-theme"><ThemeToggle /></div>
     <section class="login-card">
       <div class="brand-mark">H</div>
       <p class="eyebrow mt-6">DEIN PRIVATER FINANZBEREICH</p>
       <h1>Willkommen zurück.</h1>
       <p class="muted mb-7">Alles im Blick. In deinem Haushaltsbuch.</p>
-      <UAlert v-if="error" color="error" :description="error" class="mb-4" /><UForm
+      <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><UForm
+        ref="validation"
         :schema="loginSchema"
         :state="form"
         class="space-y-5"

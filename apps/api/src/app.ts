@@ -17,6 +17,8 @@ import { SyncService } from './sync.js';
 import { startBank } from './bank.js';
 import { completeApiDocument } from './api-document.js';
 import { ContractInterceptor } from './contract-interceptor.js';
+import { AssignmentController } from './assignment-controller.js';
+import { AssignmentService } from './assignments.js';
 
 /** Create an application with injectable persistence for integration tests. */
 export async function createApp(
@@ -24,13 +26,14 @@ export async function createApp(
   recover = true,
 ): Promise<{ app: NestFastifyApplication; db: Db; openapi: OpenAPIObject }> {
   @Module({
-    controllers: [RootController, ImportController, LedgerController],
+    controllers: [RootController, ImportController, LedgerController, AssignmentController],
     providers: [
       { provide: 'DB', useValue: db },
       AuthService,
       ImportService,
       LedgerService,
       SyncService,
+      AssignmentService,
       { provide: 'BANK_FACTORY', useValue: startBank },
       { provide: APP_GUARD, useClass: AuthGuard },
     ],

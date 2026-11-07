@@ -1,45 +1,35 @@
 # Private Linux deployment
 
-## Requirements and configuration
+## Production contract
 
-Docker Engine with Compose v2, a Linux home/VPN interface, private DNS, and an age key pair for backups. No bank credentials are required for a CSV-only installation. Docker execution has not been verified on the Windows development workstation.
+Source development stays local. GitHub Actions builds API/web/backup images, tests them in an isolated Linux installation, and saves the exact verified images. Only a push to main whose verify and operations jobs succeed may publish those saved images to private GHCR. The publisher checks full-revision image labels and does not rebuild after testing. It then creates a versioned downloadable deployment bundle and records published image digests in the job summary.
 
-Copy `infrastructure/.env.example` to `infrastructure/.env`. Set PRIVATE_BIND_IP to the actual home/VPN interface address, APP_HOST to a privately resolved hostname, and PUBLIC_APP_URL to its HTTPS origin. Never use `0.0.0.0` or publish a router port. Check both IPv4/IPv6 and Docker's firewall integration on the target host.
+The production directory is `/root/docker/financial-tracking` on rocky. It contains only `compose.yaml`, `.env`, and required secrets/configuration. No repository, Dockerfiles, source mounts, or server builds. PostgreSQL uses the recorded upstream digest; migrate/API share one immutable API digest. The bundle's `.env.example` contains immutable app-image references, never registry credentials, database passwords, or bank PIN/TAN.
 
-Create `infrastructure/secrets/db_password` with a strong random database password and restrictive host permissions. Generate an age identity on a separate secure administrative machine. Put only its public recipient line(s) in `infrastructure/secrets/backup_recipients`. Keep the private age identity separately from this server and test that it decrypts a backup. Configure BACKUP_DIRECTORY on durable storage with enough capacity; copy encrypted backups to another physical location as appropriate.
+Use the bundle's [operator instructions](../infrastructure/DEPLOYMENT.md) for installation/update commands and prerequisite checks. The source `infrastructure/.env.example` intentionally contains release placeholders; only packaging with validated digests fills them. Do not replace them with `latest` or invent unverified digests.
 
-No database password, bank PIN/TAN, session token, or private age key belongs in Git, images, Compose environment literals, CI, or screenshots. The API bootstrap reads the mounted database password and encodes it into an in-process connection URL, then drops root privileges to UID/GID 1000 before running application or migration code. Product ID and confirmed bank endpoint are optional server configuration; see [banking.md](banking.md).
+## Network and readiness
 
-## Initial installation
+Reinspect existing Compose projects, DHCP reservations and live conflicts before allocating `192.168.178.33`. Reuse external `FRITZBOX` / `traefik-public`; do not recreate shared networks. The web container gets the LAN address, but the browser URL remains `https://haushaltsbuch.mfurti.de` via existing Traefik, Netcup TLS, and `secured@file`. API/database remain on the application's own bridge without LAN addresses or host port mappings. The bridge permits outbound bank requests.
 
-From the repository root:
+Web rejects direct application requests unless the socket peer resolves to the configured Docker proxy alias `traefik`; forged forwarding headers do not establish trust. Only a loopback `/health` probe bypasses that peer check. Local development does not require a proxy; the isolated direct-browser test launcher explicitly disables the production proxy gate. Never disable it for the deployed Macvlan service.
 
-```sh
-docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml config --quiet
-docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build
-docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d
-docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm -it api admin
-docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml ps
-```
+`GET /api/v1/health` reports liveness; `GET /api/v1/health/ready` performs a bounded database probe and returns a safe 503 on failure. Web `/health` checks the API/database dependency. These probes return no financial data, database details, or credentials. Compose waits for healthy PostgreSQL, successful migration, and healthy API before web. Backup starts only after successful migration so the first snapshot includes the schema.
 
-The one-shot migrator runs before the API starts. Administrative initialization prompts interactively for username/password (at least twelve characters), provisions the only user and default categories, and refuses to create a second user. Do not put a password in shell arguments.
+## Secrets, persistence and updates
 
-Caddy uses its internal CA for the private hostname. Export the CA's public root certificate from the Caddy data volume and install it as trusted on authorized client devices. Never export its private key. Only port 443 is published, bound to PRIVATE_BIND_IP. API/PostgreSQL have no host port mappings. Visit PUBLIC_APP_URL via the home network or VPN, sign in, create a connection/account, and import CSV.
+Preserve `household-ledger` project naming, `household-ledger_postgres_data`, existing user/category/transaction data, the database password, backup public recipients, and backup directory. Store secret files with restrictive permissions and dedicated SELinux file contexts. The bootstrap reads the password before dropping to UID/GID 1000. The private age identity stays separately managed, not in server source/configuration/images.
 
-The web server uses `NUXT_API_INTERNAL_URL=http://api:3001` inside Compose. This is private runtime configuration; clients call `/api/v1` on their own origin. No external telemetry or analytics is configured.
+Private GHCR pulls need protected read-only package credentials in Docker's credential configuration; never Compose environment literals. Document rotation/revocation with the operator. Actual publication/private package permissions and target-host pulls remain acceptance gates until executed; a passing local test does not prove them.
 
-## Backups and health
+Before an approved production update, verify a fresh encrypted backup, record current image digests/configuration, agree on a maintenance window, stop writers, and run the reviewed migration on the exact candidate. A migration failure must leave access stopped without volume resets or automatic schema reversal. Image rollback requires schema compatibility; otherwise restore the tested pre-update backup into a new isolated stack with compatible images. See [recovery.md](recovery.md).
 
-The backup container starts by default, takes an encrypted custom-format PostgreSQL dump immediately and every 24 hours, and retains the newest seven archives. Failed pipelines never publish a final archive. Its health check detects missing backups after 25 hours; inspect container health and the stable `backup complete`/`backup failed` messages. There are no automatic external notifications.
+The current server source tree and obsolete path rules may be removed only after approved transition and verification; never delete secrets, persistent volumes, or backups. A shared-host reboot and real-bank access require separate explicit authorization.
 
-Backups include the database's actual financial data and session hashes but no bank PIN/TAN. Caddy certificate volumes, server configuration, database password, and the separately held age identity also need an operator-managed recovery copy. See [recovery.md](recovery.md).
+## Backups and evidence
 
-## Updates
+The default backup container creates an age-encrypted custom-format dump after migration and every 24 hours. Retention preserves all generated snapshots from the preceding seven full UTC calendar days plus today, including extra manual runs. Incomplete pipelines never publish a final archive. Backup health uses the last successful completion and becomes unhealthy after 25 hours; no automatic external notifications or recurring off-host copies are configured.
 
-1. Record the running commit/image and take a fresh encrypted backup; verify its availability.
-2. Stop web/API access for the maintenance window. Wait for or cancel active bank runs before shutdown.
-3. Build the reviewed version. Run the migrator explicitly using `docker compose ... run --rm migrate` with the same env/file options as above.
-4. Start/recreate the application services, verify health, login, categories, account balances, and a known monthly report.
-5. If a migration fails, keep the application stopped and inspect safe diagnostics. Do not delete volumes or automatically reverse migrations. Restore the pre-update backup into a fresh database and use the recorded compatible image if rollback is necessary.
+Local checks cover Compose structure, real pruning fixtures, bundle allowlisting/immutable references, API readiness errors, and proxy address decisions. Linux operations CI builds runtime images, validates image-only startup, registry/missing-secret/migration failures, real dependency recovery, direct-socket denial, encrypted restore and persistent data after recreation. These checks must actually pass for the candidate revision before completion is claimed; Windows has no Docker runtime.
 
-Before product use, run target-host acceptance: HTTPS trust, home/VPN-only reachability, real session cookies, initial install, daily backup health, and isolated restoration. These target-host checks remain open until actually executed.
+Historical target-host TLS/restore and initial-delivery CI evidence is recorded in [progress.md](progress.md) and [initial-implementation-checklist.md](initial-implementation-checklist.md). It does not prove the new deployment candidate or real Sparkasse compatibility.

@@ -3,25 +3,21 @@ import { existsSync } from 'node:fs';
 import { z } from 'zod';
 import { AppError } from './errors.js';
 import { normalizedSchema } from './csv.js';
+import { bankChallengeSchema, centsSchema, timeSchema, ibanSchema } from '@financial-tracking/contracts';
 
 export const bankBundleSchema = z.object({
   accounts: z.array(
     z.object({
-      reference: z.string(),
-      name: z.string(),
-      iban: z.string().nullable(),
-      balanceCents: z.string(),
-      observedAt: z.string(),
+      reference: z.string().min(1),
+      name: z.string().min(1),
+      iban: ibanSchema.nullable(),
+      balanceCents: centsSchema,
+      observedAt: timeSchema,
       rows: z.array(normalizedSchema.omit({ accountId: true })),
     }),
   ),
-  failedAccounts: z.number().int(),
-  metadata: z.record(z.string(), z.unknown()),
-});
-export const bankChallengeSchema = z.object({
-  type: z.enum(['TAN', 'APP_APPROVAL', 'SELECT_METHOD']),
-  message: z.string().max(1000),
-  methods: z.array(z.object({ id: z.number(), name: z.string() })).optional(),
+  failedAccounts: z.number().int().nonnegative(),
+  metadata: z.object({}).strict(),
 });
 /** Credential-free data returned by the isolated bank adapter. */
 export type BankBundle = z.infer<typeof bankBundleSchema>;
@@ -40,20 +36,34 @@ export interface BankInput {
   bankCode: string;
   fromDate: string;
   toDate: string;
-  metadata?: unknown;
   tanMethodId?: number;
   tanMediaName?: string;
 }
 
+/** Report configuration requirements without exposing endpoint, product ID or credentials. */
+export function bankSetup(environment: Record<string, string | undefined> = process.env) {
+  const missing: ('PRODUCT_ID' | 'BANK_ENDPOINT')[] = [];
+  if (!environment.FINTS_PRODUCT_ID?.trim()) missing.push('PRODUCT_ID');
+  let endpoint: URL | null = null;
+  try {
+    endpoint = new URL(environment.FINTS_BANK_URL ?? '');
+  } catch {
+    /* Missing/invalid configuration stays actionable. */
+  }
+  if (!endpoint || endpoint.protocol !== 'https:' || endpoint.username || endpoint.password || endpoint.hash)
+    missing.push('BANK_ENDPOINT');
+  return { configured: !missing.length, bankCode: '69050001' as const, missing };
+}
+
 /** Isolate lib-fints because its decoder writes raw responses to stderr on failure. */
 export function startBank(input: BankInput, onChallenge: (challenge: BankChallenge | null) => void): BankConnector {
-  if (!process.env.FINTS_PRODUCT_ID || !process.env.FINTS_BANK_URL)
+  if (!bankSetup().configured)
     throw new AppError(
       'BANK_NOT_CONFIGURED',
       'FinTS benötigt registrierte Produkt-ID und bestätigten Bankendpunkt.',
       409,
     );
-  const endpoint = new URL(process.env.FINTS_BANK_URL);
+  const endpoint = new URL(process.env.FINTS_BANK_URL!);
   if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password || input.bankCode !== '69050001')
     throw new AppError(
       'BANK_UNSUPPORTED',

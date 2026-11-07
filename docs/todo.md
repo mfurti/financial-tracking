@@ -1,170 +1,144 @@
-# Implementation checklist
+# Expansion implementation checklist
 
-Implementation approved for [issue #1](https://github.com/mfurti/financial-tracking/issues/1) in the current checkout. Unchecked items remain pending; task completion evidence is recorded separately below.
-See [plan.md](plan.md) for scope, architecture, defaults, and acceptance criteria.
+Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). Stage 1 of [issue #3](https://github.com/mfurti/financial-tracking/issues/3) is explicitly approved in the current checkout, branch `codex/3-complete-ledger-stage-one`. Production rollout, real-bank acceptance, and host reboot require separate approval. Stages 2/3 remain gated.
 
-## Before implementation
+The previous checklist, including the audited delivery evidence and remaining baseline checks, is preserved in [initial-implementation-checklist.md](initial-implementation-checklist.md). Its open work is carried into the tasks below; checked historical implementation is not proof of expansion acceptance.
 
-- [x] Obtain explicit approval for the plan.
-- [x] Inspect existing remote tasks/PRs; create or reuse the task record required by the coding workflow without duplicates.
-- [x] Show the task record and obtain implementation approval; agree on current checkout versus worktree.
-- [x] Inspect the remote base before creating the implementation branch; preserve unrelated work.
-- [x] Resolve dependency versions against current official documentation and record the supported runtime/package manager.
-- [ ] Keep bank credentials out of chat, issues, fixtures, source files, and commits.
+## Current baseline and gates
 
-## T1 — Workspace, contracts, and application foundation
+- [x] Deliver initial ledger through issue #1 / PR #2, merged as `d0f90de395461376e94b79db8ca420d9906d215a`.
+- [x] Record running deployment under `/root/docker/financial-tracking`, trusted Traefik HTTPS, user-confirmed login, and 13 default categories.
+- [x] Record initial target-host schema restoration, separate synthetic financial-data restoration in CI, encrypted backups, and private backup identity held off-server.
+- [x] Audit old checklist and preserve its evidence without claiming new test or server results.
+- [x] Agree on three-stage expansion, account-independent CSV, per-candidate reconciliation decisions, `.33` container address, and complete light/dark interface redesign.
+- [x] Record issue #3 and obtain explicit Stage 1 implementation approval in the current checkout after showing its link.
+- [ ] Before each implementation task, confirm prerequisites and preserve unrelated work. Complete its relevant source, tests, documentation, validation, and commit together.
 
-Dependencies: implementation approval. Outcome: buildable applications with shared validation, persistence, and authenticated access.
+Ongoing rules: develop source locally only; never store real PIN/TAN in chat, source, fixtures, database, logs, backups, or browser persistence. No server repository or builds. Never count fixture bank results as real compatibility proof.
 
-### Workspace and standards
+## P0 — Inventory and baseline
 
-- [x] Create the pnpm workspace: API, web, and contracts packages.
-- [x] Configure strict TypeScript, package exports, build outputs, and dependency/build order.
-- [x] Pin the package manager and compatible supported runtime/dependency versions; commit the lockfile.
-- [x] Establish ESLint, formatting, LF endings, Vue block/attribute ordering, and JSDoc/TSDoc rules.
-- [x] Document canonical standards and actual check/fix commands; exclude generated/vendor/build files.
-- [x] Add CI checks incrementally, starting with lint, format, typecheck, and package builds.
+- [x] Inspect branch, commits, worktree, source/migrations, scripts, CI, tests, and all three plans; preserve the untracked user document and its original SHA-256 in `.local/p0`.
+- [x] Fetch the remote base and retain local documentation commit `621c979` on the issue branch; no reset, clean, stash, or server connection performed.
+- [x] Use existing Node 24.22.1 runtime and pnpm 11.25.0 without changing system Node 26 or package pins.
+- [x] Run baseline lint, all 26 tests on disposable PostgreSQL, strict typechecks, production builds, and both desktop/mobile browser profiles. Record the pre-existing user-plan formatting failure separately.
+- [x] Consolidate stricter user-plan requirements, Stage 2 refund semantics, and later recurrence decisions without implementing later-stage features.
+- [x] Record the prioritized file/dependency/check matrix and baseline evidence in [progress.md](progress.md#p0--expansion-baseline-2026-11-07).
+- [x] Commit the validated P0 documentation before feature implementation: `e2e4963`.
 
-### Shared Zod library
+## Stage 1 — Complete and validate the ledger
 
-- [x] Create `@financial-tracking/contracts` as a framework-independent browser-safe package.
-- [x] Define reusable identifiers, EUR cent amounts, dates, timestamps, pagination, and validation-error schemas.
-- [x] Define session, account, transaction, category, monthly-summary, and import-run request/response schemas.
-- [x] Define run status, authorization-continuation, and cancellation contracts without exposing FinTS internals.
-- [x] Define concrete `/api/v1` routes and input limits before building their consumers.
-- [x] Infer exported TypeScript types from Zod; avoid duplicate handwritten DTO field definitions.
-- [x] Keep transport schemas JSON-compatible; keep form-specific coercion explicit.
-- [x] Add schema tests for valid payloads, invalid boundaries, and safe errors.
+### P1.1 — Registry images and deployment-only server
 
-### API, web, and persistence
+- [x] Add CI image builds for API, web, and backup; keep migration execution in the matching API image. Label images with source/revision and use commit tags.
+- [x] Gate GHCR publication on successful checks for the same revision; keep PR validation separate from production publication.
+- [ ] Configure private package publication with CI credentials and server-side read-only pulls without committing registry secrets.
+- [x] Create one production `compose.yaml` containing digest-pinned `image:` references, no `build:`, no Dockerfile dependency, and no source mounts. Keep backup/restore scripts inside the image.
+- [x] Reinspect the other actual Compose files and `FRITZBOX` / `traefik-public` networks during implementation. Compare static addressing and Traefik conventions rather than guessing.
+- [ ] Verify DHCP reservation/exclusion and non-Docker address conflicts before assigning `192.168.178.33`; planning proved only that Docker had no container assigned there.
+- [x] Prepare web `.33` on external `FRITZBOX`, plus Traefik/backend networking. Retain the canonical domain, existing TLS resolver, LAN middleware, and security headers. Publish no application host ports; keep API/database off the LAN.
+- [x] Prevent direct Macvlan requests bypassing Traefik protections; assess actual peer addresses and reject spoofed forwarding headers instead of trusting them as evidence of proxy traversal.
+- [x] Put PostgreSQL, API database-readiness, web-readiness, and backup-freshness healthchecks directly in Compose. Gate API startup on successful migration.
+- [x] Preserve in the deployment definition the Compose project name, `household-ledger_postgres_data`, secrets, and backup storage; compare data before/after recreation.
+- [x] Fix backup retention to preserve at least seven calendar days despite extra manual snapshots; keep independent keys and document manual off-host copies accurately.
+- [x] Test isolated image-only installation, readiness failure/recovery and runtime source exclusions in Linux CI. Registry publication/pull on the target host remains open.
+- [x] Produce a versioned downloadable deployment bundle containing Compose/config templates/instructions only; prove missing-secret, registry-unavailable, and failed-migration behavior without touching production.
+- [ ] After successful production transition and verification, remove the old source tree and obsolete project path rules. Retain only deployment configuration/secrets and required data; do not delete volumes or backups.
+- [x] Update deployment/recovery documentation, record actual checks, and commit P1.1. Production rollout still requires its applicable approval.
 
-- [x] Bootstrap NestJS with Fastify and connect Prisma to PostgreSQL.
-- [x] Create initial models/migrations for the user, sessions, bank connections, accounts, balances, transactions, categories, and import runs.
-- [x] Keep money in integer cents and booking/value dates as calendar dates.
-- [x] Add explicit Prisma-to-contract mapping; prevent internal record fields from leaking.
-- [x] Integrate `nestjs-zod` request validation, response serialization, and generated OpenAPI.
-- [x] Bootstrap Nuxt/Nuxt UI and a typed `$fetch` wrapper using shared request/response types and response parsing.
-- [x] Add one administratively provisioned user; no registration endpoint.
-- [x] Implement Argon2id password hashing, server-side sessions, logout, expiry, CSRF protection, and login rate limits.
-- [x] Configure secure HttpOnly cookies and same-origin API routing through the reverse proxy.
-- [x] Add environment templates without secrets and Docker Compose for local development.
+P1.1 code/CI evidence: `4af2e65`, `8512215`; [green CI](https://github.com/mfurti/financial-tracking/actions/runs/42367331141). Prepared networking is not an allocated IP or completed rollout.
 
-### T1 verification and handoff
+### P1.2 — CSV without an account or bank connection
 
-- [x] Verify contracts build before consumers; import the built package in API and web.
-- [x] Verify the contracts package bundles for the browser without server-only dependencies.
-- [x] Test unauthenticated access, bad input, invalid responses, login/logout, CSRF, and session expiry.
-- [x] Verify effective lint/format rules and formatting convergence on representative TS/Vue files.
-- [x] Run applicable lint, format, typecheck, tests, migrations on a disposable database, and builds.
-- [x] Document setup and verified commands; record remaining manual documentation checks.
-- [x] Commit T1 and record its SHA and validation results in the task record.
+- [x] Review existing data and add a preservation-safe migration for unassigned transaction/staging account associations and explicit non-null identity scopes. Preserve existing account IDs and backfill their identity scopes.
+- [x] Update shared Zod contracts, runtime validation/serialization, OpenAPI, and clients for optional CSV targets, unassigned responses/filters, assignment, and reconciliation choices.
+- [x] Allow file selection, mapping, bounded preview, partial-import consent, confirmation, and cancellation with zero accounts/connections; require no hidden placeholder account.
+- [x] Persist unassigned transactions in "Ohne Konto" with categorization, immediate global/monthly totals, and explicit filtering; exclude them from specific-account totals.
+- [x] Support later assignment of individual/selected transactions with candidate comparison against existing CSV/live records.
+- [x] Offer bank values, CSV values, a separate transaction, or skipping assignment per candidate; show conflicting values before overwrite confirmation.
+- [x] Make consolidation/identity updates atomic; preserve provenance and manual categories/transfer annotations by default. Ensure one resulting transaction is counted once.
+- [x] Make repeated confirmations idempotent and detect concurrent assignment/merge conflicts. Show source/date/amount/text/account/category/status differences before resolving each candidate.
+- [x] Keep unassigned identities import-scoped; use explicit review for possible cross-file duplicates instead of trusting globally repeated bank references or nullable unique keys.
+- [x] Test old-data migration, repeated/partially overlapping CSVs, genuine equal-looking purchases, CSV/FinTS overlap, conflicting references, preservation of categories/transfer flags, rollback, and each reconciliation decision.
+- [x] Test cent-exact totals before/after assignment/consolidation, month/year boundaries, refunds, transfer exclusion, and pending-to-booked reconciliation.
+- [x] Document compatibility and coordinated migration/client rollout; record checks and commit P1.2.
 
-## T2 — Sparkasse connectivity and CSV fallback
+P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verify/operations passed. No production migration executed.
 
-Dependencies: T1. Outcome: proven bank reads or an explicit FinTS blocker, plus a usable CSV import path.
+### P1.3 — Calm, responsive interface and themes
 
-### FinTS compatibility proof
+- [x] Redesign the application shell/navigation and all ledger pages with consistent Nuxt UI components, typography, spacing, and feedback.
+- [x] Redesign dashboard month selection, income/expense/net, category breakdown, recent activity, and outstanding reviews. Distinguish authoritative balances from incomplete transaction totals.
+- [x] Make "Ohne Konto", later assignment, and reconciliation choices clear in normal/empty/first-run workflows.
+- [x] Improve transaction filters and bulk actions; use mobile lists/cards instead of page-wide overflowing tables.
+- [x] Add light/dark toggles on login and authenticated pages; default to system preference and preserve explicit device-local choices across reloads.
+- [x] Replace hardcoded custom colors with shared semantic theme variables across all pages and interaction states.
+- [x] Preserve API error codes/field paths in the client and map safe errors to form controls; complete shared-schema validation including account IBAN input.
+- [x] Cover loading, empty, stale/partial data, failed imports, expired sessions, and recoverable errors without losing necessary user input.
+- [x] Verify keyboard navigation, accessible labels, contrast, focus transitions, and responsive behavior across all pages; do not rely on color alone.
+- [x] Add desktop/mobile browser assertions for unassigned CSV, assignment/reconciliation, exact monthly amounts, transfer exclusion, and both themes including reload persistence.
+- [x] Record page/state acceptance and commit P1.3.
 
-- [ ] Register an application-specific FinTS product ID through the official process.
-- [ ] Confirm Sparkasse Bodensee BLZ `69050001` and its official FinTS endpoint.
-- [x] Review and pin `lib-fints`; retain required license notices.
-- [x] Define the internal `BankConnector` boundary for discovery, balances, transactions, authorization continuation, and cancellation.
-- [x] Validate configured bank destinations; do not accept arbitrary request-supplied bank URLs.
-- [ ] Discover account capabilities and available TAN methods/media.
-- [x] Implement manual refresh with PIN entry; never persist PIN/TAN.
-- [ ] Support the user's available authorization method, including banking-app approval when available.
-- [x] Respect bank-provided polling limits and expiry; prevent concurrent runs for one connection.
-- [x] Release in-memory credentials and authorization state after completion, failure, cancellation, expiry, or restart.
-- [x] Review persisted connection metadata for secrets and transient authorization material.
-- [x] Disable protocol/body logging that could expose credentials or financial data.
-- [ ] Interactively verify account discovery, balance, and transaction reads against the real account; record sanitized results only.
-- [ ] Record supported history range and any bank restrictions; never imply complete history without evidence.
+### P1.4 — Manual live Sparkasse queries
 
-### CSV fallback
+- [x] Help the user choose appropriate Sparkasse access and prepare their own FinTS product registration; explain required user actions when this step begins. No registration currently exists.
+- [ ] Obtain the application's own product ID and confirm the official Sparkasse Bodensee endpoint, BLZ, and available account/TAN capabilities; do not reuse an unrelated product ID.
+- [x] Complete discovery, balances, booked transactions, history ranges, TAN method/media selection, app approval/polling, cancellation, and safe retry through the existing adapter.
+- [x] Implement actionable setup/unsupported-method states and keep CSV independent when prerequisites are missing.
+- [x] Verify bank-provided polling/expiry limits, a single active run per connection, transient credentials, worker disposal, and no automatic incorrect-PIN retry.
+- [x] Complete synthetic success, successful authorization continuation, pending, rejected, expired, network failure, wrong-PIN, cancellation, concurrent-refresh, and worker-restart tests.
+- [x] Add mocked browser interactions for TAN selection, app approval, polling, failure, expiry, and cancellation; never use real credentials in browser tests.
+- [ ] Separately perform user-assisted real discovery/balance/transaction/approval checks when prerequisites exist; document supported history and sanitized restrictions. Keep compatibility explicitly open otherwise.
+- [x] Update banking/user documentation, record exact proof/blockers, and commit P1.4.
 
-- [x] Add file size/row limits and supported encoding/delimiter handling for Sparkasse exports.
-- [x] Provide column mapping for dates, signed amount, counterparty, purpose, and available references.
-- [x] Parse German numeric/date formats; reject unsupported currencies and ambiguous mappings.
-- [x] Show a preview and row-level errors before confirmation; retain no uploaded raw file after processing.
-- [x] Normalize CSV records to the same internal import input used by FinTS.
-- [x] Expose import status and safe actionable errors through shared contracts.
+### P1.5 — Final acceptance, recovery, and Stage 1 review
 
-### T2 verification and handoff
+- [x] Add real HTTP/PostgreSQL session-expiry, login-rate-limit, safe invalid-input/field-path and response-serialization regressions.
+- [x] Run final local format/lint/strict types, schema/migration tests, production builds, 60 tests and eight desktop/mobile browser cases. Record the Windows test-cleanup race and verified fix.
+- [x] Review shared contracts/API/OpenAPI/client compatibility, function/type documentation and Vue conventions.
+- [x] Restore the actual initialized encrypted target-host backup locally, apply forward migrations, compare existing rows/hash, and verify isolated login/accounts/categories/history/report/responsive UI. Record the explicit limitation: this archive has no financial transactions.
+- [x] Pass extended Linux CI for source candidate `7754522`: 61 tests, eight browser cases, populated PostgreSQL 17/API/web encrypted recovery, login/history/reports, PIN/TAN marker scans and plaintext cleanup. Both [push](https://github.com/mfurti/financial-tracking/actions/runs/42386882489) and [PR](https://github.com/mfurti/financial-tracking/actions/runs/42386886259) runs passed.
+- [x] Confirm image-only CI startup, readiness/dependency recovery, private API/database, direct-access denial, volume recreation and backup health for tested source candidate `7754522`. Actual target rollout remains open below.
+- [x] Verify seven-calendar-day retention with extra manual-run fixtures; retain the separately held recovery identity and prove actual archive decryption.
+- [x] Document schema-compatible image rollback versus backup recovery, with no automatic down-migration promise.
+- [x] Create and attach [source PR #4](https://github.com/mfurti/financial-tracking/pull/4); P1.5 commit `86f7b89`, transfer correction `78f3371`. Final current-head CI remains a separate gate above; PR is unmerged.
+- [ ] After approved main merge, verify actual private GHCR publication, exact immutable digests, deployment bundle and target read-only registry pulls.
+- [ ] Recheck DHCP/exclusion/non-Docker conflicts before allocating `.33`; prepared Compose is not a live reservation.
+- [ ] Obtain production-rollout approval/window, record existing image/config state, verify a fresh pre-update backup, pause writes, run reviewed migrations and validate data/HTTPS/private access/readiness/backups before reopening.
+- [ ] Only after successful transition, remove obsolete server source/build files and old project path rules; preserve deployment files, secrets, database volume and backups.
+- [ ] Perform shared-host reboot acceptance only in a separately approved window.
+- [ ] Complete user-assisted real-bank compatibility after the user's own registration and confirmed endpoint; record history/TAN/media restrictions without credentials.
+- [ ] Review Stage 1 jointly: layout, workflow, exact totals, CSV decisions, operations and explicit real-bank limitations. See [stage-one-acceptance.md](stage-one-acceptance.md).
+- [ ] Obtain explicit Stage 1 acceptance and separate permission before starting Stage 2. **Stop here until then.**
 
-- [ ] Test successful reads and authorization-required, pending, rejected, expired, cancelled, and network-failure states with sanitized fixtures.
-- [ ] Test incorrect PIN without automatic credential retry, parallel refresh, and restart during approval.
-- [x] Test CSV preview, mapping, invalid rows, limits, and cancellation.
-- [ ] If FinTS fails, document the exact blocker and keep CSV operational; do not silently add another provider/runtime.
-- [x] Update bank setup documentation with prerequisites and actual verified behavior.
-- [x] Commit T2 and record its SHA, checks, and real-bank proof or blocker.
+## Stage 2 — Monthly category budgets
 
-## T3 — Durable imports and reporting
+Dependencies: explicit Stage 1 acceptance and separate implementation approval.
 
-Dependencies: T2. Outcome: reliable imports and accurate account/monthly views.
+- [ ] Define shared contracts/persistence and a reviewed migration for monthly expense-category budgets, with exact cent amounts.
+- [ ] Implement create/edit and explicit copy from the previous month; no automatic rollover.
+- [ ] Define explicit refund identification and calculate consumption as expenses less those refunds, floored at zero; ordinary category income is not automatically a refund. Include booked unassigned data and exclude pending transactions/own transfers.
+- [ ] Show budget, consumption, remainder, and overspending in responsive light/dark UI with field validation.
+- [ ] Test month boundaries, refunds, category changes, unassigned/assigned equivalence, exact totals, and budget-copy behavior.
+- [ ] Complete applicable checks, documentation, scoped commits, and approved delivery.
+- [ ] Obtain separate Stage 2 acceptance and permission before Stage 3. **Stop here until then.**
 
-- [x] Persist source references and import provenance scoped to each account.
-- [x] Prefer stable bank references for idempotent ingestion.
-- [x] Present ambiguous duplicate candidates for review; preserve legitimate equal-looking transactions.
-- [x] Reconcile overlapping CSV/FinTS imports through the same pipeline.
-- [x] Preserve manual category assignments and transfer flags during reimport.
-- [x] Import each account atomically after its complete fetch; preserve previous data on failure.
-- [x] Expose partial success when some accounts succeed and others fail.
-- [x] Save authoritative balance snapshots separately from transaction-derived totals.
-- [x] Store pending/booked status and keep pending records out of monthly totals.
-- [x] Implement category creation/update and transaction category assignment.
-- [x] Implement marking transfers between owned accounts and excluding them from income/expense totals.
-- [x] Implement transaction search, account/date/category filters, stable ordering, and bounded pagination.
-- [x] Implement monthly income, expense, net, category breakdown, and previous-month comparison by booking date.
-- [ ] Test repeated imports, overlapping periods, cross-source overlap, duplicate ambiguity, and preserved user edits.
-- [ ] Test cent-exact totals, month/year boundaries, refunds, transfers, and pending/booked behavior.
-- [x] Test response schemas/OpenAPI against actual API results and authorization boundaries.
-- [x] Run applicable checks; update data/import documentation.
-- [x] Commit T3 and record its SHA and validation results.
+## Stage 3 — Recurring-expense planning
 
-## T4 — Responsive German household ledger
+Dependencies: explicit Stage 2 acceptance and separate implementation approval.
 
-Dependencies: T3. Outcome: complete browser workflow on desktop and phone.
+- [ ] Define shared contracts/persistence and reviewed migration for amount, category, start, optional end, and monthly/quarterly/yearly intervals.
+- [ ] Decide end-date inclusivity and handling of partial/combined payments; default to explicit 1:1 matching, without implementing these features during Stage 1.
+- [ ] Implement create/edit/end and next-due-date calculation, preserving the intended monthly day across short months and leap years.
+- [ ] Show upcoming payments, the amounts actually due in the selected month, and a separately labeled monthly average; round only displayed fractional-cent equivalents.
+- [ ] Keep planning entries out of real transactions and actual reports; do not initiate payments or create real bookings automatically.
+- [ ] Allow explicit matching to a real transaction and prevent duplicate matching of one planned occurrence.
+- [ ] Implement responsive light/dark UI, validation, and tests for month ends, leap years, ended series, intervals, and duplicate matching.
+- [ ] Complete applicable checks, documentation, scoped commits, approved delivery, and final user acceptance.
 
-- [x] Build the login screen and authenticated application shell.
-- [x] Build account selection, balance display, and last-successful-refresh indicators.
-- [x] Build dashboard month selection, income/expense/net summaries, and monthly comparison.
-- [x] Build the transaction list with search, filters, pagination, category assignment, and transfer marking.
-- [x] Build category management with clear validation feedback.
-- [x] Build CSV upload, mapping, preview, duplicate review, confirmation, and import results.
-- [x] Build bank connection setup, PIN entry, TAN-method selection, approval status, cancellation, and retry flows.
-- [ ] Validate forms with shared schemas; map server validation field paths to the relevant controls.
-- [x] Clear sensitive form values after submission; prevent credentials entering browser persistence or telemetry.
-- [x] Display German dates/currency and Europe/Berlin timestamps consistently.
-- [x] Provide loading, empty, stale-data, partial-success, error, and expired-session states.
-- [ ] Check keyboard navigation, accessible labels, focus management, and mobile layout.
-- [x] Add Playwright coverage for login, imports, filtering, categorization, transfer exclusion, and monthly totals.
-- [ ] Verify bank authorization interactions with mocks; do not put live credentials in browser tests.
-- [x] Run applicable checks and document user-facing workflows.
-- [x] Commit T4 and record its SHA and validation results.
+## Completion rules
 
-## T5 — Production readiness and final acceptance
-
-Dependencies: T4. Outcome: recoverable private deployment with documented validation.
-
-- [x] Build production Docker images with the contracts package available to both consumers.
-- [ ] Bind HTTPS ingress only to the intended home/VPN interface; keep API/database services internal.
-- [x] Configure production secrets outside version control and image layers.
-- [ ] Verify persistent volumes, health checks, and restart behavior without exposing financial details.
-- [ ] Schedule daily encrypted database backups with seven-day retention and independently stored keys.
-- [x] Document a fresh installation, administrative account provisioning, migration execution, and updates.
-- [x] Document recovery for a failed update using a pre-update backup; do not promise automatic down-migrations.
-- [ ] Restore a backup into an isolated environment and verify accounts, transactions, categories, and reports.
-- [ ] Verify no PIN/TAN appears in database records, logs, error responses, or backup contents.
-- [x] Run full lint, format check, strict typecheck, unit/integration tests, Playwright tests, and production builds in CI.
-- [x] Review contract compatibility across Zod schemas, backend validation/serialization, OpenAPI, and frontend consumers.
-- [ ] Complete desktop/mobile acceptance and separate real-bank verification or document the outstanding blocker.
-- [x] Record exact commands/results and operational limitations in the task record and documentation.
-- [x] Commit T5 and record its SHA and validation results.
-- [x] Open/update the feature PR and follow the required review/merge approval workflow; do not deploy or merge without applicable authorization.
-
-## Stop conditions
-
-- [ ] Confirm version 1 stays single-user, EUR-only, and private to home network/VPN.
-- [ ] Confirm no payment initiation, public signup, budgets, forecasts, investment features, or unattended bank synchronization were added.
-- [ ] Confirm all required checks and restoration proof passed, with external blockers reported accurately.
-- [ ] Confirm no implementation item was marked complete on the strength of this planning/documentation commit alone.
+- [ ] Complete only work backed by actual code/checks/recorded acceptance; this documentation commit does not complete expansion work.
+- [ ] Preserve existing user/financial data and explicitly document any compatibility limit or external bank blocker.
+- [ ] Keep the server deployment-only and all source development local; verify no repository or build dependency remains on rocky after the approved transition.
+- [ ] Report current activity, remaining work, and required user actions at handoffs; do not claim background work that is not running.

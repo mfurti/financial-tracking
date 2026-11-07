@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { z } from 'zod';
-import { issueSchema, runSchema, type ImportRun } from '@financial-tracking/contracts';
+import {
+  issueSchema,
+  runSchema,
+  accountSchema,
+  categorySchema,
+  type ImportRun,
+  type Account,
+  type Category,
+} from '@financial-tracking/contracts';
 
 const api = useApi();
 const route = useRoute();
@@ -10,6 +18,36 @@ const selectedRun = ref(String(route.query.run ?? ''));
 const matches = reactive<Record<string, string>>({});
 const error = ref('');
 const busy = ref(false);
+const accounts = ref<Account[]>([]);
+const categories = ref<Category[]>([]);
+/** Resolve only the currently offered comparison target. */
+function candidate(issue: z.infer<typeof issueSchema>) {
+  return issue.candidates?.find(
+    /** Do not infer a match merely from the first candidate. */ (row) => row.id === matches[issue.id],
+  );
+}
+/** Keep unassigned entries visible alongside their true account associations. */
+function accountName(id: string | null) {
+  return accounts.value.find(/** Match a real account identifier. */ (row) => row.id === id)?.name ?? 'Ohne Konto';
+}
+/** Read the manual target annotation without changing it during comparison. */
+function categoryName(id: string | null) {
+  return (
+    categories.value.find(/** Use the current public category name. */ (row) => row.id === id)?.name ??
+    'Nicht kategorisiert'
+  );
+}
+/** Describe source provenance in product language, including unknown migrated records. */
+function sourceNames(values?: string[]) {
+  return (
+    values
+      ?.map(
+        /** Do not present a migrated unknown source as a verified bank read. */ (value) =>
+          value === 'FINTS' ? 'Bank' : value === 'CSV' ? 'CSV' : 'Bestand',
+      )
+      .join(', ') || 'Bestand'
+  );
+}
 const labels: Record<string, string> = {
   CREATED: 'Vorschau',
   RUNNING: 'Läuft',
@@ -25,7 +63,11 @@ async function load() {
   busy.value = true;
   error.value = '';
   try {
-    runs.value = await api.request('/imports', z.array(runSchema));
+    [runs.value, accounts.value, categories.value] = await Promise.all([
+      api.request('/imports', z.array(runSchema)),
+      api.request('/accounts', z.array(accountSchema)),
+      api.request('/categories', z.array(categorySchema)),
+    ]);
     if (selectedRun.value)
       issues.value = await api.request(`/imports/${selectedRun.value}/issues`, z.array(issueSchema));
   } catch (cause) {
@@ -41,16 +83,31 @@ async function select(id: string) {
   await load();
 }
 /** Apply a deliberate duplicate decision to one staged row. */
-async function resolve(issueId: string, action: 'NEW' | 'MATCH' | 'SKIP') {
+async function resolve(issueId: string, action: 'NEW' | 'MATCH' | 'SKIP' | 'EXISTING' | 'INCOMING') {
+  if (busy.value) return;
+  busy.value = true;
   error.value = '';
   try {
     await api.request(`/imports/${selectedRun.value}/resolutions`, runSchema, {
       method: 'POST',
-      body: { resolutions: [{ issueId, action, transactionId: matches[issueId] || undefined }] },
+      body: {
+        resolutions: [
+          {
+            issueId,
+            action,
+            transactionId: matches[issueId] || undefined,
+            candidateVersion: issues.value.find(
+              /** Bind replacement to the version actually displayed. */ (issue) => issue.id === issueId,
+            )?.candidateVersions?.[matches[issueId] ?? ''],
+          },
+        ],
+      },
     });
     await load();
   } catch (cause) {
     error.value = (cause as Error).message;
+  } finally {
+    busy.value = false;
   }
 }
 onMounted(load);
@@ -68,7 +125,7 @@ onMounted(load);
       ><UButton to="/imports/csv">CSV importieren</UButton>
     </div>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <section class="panel mb-6">
     <p v-if="!runs.length" class="empty-copy">
       Noch keine Importe. Starte mit einer CSV-Datei oder deiner Bankverbindung.
@@ -107,20 +164,46 @@ onMounted(load);
         >
       </div>
       <template v-if="issue.incoming"
-        ><label
-          >Bekannte Buchung auswählen<select v-model="matches[issue.id]" class="control">
+        ><p>
+          {{ issue.incomingSource === 'FINTS' ? 'Bank' : 'CSV' }} · {{ accountName(issue.incoming.accountId) }} ·
+          {{ issue.incoming.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt' }}
+        </p>
+        <p class="reference-copy">Referenz: {{ issue.incomingReference || 'Nicht geliefert' }}</p>
+        <label
+          >Bekannte Buchung auswählen<select
+            v-model="matches[issue.id]"
+            aria-label="Bekannte Buchung auswählen"
+            class="control"
+          >
             <option value="">Kandidat wählen</option>
-            <option v-for="candidate in issue.candidates" :key="candidate.id" :value="candidate.id">
-              {{ calendarDate(candidate.bookingDate) }} · {{ candidate.description }} ·
-              {{ money(candidate.amountCents) }}
+            <option v-for="option in issue.candidates" :key="option.id" :value="option.id">
+              {{ calendarDate(option.bookingDate) }} · {{ option.description }} ·
+              {{ money(option.amountCents) }}
             </option>
           </select></label
         >
+        <div v-if="candidate(issue)" class="mt-4">
+          <p>
+            {{ candidate(issue)!.description }} · {{ calendarDate(candidate(issue)!.bookingDate) }} ·
+            {{ money(candidate(issue)!.amountCents) }}
+          </p>
+          <p>
+            {{ accountName(candidate(issue)!.accountId) }} ·
+            {{ candidate(issue)!.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt' }} ·
+            {{ categoryName(candidate(issue)!.categoryId)
+            }}<span v-if="candidate(issue)!.isTransfer"> · Umbuchung</span>
+          </p>
+          <p>Quelle: {{ sourceNames(issue.candidateSources?.[candidate(issue)!.id]) }}</p>
+          <p class="reference-copy">
+            Referenzen: {{ issue.candidateReferences?.[candidate(issue)!.id]?.join(', ') || 'Nicht geliefert' }}
+          </p>
+        </div>
         <div class="toolbar mt-4">
-          <UButton :disabled="!matches[issue.id]" variant="soft" @click="resolve(issue.id, 'MATCH')"
-            >Mit bekannter Buchung verknüpfen</UButton
-          ><UButton :disabled="issue.code === 'SOURCE_CHANGED'" variant="soft" @click="resolve(issue.id, 'NEW')"
-            >Als eigene neue Buchung übernehmen</UButton
+          <UButton :disabled="!matches[issue.id]" variant="soft" @click="resolve(issue.id, 'EXISTING')"
+            >Vorhandene Daten behalten</UButton
+          ><UButton :disabled="!matches[issue.id]" variant="soft" @click="resolve(issue.id, 'INCOMING')"
+            >Importdaten übernehmen</UButton
+          ><UButton variant="soft" @click="resolve(issue.id, 'NEW')">Separat behalten</UButton
           ><UButton color="neutral" variant="ghost" @click="resolve(issue.id, 'SKIP')">Überspringen</UButton>
         </div></template
       >
@@ -130,3 +213,9 @@ onMounted(load);
     </p>
   </section>
 </template>
+
+<style scoped>
+.reference-copy {
+  overflow-wrap: anywhere;
+}
+</style>

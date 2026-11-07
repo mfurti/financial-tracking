@@ -27,10 +27,10 @@ async function logout() {
 
 <template>
   <div class="app-frame">
+    <a href="#main-content" class="skip-link">Zum Inhalt springen</a>
     <aside class="sidebar">
       <NuxtLink to="/" class="brand"
-        ><span class="brand-mark">H</span
-        ><span>Haushaltsbuch<small>DEINE FINANZEN. DEIN ÜBERBLICK.</small></span></NuxtLink
+        ><span class="brand-mark">H</span><span>Haushaltsbuch<small>Privater Finanzplaner</small></span></NuxtLink
       >
       <nav aria-label="Hauptnavigation">
         <NuxtLink
@@ -38,6 +38,7 @@ async function logout() {
           :key="link.to"
           :to="link.to"
           :class="{ active: link.to === '/' ? route.path === '/' : route.path.startsWith(link.to) }"
+          :aria-current="(link.to === '/' ? route.path === '/' : route.path.startsWith(link.to)) ? 'page' : undefined"
           ><span aria-hidden="true">{{ link.icon }}</span
           >{{ link.label }}</NuxtLink
         >
@@ -48,14 +49,18 @@ async function logout() {
     </aside>
     <div class="main-frame">
       <header class="topbar">
-        <span>Persönliche Finanzen</span>
+        <span class="workspace-label">Mein Haushaltsbuch</span>
         <div>
-          <span class="user-badge">{{ api.session.value?.username?.slice(0, 1).toUpperCase() }}</span
-          ><span>{{ api.session.value?.username }}</span
-          ><UButton variant="ghost" color="neutral" @click="logout">Abmelden</UButton>
+          <ThemeToggle />
+          <span class="user-badge" :aria-label="`Angemeldet: ${api.session.value?.username}`">{{
+            api.session.value?.username?.slice(0, 1).toUpperCase()
+          }}</span>
+          <UButton size="sm" variant="ghost" color="neutral" @click="logout">Abmelden</UButton>
         </div>
       </header>
-      <main class="page-content"><UAlert v-if="error" color="error" :description="error" class="mb-4" /><slot /></main>
+      <main id="main-content" tabindex="-1" class="page-content">
+        <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><slot />
+      </main>
       <footer class="page-footer">Privat verwaltet · Daten bleiben auf deinem Server</footer>
     </div>
   </div>

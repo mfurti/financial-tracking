@@ -92,7 +92,7 @@ async function makePreview() {
   error.value = '';
   try {
     const body = csvPreviewInputSchema.parse({
-      accountId: accountId.value,
+      accountId: accountId.value || null,
       content: content.value,
       encoding: encoding.value,
       delimiter: delimiter.value,
@@ -142,7 +142,6 @@ onMounted(
       accounts.value = (await api.request('/accounts', z.array(accountSchema))).filter(
         /** Hide inactive import targets. */ (account) => account.isActive,
       );
-      accountId.value = accounts.value[0]?.id ?? '';
     } catch (cause) {
       error.value = (cause as Error).message;
     }
@@ -165,20 +164,19 @@ onBeforeUnmount(
     </div>
     <UButton to="/imports" variant="ghost">Importhistorie</UButton>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <div class="stepper">
     <span :class="{ selected: !headers.length }">1 · Datei</span
     ><span :class="{ selected: headers.length && !preview }">2 · Spalten</span
     ><span :class="{ selected: preview }">3 · Prüfen</span>
   </div>
   <section v-if="!preview" class="panel">
-    <p v-if="!accounts.length" class="empty-copy">
-      Lege zuerst unter <NuxtLink to="/accounts" class="text-link">Konten</NuxtLink> ein Zielkonto an.
-    </p>
-    <form v-else class="space-y-6" @submit.prevent="makePreview">
+    <p v-if="!accounts.length" class="empty-copy">Du kannst ohne Konto importieren und Buchungen später zuordnen.</p>
+    <form class="space-y-6" @submit.prevent="makePreview">
       <div class="form-row">
         <label
-          >Zielkonto<select v-model="accountId" class="control">
+          >Zielkonto (optional)<select v-model="accountId" aria-label="Zielkonto (optional)" class="control">
+            <option value="">Ohne Konto — später zuordnen</option>
             <option v-for="account in accounts" :key="account.id" :value="account.id">{{ account.name }}</option>
           </select></label
         ><label
