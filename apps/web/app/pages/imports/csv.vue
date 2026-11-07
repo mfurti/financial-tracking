@@ -28,6 +28,7 @@ const detectedEncoding = ref<CsvEncoding>('utf-8');
 const detectedDelimiter = ref<CsvDelimiter>(';');
 const fileBytes = shallowRef<Uint8Array | null>(null);
 const readingFile = ref(false);
+const formatExpanded = ref(false);
 const headers = ref<string[]>([]);
 const content = ref('');
 const filename = ref('');
@@ -152,6 +153,7 @@ function readFile() {
       if (!parsed.headers.includes(mapping[key] ?? '')) (mapping as Record<string, string>)[key] = suggested[key] ?? '';
     }
   } catch (cause) {
+    formatExpanded.value = true;
     error.value = cause instanceof CsvFileError ? cause.message : userErrorMessage(cause);
   }
 }
@@ -246,8 +248,12 @@ onBeforeUnmount(
     <p v-if="!accounts.length" class="empty-copy">Du kannst ohne Konto importieren und Buchungen später zuordnen.</p>
     <form class="space-y-6" @submit.prevent="makePreview">
       <div>
-        <label
-          >Zielkonto (optional)<select v-model="accountId" aria-label="Zielkonto (optional)" class="control">
+        <label class="block max-w-md"
+          >Zielkonto (optional)<select
+            v-model="accountId"
+            aria-label="Zielkonto (optional)"
+            class="control mt-2 block w-full"
+          >
             <option value="">Ohne Konto — später zuordnen</option>
             <option v-for="account in accounts" :key="account.id" :value="account.id">{{ account.name }}</option>
           </select></label
@@ -267,7 +273,11 @@ onBeforeUnmount(
         Dateiformat: {{ encodingNames[detectedEncoding] }} · {{ delimiterNames[detectedDelimiter] }} ·
         {{ headers.length }} Spalten. Bitte prüfe, ob Umlaute in den Spaltennamen richtig aussehen.
       </p>
-      <details class="import-format" :open="!!error && !!fileBytes">
+      <details
+        class="import-format"
+        :open="formatExpanded"
+        @toggle="formatExpanded = ($event.target as HTMLDetailsElement).open"
+      >
         <summary>Dateiformat anpassen (optional)</summary>
         <p class="muted text-sm my-3">
           Normalerweise funktioniert „Automatisch“. Einstellungen wirken sofort auf dieselbe Datei; erneutes Auswählen
@@ -301,7 +311,7 @@ onBeforeUnmount(
           der Vorschau. Mit * markierte Angaben sind nötig.
         </p>
       </div>
-      <div v-if="headers.length" class="filter-grid">
+      <div v-if="headers.length" class="filter-grid csv-columns">
         <label v-for="field in requiredFields" :key="field.key"
           >{{ field.label }} *<select v-model="mapping[field.key]" required class="control">
             <option value="">Spalte wählen</option>
@@ -314,7 +324,7 @@ onBeforeUnmount(
         <p class="muted text-sm my-3">
           Diese Angaben können leer bleiben. Wähle nur Spalten aus, deren Bedeutung du kennst.
         </p>
-        <div class="filter-grid">
+        <div class="filter-grid csv-columns">
           <label v-for="field in optionalFields" :key="field.key"
             >{{ field.label
             }}<select v-model="mapping[field.key]" class="control">

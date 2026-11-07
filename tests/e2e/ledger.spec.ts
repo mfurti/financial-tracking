@@ -44,7 +44,20 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
   await expect(page.getByRole('alert')).toContainText('passt nicht zu den Dateibytes');
   await page.getByLabel('Kodierung', { exact: false }).selectOption('windows-1252');
   await expect(page.getByRole('alert')).not.toBeVisible();
+  await expect(page.getByLabel('Kodierung', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Vorschau erstellen' })).toBeEnabled();
+  expect(
+    await page.evaluate(
+      /** Import help must fit the supported narrow viewport. */ () =>
+        document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await expect(page.getByRole('link', { name: 'Zum Inhalt springen', exact: true })).not.toBeFocused();
+  await page.evaluate(
+    /** Capture fixed controls at the actual page top, not the browser's last auto-scroll position. */ () =>
+      window.scrollTo(0, 0),
+  );
+  await page.screenshot({ path: `.local/csv-columns-${info.project.name}.png`, fullPage: true });
   await page.getByRole('button', { name: 'Vorschau erstellen' }).click();
   await expect(page.getByRole('heading', { name: 'Vorschau prüfen' })).toBeVisible();
   await expect(page.getByText(label, { exact: true })).toBeVisible();

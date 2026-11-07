@@ -35,7 +35,7 @@ Die Importhistorie zeigt zusätzliche Prüfungen aus wiederholten oder überlapp
 
 ## Darstellung und Fehler
 
-**Hell**, **Dunkel** und **System** stehen auf der Anmeldeseite und in der Anwendung bereit. System folgt deinem Gerät; eine ausdrückliche Auswahl bleibt auf diesem Gerät nach Neuladen erhalten.
+Ein einzelner **Sonne/Mond-Button** wechselt auf der Anmeldeseite und in der Anwendung zwischen Hell und Dunkel. Ohne eigene Auswahl folgt die Darstellung deinem Gerät. Ein Klick speichert die gewünschte Darstellung auf diesem Gerät, auch nach Neuladen. Der Schieber und die Farben wechseln weich; bei der Geräteeinstellung „Bewegung reduzieren“ erfolgt der Wechsel ohne Animation. Der Button ist per Tabulator und Leertaste bedienbar; „Dunkelmodus gedrückt“ bedeutet, dass Dunkel aktiv ist.
 
 Fehlerhafte Formularfelder werden markiert. Bei Servervalidierung springt der Tastaturfokus zum ersten betroffenen Feld. Korrigiere die Eingabe und sende erneut; gewöhnliche Formulare behalten ihren Entwurf. Passwörter, PIN und TAN werden nach einem Versuch gelöscht. Bei abgelaufener Sitzung ist eine neue Anmeldung erforderlich.
 
