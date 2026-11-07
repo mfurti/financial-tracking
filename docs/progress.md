@@ -73,6 +73,10 @@ Status: local implementation and acceptance passed; scoped commit follows this e
 | Transactions/imports/CSV/connections/settings | Both themes, heading and viewport checks; existing populated and accountless journeys | All eight primary routes; real fixtures, no live bank credentials                  |
 | Session expiry                                | Missing cookie redirects to login; explicit theme survives                            | Cookie removed in synthetic browser context                                        |
 
+## P1.4a — Bank authorization test boundary
+
+P1.3 is committed as `f0ace1c`. Before extending live-bank setup, moved the existing authorization/cent conversion into a worker-owned helper without changing public messages, timing or failure semantics. Existing twelve ledger integration tests and three direct driver tests passed (15 total): TAN continuation, no incorrect-PIN retry, bank first/between-poll waits and maximum attempts, unsupported challenge rejection and exact cent conversion. API/web/root strict typechecks and lint passed after correcting an invalid test-only photo-challenge fixture to the SDK's actual HHD string format. Registration documentation remains a separate pending P1.4 change; no bank traffic or server change occurred.
+
 ## Historical initial delivery evidence
 
 Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issues/1).

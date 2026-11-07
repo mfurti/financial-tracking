@@ -2,8 +2,9 @@ import { parentPort, workerData } from 'node:worker_threads';
 import { randomUUID } from 'node:crypto';
 import { FinTSClient, FinTSConfig, type ClientResponse, type BankingInformation } from 'lib-fints';
 import { z } from 'zod';
-import { centsSchema, dateSchema, challengeInputSchema } from '@financial-tracking/contracts';
+import { dateSchema, challengeInputSchema } from '@financial-tracking/contracts';
 import { stableReference } from './csv.js';
+import { authorizeBank, libraryCents } from './bank-authorization.js';
 
 const input = z
   .object({
@@ -70,60 +71,21 @@ async function answer() {
   );
 }
 
-/** Drive a TAN operation while respecting the bank's waiting time and poll limit. */
-async function authorized<T extends ClientResponse>(
+/** Bind authorization to the current isolated worker without changing its public messages. */
+function authorized<T extends ClientResponse>(
   initial: () => Promise<T>,
   continuation: (reference: string, tan?: string) => Promise<T>,
 ): Promise<T> {
-  let response = await initial();
-  let attempts = 0;
-  let lastPoll = Date.now();
-  while (response.requiresTan) {
-    if (!response.tanReference || response.tanPhoto || response.tanChallengeHhdUc) throw new Error('BANK_UNSUPPORTED');
-    const method = config.selectedTanMethod;
-    const challengeMessage = (response.tanChallenge ?? 'Bankfreigabe erforderlich.')
-      .split(input.pin)
-      .join('[geschützt]')
-      .slice(0, 1000);
-    parentPort!.postMessage({
-      kind: 'challenge',
-      data: { type: method?.isDecoupled ? 'APP_APPROVAL' : 'TAN', message: challengeMessage },
-    });
-    const submitted = await answer();
-    const seconds = attempts
-      ? (method?.decoupled?.waitingSecondsBetweenStatusRequests ?? 5)
-      : (method?.decoupled?.waitingSecondsBeforeFirstStatusRequest ?? 5);
-    const remaining = seconds * 1000 - (Date.now() - lastPoll);
-    if (method?.isDecoupled && remaining > 0)
-      await new Promise(
-        /** Delay inside the isolated worker according to bank limits. */ (resolve) => setTimeout(resolve, remaining),
-      );
-    if (attempts++ >= (method?.decoupled?.maxStatusRequests ?? 20)) throw new Error('BANK_AUTH_REJECTED');
-    parentPort!.postMessage({ kind: 'running' });
-    response = await continuation(response.tanReference, submitted.tan);
-    lastPoll = Date.now();
-  }
-  if (!response.success) {
-    if (
-      response.bankAnswers.some(
-        /** Classify login refusal without forwarding bank text. */ (answer) => [9930, 9942].includes(answer.code),
-      )
-    )
-      throw new Error('BANK_INVALID_CREDENTIALS');
-    throw new Error('BANK_AUTH_REJECTED');
-  }
-  return response;
+  return authorizeBank(initial, continuation, {
+    config,
+    pin: input.pin,
+    answer,
+    /** Publish only the same safe public challenge as before extraction. */
+    challenge: (data) => parentPort!.postMessage({ kind: 'challenge', data }),
+    /** Signal that the worker is continuing the existing bank dialog. */
+    running: () => parentPort!.postMessage({ kind: 'running' }),
+  });
 }
-
-/** Convert a library numeric boundary to exact cents; reject unsafe precision. */
-function libraryCents(value: number) {
-  if (!Number.isFinite(value) || Math.abs(value) > Number.MAX_SAFE_INTEGER / 100)
-    throw new Error('BANK_INVALID_RESPONSE');
-  const text = value.toFixed(2);
-  if (Number(text) !== value) throw new Error('BANK_INVALID_RESPONSE');
-  return centsSchema.parse(BigInt(text.replace('.', '')).toString());
-}
-
 try {
   await authorized(
     /** Initialize the bank dialog once; incorrect PIN is never retried. */ () => client.synchronize(),
