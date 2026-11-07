@@ -126,7 +126,7 @@ P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verif
 
 - [x] U1: incorporate the user's latest direction into both plans, audit stale implementation/deployment entries and preserve genuine external gates.
 - [x] U2: upload-and-analyze happy path, Sparkasse purpose precedence, optional full-file period in shared response/runtime/OpenAPI and actual monthly analytics. Retain exception/partial/duplicate handling; verify lost-response recovery without another POST and abandoned-preview cancellation. Passed 27 focused tests and all 12 browser cases.
-- [ ] U3: 18 theme families in Settings with light/dark adaptation, early device-local persistence and contrast checks; one genuinely circular mode button with keyboard/reduced-motion behavior.
+- [x] U3: 18 adapted theme families in Settings, build-time palette CSS/early allowlisted preference, device-local persistence and one 44×44 circular mode control. Passed 19 palette/bootstrap tests and four real desktop/mobile appearance/interface journeys, including every family/mode, reload/logout and reduced motion.
 - [ ] U4: new Finanzguru-inspired cards/dashboard/compact mobile navigation; make category purpose, real monthly totals/counts and management clear, with empty/error/loading/uncategorized states.
 - [ ] U5: update user guide/evidence, finish feature checks, open PR and verify full CI; obtain new action-specific merge/rollout approvals.
 

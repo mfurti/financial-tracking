@@ -1,3 +1,5 @@
+import { appearanceBootstrap, appearanceStyleSheet } from './app/utils/appearance';
+
 export default defineNuxtConfig({
   compatibilityDate: '2026-11-06',
   modules: ['@nuxt/ui'],
@@ -12,5 +14,12 @@ export default defineNuxtConfig({
     trustedProxyHost: 'traefik',
     public: { apiBase: '/api/v1' },
   },
-  app: { head: { htmlAttrs: { lang: 'de' }, title: 'Haushaltsbuch' } },
+  app: {
+    head: {
+      htmlAttrs: { lang: 'de' },
+      title: 'Haushaltsbuch',
+      script: [{ key: 'appearance-preference', innerHTML: appearanceBootstrap() }],
+      style: [{ key: 'appearance-palettes', innerHTML: appearanceStyleSheet() }],
+    },
+  },
 });

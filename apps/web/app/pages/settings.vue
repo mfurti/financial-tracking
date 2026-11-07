@@ -41,6 +41,7 @@ onBeforeUnmount(
       <p class="muted">Bewusst einfach. Vollständig unter deiner Kontrolle.</p>
     </div>
   </div>
+  <AppearanceSettings />
   <section class="panel">
     <dl class="detail-list">
       <dt>Benutzer</dt>

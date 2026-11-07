@@ -1,5 +1,12 @@
 # Implementation evidence
 
+## U3 — Theme families and circular mode control (2026-11-07)
+
+- U2 commit: `5772824`. Added 18 app-adapted families in Settings, each supporting light and dark. Static CSS is generated from one typed catalog at build time; an allowlisted early script restores the device palette before mounting. Only palette identity is stored; there is no server/profile schema change.
+- A single native 44×44 button with 50% radius displays one mode symbol. Removed the slider/second mode surface; retained keyboard focus, persisted/system mode and reduced-motion behavior. Settings also permits returning to system brightness. Semantic income/expense colors are independent of branding.
+- All family text, secondary text, actions, button text and income/expense token pairs measured at least 4.5:1 against both card/canvas backgrounds. The initial Solarized dark action failed at 4.12:1; its adapted accent was brightened and all 19 palette/bootstrap tests passed. This is palette proof, not a blanket accessibility certification.
+- Production build, lint and strict types passed. Four real browser cases passed: every family in both modes on Settings, persisted selection after reload/logout/login page, both default themes across all pages, square circular bounds, keyboard focus and zero-motion behavior on desktop/mobile. Synthetic Dracula Settings and circular login views visually inspected. Server remains unchanged pending this feature's own delivery approval.
+
 ## U2 — Upload directly to actual analytics (2026-11-07)
 
 - U1 plan/audit commit: `52525a6`. The user explicitly replaced routine confirmation with upload-and-analyze. Valid recognized CSV now stages server validation, commits with allowPartial=false and opens actual monthly analytics. Existing financial identity/reconciliation and cent precision are unchanged.

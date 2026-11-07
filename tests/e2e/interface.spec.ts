@@ -13,7 +13,11 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
   await page.keyboard.press('Space');
   await expect(page.locator('html')).not.toHaveClass(/dark/);
   await expect(theme).toBeFocused();
-  await expect(page.locator('.theme-toggle-thumb')).toHaveCSS('transition-duration', '0.24s');
+  await expect(page.locator('.theme-toggle svg')).toHaveCSS('transition-duration', '0.24s');
+  const circle = await theme.boundingBox();
+  expect(circle).not.toBeNull();
+  expect(circle!.width).toBe(circle!.height);
+  await expect(theme).toHaveCSS('border-radius', '50%');
   await page.reload();
   await expect(page.locator('html')).not.toHaveClass(/dark/);
   await theme.click();
@@ -23,7 +27,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await theme.click();
   await expect(page.locator('html')).not.toHaveClass(/dark/);
-  await expect(page.locator('.theme-toggle-thumb')).toHaveCSS('transition-duration', '0s');
+  await expect(page.locator('.theme-toggle svg')).toHaveCSS('transition-duration', '0s');
   await theme.click();
   await expect(page.locator('html')).toHaveClass(/dark/);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
@@ -64,7 +68,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
           /** Require the shared surfaces and text to follow the active theme. */ () =>
             getComputedStyle(document.body).backgroundColor,
         ),
-      ).toBe(mode === 'Dunkel' ? 'rgb(16, 25, 22)' : 'rgb(245, 246, 243)');
+      ).toBe(mode === 'Dunkel' ? 'rgb(19, 19, 31)' : 'rgb(246, 247, 251)');
       if (path.startsWith('/?'))
         await page.screenshot({ path: `.local/dashboard-${mode}-${info.project.name}.png`, fullPage: true });
     }

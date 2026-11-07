@@ -39,7 +39,9 @@ Die Importhistorie zeigt zusätzliche Prüfungen aus wiederholten oder überlapp
 
 ## Darstellung und Fehler
 
-Ein einzelner **Sonne/Mond-Button** wechselt auf der Anmeldeseite und in der Anwendung zwischen Hell und Dunkel. Ohne eigene Auswahl folgt die Darstellung deinem Gerät. Ein Klick speichert die gewünschte Darstellung auf diesem Gerät, auch nach Neuladen. Der Schieber und die Farben wechseln weich; bei der Geräteeinstellung „Bewegung reduzieren“ erfolgt der Wechsel ohne Animation. Der Button ist per Tabulator und Leertaste bedienbar; „Dunkelmodus gedrückt“ bedeutet, dass Dunkel aktiv ist.
+Ein einzelner **kreisrunder Sonne/Mond-Button** wechselt auf der Anmeldeseite und in der Anwendung zwischen Hell und Dunkel. Ohne eigene Auswahl folgt die Darstellung deinem Gerät. Ein Klick speichert die gewünschte Helligkeit auf diesem Gerät, auch nach Neuladen. Symbol und Farben wechseln weich; bei „Bewegung reduzieren“ erfolgt der Wechsel ohne Animation. Der Button ist per Tabulator und Leertaste bedienbar; „Dunkelmodus gedrückt“ bedeutet, dass Dunkel aktiv ist.
+
+Unter **Einstellungen → Farben & Darstellung** wählst du aus 18 Farbwelten, darunter VS Code Modern, GitHub, One Dark Pro, Dracula, Nord, Monokai, Solarized und Catppuccin. Die Farben sind für die App mit hellen und dunklen Gegenstücken angepasst. Auch diese Auswahl bleibt auf diesem Gerät gespeichert und gilt auf der Anmeldeseite. Über **Helligkeit → Wie mein Gerät** stellst du die automatische Systemwahl wieder her.
 
 Fehlerhafte Formularfelder werden markiert. Bei Servervalidierung springt der Tastaturfokus zum ersten betroffenen Feld. Korrigiere die Eingabe und sende erneut; gewöhnliche Formulare behalten ihren Entwurf. Passwörter, PIN und TAN werden nach einem Versuch gelöscht. Bei abgelaufener Sitzung ist eine neue Anmeldung erforderlich.
 

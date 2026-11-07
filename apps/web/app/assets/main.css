@@ -81,7 +81,7 @@ small {
   color: var(--muted);
 }
 .positive {
-  color: var(--green);
+  color: var(--positive, var(--green));
 }
 .negative {
   color: var(--negative);
@@ -618,49 +618,25 @@ small {
 .theme-toggle {
   position: relative;
   display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  justify-items: center;
+  place-items: center;
   flex-shrink: 0;
   align-items: center;
-  width: 80px;
+  width: 44px;
   height: 44px;
   padding: 4px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 50%;
   background: var(--soft);
   color: var(--ink);
   cursor: pointer;
-}
-.theme-toggle-thumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--surface);
-  box-shadow: 0 1px 5px var(--shadow);
-  transition: transform 240ms ease;
-}
-.theme-toggle.is-dark .theme-toggle-thumb {
-  transform: translateX(36px);
 }
 .theme-toggle svg {
   position: relative;
   width: 18px;
   height: 18px;
-  transition:
-    opacity 240ms ease,
-    transform 240ms ease;
-}
-.theme-toggle .theme-moon,
-.theme-toggle.is-dark .theme-sun {
-  opacity: 0.55;
-  transform: rotate(-20deg);
-}
-.theme-toggle.is-dark .theme-moon {
-  opacity: 1;
-  transform: rotate(0);
+  transition-property: opacity, transform;
+  transition-duration: 240ms;
+  transition-timing-function: ease;
 }
 html.theme-transition,
 html.theme-transition * {
@@ -668,19 +644,39 @@ html.theme-transition * {
   transition-duration: 240ms;
   transition-timing-function: ease;
 }
-html.theme-transition .theme-toggle-thumb {
-  transition-property: transform, background-color, box-shadow;
-}
 html.theme-transition .theme-toggle svg {
   transition-property: opacity, transform, color;
 }
 @media (prefers-reduced-motion: reduce) {
   html.theme-transition,
   html.theme-transition *,
-  .theme-toggle-thumb,
   .theme-toggle svg {
     transition: none !important;
   }
+}
+.appearance-preview {
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 20px;
+}
+.appearance-preview > div {
+  padding: 18px;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: center;
+}
+.appearance-preview span {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  grid-row: span 2;
+}
+.appearance-preview small {
+  display: block;
+  margin-top: 5px;
 }
 .field-help {
   display: block;
