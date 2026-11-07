@@ -8,6 +8,16 @@ PRs #4–#7 are merged. Current approved runtime is `a2ea7371b181ebbf92c17006b82
 
 The user's next review requests automatic upload/analysis, a Finanzguru-inspired redesign, a circular mode control, Settings theme families and understandable categories. These U1–U5 tasks are planned in ausbauplan.md and tracked in todo.md; they are not delivered merely because earlier UI tests passed. The records below preserve earlier rollout evidence.
 
+## Current experience revision: source acceptance
+
+Branch `codex/3-guided-finance-experience`; U1 `52525a6`, U2 `5772824`, U3 `79e0413`, U4 `4fdc508`. No new database migration or production change.
+
+- All 94 tests across 18 files passed, including exact-money/reconciliation, authentication/security, HTTP/contracts, encoding and 19 palette/bootstrap cases. Format, lint, strict types and production builds passed.
+- All 16 browser cases passed on populated desktop/mobile and accountless desktop/mobile instances. Covered upload-only analytics across more than 20 records and multiple months, lost-response recovery with one commit, format correction, missing mapping, explicit partial consent, late-preview cancellation, category assignment and resulting exact totals, month-read failure/retry, responsive navigation/keyboard, every bundled theme in both modes, persistence/reduced motion and existing overlap decisions.
+- Browser fixtures use real application authentication, APIs and disposable PostgreSQL. Fault/response-loss injection is explicit; bank protocol states remain synthetic and do not prove live Sparkasse compatibility. Populated desktop/mobile instances are isolated to preserve the unchanged login throttle.
+- Synthetic dashboard/category desktop and 360px mobile views were visually inspected in default light/dark; Dracula Settings inspected. Reviewable local captures: `.local/experience-dashboard-{desktop,mobile}.png`, `.local/experience-categories-{desktop,mobile}.png`, `.local/dashboard-{Hell,Dunkel}-{desktop,mobile}.png` and `.local/settings-dracula-{desktop,mobile}.png`. Images contain no real banking data and are not shipped assets.
+- Actual original CSV, joint everyday-use review, FinTS registration/confirmed endpoint/live acceptance, credential-scope review and separately authorized host reboot remain open. This revision still needs its own PR CI, merge decision and server rollout decision. Production remains `a2ea737` until an explicitly approved rollout completes.
+
 ## Source increments
 
 | Increment                           | Commit               | Evidence                                                                                                                                                       |

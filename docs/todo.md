@@ -128,7 +128,9 @@ P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verif
 - [x] U2: upload-and-analyze happy path, Sparkasse purpose precedence, optional full-file period in shared response/runtime/OpenAPI and actual monthly analytics. Retain exception/partial/duplicate handling; verify lost-response recovery without another POST and abandoned-preview cancellation. Passed 27 focused tests and all 12 browser cases.
 - [x] U3: 18 adapted theme families in Settings, build-time palette CSS/early allowlisted preference, device-local persistence and one 44×44 circular mode control. Passed 19 palette/bootstrap tests and four real desktop/mobile appearance/interface journeys, including every family/mode, reload/logout and reduced motion.
 - [x] U4: new Finanzguru-inspired cards/dashboard/compact mobile navigation; category purpose, real monthly totals/counts and secondary management, with empty/error/loading/uncategorized states. Verified real assignments, failed-month retry, mobile disclosure/focus and synthetic responsive views; separate browser test instances preserve production login limits.
-- [ ] U5: update user guide/evidence, finish feature checks, open PR and verify full CI; obtain new action-specific merge/rollout approvals.
+- [x] U5 source checks: update user guide/evidence, pass all 94 tests and 16 browser cases, format/lint/types/production build. U1 `52525a6`, U2 `5772824`, U3 `79e0413`, U4 `4fdc508`.
+- [ ] U5 delivery: open this revision's feature PR and verify its full CI. Current remote status is recorded in issue #3.
+- [ ] Obtain new action-specific merge/rollout approvals and separately verify any approved production change; current production remains `a2ea737`.
 
 Still external: real-file/joint acceptance, own FinTS registration plus bank-confirmed endpoint/live test, registry minimum-scope review and separately approved shared-host reboot. These are not silently marked done by this UI revision.
 

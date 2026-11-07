@@ -1,5 +1,10 @@
 # Implementation evidence
 
+## U5 — Integrated source verification (2026-11-07)
+
+- U4 commit: `4fdc508`. All 94 tests and all 16 browser cases passed after isolating populated browser fixtures; production authentication was unchanged. Final format/lint/strict types and production build passed. User guidance now explains the app's purpose, month-versus-bank balances, compact navigation, upload-only analysis, themes and the real category-assignment workflow.
+- Source acceptance and limitations recorded in stage-one-acceptance.md. Plan and checklist preserve outstanding original-file/user/operator prerequisites. CI/PR results and subsequent action-specific approvals are recorded in issue #3; source tests alone do not authorize merge or production changes.
+
 ## U4 — Monthly overview, clear categories and compact navigation (2026-11-07)
 
 - U3 commit: `79e0413`. Replaced the sidebar/header hierarchy, added a compact native-disclosure mobile navigation and reusable local SVG icons. Monthly net is prominent, with income/expenses and actual data scope; source bank balances remain separately labeled. The shared expense chart links to real booked non-transfer expenses in the same month, including the explicit uncategorized bucket.
