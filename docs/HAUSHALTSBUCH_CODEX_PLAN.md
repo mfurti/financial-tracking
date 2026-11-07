@@ -1,10 +1,18 @@
 # Haushaltsbuch – verbindlicher Umsetzungsplan für Codex
 
-> **Aktueller Stand, 2026-11-07:** Stufe 1 ist implementiert und bis PR #7 als `a2ea737` auf rocky ausgerollt. Die gemeinsame Abnahme ist offen. Die nachfolgenden ursprünglichen Prüflisten dokumentieren den Planungsstand; tatsächliche Erledigung und Prüfungen stehen in [todo.md](todo.md), [progress.md](progress.md) und [stage-one-acceptance.md](stage-one-acceptance.md).
+> **Geprüfter Dokumentationsstand, 2026-11-07:** PR #8/#9 sind zusätzlich gemergt und als `1e33afa` auf rocky ausgerollt; 95 Tests, 16 Browserfälle und Wiederherstellung sind belegt. Die gemeinsame Abnahme und Originaldatei-Abnahme bleiben offen. Der neue Auftrag verwendet **Finanzfluss Copilot als Hauptvorbild** und ergänzt konsequente Nuxt-UI-Bedienelemente, Analysen, Verträge und Theme-Kacheln. Fehlende Funktionen und historische Erledigungen sind in [todo.md](todo.md) getrennt; dieser Abgleich implementiert keine neuen Funktionen.
 >
 > **Ursprüngliche Planungsgrenze:** Beim damaligen Anlegen dieses Dokuments waren Änderungen und Serverzugriffe ausgeschlossen. P0 und Stufe 1 wurden anschließend ausdrücklich beauftragt; neue Merge-/Rollout-Aktionen benötigen weiterhin ihre jeweilige Freigabe.
 
-## Aktuelle Ergänzung: einfach hochladen, verstehen und auswerten
+## Neuer Nutzerauftrag: Finanzfluss, Nuxt UI und verständliche Auswertungen
+
+Der Nutzer verlangt die Prüfung der offenen Aufgaben und sagt Go zum beschriebenen Ausbau: alle Bedienelemente konsistent aus Nuxt UI; Datumswahl nach dem offiziellen InputDate-Beispiel; Theme-Kacheln wie im lokalen Habit Tracker und alle sechs Ayu-Varianten; klare Importklärung und Kategorienregeln; Analysen mit Durchschnitt, Trend und Aufteilung; echte Vertrags-/Abo-/Mietübersicht. Finanzfluss ersetzt Finanzguru als Hauptreferenz für den nächsten Ausbau. Das ist kein Auftrag zum Wechsel auf eine andere UI-Bibliothek.
+
+Die Anforderungen N1–N8 in todo.md beschreiben den geprüften fehlenden Umfang. Für neue Auswertungssemantik, gemeinsame Zod/API-Verträge und Vertragspersistenz ist vor der Umsetzung ein detaillierter Plan im Planmodus nach coding-workflow nötig. Der bisherige Budget-Zwischenschritt ist keine Voraussetzung für den jetzt ausdrücklich gewünschten Vertragsausbau; Budgets selbst bleiben eigener Rückstand. Keine neue Serveränderung, kein Merge/Rollout, Bankzugriff oder Neustart ist allein mit diesem Dokumentationsabgleich freigegeben.
+
+Referenzen: [Finanzfluss Budget-Analyse](https://www.finanzfluss.de/copilot/hilfe/budget/), [Nuxt UI InputDate als Datepicker](https://ui.nuxt.com/docs/components/input-date#as-a-date-picker), [Ayu-Varianten](https://github.com/ayu-theme/vscode-ayu). Lokales Kachelvorbild: `V:/GitHub/habit-tracker/web/app/pages/theme.vue` und `ThemePreview.vue`; keine Habit-Tracker-Dateien wurden verändert.
+
+## Umgesetzte Ergänzung bis PR #8/#9: einfach hochladen, verstehen und auswerten
 
 Der Nutzer beauftragt die Umsetzung dieser Ergänzung im bestehenden Stufe-1-Auftrag. Sie konkretisiert die bisherigen Import- und UI-Anforderungen und ersetzt die zusätzliche Bestätigung im fehlerfreien Standardimport. Stufe 2/3 bleiben gesondert freizugeben.
 

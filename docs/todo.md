@@ -1,8 +1,28 @@
 # Expansion implementation checklist
 
-Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). Stage 1 of [issue #3](https://github.com/mfurti/financial-tracking/issues/3) is approved; PRs #4–#7 are merged. Deployment checkpoint before PR #8: `a2ea737`, web `.33`, runtime-only server. The user explicitly requested the U1–U5 experience revision below and authorized PR #8 merge/rollout after green CI. Current delivery, image publication and target verification are recorded in issue #3. Real-bank acceptance and host reboot retain separate approvals. Stages 2/3 remain gated.
+Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). [Issue #3](https://github.com/mfurti/financial-tracking/issues/3) remains open. PRs #4–#9 are merged; the last verified deployment is `1e33afa517c968edf6ef969c1e3f841a2db16c20`, web `.33`, runtime-only server. The new user instruction selects Finanzfluss Copilot as the primary reference and requests Nuxt UI consistency, analyses, contracts and theme tiles. The source audit below separates these missing features from earlier delivery. Budgets remain separate backlog; real-bank access, host reboot and any new rollout retain their own gates.
 
 The previous checklist, including the audited delivery evidence and remaining baseline checks, is preserved in [initial-implementation-checklist.md](initial-implementation-checklist.md). Its open work is carried into the tasks below; checked historical implementation is not proof of expansion acceptance.
+
+## Current source audit — 2026-11-07
+
+- [x] Check source/routes/schema against the new request: existing analytics is one monthly report; category CRUD exists. Range analyses, categorization rules and contract models/routes/pages do not exist.
+- [x] Correct delivery status using recorded evidence: PR #8 `f1b3e78` and PR #9 `1e33afa` merged/deployed; [main CI 42417004125](https://github.com/mfurti/financial-tracking/actions/runs/42417004125) passed 95 tests, 16 browser cases, operations/recovery and publication. Fresh write-stopped backup restored in nine seconds, all 14 tables preserved, 103-second pause, four healthy services. Encrypted current configuration was explicitly approved, copied off-server and authenticated. This audit did not rerun those checks or access production.
+- [x] Identify unfinished Nuxt UI adoption: native selects/date/month/checkbox/disclosure controls remain in transactions, CSV import, import clarification, bank connections, account assignment, category management, Settings and navigation. Earlier redesign completion does not mean all controls are Nuxt UI.
+- [x] Compare the local Habit Tracker reference: theme cards have actual color previews and selection indicators. Financial Tracking still uses a select and one generic Ayu family.
+
+### Requested next product work — not implemented
+
+- [ ] N1 — Consistent Nuxt UI controls throughout the application, including searchable long selections, validation, disabled/loading/error states, confirmations, keyboard focus and compact mobile navigation. Preserve the circular mode button and import/assignment/partial-consent behavior.
+- [ ] N2 — Date selection following the official InputDate “As a date picker” example: German `UInputDate`, `UPopover`, `UCalendar`; range selection where needed and clear monthly report selection. Preserve calendar dates without timezone shifts, clearing, URL filters and keyboard/mobile behavior.
+- [ ] N3 — Theme cards like the Habit Tracker, with faithful mini previews, a visible selection indicator and device persistence. Include Ayu Light, Mirage and Dark, each bordered/unbordered; retain saved preferences, mode toggle, contrast and reduced motion.
+- [ ] N4 — A dedicated Analyses page: 3/6/12-month and chosen-period views, average expenses, comparable trends in euros/percent, category distribution and drill-down into the underlying transactions. Specify missing/incomplete months and zero comparison bases; preserve exact cents, transfer/pending exclusion and accountless records. Distinguish confirmed fixed costs from unclassified spending.
+- [ ] N5 — Keep existing category management; add useful category templates and deterministic assignment rules with visible reasons. Preserve manual assignments, avoid guessing ambiguous categories and explain why a booking remains uncategorized.
+- [ ] N6 — Contracts for subscriptions, rent, insurance, energy, internet and other recurring payments: real persistence, create/edit/end, intervals, next payment, monthly/yearly equivalents and user-entered cancellation data. Recurrence suggestions need sufficient evidence and confirmation; actual transactions remain separate and must not be counted twice. Reuse the recurrence requirements below without requiring unrelated budget implementation first.
+- [ ] N7 — Finanzfluss-inspired navigation: Overview, Transactions, Analyses, Contracts, More. Put category analysis under Analyses and make import a reachable action. Replace vague import “checks” with specific “bookings to clarify,” showing the reason, candidates and consequences; known duplicates remain automatic, uncertain matches remain explicit.
+- [ ] N8 — Detailed implementation plan/task record, API/shared-Zod/OpenAPI review, reviewed additive migration where needed, preservation tests, complete UI journeys and synthetic visual acceptance. Scoped commits and PR; new merge/rollout approval applies only to that concrete revision. No real bank access or server source checkout.
+
+The user explicitly said Go for this expansion. A decision-complete plan for its new analysis/API/contract persistence is still required by coding-workflow before feature implementation; the list above records requested outcomes and audited gaps. It does not claim implementation, blanket Stage 1 acceptance or deployment approval.
 
 ## Current baseline and gates
 
@@ -68,7 +88,8 @@ P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verif
 
 ### P1.3 — Calm, responsive interface and themes
 
-- [x] Redesign the application shell/navigation and all ledger pages with consistent Nuxt UI components, typography, spacing, and feedback.
+- [x] Deliver the initial application shell/cards/ledger-page redesign, typography, spacing and feedback.
+- [ ] Finish consistent Nuxt UI adoption for all user-facing controls; the audited native controls are tracked in N1/N2. The initial redesign did not complete this requirement.
 - [x] Redesign dashboard month selection, income/expense/net, category breakdown, recent activity, and outstanding reviews. Distinguish authoritative balances from incomplete transaction totals.
 - [x] Make "Ohne Konto", later assignment, and reconciliation choices clear in normal/empty/first-run workflows.
 - [x] Improve transaction filters and bulk actions; use mobile lists/cards instead of page-wide overflowing tables.
@@ -139,7 +160,7 @@ Still external: real-file/joint acceptance, own FinTS registration plus bank-con
 
 - [x] D1: support the user's confirmed Sparkasse `TT.MM.JJ` dates (booking and value date, explicit 2000–2099), retain strict calendar checks and existing formats; update guidance and parser/real-upload regression evidence. All 95 tests and four focused desktop/mobile import cases passed; format/lint/types/build passed.
 
-D2 delivery gate: the narrow correction needs full CI and its own PR merge/rollout approval. PR #8 is merged as `f1b3e78`; its target switch is held before the maintenance pause until this confirmed normal-import blocker is corrected. The current open/completed delivery checklist and actual target revision are maintained in [issue #3](https://github.com/mfurti/financial-tracking/issues/3), including publication, fresh write-stopped backup/recovery and all-table preservation. Source completion is not rollout proof.
+- [x] D2 delivery: approved PR #9 merged as `1e33afa`; combined PR #8/#9 rollout completed after successful main CI 42417004125, fresh write-stopped backup/recovery and all-table preservation. The intermediate PR #8-only rollout was intentionally skipped. Current encrypted runtime configuration is also verified off-server. Evidence: issue #3 and the current audit above.
 
 ## Stage 2 — Monthly category budgets
 
@@ -155,7 +176,7 @@ Dependencies: explicit Stage 1 acceptance and separate implementation approval.
 
 ## Stage 3 — Recurring-expense planning
 
-Dependencies: explicit Stage 2 acceptance and separate implementation approval.
+Historical sequence: this originally depended on Stage 2 acceptance. The new explicit contracts request is tracked in N6 and does not require unrelated budgets first. Retain the following financial recurrence requirements in its detailed plan; this source audit does not implement them.
 
 - [ ] Define shared contracts/persistence and reviewed migration for amount, category, start, optional end, and monthly/quarterly/yearly intervals.
 - [ ] Decide end-date inclusivity and handling of partial/combined payments; default to explicit 1:1 matching, without implementing these features during Stage 1.
@@ -168,7 +189,7 @@ Dependencies: explicit Stage 2 acceptance and separate implementation approval.
 
 ## Completion rules
 
-- [ ] Complete only work backed by actual code/checks/recorded acceptance; this documentation commit does not complete expansion work.
-- [ ] Preserve existing user/financial data and explicitly document any compatibility limit or external bank blocker.
-- [ ] Keep the server deployment-only and all source development local; verify no repository or build dependency remains on rocky after the approved transition.
-- [ ] Report current activity, remaining work, and required user actions at handoffs; do not claim background work that is not running.
+- Complete only work backed by actual code/checks/recorded acceptance; this documentation audit does not complete the new features.
+- Preserve existing user/financial data and explicitly document any compatibility limit or external bank blocker.
+- Keep the server deployment-only and all source development local; verify no repository or build dependency remains on rocky after any approved transition.
+- Report current activity, remaining work, and required user actions at handoffs; do not claim background work that is not running.

@@ -1,5 +1,12 @@
 # Implementation evidence
 
+## Checklist audit and new Finanzfluss requirements (2026-11-07)
+
+- Audited source, routes/schema, theme catalog, the local Habit Tracker tile reference, recorded PR #8/#9 delivery and issue #3. Corrected stale a2ea737/held-rollout headers to the recorded 1e33afa deployment. No fresh server check, original-file acceptance or application test is claimed.
+- Reopened the overstated full Nuxt UI control requirement: selects/date/month/checkbox/disclosure controls still exist outside Nuxt UI. Existing category CRUD/monthly reporting are present; range analyses, categorization rules and contract persistence/routes/pages are absent. Theme selection remains a dropdown with one generic Ayu family.
+- Recorded requested outcomes N1–N8, with Finanzfluss as the new primary reference, Nuxt date picker, Habit-Tracker-style tiles/all six Ayu variants, clear import clarification, analyses and contracts. Kept budgets independent and real-bank/credential/reboot/original-file/joint-acceptance tasks open. Converted ongoing completion rules from false unfinished-feature checkboxes into rules.
+- This increment changes documentation only. Detailed planning for new analysis/API/contract semantics must occur in actual Plan mode per coding-workflow before feature implementation; no application, migration, dependency, server or Habit Tracker source changed.
+
 ## D1 — Confirmed Sparkasse short-year dates (2026-11-07)
 
 - Read-only aggregate diagnostics showed 74 invalid booking dates; no source values were exposed. The user confirmed `TT.MM.JJ`. Added explicit 2000–2099 normalization to the existing shared booking/value-date parser, preserving strict calendar validation, four-digit historical/ISO input, exact money, financial identity and CSV_INVALID_ROW partial-consent classification. Help and safe errors explain the supported formats/century.
