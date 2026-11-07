@@ -277,6 +277,13 @@ export const apiContracts: Record<string, ApiContract> = {
     status: 200,
     public: true,
   },
+  readiness: {
+    method: 'get',
+    path: '/health/ready',
+    response: z.object({ status: z.literal('ok') }),
+    status: 200,
+    public: true,
+  },
   login: {
     method: 'post',
     path: '/auth/login',

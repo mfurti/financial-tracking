@@ -24,7 +24,7 @@ Ongoing rules: develop source locally only; never store real PIN/TAN in chat, so
 - [x] Run baseline lint, all 26 tests on disposable PostgreSQL, strict typechecks, production builds, and both desktop/mobile browser profiles. Record the pre-existing user-plan formatting failure separately.
 - [x] Consolidate stricter user-plan requirements, Stage 2 refund semantics, and later recurrence decisions without implementing later-stage features.
 - [x] Record the prioritized file/dependency/check matrix and baseline evidence in [progress.md](progress.md#p0--expansion-baseline-2026-11-07).
-- [ ] Commit the validated P0 documentation before feature implementation.
+- [x] Commit the validated P0 documentation before feature implementation: `e2e4963`.
 
 ## Stage 1 — Complete and validate the ledger
 

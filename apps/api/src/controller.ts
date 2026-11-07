@@ -4,6 +4,8 @@ import { createZodDto } from 'nestjs-zod';
 import { loginSchema, sessionSchema, passwordChangeSchema } from '@financial-tracking/contracts';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.js';
+import { type Db } from './db.js';
+import { AppError } from './errors.js';
 
 /** Login contract adapter; shared fields are defined only in contracts. */
 class LoginDto extends createZodDto(loginSchema) {}
@@ -14,12 +16,29 @@ class SessionDto extends createZodDto(sessionSchema) {}
 @Controller()
 export class RootController {
   /** Receive session management without implicit reflection dependencies. */
-  constructor(@Inject(AuthService) private readonly auth: AuthService) {}
+  constructor(
+    @Inject(AuthService) private readonly auth: AuthService,
+    @Inject('DB') private readonly db: Db,
+  ) {}
 
   /** Liveness only; does not disclose environment or financial data. */
   @Get('health')
   health() {
     return { status: 'ok' };
+  }
+
+  /** Verify database readiness without exposing queries, configuration, or records. */
+  @Get('health/ready')
+  async ready() {
+    try {
+      await this.db.$transaction(
+        /** Bound the probe independently of long import transactions. */ async (tx) => tx.$queryRaw`SELECT 1`,
+        { maxWait: 1000, timeout: 2000 },
+      );
+      return { status: 'ok' };
+    } catch {
+      throw new AppError('NOT_READY', 'Dienst vorübergehend nicht bereit.', 503);
+    }
   }
 
   /** Authenticate and return the shared session transport. */

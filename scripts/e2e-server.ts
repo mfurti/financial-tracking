@@ -44,7 +44,13 @@ const compiledDb = createDb(resource.url);
 const service = await createApp(compiledDb);
 await service.app.listen(4321, '127.0.0.1');
 const web = spawn(process.execPath, ['apps/web/.output/server/index.mjs'], {
-  env: { ...process.env, PORT: '4320', HOST: '127.0.0.1', NUXT_API_INTERNAL_URL: 'http://127.0.0.1:4321' },
+  env: {
+    ...process.env,
+    PORT: '4320',
+    HOST: '127.0.0.1',
+    NUXT_API_INTERNAL_URL: 'http://127.0.0.1:4321',
+    NUXT_REQUIRE_TRUSTED_PROXY: 'false',
+  },
   stdio: ['ignore', 'pipe', 'pipe'],
   windowsHide: true,
 });

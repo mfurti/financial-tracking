@@ -3,7 +3,7 @@
 Restore into a **new empty PostgreSQL database**, never over an existing database. Keep the running server and its volumes intact until the replacement has been verified. The restore script checks that the public schema has no tables and refuses a nonempty target.
 
 1. Prepare an isolated Linux/Docker environment with PostgreSQL 17 and a new empty database. Use a distinct Compose project/volume, private bind address, and backup output directory; do not point it at production services.
-2. Recover the database password/configuration, chosen encrypted archive, and private age identity. Mount the archive and identity read-only into a temporary container built from `infrastructure/backup/Dockerfile`; mount the target's password at `/run/secrets/db_password`.
+2. Recover the database password/configuration, chosen encrypted archive, private age identity, and the recorded compatible deployment bundle/image digests. Pull the backup image from that bundle; never clone/build a repository on the recovery server. Mount the archive and identity read-only into its temporary container, with the empty target's password at `/run/secrets/db_password`.
 3. Set PGHOST, PGUSER, and PGDATABASE to that explicitly empty target. Execute:
 
 ```sh

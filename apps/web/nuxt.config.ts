@@ -5,6 +5,11 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   telemetry: false,
   css: ['~/assets/main.css'],
-  runtimeConfig: { apiInternalUrl: 'http://127.0.0.1:3001', public: { apiBase: '/api/v1' } },
+  runtimeConfig: {
+    apiInternalUrl: 'http://127.0.0.1:3001',
+    requireTrustedProxy: process.env.NODE_ENV === 'production',
+    trustedProxyHost: 'traefik',
+    public: { apiBase: '/api/v1' },
+  },
   app: { head: { htmlAttrs: { lang: 'de' }, title: 'Haushaltsbuch' } },
 });

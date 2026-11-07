@@ -36,7 +36,56 @@ jobs:
   operations:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      EXPORT_VERIFIED_IMAGES: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '1' || '0' }}
     steps:
       - uses: actions/checkout@v4
       - run: mkdir -p .local
       - run: bash scripts/verify-operations.sh
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: verified-images-${{ github.sha }}
+          path: .local/verified-images/images.tar.gz
+          retention-days: 1
+          if-no-files-found: error
+          include-hidden-files: true
+  publish:
+    needs: [verify, operations]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-images-${{ github.sha }}
+          path: .local/verified-images
+      - run: gzip -dc .local/verified-images/images.tar.gz | docker load
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the exact tested images and create a deployment-only bundle
+        shell: bash
+        run: |
+          bash scripts/publish-images.sh
+          source .local/published-images.env
+          node scripts/package-deployment.mjs --revision "$GITHUB_SHA" --output ".local/release/$GITHUB_SHA" --api "$API_IMAGE" --web "$WEB_IMAGE" --backup "$BACKUP_IMAGE"
+          tar -czf ".local/financial-tracking-$GITHUB_SHA.tar.gz" -C ".local/release/$GITHUB_SHA" .
+          printf '### Published tested image digests\n```text\n' >> "$GITHUB_STEP_SUMMARY"
+          cat .local/published-images.env >> "$GITHUB_STEP_SUMMARY"
+          printf '```\n' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: financial-tracking-deployment-${{ github.sha }}
+          path: .local/financial-tracking-${{ github.sha }}.tar.gz
+          retention-days: 30
+          if-no-files-found: error
+          include-hidden-files: true

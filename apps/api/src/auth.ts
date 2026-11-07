@@ -149,7 +149,11 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest<FastifyRequest>();
     const pathname = req.url.split('?')[0];
-    if (pathname === '/api/v1/health' || (pathname === '/api/v1/auth/login' && req.method === 'POST')) return true;
+    if (
+      (req.method === 'GET' && (pathname === '/api/v1/health' || pathname === '/api/v1/health/ready')) ||
+      (pathname === '/api/v1/auth/login' && req.method === 'POST')
+    )
+      return true;
     await this.auth.authenticate(req);
     return true;
   }

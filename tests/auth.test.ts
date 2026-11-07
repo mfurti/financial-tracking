@@ -4,6 +4,7 @@ import { passwordHash } from '../apps/api/src/auth.js';
 import { testDatabase } from './database.js';
 import { ImportService } from '../apps/api/src/imports.js';
 import { apiContracts } from '../packages/contracts/src/index.js';
+import type { Db } from '../apps/api/src/db.js';
 
 describe('private API authentication', /** Exercise sessions with real persisted token hashes. */ () => {
   let resource: Awaited<ReturnType<typeof testDatabase>>;
@@ -38,6 +39,29 @@ describe('private API authentication', /** Exercise sessions with real persisted
         })
       ).statusCode,
     ).toBe(403);
+  });
+  it('reports bounded database readiness separately from liveness', /** Health errors must never disclose database details. */ async () => {
+    const request = { method: 'GET' as const, url: '/api/v1/health/ready' };
+    expect((await service.app.inject(request)).json()).toEqual({ status: 'ok' });
+    const failure = await createApp(
+      {
+        /** Model a failing dependency without mutating the real Prisma proxy shared by other tests. */
+        async $transaction() {
+          throw new Error('synthetic-private-db-secret');
+        },
+      } as unknown as Db,
+      false,
+    );
+    await failure.app.getHttpAdapter().getInstance().ready();
+    try {
+      const response = await failure.app.inject(request);
+      expect(response.statusCode).toBe(503);
+      expect(response.body).not.toContain('synthetic-private-db-secret');
+      expect((await service.app.inject({ method: 'GET', url: '/api/v1/health' })).statusCode).toBe(200);
+    } finally {
+      await failure.app.close();
+    }
+    expect((await service.app.inject(request)).statusCode).toBe(200);
   });
   it('creates a hashed session with secure cookie attributes and shared response', /** Authentication exposes no database tokens. */ async () => {
     const response = await service.app.inject({

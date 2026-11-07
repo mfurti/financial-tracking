@@ -12,6 +12,9 @@ RUN pnpm rebuild argon2 esbuild @prisma/engines prisma vue-demi && pnpm db:gener
 RUN pnpm --filter api deploy --legacy --prod /out
 
 FROM node:24.22.1-bookworm-slim AS api
+ARG VCS_REF=development
+LABEL org.opencontainers.image.source="https://github.com/mfurti/financial-tracking" \
+      org.opencontainers.image.revision="$VCS_REF"
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3001
 WORKDIR /app
@@ -21,6 +24,9 @@ ENTRYPOINT ["node", "bootstrap.mjs"]
 CMD ["serve"]
 
 FROM node:24.22.1-bookworm-slim AS web
+ARG VCS_REF=development
+LABEL org.opencontainers.image.source="https://github.com/mfurti/financial-tracking" \
+      org.opencontainers.image.revision="$VCS_REF"
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
 WORKDIR /app
 COPY --from=build --chown=node:node /workspace/apps/web/.output /app/.output
