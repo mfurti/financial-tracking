@@ -16,7 +16,7 @@ This record separates implemented source from external/live acceptance. Stage 2 
 
 The CI publisher intentionally skips feature branches. Green feature CI does not mean production images were published or the server was updated.
 
-Source review: [PR #4](https://github.com/mfurti/financial-tracking/pull/4), still open and unmerged. The parallel push run at `78f3371` exposed an intermittent detail-navigation failure despite the green PR run. Investigation reproduced a stale list response rewriting a detail URL. Its scoped fix/regression requires fresh current-head CI; the green historical run is not substituted for that proof.
+Source review: [PR #4](https://github.com/mfurti/financial-tracking/pull/4), still open and unmerged. The parallel push run at `78f3371` exposed an intermittent detail-navigation failure despite the green PR run. Investigation reproduced a stale list response rewriting a detail URL. The correction `7754522` passed both [push CI](https://github.com/mfurti/financial-tracking/actions/runs/42386882489) and [PR CI](https://github.com/mfurti/financial-tracking/actions/runs/42386886259), including 61 tests, eight browser cases and expanded Linux operations. The final documentation-only head is verified separately before handoff.
 
 ## Target backup recovery, 2026-11-07
 
