@@ -55,6 +55,9 @@ missing=json.loads(json.dumps(d)); missing['secrets']['db_password']['file']=str
 registry=json.loads(json.dumps(d)); registry['services']['web']['image']='127.0.0.1:1/unavailable@sha256:'+'0'*64
 (p/'registry.json').write_text(json.dumps(registry))
 PY
+# Exercise the publisher's registry-manifest format against the already pinned public database image.
+postgres_reference="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["services"]["postgres"]["image"])' "$ops_dir/resolved.json")"
+docker buildx imagetools inspect "$postgres_reference" --format '{{json .Manifest}}' | python3 -c 'import json,re,sys; digest=json.load(sys.stdin)["digest"]; assert re.fullmatch(r"sha256:[a-f0-9]{64}",digest); assert digest == sys.argv[1].split("@",1)[1]' "$postgres_reference"
 compose=(docker compose --project-name "$project" -f "$ops_dir/compose.json")
 cleanup() {
  docker rm -f "$restore_web" "$restore_api" "$restore_name" >/dev/null 2>&1 || true
