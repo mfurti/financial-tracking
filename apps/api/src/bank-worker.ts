@@ -1,10 +1,10 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { randomUUID } from 'node:crypto';
-import { FinTSClient, FinTSConfig, type ClientResponse, type BankingInformation } from 'lib-fints';
+import { FinTSClient, FinTSConfig, type ClientResponse } from 'lib-fints';
 import { z } from 'zod';
 import { dateSchema, challengeInputSchema } from '@financial-tracking/contracts';
 import { stableReference } from './csv.js';
-import { authorizeBank, libraryCents } from './bank-authorization.js';
+import { authorizeBank, libraryCents, transientSecrets } from './bank-authorization.js';
 
 const input = z
   .object({
@@ -15,12 +15,13 @@ const input = z
     toDate: dateSchema,
     endpoint: z.url(),
     productId: z.string(),
-    metadata: z.unknown().optional(),
     tanMethodId: z.number().optional(),
     tanMediaName: z.string().optional(),
   })
   .parse(workerData);
 const originalFetch = globalThis.fetch;
+const secrets = transientSecrets(input.pin);
+const publicText = secrets.publicText;
 // The library has no timeout/cancel injection. This worker confines its transport to the configured endpoint.
 globalThis.fetch =
   /** Reject redirects, unexpected destinations, excessive responses, and stalled bank requests. */ async (
@@ -55,7 +56,7 @@ const config = FinTSConfig.forFirstTimeUse(
   input.pin,
 );
 config.debugEnabled = false;
-if (input.metadata) config.bankingInformation = input.metadata as BankingInformation;
+// Discover fresh protocol parameters each manual run; never persist raw BPD/UPD or bank messages.
 const client = new FinTSClient(config);
 
 /** Wait for exactly one validated authorization response. */
@@ -64,8 +65,11 @@ async function answer() {
     /** Parent messages never enter persistent storage. */ (resolve) => {
       parentPort!.once(
         'message',
-        /** Validate before selecting methods or sending TAN values. */ (value: unknown) =>
-          resolve(challengeInputSchema.parse(value)),
+        /** Validate and retain redaction knowledge only in the credential-owning worker. */ (value: unknown) => {
+          const submitted = challengeInputSchema.parse(value);
+          if (submitted.tan) secrets.remember(submitted.tan);
+          resolve(submitted);
+        },
       );
     },
   );
@@ -80,6 +84,7 @@ function authorized<T extends ClientResponse>(
     config,
     pin: input.pin,
     answer,
+    publicText,
     /** Publish only the same safe public challenge as before extraction. */
     challenge: (data) => parentPort!.postMessage({ kind: 'challenge', data }),
     /** Signal that the worker is continuing the existing bank dialog. */
@@ -92,8 +97,11 @@ try {
     /** Continue an initialization requiring TAN. */ (reference, tan) => client.synchronizeWithTan(reference, tan),
   );
   const methods = config.availableTanMethods;
-  if (input.tanMethodId) client.selectTanMethod(input.tanMethodId);
-  else if (methods.length === 1) client.selectTanMethod(methods[0]!.id);
+  if (input.tanMethodId) {
+    if (!methods.some(/** Only select a currently offered bank method. */ (method) => method.id === input.tanMethodId))
+      throw new Error('BANK_UNSUPPORTED');
+    client.selectTanMethod(input.tanMethodId);
+  } else if (methods.length === 1) client.selectTanMethod(methods[0]!.id);
   else if (methods.length > 1) {
     parentPort!.postMessage({
       kind: 'challenge',
@@ -101,16 +109,33 @@ try {
         type: 'SELECT_METHOD',
         message: 'TAN-Verfahren wählen.',
         methods: methods.map(
-          /** Expose only method identifiers and labels. */ (method) => ({ id: method.id, name: method.name }),
+          /** Offer only the bank's method/media choices without protocol objects. */ (method) => ({
+            id: method.id,
+            name: publicText(method.name).slice(0, 200),
+            media: method.activeTanMedia,
+            mediaRequired: method.tanMediaRequirement === 2,
+          }),
         ),
       },
     });
     const selected = await answer();
     if (!selected.tanMethodId) throw new Error('BANK_UNSUPPORTED');
     client.selectTanMethod(selected.tanMethodId);
-    if (selected.tanMediaName) client.selectTanMedia(selected.tanMediaName);
+    if (selected.tanMediaName) input.tanMediaName = selected.tanMediaName;
   }
-  if (input.tanMediaName) client.selectTanMedia(input.tanMediaName);
+  const selectedMethod = config.selectedTanMethod;
+  if (selectedMethod?.tanMediaRequirement === 2 && !input.tanMediaName) {
+    if (!selectedMethod.activeTanMedia.length) throw new Error('BANK_UNSUPPORTED');
+    parentPort!.postMessage({
+      kind: 'challenge',
+      data: { type: 'SELECT_MEDIA', message: 'TAN-Medium wählen.', media: selectedMethod.activeTanMedia },
+    });
+    input.tanMediaName = (await answer()).tanMediaName;
+  }
+  if (input.tanMediaName) {
+    if (!selectedMethod?.activeTanMedia.includes(input.tanMediaName)) throw new Error('BANK_UNSUPPORTED');
+    client.selectTanMedia(input.tanMediaName);
+  }
   await authorized(
     /** Reinitialize with the selected TAN method to retrieve user accounts. */ () => client.synchronize(),
     /** Complete selected-method initialization. */ (reference, tan) => client.synchronizeWithTan(reference, tan),
@@ -142,8 +167,8 @@ try {
                 currency: 'EUR' as const,
                 bookingDate: dateSchema.parse(row.entryDate.toISOString().slice(0, 10)),
                 valueDate: dateSchema.parse(row.valueDate.toISOString().slice(0, 10)),
-                description: row.purpose || row.bookingText || row.transactionType,
-                counterpartyName: row.remoteName || null,
+                description: publicText(row.purpose || row.bookingText || row.transactionType),
+                counterpartyName: row.remoteName ? publicText(row.remoteName) : null,
                 counterpartyIban: row.remoteIdentifier?.startsWith('DE') ? row.remoteIdentifier : null,
                 status: 'BOOKED' as const,
                 identityType: reference ? 'BANK_REFERENCE' : 'FINTS_OBSERVATION',
@@ -155,7 +180,7 @@ try {
       );
       accounts.push({
         reference: account.iban ?? `${account.accountNumber}:${account.subAccountId ?? ''}`,
-        name: account.product ?? account.accountNumber,
+        name: publicText(account.product ?? account.accountNumber),
         iban: account.iban ?? null,
         balanceCents: libraryCents(balance.balance.balance),
         observedAt: balance.balance.date.toISOString(),
@@ -168,18 +193,13 @@ try {
     }
   }
   if (!accounts.length) throw new Error('BANK_UNSUPPORTED');
-  // bankingInformation contains protocol parameters/system ID, never config.pin or the client object.
+  // Do not export raw protocol metadata, decoder messages or credential-owning client objects.
   parentPort!.postMessage({
     kind: 'done',
     data: {
       accounts,
       failedAccounts,
-      metadata: {
-        systemId: config.bankingInformation.systemId,
-        bpd: config.bankingInformation.bpd,
-        upd: config.bankingInformation.upd,
-        bankMessages: [],
-      },
+      metadata: {},
     },
   });
 } catch (error) {
@@ -194,5 +214,6 @@ try {
 } finally {
   config.pin = undefined;
   input.pin = '';
+  secrets.clear();
   parentPort!.close();
 }

@@ -201,6 +201,26 @@ export const issueSchema = z.object({
   candidateSources: z.record(idSchema, z.array(z.enum(['CSV', 'FINTS', 'LEGACY']))).optional(),
   candidateReferences: z.record(idSchema, z.array(z.string())).optional(),
 });
+export const bankSetupSchema = z.object({
+  configured: z.boolean(),
+  bankCode: z.literal('69050001'),
+  missing: z.array(z.enum(['PRODUCT_ID', 'BANK_ENDPOINT'])),
+});
+export const bankChallengeSchema = z.object({
+  type: z.enum(['TAN', 'APP_APPROVAL', 'SELECT_METHOD', 'SELECT_MEDIA']),
+  message: z.string().max(1000),
+  methods: z
+    .array(
+      z.object({
+        id: z.number().int().positive(),
+        name: z.string().max(200),
+        media: z.array(z.string().max(100)).optional(),
+        mediaRequired: z.boolean().optional(),
+      }),
+    )
+    .optional(),
+  media: z.array(z.string().max(100)).optional(),
+});
 export const runSchema = z.object({
   id: idSchema,
   source: z.enum(['CSV', 'FINTS']),
@@ -211,13 +231,7 @@ export const runSchema = z.object({
   knownCount: z.number().int(),
   reviewRequiredCount: z.number().int(),
   errorCode: z.string().nullable(),
-  challenge: z
-    .object({
-      type: z.enum(['TAN', 'APP_APPROVAL', 'SELECT_METHOD']),
-      message: z.string(),
-      methods: z.array(z.object({ id: z.number(), name: z.string() })).optional(),
-    })
-    .nullable(),
+  challenge: bankChallengeSchema.nullable(),
 });
 export const csvMappingSchema = z.object({
   bookingDate: z.string().min(1),
@@ -373,6 +387,7 @@ export const apiContracts: Record<string, ApiContract> = {
   logout: { method: 'post', path: '/auth/logout', response: okSchema, status: 201 },
   password: { method: 'post', path: '/auth/password', request: passwordChangeSchema, response: okSchema, status: 201 },
   connections: { method: 'get', path: '/bank-connections', response: z.array(connectionSchema), status: 200 },
+  bankSetup: { method: 'get', path: '/bank-setup', response: bankSetupSchema, status: 200 },
   createConnection: {
     method: 'post',
     path: '/bank-connections',

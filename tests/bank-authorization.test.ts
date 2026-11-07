@@ -4,6 +4,7 @@ import {
   libraryCents,
   type AuthorizationContext,
   type BankResponse as ClientResponse,
+  transientSecrets,
 } from '../apps/api/src/bank-authorization.js';
 
 /** Build only public bank response fields used by the production authorization driver. */
@@ -22,6 +23,13 @@ function context(): AuthorizationContext {
 }
 
 describe('bank authorization boundary', /** Deterministic driver proof without bank traffic or production credentials. */ () => {
+  it('redacts both PIN and later TAN values and releases its transient references', /** Repeated bank challenges must not echo an earlier authorization secret. */ () => {
+    const secrets = transientSecrets('CANARY_PIN_A');
+    secrets.remember('CANARY_TAN_B');
+    expect(secrets.publicText('Bank CANARY_PIN_A CANARY_TAN_B')).toBe('Bank [geschützt] [geschützt]');
+    secrets.clear();
+    expect(secrets.publicText('CANARY_TAN_B')).toBe('CANARY_TAN_B');
+  });
   afterEach(/** Restore wall time even when a bank-limit assertion fails. */ () => vi.useRealTimers());
   it('continues a TAN dialog and never retries a rejected PIN', /** Only an explicit pending challenge permits continuation. */ async () => {
     const interaction = context(),
@@ -74,6 +82,7 @@ describe('bank authorization boundary', /** Deterministic driver proof without b
     await vi.advanceTimersByTimeAsync(7000);
     await result;
     expect(continuation).toHaveBeenCalledTimes(2);
+    expect(interaction.challenge).toHaveBeenCalledTimes(2);
   });
   it('rejects unsupported challenge formats and unsafe cent conversion', /** Unsupported rendering never becomes a successful read. */ async () => {
     const interaction = context();

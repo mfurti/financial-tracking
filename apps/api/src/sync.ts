@@ -94,7 +94,6 @@ export class SyncService implements OnModuleDestroy {
           bankCode: connection.bankCode,
           fromDate,
           toDate,
-          metadata: connection.metadata,
           tanMethodId: input.tanMethodId,
           tanMediaName: input.tanMediaName,
         },
@@ -206,6 +205,8 @@ export class SyncService implements OnModuleDestroy {
     const active = this.active.get(id);
     if (!active?.challenge || active.continuing) throw new AppError('CHALLENGE_STATE', 'Keine offene Freigabe.', 409);
     if (active.challenge.type === 'TAN' && !input.tan) throw new AppError('TAN_REQUIRED', 'TAN eingeben.');
+    if (active.challenge.type === 'SELECT_MEDIA' && !active.challenge.media?.includes(input.tanMediaName ?? ''))
+      throw new AppError('MEDIA_REQUIRED', 'Angebotenes TAN-Medium wählen.');
     if (
       active.challenge.type === 'SELECT_METHOD' &&
       !active.challenge.methods?.some(/** Accept only offered methods. */ (method) => method.id === input.tanMethodId)

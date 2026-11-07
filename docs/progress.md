@@ -77,6 +77,16 @@ Status: local implementation and acceptance passed; scoped commit follows this e
 
 P1.3 is committed as `f0ace1c`. Before extending live-bank setup, moved the existing authorization/cent conversion into a worker-owned helper without changing public messages, timing or failure semantics. Existing twelve ledger integration tests and three direct driver tests passed (15 total): TAN continuation, no incorrect-PIN retry, bank first/between-poll waits and maximum attempts, unsupported challenge rejection and exact cent conversion. API/web/root strict typechecks and lint passed after correcting an invalid test-only photo-challenge fixture to the SDK's actual HHD string format. Registration documentation remains a separate pending P1.4 change; no bank traffic or server change occurred.
 
+## P1.4 — Manual FinTS setup and synthetic acceptance
+
+Status: source and synthetic checks passed; real-bank acceptance remains blocked on the user's own registration and confirmed endpoint. The user explicitly reported no application yet and requested the [registration guide](fints-registration.md). No registration/support message was sent, no real bank connection attempted and no server configuration changed.
+
+- P1.3 commit `f0ace1c` passed [CI run 42371818775](https://github.com/mfurti/financial-tracking/actions/runs/42371818775), including Linux operations. P1.4's behavior-preserving driver extraction is `d6d6c2c`.
+- Added private setup capabilities without disclosing configuration values, shared challenge schemas, required offered-media selection, optional history dates and actionable failure/expiry/restart states. Browser polling resumes after a failed status request via explicit continuation/reload, without creating a new bank request. Repeated manual confirmation still observes bank wait/count limits.
+- Tightened worker financial responses to shared cents/timestamp/IBAN validation. Do not persist raw BPD/UPD or protocol messages; discover afresh each manual run. Redact known transient PIN/TAN from free text inside the worker, drain decoder streams, clear transient redaction references and terminate on completion/error/cancellation/deadline.
+- All 56 tests passed, including direct authorization timing/precision, synthetic worker ownership/safe output, real PostgreSQL manager/import lifecycle and existing cancellation/concurrency/restart regressions. All eight browser cases passed: desktop/mobile synthetic method/media/TAN/app approval, pending, safe failures, expiry and cancellation, plus prior UI and accountless workflows. Types/lint/build passed. Final focused checks cover the last response-schema tightening before the scoped commit.
+- Bank-provided history range, actual account/balance/transaction completeness, library response compatibility and available TAN/media require a separately approved, user-assisted live run. First-run defaults (90 days) and overlap (14 days) are explicit in banking documentation; no real-bank pass is claimed. Production/reboot/IP allocation remain separate gates.
+
 ## Historical initial delivery evidence
 
 Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issues/1).

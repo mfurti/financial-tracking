@@ -81,15 +81,15 @@ P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verif
 
 ### P1.4 — Manual live Sparkasse queries
 
-- [ ] Help the user choose appropriate Sparkasse access and prepare their own FinTS product registration; explain required user actions when this step begins. No registration currently exists.
+- [x] Help the user choose appropriate Sparkasse access and prepare their own FinTS product registration; explain required user actions when this step begins. No registration currently exists.
 - [ ] Obtain the application's own product ID and confirm the official Sparkasse Bodensee endpoint, BLZ, and available account/TAN capabilities; do not reuse an unrelated product ID.
-- [ ] Complete discovery, balances, booked transactions, history ranges, TAN method/media selection, app approval/polling, cancellation, and safe retry through the existing adapter.
-- [ ] Implement actionable setup/unsupported-method states and keep CSV independent when prerequisites are missing.
-- [ ] Verify bank-provided polling/expiry limits, a single active run per connection, transient credentials, worker disposal, and no automatic incorrect-PIN retry.
-- [ ] Complete synthetic success, successful authorization continuation, pending, rejected, expired, network failure, wrong-PIN, cancellation, concurrent-refresh, and worker-restart tests.
-- [ ] Add mocked browser interactions for TAN selection, app approval, polling, failure, expiry, and cancellation; never use real credentials in browser tests.
+- [x] Complete discovery, balances, booked transactions, history ranges, TAN method/media selection, app approval/polling, cancellation, and safe retry through the existing adapter.
+- [x] Implement actionable setup/unsupported-method states and keep CSV independent when prerequisites are missing.
+- [x] Verify bank-provided polling/expiry limits, a single active run per connection, transient credentials, worker disposal, and no automatic incorrect-PIN retry.
+- [x] Complete synthetic success, successful authorization continuation, pending, rejected, expired, network failure, wrong-PIN, cancellation, concurrent-refresh, and worker-restart tests.
+- [x] Add mocked browser interactions for TAN selection, app approval, polling, failure, expiry, and cancellation; never use real credentials in browser tests.
 - [ ] Separately perform user-assisted real discovery/balance/transaction/approval checks when prerequisites exist; document supported history and sanitized restrictions. Keep compatibility explicitly open otherwise.
-- [ ] Update banking/user documentation, record exact proof/blockers, and commit P1.4.
+- [x] Update banking/user documentation, record exact proof/blockers, and commit P1.4.
 
 ### P1.5 — Final acceptance, recovery, and Stage 1 review
 
