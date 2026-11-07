@@ -352,4 +352,32 @@ describe('accountless CSV and explicit assignment', /** Exercise real constraint
     ).toHaveLength(1);
     expect(await resource.db.transaction.count({ where: { id: { in: [source.id, existing.id] } } })).toBe(1);
   });
+  it('refuses to collapse the two sides of one explicit transfer group', /** A shared reference must not turn an opposing transfer pair into one transaction. */ async () => {
+    const target = await account(),
+      tag = randomUUID(),
+      source = await csv(tag);
+    const counterpart = await bank(target.id, target.bankConnectionId, tag, 1000n);
+    const group = await ledger.createTransfer({ transactionIds: [source.id, counterpart.id] });
+    const preview = await assignments.preview({ accountId: target.id, transactionIds: [source.id] });
+    expect(
+      preview.items[0]!.candidates.some(
+        /** The reused reference makes this a visible but unsafe merge. */ (candidate) =>
+          candidate.transaction.id === counterpart.id,
+      ),
+    ).toBe(true);
+    await expect(
+      assignments.apply({
+        requestId: randomUUID(),
+        accountId: target.id,
+        decisions: [
+          { transactionId: source.id, token: preview.items[0]!.token, candidateId: counterpart.id, action: 'BANK' },
+        ],
+      }),
+    ).rejects.toThrow('Umbuchungszuordnung');
+    const retained = await resource.db.transaction.findMany({ where: { transferGroupId: group.id } });
+    expect(retained).toHaveLength(2);
+    expect(
+      retained.reduce(/** Opposing amounts remain intact after rejection. */ (sum, row) => sum + row.amountCents, 0n),
+    ).toBe(0n);
+  });
 });

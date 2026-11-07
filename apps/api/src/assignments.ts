@@ -197,14 +197,10 @@ export class AssignmentService {
               'Unterschiedliche manuelle Kategorien: Quelle ausdrücklich wählen.',
               409,
             );
-          if (
-            source.transferGroupId &&
-            candidate.transferGroupId &&
-            source.transferGroupId !== candidate.transferGroupId
-          )
+          if (source.transferGroupId && candidate.transferGroupId)
             throw new AppError(
               'TRANSFER_CONFLICT',
-              'Zwei Umbuchungsgruppen zuerst ausdrücklich prüfen und auflösen.',
+              'Beide Buchungen besitzen eine Umbuchungszuordnung. Zuordnungen zuerst ausdrücklich prüfen und aufheben.',
               409,
             );
           const categoryId =

@@ -97,6 +97,10 @@ Status: local final checks and new Linux CI acceptance in progress; production d
 - The first final local suite passed all 60 assertions but failed teardown with Windows `EBUSY`. Investigation found embedded-postgres immediately removes the data directory after parent exit/taskkill without file-lock retries. The harness now stops first and removes only its verified UUID directory under `.local`, with bounded native retries; no shared/external path is cleaned this way. The rerun passed all 60 tests including teardown. The production build and all eight browser cases passed; the final harness/browser/guideline verification is recorded before commit.
 - Reviewed function/type documentation, Vue ordering, shared contracts and deployment/migration compatibility. Server-side actions in this increment were read-only archive lookup/copy; no source upload, IP allocation, configuration change, migration, cleanup, bank call or reboot occurred.
 
+## Final review — Preserve both transfer sides
+
+The final source review found an additional P1.2 reconciliation boundary: an unassigned source and a target could already be opposite members of the same transfer group, while a reused bank reference made the target visible. The existing guard rejected two different groups but allowed this same-group pair to collapse. A real PostgreSQL regression failed before the fix. Reconciliation now rejects any merge where both selected records already own transfer-group annotations, requiring an explicit prior review/unlink. The test verifies rejection preserves both members and their opposite exact amounts. This is a scoped Stage 1 correction, not a change to ordinary CSV imports or standalone transfer markers.
+
 ## Historical initial delivery evidence
 
 Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issues/1).
