@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod';
+import { userErrorMessage } from '../../utils/api-error';
 import {
   issueSchema,
   runSchema,
@@ -71,7 +72,7 @@ async function load() {
     if (selectedRun.value)
       issues.value = await api.request(`/imports/${selectedRun.value}/issues`, z.array(issueSchema));
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = userErrorMessage(cause);
   } finally {
     busy.value = false;
   }
@@ -105,7 +106,7 @@ async function resolve(issueId: string, action: 'NEW' | 'MATCH' | 'SKIP' | 'EXIS
     });
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = userErrorMessage(cause);
   } finally {
     busy.value = false;
   }
@@ -141,7 +142,8 @@ onMounted(load);
       <div>
         <strong>{{ run.source }} · {{ labels[run.status] }}</strong
         ><small
-          >{{ observedTime(run.startedAt) }}<span v-if="run.errorCode"> · {{ run.errorCode }}</span></small
+          >{{ observedTime(run.startedAt)
+          }}<span v-if="run.errorCode"> · Nicht abgeschlossen; bitte Hinweise prüfen</span></small
         >
       </div>
       <span>{{ run.importedCount }} neu · {{ run.knownCount }} bekannt · {{ run.reviewRequiredCount }} prüfen</span>
@@ -154,7 +156,7 @@ onMounted(load);
     </div>
     <p v-if="!issues.length" class="empty-copy">Keine offenen Hinweise für diesen Import.</p>
     <article v-for="issue in issues" :key="issue.id" class="review-card">
-      <p class="eyebrow">ZEILE {{ issue.rowNumber ?? '–' }} · {{ issue.code }}</p>
+      <p class="eyebrow">{{ issue.rowNumber ? `ZEILE ${issue.rowNumber}` : 'HINWEIS ZUM IMPORT' }}</p>
       <h3>{{ issue.message }}</h3>
       <div v-if="issue.incoming" class="review-incoming">
         <strong>{{ issue.incoming.description }}</strong

@@ -29,12 +29,22 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
   await page.getByRole('button', { name: 'Kategorie anlegen', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Kategoriename' }).last()).toHaveValue(/Lebensmittel|Wohnen/);
   await page.goto('/imports/csv');
-  const label = `Browserimport ${info.project.name}`;
+  const label = `Browserimport ${info.project.name} Müller`;
   await page.getByLabel('CSV-Datei', { exact: true }).setInputFiles({
     name: 'sparkasse.csv',
     mimeType: 'text/csv',
-    buffer: Buffer.from(`Datum;Betrag;Text;Bankreferenz\n04.11.2026;-12,34;${label};pw-${info.project.name}\n`),
+    buffer: Buffer.from(
+      `Datum;Betrag;Text;Bankreferenz\n04.11.2026;-12,34;${label};pw-${info.project.name}\n`,
+      'latin1',
+    ),
   });
+  await expect(page.getByRole('status').filter({ hasText: 'Dateiformat: Windows-1252' })).toBeVisible();
+  await page.getByText('Dateiformat anpassen (optional)', { exact: true }).click();
+  await page.getByLabel('Kodierung', { exact: false }).selectOption('utf-8');
+  await expect(page.getByRole('alert')).toContainText('passt nicht zu den Dateibytes');
+  await page.getByLabel('Kodierung', { exact: false }).selectOption('windows-1252');
+  await expect(page.getByRole('alert')).not.toBeVisible();
+  await expect(page.getByRole('button', { name: 'Vorschau erstellen' })).toBeEnabled();
   await page.getByRole('button', { name: 'Vorschau erstellen' }).click();
   await expect(page.getByRole('heading', { name: 'Vorschau prüfen' })).toBeVisible();
   await expect(page.getByText(label, { exact: true })).toBeVisible();

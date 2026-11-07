@@ -597,6 +597,23 @@ small {
   background: var(--surface);
   gap: 2px;
 }
+.field-help {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.import-format {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+}
+.import-format summary {
+  cursor: pointer;
+  font-weight: 600;
+}
 .login-theme {
   position: absolute;
   right: 20px;

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { type Session } from '@financial-tracking/contracts';
-import { publicApiError } from '../utils/api-error';
+import { ApiError, publicApiError } from '../utils/api-error';
 
 /** Typed same-origin API transport with shared runtime response validation. */
 export function useApi() {
@@ -28,6 +28,12 @@ export function useApi() {
       });
       return schema.parse(response);
     } catch (error: unknown) {
+      if (error instanceof z.ZodError)
+        throw new ApiError(
+          'Die Serverantwort konnte nicht verarbeitet werden. Bitte lade die Ansicht neu und versuche es erneut.',
+          'INVALID_RESPONSE',
+          502,
+        );
       const details = error as { statusCode?: number; data?: unknown };
       if (details.statusCode === 401) {
         session.value = null;

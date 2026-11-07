@@ -1,5 +1,4 @@
-import { z } from 'zod';
-import { formFieldErrors } from '../utils/api-error';
+import { formFieldErrors, userErrorMessage } from '../utils/api-error';
 
 /** Attach public server validation paths to the page's existing Nuxt UI form. */
 export function useFormFeedback() {
@@ -20,11 +19,7 @@ export function useFormFeedback() {
   function formError(cause: unknown) {
     validation.value?.setErrors(formFieldErrors(cause));
     pendingFocus.value = validation.value?.getErrors?.()[0]?.id ?? '';
-    return cause instanceof z.ZodError
-      ? 'Bitte markierte Eingaben prüfen.'
-      : cause instanceof Error
-        ? cause.message
-        : 'Anfrage fehlgeschlagen. Bitte erneut versuchen.';
+    return userErrorMessage(cause);
   }
   return { validation, formError };
 }

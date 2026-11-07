@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod';
+import { userErrorMessage } from '../utils/api-error';
 
 const api = useApi();
 const route = useRoute();
@@ -20,7 +21,7 @@ async function logout() {
     api.session.value = null;
     await navigateTo('/login');
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = userErrorMessage(cause);
   }
 }
 </script>

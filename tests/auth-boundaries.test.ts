@@ -3,6 +3,7 @@ import { createApp } from '../apps/api/src/app.js';
 import { passwordHash } from '../apps/api/src/auth.js';
 import { LedgerService } from '../apps/api/src/ledger.js';
 import { testDatabase } from './database.js';
+import { csvEncodingSchema, csvDelimiterSchema } from '../packages/contracts/src/index.js';
 
 describe('authentication and HTTP contract boundaries', /** Exercise real session expiry, rate limiting and response validation. */ () => {
   let resource: Awaited<ReturnType<typeof testDatabase>>, service: Awaited<ReturnType<typeof createApp>>;
@@ -77,6 +78,52 @@ describe('authentication and HTTP contract boundaries', /** Exercise real sessio
     } finally {
       ledger.categories = original;
     }
+  });
+  it('documents and accepts decoded CSV format metadata without weakening authentication', /** Byte decoding stays in the browser; API/OpenAPI share all supported format enums. */ async () => {
+    const body = {
+      content: 'Datum\tBetrag\tText\n07.11.2026\t-1,20\tÜberweisung Test\n',
+      delimiter: '\t',
+      encoding: 'utf-16le',
+      mapping: { bookingDate: 'Datum', amount: 'Betrag', description: 'Text' },
+    };
+    const denied = await service.app.inject({ method: 'POST', url: '/api/v1/imports/csv/preview', payload: body });
+    expect(denied.statusCode).toBe(401);
+    const headers = await login();
+    for (const encoding of csvEncodingSchema.options) {
+      const response = await service.app.inject({
+        method: 'POST',
+        url: '/api/v1/imports/csv/preview',
+        headers,
+        payload: { ...body, encoding },
+      });
+      expect(response.statusCode).toBe(201);
+      expect(response.json()).toMatchObject({
+        totalRows: 1,
+        invalidRows: 0,
+        rows: [{ description: 'Überweisung Test', amountCents: '-120', accountId: null }],
+      });
+    }
+    expect(await resource.db.transaction.count()).toBe(0);
+    expect(service.openapi.paths['/api/v1/imports/csv/preview']?.post?.requestBody).toMatchObject({
+      content: {
+        'application/json': {
+          schema: {
+            properties: {
+              encoding: { enum: csvEncodingSchema.options },
+              delimiter: { enum: csvDelimiterSchema.options },
+            },
+          },
+        },
+      },
+    });
+    const invalid = await service.app.inject({
+      method: 'POST',
+      url: '/api/v1/imports/csv/preview',
+      headers,
+      payload: { ...body, encoding: 'utf-7' },
+    });
+    expect(invalid.statusCode).toBe(400);
+    expect(invalid.json().error.details.fields).toContainEqual({ path: 'encoding', code: 'invalid_value' });
   });
   it('limits repeated login failures without disclosing account existence', /** A separate app owns fresh in-memory IP/username rate limits. */ async () => {
     const isolated = await createApp(resource.db, false);

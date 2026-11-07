@@ -2,7 +2,15 @@
 
 ## Erste Buchungen
 
-Unter **CSV importieren** kannst du sofort eine Datei auswählen. **Ohne Konto** ist die Voreinstellung; eine Bankverbindung ist dafür nicht nötig. Wähle Kodierung und Trennzeichen, prüfe die Spaltenzuordnung und anschließend die Vorschau. Fehlerhafte Zeilen werden nur nach ausdrücklicher Zustimmung übersprungen. Ein abgebrochener Import übernimmt keine Buchungen.
+Unter **CSV importieren** kannst du sofort eine Datei auswählen. **Ohne Konto** ist die Voreinstellung; eine Bankverbindung ist dafür nicht nötig. Kodierung und Trennzeichen werden zunächst automatisch ermittelt. Prüfe anschließend Spaltenzuordnung und Vorschau. Fehlerhafte Zeilen werden nur nach ausdrücklicher Zustimmung übersprungen. Ein abgebrochener Import übernimmt keine Buchungen.
+
+**Kodierung** beschreibt, wie Dateibytes zu Buchstaben und Sonderzeichen werden. Eine Bankdatei kann beispielsweise Windows-1252 statt UTF-8 verwenden; der bisherige UTF-8-Fehler bedeutet nicht, dass deine Buchungen kaputt sind. Die automatische Erkennung prüft UTF-8 und UTF-16 mit Erkennungsmarkierung; andernfalls versucht sie Windows-1252. Ältere Einbyte-Kodierungen sind nicht immer eindeutig unterscheidbar. Prüfe daher die angezeigten Umlaute. Unter **Dateiformat anpassen** kannst du UTF-8, Windows-1252/ANSI, ISO-8859-15/Latin-9 und UTF-16 LE/BE auswählen. Latin-9 kann bei einem falsch dargestellten Eurozeichen helfen. Eine Änderung liest dieselbe Datei erneut; du musst sie nicht noch einmal auswählen.
+
+**Trennzeichen** trennt die Spalten: Semikolon, Komma oder Tabulator. Bei einer langen statt mehrerer einzelner Spalten wähle das passende Zeichen manuell. **Spaltenüberschriften** sind die Namen in der ersten CSV-Zeile, etwa Buchungstag, Betrag und Verwendungszweck. Die Anwendung schlägt bekannte Namen vor; bei mehreren passenden Spalten entscheidest du selbst.
+
+Für den Import brauchst du **Buchungsdatum**, **Betrag** und **Buchungstext**. Verwende gültige Daten als TT.MM.JJJJ oder JJJJ-MM-TT und Beträge mit Dezimalkomma; negative Beträge sind Ausgaben. Unter **Weitere Angaben zuordnen** findest du optionale Informationen mit Erklärungen. Eine Bankreferenz darf nur genau eine Buchung identifizieren; Mandats- oder Kundenreferenzen besser leer lassen. Ohne Währungsspalte wird EUR angenommen; es findet keine Währungsumrechnung statt.
+
+**Vorschau erstellen** speichert noch keine Buchungen. Die Zeilenhinweise benennen das konkrete Problem, etwa ungültiges Datum, Betrag oder fehlenden Text. Korrigiere den Export und wähle ihn erneut oder bestätige ausdrücklich, nur gültige Zeilen zu übernehmen. Erst **Import bestätigen** übernimmt diese Buchungen. Ohne gesetzte Zustimmung bleibt ein Teilimport gesperrt.
 
 Gebuchte kontolose Umsätze zählen sofort in der Monatsübersicht. Unter **Umsätze → Konto → Ohne Konto** findest du sie wieder und kannst Kategorien vergeben. Der Filter für ein bestimmtes Konto enthält sie erst nach einer Zuordnung.
 
