@@ -70,12 +70,20 @@ export class ImportService {
       },
       { timeout: 60000 },
     );
+    let from: string | null = null,
+      to: string | null = null;
+    for (const row of preview.rows) {
+      const date = row.data.bookingDate;
+      if (!from || date < from) from = date;
+      if (!to || date > to) to = date;
+    }
     return csvPreviewSchema.parse({
       run: await this.run(run.id),
       headers: preview.headers,
       rows: preview.rows.slice(0, 20).map(/** Bound preview response size. */ (row) => row.data),
       totalRows: preview.totalRows,
       invalidRows: preview.issues.length,
+      period: from && to ? { from, to } : null,
       issues: await this.issues(run.id),
     });
   }

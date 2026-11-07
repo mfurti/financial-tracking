@@ -1,8 +1,16 @@
 # Haushaltsbuch bedienen
 
+## Dein Überblick
+
+Die App sammelt deine Buchungen und zeigt, wie viel im ausgewählten Monat eingenommen und ausgegeben wurde. Die große **Monatsbilanz** ist die Differenz dieser Geldflüsse. Sie ist kein verfügbarer Kontostand und keine Prognose. Darunter siehst du die Ausgabenverteilung und die letzten Buchungen; tatsächliche Bank-Kontostände stehen getrennt daneben.
+
+Am Computer findest du die Seiten links. Auf dem Telefon stehen **Übersicht**, **Umsätze**, **Kategorien** und **Importieren** unten. Unter **Mehr** erreichst du Konten, Importhistorie, Bankverbindungen und Einstellungen. Das Menü schließt nach der Navigation, beim Klicken außerhalb oder mit Escape. Das Zahnrad oben öffnet die Einstellungen direkt.
+
 ## Erste Buchungen
 
-Unter **CSV importieren** kannst du sofort eine Datei auswählen. **Ohne Konto** ist die Voreinstellung; eine Bankverbindung ist dafür nicht nötig. Kodierung und Trennzeichen werden zunächst automatisch ermittelt. Prüfe anschließend Spaltenzuordnung und Vorschau. Fehlerhafte Zeilen werden nur nach ausdrücklicher Zustimmung übersprungen. Ein abgebrochener Import übernimmt keine Buchungen.
+Unter **Importieren** wählst du deine CSV-Datei aus. Die App erkennt Format und bekannte Spalten, übernimmt vollständig gültige Buchungen automatisch und öffnet die echte Monatsauswertung. Eine Bankverbindung oder Kontoanlage ist nicht nötig. Bei Dateien mit mehreren Monaten wird der letzte enthaltene Monat geöffnet; die übrigen Buchungen bleiben in ihren tatsächlichen Monaten sichtbar. Die Erfolgsmeldung zeigt neue und bereits bekannte Buchungen.
+
+Nur bei unklaren Spalten, fehlerhaften Zeilen oder möglichen Dubletten ist eine Entscheidung nötig. Unter **Importoptionen** kannst du bei Bedarf ein bestehendes Zielkonto oder ein anderes Dateiformat wählen. Ohne Konto zählen Buchungen trotzdem sofort; eine spätere Zuordnung bleibt möglich. Es werden keine Platzhalterkonten angelegt.
 
 **Kodierung** beschreibt, wie Dateibytes zu Buchstaben und Sonderzeichen werden. Eine Bankdatei kann beispielsweise Windows-1252 statt UTF-8 verwenden; der bisherige UTF-8-Fehler bedeutet nicht, dass deine Buchungen kaputt sind. Die automatische Erkennung prüft UTF-8 und UTF-16 mit Erkennungsmarkierung; andernfalls versucht sie Windows-1252. Ältere Einbyte-Kodierungen sind nicht immer eindeutig unterscheidbar. Prüfe daher die angezeigten Umlaute. Unter **Dateiformat anpassen** kannst du UTF-8, Windows-1252/ANSI, ISO-8859-15/Latin-9 und UTF-16 LE/BE auswählen. Latin-9 kann bei einem falsch dargestellten Eurozeichen helfen. Eine Änderung liest dieselbe Datei erneut; du musst sie nicht noch einmal auswählen.
 
@@ -10,7 +18,9 @@ Unter **CSV importieren** kannst du sofort eine Datei auswählen. **Ohne Konto**
 
 Für den Import brauchst du **Buchungsdatum**, **Betrag** und **Buchungstext**. Verwende gültige Daten als TT.MM.JJJJ oder JJJJ-MM-TT und Beträge mit Dezimalkomma; negative Beträge sind Ausgaben. Unter **Weitere Angaben zuordnen** findest du optionale Informationen mit Erklärungen. Eine Bankreferenz darf nur genau eine Buchung identifizieren; Mandats- oder Kundenreferenzen besser leer lassen. Ohne Währungsspalte wird EUR angenommen; es findet keine Währungsumrechnung statt.
 
-**Vorschau erstellen** speichert noch keine Buchungen. Die Zeilenhinweise benennen das konkrete Problem, etwa ungültiges Datum, Betrag oder fehlenden Text. Korrigiere den Export und wähle ihn erneut oder bestätige ausdrücklich, nur gültige Zeilen zu übernehmen. Erst **Import bestätigen** übernimmt diese Buchungen. Ohne gesetzte Zustimmung bleibt ein Teilimport gesperrt.
+Bei ungültigen Zeilen bleibt die Übernahme stehen und zeigt das konkrete Problem, etwa Datum, Betrag oder fehlenden Text. Korrigiere den Export oder bestätige ausdrücklich, nur gültige Buchungen zu übernehmen. Ohne diese Zustimmung wird kein Teilimport ausgeführt. Mögliche Dubletten landen bei den offenen Prüfungen und werden nicht still doppelt gezählt.
+
+Fehlt nach der Übernahme die Serverantwort, prüft die App denselben Importstatus. Es wird nicht automatisch eine zweite Übernahme erzeugt. Mit **Importstatus prüfen** lässt sich der bestehende Vorgang erneut lesen. Beim Verlassen einer noch nicht übernommenen Vorschau wird sie abgebrochen; eine bereits laufende Übernahme wird nicht durch einen späten Seitenwechsel zurückgesetzt.
 
 Gebuchte kontolose Umsätze zählen sofort in der Monatsübersicht. Unter **Umsätze → Konto → Ohne Konto** findest du sie wieder und kannst Kategorien vergeben. Der Filter für ein bestimmtes Konto enthält sie erst nach einer Zuordnung.
 
@@ -33,9 +43,17 @@ Die Importhistorie zeigt zusätzliche Prüfungen aus wiederholten oder überlapp
 
 **Einnahmen, Ausgaben und Monatssaldo** beziehen sich auf das Buchungsdatum im ausgewählten Monat, einschließlich gebuchter Umsätze ohne Konto. Vorgemerkte Umsätze und als eigene Umbuchungen markierte Buchungen bleiben außerhalb dieser Auswertung. Erstattungen mit positivem Betrag erscheinen als Einnahmen. Alle Beträge werden centgenau berechnet.
 
+## Kategorien verstehen
+
+**Kategorien** zeigt die monatlichen Einnahmen, Ausgaben und noch nicht zugeordneten Buchungen. Im Diagramm erscheinen ausschließlich Ausgaben; klicke eine Gruppe an, um genau die zugehörigen gebuchten Ausgaben dieses Monats zu sehen. Die Gruppen „Lebensmittel“ oder „Wohnen“ helfen beim Vergleichen, verändern aber keine Beträge.
+
+**Nicht kategorisiert** heißt: Die Buchung ist bereits übernommen und mitgerechnet. Über **Buchungen zuordnen** öffnest du die betroffenen Umsätze und wählst ihre Kategorie. Fehlende Kategorien werden beim CSV-Import nicht geraten. Unter **Kategorien verwalten** kannst du eigene Gruppen anlegen, umbenennen oder deaktivieren. Löschen entfernt nur die Kategorie und ihre Zuordnungen, keine Buchungen.
+
 ## Darstellung und Fehler
 
-Ein einzelner **Sonne/Mond-Button** wechselt auf der Anmeldeseite und in der Anwendung zwischen Hell und Dunkel. Ohne eigene Auswahl folgt die Darstellung deinem Gerät. Ein Klick speichert die gewünschte Darstellung auf diesem Gerät, auch nach Neuladen. Der Schieber und die Farben wechseln weich; bei der Geräteeinstellung „Bewegung reduzieren“ erfolgt der Wechsel ohne Animation. Der Button ist per Tabulator und Leertaste bedienbar; „Dunkelmodus gedrückt“ bedeutet, dass Dunkel aktiv ist.
+Ein einzelner **kreisrunder Sonne/Mond-Button** wechselt auf der Anmeldeseite und in der Anwendung zwischen Hell und Dunkel. Ohne eigene Auswahl folgt die Darstellung deinem Gerät. Ein Klick speichert die gewünschte Helligkeit auf diesem Gerät, auch nach Neuladen. Symbol und Farben wechseln weich; bei „Bewegung reduzieren“ erfolgt der Wechsel ohne Animation. Der Button ist per Tabulator und Leertaste bedienbar; „Dunkelmodus gedrückt“ bedeutet, dass Dunkel aktiv ist.
+
+Unter **Einstellungen → Farben & Darstellung** wählst du aus 18 Farbwelten, darunter VS Code Modern, GitHub, One Dark Pro, Dracula, Nord, Monokai, Solarized und Catppuccin. Die Farben sind für die App mit hellen und dunklen Gegenstücken angepasst. Auch diese Auswahl bleibt auf diesem Gerät gespeichert und gilt auf der Anmeldeseite. Über **Helligkeit → Wie mein Gerät** stellst du die automatische Systemwahl wieder her.
 
 Fehlerhafte Formularfelder werden markiert. Bei Servervalidierung springt der Tastaturfokus zum ersten betroffenen Feld. Korrigiere die Eingabe und sende erneut; gewöhnliche Formulare behalten ihren Entwurf. Passwörter, PIN und TAN werden nach einem Versuch gelöscht. Bei abgelaufener Sitzung ist eine neue Anmeldung erforderlich.
 

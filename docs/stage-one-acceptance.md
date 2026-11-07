@@ -2,6 +2,28 @@
 
 This record separates implemented source from external/live acceptance. Stage 2 budgets and Stage 3 recurring expenses remain unauthorized.
 
+## Current deployed baseline and new review
+
+This section records the pre-PR #8 deployment checkpoint. For subsequent delivery and actual server revision, see the current status in [issue #3](https://github.com/mfurti/financial-tracking/issues/3).
+
+PRs #4–#7 are merged. Current approved runtime is `a2ea7371b181ebbf92c17006b827ba2ec35289a7`; [main CI 42397313981](https://github.com/mfurti/financial-tracking/actions/runs/42397313981) passed 74 tests, eight browser cases, isolated operations/recovery and publication. The PR #7 rollout preserved all 14 tables and migration state with no new schema migration; four services healthy, 31-second pause/start, trusted HTTPS 200, anonymous accounts 401 and direct/spoofed-header denial 403. The fresh initialized encrypted archive recovered off-server in 9 seconds; it contained no financial transactions. Original bank-file and joint everyday-use acceptance remain open.
+
+The user's next review requests automatic upload/analysis, a Finanzguru-inspired redesign, a circular mode control, Settings theme families and understandable categories. These U1–U5 tasks are planned in ausbauplan.md and tracked in todo.md; they are not delivered merely because earlier UI tests passed. The records below preserve earlier rollout evidence.
+
+## Current experience revision: source acceptance
+
+Branch `codex/3-guided-finance-experience`; U1 `52525a6`, U2 `5772824`, U3 `79e0413`, U4 `4fdc508`. No new database migration or production change.
+
+- All 94 tests across 18 files passed, including exact-money/reconciliation, authentication/security, HTTP/contracts, encoding and 19 palette/bootstrap cases. Format, lint, strict types and production builds passed.
+- All 16 browser cases passed on populated desktop/mobile and accountless desktop/mobile instances. Covered upload-only analytics across more than 20 records and multiple months, lost-response recovery with one commit, format correction, missing mapping, explicit partial consent, late-preview cancellation, category assignment and resulting exact totals, month-read failure/retry, responsive navigation/keyboard, every bundled theme in both modes, persistence/reduced motion and existing overlap decisions.
+- Browser fixtures use real application authentication, APIs and disposable PostgreSQL. Fault/response-loss injection is explicit; bank protocol states remain synthetic and do not prove live Sparkasse compatibility. Populated desktop/mobile instances are isolated to preserve the unchanged login throttle.
+- Synthetic dashboard/category desktop and 360px mobile views were visually inspected in default light/dark; Dracula Settings inspected. Reviewable local captures: `.local/experience-dashboard-{desktop,mobile}.png`, `.local/experience-categories-{desktop,mobile}.png`, `.local/dashboard-{Hell,Dunkel}-{desktop,mobile}.png` and `.local/settings-dracula-{desktop,mobile}.png`. Images contain no real banking data and are not shipped assets.
+- Actual original CSV, joint everyday-use review, FinTS registration/confirmed endpoint/live acceptance, credential-scope review and separately authorized host reboot remain open. This revision still needs its own PR CI, merge decision and server rollout decision. Production remains `a2ea737` until an explicitly approved rollout completes.
+
+## PR #8 delivery decision
+
+[PR CI 42414991656](https://github.com/mfurti/financial-tracking/actions/runs/42414991656) and push CI 42414959543 passed verification plus Linux image-only/container/backup/restore operations for `0a87b70`. The user explicitly authorized PR #8 merge and rollout after green CI, with a fresh encrypted backup, brief write pause, preserved data/secrets/IP and no new schema migration, reboot or real bank access. Recheck every subsequent head and main image publication. Actual merge/rollout/recovery evidence is maintained in issue #3; approval alone is not deployment proof.
+
 ## Source increments
 
 | Increment                           | Commit               | Evidence                                                                                                                                                       |

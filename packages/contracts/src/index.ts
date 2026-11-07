@@ -258,6 +258,7 @@ export const csvPreviewSchema = z.object({
   rows: z.array(transactionSchema.omit({ id: true, categoryId: true, isTransfer: true, transferGroupId: true })),
   totalRows: z.number().int(),
   invalidRows: z.number().int(),
+  period: z.object({ from: dateSchema, to: dateSchema }).nullable().optional(),
   issues: z.array(issueSchema),
 });
 export const csvCommitSchema = z.object({ allowPartial: z.boolean().default(false) });

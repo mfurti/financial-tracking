@@ -30,7 +30,7 @@ export function decodeCsv(bytes: Uint8Array, requested: CsvEncoding | 'auto') {
     content = new TextDecoder(encoding, { fatal: true }).decode(bytes);
   } catch {
     throw new CsvFileError(
-      'Die gewählte Zeichenkodierung passt nicht zu den Dateibytes. Wähle unter „Dateiformat anpassen“ Automatisch oder eine andere Kodierung. Die Datei muss nicht erneut ausgewählt werden.',
+      'Die Datei ist in einem anderen Textformat gespeichert, zum Beispiel Windows-1252 statt UTF-8. Wähle unter „Dateiformat anpassen“ Automatisch oder eine andere Kodierung. Erneutes Auswählen ist nicht nötig.',
     );
   }
   let binary = content.startsWith('PK\u0003\u0004') || content.startsWith('%PDF-');
@@ -92,7 +92,7 @@ export function suggestCsvMapping(headers: string[]): CsvMapping {
       'Gegenpartei',
       'Name Zahlungsbeteiligter',
     ],
-    counterpartyIban: ['IBAN Zahlungsbeteiligter', 'Gegenkonto-IBAN', 'IBAN Kontonummer'],
+    counterpartyIban: ['IBAN Zahlungsbeteiligter', 'Gegenkonto-IBAN', 'IBAN Kontonummer', 'Kontonummer/IBAN'],
     reference: ['Bankreferenz'],
     currency: ['Waehrung', 'Währung'],
   };
@@ -105,6 +105,13 @@ export function suggestCsvMapping(headers: string[]): CsvMapping {
         ),
     );
     if (matches.length === 1) (result as Record<string, string>)[key] = matches[0]!;
+    if (key === 'description' && matches.length > 1) {
+      const purpose = matches.find(
+        /** Prefer payment purpose over the bank's generic booking-type column. */ (heading) =>
+          headingKey(heading) === 'verwendungszweck',
+      );
+      if (purpose) result.description = purpose;
+    }
   }
   return result;
 }

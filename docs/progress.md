@@ -1,5 +1,34 @@
 # Implementation evidence
 
+## U5 — Integrated source verification (2026-11-07)
+
+- [PR #8](https://github.com/mfurti/financial-tracking/pull/8): PR CI 42414991656 and push CI 42414959543 passed full verification plus Linux operations at `0a87b70`. User subsequently approved this PR's merge and rollout after green CI. Subsequent heads, main publication and the actual deployment are separately verified in issue #3.
+- U4 commit: `4fdc508`. All 94 tests and all 16 browser cases passed after isolating populated browser fixtures; production authentication was unchanged. Final format/lint/strict types and production build passed. User guidance now explains the app's purpose, month-versus-bank balances, compact navigation, upload-only analysis, themes and the real category-assignment workflow.
+- Source acceptance and limitations recorded in stage-one-acceptance.md. Plan and checklist preserve outstanding original-file/user/operator prerequisites. CI/PR results and subsequent action-specific approvals are recorded in issue #3; source tests alone do not authorize merge or production changes.
+
+## U4 — Monthly overview, clear categories and compact navigation (2026-11-07)
+
+- U3 commit: `79e0413`. Replaced the sidebar/header hierarchy, added a compact native-disclosure mobile navigation and reusable local SVG icons. Monthly net is prominent, with income/expenses and actual data scope; source bank balances remain separately labeled. The shared expense chart links to real booked non-transfer expenses in the same month, including the explicit uncategorized bucket.
+- Categories now presents actual monthly money/counts, assignment guidance and direct filtered transaction links. Management is secondary in a disclosure; existing creation, edits and confirmed deletion remain available. Changing a month cannot leave stale totals displayed after a failed read; a retry restores the actual empty/result state. Late dashboard/category reads cannot redirect or update an abandoned page.
+- New real browser journey persists an uploaded payment, follows uncategorized records, assigns a category and verifies the exact resulting report. It also checks mobile menu navigation/outside/Escape/focus and failed-month retry. Existing form-error/retry and ledger journeys continue to exercise real persistence.
+- Visually inspected synthetic desktop/360px monthly dashboards and category views, both default modes and Dracula Settings. Removed a misleading chart booking count because the report's category count includes income as well as expense records; percentages and exact expense amounts remain visible.
+- Full 94 unit/database/HTTP/security/operations-script tests passed; build, lint, strict types and formatting passed. The first expanded combined browser run reached the unchanged 10-login/15-minute throttle because desktop/mobile shared a server. Isolated the populated browser projects by test server/database instead of relaxing production authentication. Final combined browser result is recorded with U5.
+
+## U3 — Theme families and circular mode control (2026-11-07)
+
+- U2 commit: `5772824`. Added 18 app-adapted families in Settings, each supporting light and dark. Static CSS is generated from one typed catalog at build time; an allowlisted early script restores the device palette before mounting. Only palette identity is stored; there is no server/profile schema change.
+- A single native 44×44 button with 50% radius displays one mode symbol. Removed the slider/second mode surface; retained keyboard focus, persisted/system mode and reduced-motion behavior. Settings also permits returning to system brightness. Semantic income/expense colors are independent of branding.
+- All family text, secondary text, actions, button text and income/expense token pairs measured at least 4.5:1 against both card/canvas backgrounds. The initial Solarized dark action failed at 4.12:1; its adapted accent was brightened and all 19 palette/bootstrap tests passed. This is palette proof, not a blanket accessibility certification.
+- Production build, lint and strict types passed. Four real browser cases passed: every family in both modes on Settings, persisted selection after reload/logout/login page, both default themes across all pages, square circular bounds, keyboard focus and zero-motion behavior on desktop/mobile. Synthetic Dracula Settings and circular login views visually inspected. Server remains unchanged pending this feature's own delivery approval.
+
+## U2 — Upload directly to actual analytics (2026-11-07)
+
+- U1 plan/audit commit: `52525a6`. The user explicitly replaced routine confirmation with upload-and-analyze. Valid recognized CSV now stages server validation, commits with allowPartial=false and opens actual monthly analytics. Existing financial identity/reconciliation and cent precision are unchanged.
+- Known Sparkasse purpose takes precedence over the generic booking-type column. Unknown/ambiguous required headings still ask for a mapping; invalid rows require explicit partial consent; possible duplicates remain staged decisions. No hidden account is created. Expert format/account options are collapsed by default.
+- Added optional valid full-file period to shared Zod/HTTP/OpenAPI response, calculated from every valid row rather than the first 20 preview rows. Existing defaults/fields remain intact and old responses without the period remain accepted by the client fallback. No database migration.
+- Recover lost commit responses by reading the existing run, not creating another preview/automatic POST. In-flight saves are not cancelled on unmount; late previews are cancelled and cannot redirect a different page. Raw file bytes stay transient until completion/cancellation/unmount, allowing correction during this view.
+- Passed 27 byte/CSV/database/HTTP checks and all 12 real browser cases on desktop/mobile, including upload-only long-period analysis, genuine Windows-1252 bank headings, no account creation, one commit despite lost response, encoding correction without reselection, missing mapping, explicit partial consent, abandoned-preview ownership, duplicate decisions and prior bank fixtures. Production build, lint and strict types passed. Server unchanged.
+
 ## User acceptance: CSV encoding, import guidance and public errors (2026-11-07)
 
 - User's Sparkasse Bodensee export stopped at the strict UTF-8 decoder. Reproduced that rejection with synthetic Windows-1252 bytes containing umlauts/euro; the real bank file was neither requested nor uploaded. Added local UTF-8/Windows-1252 detection, UTF-16 BOM detection and explicit UTF-8/Windows-1252/Latin-9/UTF-16 LE/BE overrides. Raw bytes remain transient and are released on successful preview/unmount; changing format reuses the selected bytes.

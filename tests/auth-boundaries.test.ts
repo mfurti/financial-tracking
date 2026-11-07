@@ -100,6 +100,7 @@ describe('authentication and HTTP contract boundaries', /** Exercise real sessio
       expect(response.json()).toMatchObject({
         totalRows: 1,
         invalidRows: 0,
+        period: { from: '2026-11-07', to: '2026-11-07' },
         rows: [{ description: 'Überweisung Test', amountCents: '-120', accountId: null }],
       });
     }

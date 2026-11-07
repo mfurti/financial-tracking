@@ -1,8 +1,21 @@
 # Haushaltsbuch – verbindlicher Umsetzungsplan für Codex
 
-> **Status:** Planung, noch nicht implementiert. Dieser Plan erweitert und präzisiert den ursprünglich von Codex formulierten Drei-Stufen-Plan. Er ist eine Arbeitsanweisung für die spätere Repository-Analyse und Umsetzung, **kein Nachweis bereits erledigter Aufgaben**.
+> **Aktueller Stand, 2026-11-07:** Stufe 1 ist implementiert und bis PR #7 als `a2ea737` auf rocky ausgerollt. Die gemeinsame Abnahme ist offen. Die nachfolgenden ursprünglichen Prüflisten dokumentieren den Planungsstand; tatsächliche Erledigung und Prüfungen stehen in [todo.md](todo.md), [progress.md](progress.md) und [stage-one-acceptance.md](stage-one-acceptance.md).
 >
-> **WICHTIG:** In diesem Planungsschritt keine Dateien im Projekt ändern, keine Serververbindung herstellen und keine Bankzugänge einrichten. Bei einer später ausdrücklich beauftragten Umsetzung zuerst P0 durchführen.
+> **Ursprüngliche Planungsgrenze:** Beim damaligen Anlegen dieses Dokuments waren Änderungen und Serverzugriffe ausgeschlossen. P0 und Stufe 1 wurden anschließend ausdrücklich beauftragt; neue Merge-/Rollout-Aktionen benötigen weiterhin ihre jeweilige Freigabe.
+
+## Aktuelle Ergänzung: einfach hochladen, verstehen und auswerten
+
+Der Nutzer beauftragt die Umsetzung dieser Ergänzung im bestehenden Stufe-1-Auftrag. Sie konkretisiert die bisherigen Import- und UI-Anforderungen und ersetzt die zusätzliche Bestätigung im fehlerfreien Standardimport. Stufe 2/3 bleiben gesondert freizugeben.
+
+1. **CSV ohne Einstellungsarbeit:** Eine erkannte, vollständig gültige Datei wird nach Auswahl automatisch gelesen, zugeordnet, mit bestehendem Dublettenschutz übernommen und im richtigen Monat ausgewertet. Kein Pflichtkonto und keine routinemäßigen Spalten-/Bestätigungsschritte. Nur echte Unklarheiten, ungültige Zeilen oder mögliche Dubletten erfordern eine Entscheidung. Ungültige Zeilen werden weiterhin nur nach ausdrücklicher Zustimmung ausgelassen. Optionen bleiben als Ausnahme erreichbar.
+2. **Finanzguru als Gestaltungsreferenz:** Neue visuelle Hierarchie mit großzügigen Karten, prägnanter Monatsbilanz, Einnahmen/Ausgaben, verständlicher Kategorienauswertung, Konten als ergänzender Information und kompakter mobiler Navigation. Die App erklärt auf jeder Hauptseite, was dort geschieht und welche Daten zugrunde liegen. Monatsbilanz bleibt ausdrücklich von einem bankgemeldeten Kontostand getrennt.
+3. **Kreis für Hell/Dunkel:** Ein kreisrunder Button mit einem zustandsabhängigen Symbol, Tastaturbedienung und reduzierter Bewegung. Kein Schiebeschalter und keine zweite sichtbare Modusfläche.
+4. **Themes in den Einstellungen:** Auswahl angepasster App-Farbwelten nach gängigen VS-Code-Themes: VS Code Modern, GitHub, One Dark Pro, Dracula, Nord, Monokai, Solarized, Catppuccin, Tokyo Night, Gruvbox, Night Owl, Material, Ayu, Rosé Pine, Cobalt2, SynthWave '84 und hoher Kontrast; zusätzlich das neue Standarddesign. Hell/Dunkel bleibt unabhängig umschaltbar. App-spezifische helle Gegenstücke werden nicht als Originalvarianten der Vorlagen ausgegeben. Auswahl lokal speichern und früh wiederherstellen; Text- und Bedienelementkontraste prüfen.
+5. **Kategorien verständlich machen:** Monatliche Beträge, Buchungszahlen und nicht kategorisierte Buchungen zeigen. Erklären, wie eine Kategorie die Auswertung verändert und wie sie einer Buchung zugewiesen wird. Bearbeitung/Anlegen/Löschen klar als Verwaltung kennzeichnen. Unbekannte Kategorien bleiben ehrlich als nicht kategorisiert sichtbar.
+6. **Offene Punkte aufräumen:** Gemergte und ausgerollte Schritte nachprüfbar abhaken. Originaldatei-Abnahme, echte Bankregistrierung/-prüfung, minimale Paketberechtigungen, separat freizugebender Neustart und gemeinsame Stufe-1-Abnahme als reale offene Punkte erhalten. Keine Budgets oder Vertragsverwaltung allein aufgrund der Designreferenz einführen.
+
+Arbeitspakete, konkrete Dateien und Prüfungen: Abschnitt „Aktuelle Erlebnis-Überarbeitung“ in [ausbauplan.md](ausbauplan.md); Status in [todo.md](todo.md).
 
 ## 0. Unveränderliche Vorgaben
 
