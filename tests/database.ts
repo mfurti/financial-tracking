@@ -1,13 +1,13 @@
 import EmbeddedPostgres from 'embedded-postgres';
 import { Client } from 'pg';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, rm } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
+import { resolve, relative } from 'node:path';
 import { createServer } from 'node:net';
 import { createDb } from '../apps/api/src/db.js';
 
 /** Find a free local port for the isolated PostgreSQL process. */
-async function freePort(): Promise<number> {
+export async function freePort(): Promise<number> {
   const server = createServer();
   return new Promise(
     /** Wait for a temporary bound local socket. */ (resolvePort, reject) => {
@@ -26,19 +26,22 @@ async function freePort(): Promise<number> {
 }
 
 /** Create a disposable real PostgreSQL database, never using DATABASE_URL. */
-export async function testDatabase(options: { initialOnly?: boolean; isolated?: boolean } = {}) {
+export async function testDatabase(options: { initialOnly?: boolean; isolated?: boolean; empty?: boolean } = {}) {
   const external = process.env.TEST_DATABASE_URL;
   if (external && !new URL(external).pathname.endsWith('_test'))
     throw new Error('TEST_DATABASE_URL must name a disposable *_test database');
   const port = await freePort();
+  const ownedRoot = resolve('.local');
+  const databaseDir = resolve(ownedRoot, `pg-${randomUUID()}`);
   const embedded = external
     ? null
     : new EmbeddedPostgres({
-        databaseDir: resolve('.local', `pg-${randomUUID()}`),
+        databaseDir,
         user: 'postgres',
         password: 'test-only-password',
         port,
-        persistent: false,
+        // The harness removes its verified owned directory with Windows file-lock retries after process exit.
+        persistent: true,
         initdbFlags: ['--encoding=UTF8', '--locale=C'],
         /** Suppress database output; tests report assertions instead of records. */
         onLog: () => {},
@@ -95,7 +98,7 @@ export async function testDatabase(options: { initialOnly?: boolean; isolated?: 
       await connection.end();
     }
   }
-  await applyMigrations(options.initialOnly ?? false);
+  if (!options.empty) await applyMigrations(options.initialOnly ?? false);
   const db = createDb(url);
   return {
     db,
@@ -104,7 +107,12 @@ export async function testDatabase(options: { initialOnly?: boolean; isolated?: 
     /** Disconnect Prisma before terminating the isolated server. */
     async close() {
       await db.$disconnect();
-      if (embedded) await embedded.stop();
+      if (embedded) {
+        await embedded.stop();
+        if (!/^pg-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(relative(ownedRoot, databaseDir)))
+          throw new Error('Refusing cleanup outside the owned local PostgreSQL directory');
+        await rm(databaseDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+      }
       if (external && ownedDatabase) {
         const management = new Client({ connectionString: external });
         await management.connect();

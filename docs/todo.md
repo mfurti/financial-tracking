@@ -93,18 +93,22 @@ P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verif
 
 ### P1.5 — Final acceptance, recovery, and Stage 1 review
 
-- [ ] Add missing session-expiry, login-rate-limit, invalid HTTP input/response serialization, and structured field-error regressions from the baseline audit.
-- [ ] Run applicable formatting, lint, strict typechecks, schema/migration validation, unit/integration tests, production builds, and desktop/mobile browser checks on the final candidate.
-- [ ] Validate shared contracts/API/OpenAPI/client compatibility and review required function/type documentation and Vue conventions.
-- [ ] Verify the deployment-only bundle, exact registry image digests, migrations, health/readiness behavior, private API/database, HTTPS/LAN restrictions, and no unexpected external route.
-- [ ] Test persistence and backup health after container recreation; perform shared-host reboot acceptance only in a separately approved window.
-- [ ] Restore a populated encrypted target-host backup into an isolated application stack and verify login, accounts, transactions, categories, import history, and monthly reports. Never overwrite production.
-- [ ] Use synthetic secret markers to check persistence, logs, error responses, and decrypted backups for PIN/TAN leakage; verify temporary plaintext cleanup.
-- [ ] Verify seven-calendar-day backup retention with additional manual runs and separately held recovery keys.
-- [ ] Record current images and a verified encrypted pre-update backup, coordinate a write pause, run reviewed migrations, and validate data before reopening access.
-- [ ] Document compatible image rollback versus backup-based schema/data recovery; do not promise automatic down-migrations.
-- [ ] Finish approved source/CI delivery and production rollout; update evidence and commit P1.5 documentation with its scoped implementation/checks.
-- [ ] Review Stage 1 jointly with the user: layout, workflow, exact totals, CSV decisions, operations, and real-bank status. List unresolved bank prerequisites explicitly.
+- [x] Add real HTTP/PostgreSQL session-expiry, login-rate-limit, safe invalid-input/field-path and response-serialization regressions.
+- [x] Run final local format/lint/strict types, schema/migration tests, production builds, 60 tests and eight desktop/mobile browser cases. Record the Windows test-cleanup race and verified fix.
+- [x] Review shared contracts/API/OpenAPI/client compatibility, function/type documentation and Vue conventions.
+- [x] Restore the actual initialized encrypted target-host backup locally, apply forward migrations, compare existing rows/hash, and verify isolated login/accounts/categories/history/report/responsive UI. Record the explicit limitation: this archive has no financial transactions.
+- [ ] Pass current-head extended Linux CI: populated encrypted financial restore into separate PostgreSQL 17/API/web, login/history/reports, PIN/TAN markers in errors/logs/restored dump and temporary plaintext cleanup. Source is authored; do not mark passed until CI succeeds.
+- [ ] Confirm final image-only CI startup, readiness/dependency recovery, private API/database, direct-access denial, volume recreation and backup health for the candidate head.
+- [x] Verify seven-calendar-day retention with extra manual-run fixtures; retain the separately held recovery identity and prove actual archive decryption.
+- [x] Document schema-compatible image rollback versus backup recovery, with no automatic down-migration promise.
+- [ ] Deliver the source PR and current-head CI evidence; record its implementation commit and review status.
+- [ ] After approved main merge, verify actual private GHCR publication, exact immutable digests, deployment bundle and target read-only registry pulls.
+- [ ] Recheck DHCP/exclusion/non-Docker conflicts before allocating `.33`; prepared Compose is not a live reservation.
+- [ ] Obtain production-rollout approval/window, record existing image/config state, verify a fresh pre-update backup, pause writes, run reviewed migrations and validate data/HTTPS/private access/readiness/backups before reopening.
+- [ ] Only after successful transition, remove obsolete server source/build files and old project path rules; preserve deployment files, secrets, database volume and backups.
+- [ ] Perform shared-host reboot acceptance only in a separately approved window.
+- [ ] Complete user-assisted real-bank compatibility after the user's own registration and confirmed endpoint; record history/TAN/media restrictions without credentials.
+- [ ] Review Stage 1 jointly: layout, workflow, exact totals, CSV decisions, operations and explicit real-bank limitations. See [stage-one-acceptance.md](stage-one-acceptance.md).
 - [ ] Obtain explicit Stage 1 acceptance and separate permission before starting Stage 2. **Stop here until then.**
 
 ## Stage 2 — Monthly category budgets
