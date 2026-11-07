@@ -55,6 +55,9 @@ missing=json.loads(json.dumps(d)); missing['secrets']['db_password']['file']=str
 registry=json.loads(json.dumps(d)); registry['services']['web']['image']='127.0.0.1:1/unavailable@sha256:'+'0'*64
 (p/'registry.json').write_text(json.dumps(registry))
 PY
+# Exercise the publisher's registry-manifest format against the already pinned public database image.
+postgres_reference="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["services"]["postgres"]["image"])' "$ops_dir/resolved.json")"
+docker buildx imagetools inspect "$postgres_reference" --format '{{json .Manifest}}' | python3 -c 'import json,re,sys; digest=json.load(sys.stdin)["digest"]; assert re.fullmatch(r"sha256:[a-f0-9]{64}",digest); assert digest == sys.argv[1].split("@",1)[1]' "$postgres_reference"
 compose=(docker compose --project-name "$project" -f "$ops_dir/compose.json")
 cleanup() {
  docker rm -f "$restore_web" "$restore_api" "$restore_name" >/dev/null 2>&1 || true
@@ -141,7 +144,7 @@ PY
 "${compose[@]}" stop postgres
 "${compose[@]}" exec -T api node -e "fetch('http://127.0.0.1:3001/api/v1/health/ready',{signal:AbortSignal.timeout(5000)}).then(r=>process.exit(r.status===503?0:1))"
 "${compose[@]}" start postgres
-for attempt in {1..30}; do if "${compose[@]}" exec -T postgres pg_isready -U ledger -d ledger >/dev/null 2>&1; then break; fi; sleep 1; done
+for attempt in {1..30}; do if "${compose[@]}" exec -T postgres pg_isready -h 127.0.0.1 -U ledger -d ledger >/dev/null 2>&1; then break; fi; sleep 1; done
 "${compose[@]}" exec -T api node -e "fetch('http://127.0.0.1:3001/api/v1/health/ready',{signal:AbortSignal.timeout(5000)}).then(r=>process.exit(r.ok?0:1))"
 "${compose[@]}" exec -T backup /usr/local/bin/backup.sh
 archive="$(find "$ops_dir/backups" -name 'ledger-*.dump.age' -printf '%T@ %p\n' | sort -rn | head -n 1 | cut -d' ' -f2-)"
@@ -150,7 +153,7 @@ docker run --detach --rm --name "$restore_name" --network "${project}_private" \
  --mount "type=bind,src=$ops_dir/db_password,dst=/run/secrets/db_password,readonly" \
  -e POSTGRES_USER=ledger -e POSTGRES_DB=ledger -e POSTGRES_PASSWORD_FILE=/run/secrets/db_password \
  "$(docker inspect "$project-postgres-1" --format '{{.Config.Image}}')" >/dev/null
-for attempt in {1..60}; do if docker exec "$restore_name" pg_isready -U ledger -d ledger >/dev/null 2>&1; then break; fi; sleep 1; done
+for attempt in {1..60}; do if docker exec "$restore_name" pg_isready -h 127.0.0.1 -U ledger -d ledger >/dev/null 2>&1; then break; fi; sleep 1; done
 docker run --rm --network "${project}_private" --entrypoint bash \
  --mount "type=bind,src=$archive,dst=/restore/archive.age,readonly" \
  --mount "type=bind,src=$ops_dir/identity.txt,dst=/restore/identity,readonly" \

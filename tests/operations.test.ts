@@ -15,6 +15,7 @@ describe('private deployment boundaries', /** Static configuration proof; does n
     }
     expect(config.services.postgres.environment.POSTGRES_PASSWORD).toBeUndefined();
     expect(config.services.postgres.environment.POSTGRES_PASSWORD_FILE).toBe('/run/secrets/db_password');
+    expect(config.services.postgres.healthcheck.test).toContain('pg_isready -h 127.0.0.1 -U ledger -d ledger');
     expect(config.services.backup.profiles).toBeUndefined();
     expect(config.services.api.depends_on.migrate.condition).toBe('service_completed_successfully');
     expect(config.services.migrate.image).toBe(config.services.api.image);
