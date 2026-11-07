@@ -25,6 +25,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
   ).toBe(true);
   await page.screenshot({ path: `.local/dashboard-${info.project.name}.png`, fullPage: true });
   await page.getByRole('link', { name: 'Kategorien', exact: true }).click();
+  await page.locator('summary').filter({ hasText: 'Kategorien verwalten' }).click();
   await page.getByLabel('Name', { exact: true }).fill(`Lebensmittel ${info.project.name}`);
   await page.getByRole('button', { name: 'Kategorie anlegen', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Kategoriename' }).last()).toHaveValue(/Lebensmittel|Wohnen/);

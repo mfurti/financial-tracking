@@ -63,3 +63,20 @@ export function observedTime(timestamp: string | null) {
     ? new Date(timestamp).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })
     : 'Noch nicht aktualisiert';
 }
+
+/** Label a calendar month in German without shifting its first day across timezones. */
+export function monthName(month: string) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return 'Monat auswählen';
+  return new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric', timeZone: 'Europe/Berlin' }).format(
+    new Date(`${month}-01T12:00:00Z`),
+  );
+}
+
+/** Reuse one inclusive calendar-month range for links and transaction queries. */
+export function monthRangeQuery(month: string): Record<string, string> {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return {};
+  const end = new Date(`${month}-01T12:00:00Z`);
+  end.setUTCMonth(end.getUTCMonth() + 1);
+  end.setUTCDate(0);
+  return { from: `${month}-01`, to: end.toISOString().slice(0, 10) };
+}

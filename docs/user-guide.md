@@ -1,8 +1,14 @@
 # Haushaltsbuch bedienen
 
+## Dein Überblick
+
+Die App sammelt deine Buchungen und zeigt, wie viel im ausgewählten Monat eingenommen und ausgegeben wurde. Die große **Monatsbilanz** ist die Differenz dieser Geldflüsse. Sie ist kein verfügbarer Kontostand und keine Prognose. Darunter siehst du die Ausgabenverteilung und die letzten Buchungen; tatsächliche Bank-Kontostände stehen getrennt daneben.
+
+Am Computer findest du die Seiten links. Auf dem Telefon stehen **Übersicht**, **Umsätze**, **Kategorien** und **Importieren** unten. Unter **Mehr** erreichst du Konten, Importhistorie, Bankverbindungen und Einstellungen. Das Menü schließt nach der Navigation, beim Klicken außerhalb oder mit Escape. Das Zahnrad oben öffnet die Einstellungen direkt.
+
 ## Erste Buchungen
 
-Unter **CSV importieren** wählst du deine Datei aus. Die App erkennt Format und bekannte Spalten, übernimmt vollständig gültige Buchungen automatisch und öffnet die echte Monatsauswertung. Eine Bankverbindung oder Kontoanlage ist nicht nötig. Bei Dateien mit mehreren Monaten wird der letzte enthaltene Monat geöffnet; die übrigen Buchungen bleiben in ihren tatsächlichen Monaten sichtbar. Die Erfolgsmeldung zeigt neue und bereits bekannte Buchungen.
+Unter **Importieren** wählst du deine CSV-Datei aus. Die App erkennt Format und bekannte Spalten, übernimmt vollständig gültige Buchungen automatisch und öffnet die echte Monatsauswertung. Eine Bankverbindung oder Kontoanlage ist nicht nötig. Bei Dateien mit mehreren Monaten wird der letzte enthaltene Monat geöffnet; die übrigen Buchungen bleiben in ihren tatsächlichen Monaten sichtbar. Die Erfolgsmeldung zeigt neue und bereits bekannte Buchungen.
 
 Nur bei unklaren Spalten, fehlerhaften Zeilen oder möglichen Dubletten ist eine Entscheidung nötig. Unter **Importoptionen** kannst du bei Bedarf ein bestehendes Zielkonto oder ein anderes Dateiformat wählen. Ohne Konto zählen Buchungen trotzdem sofort; eine spätere Zuordnung bleibt möglich. Es werden keine Platzhalterkonten angelegt.
 
@@ -36,6 +42,12 @@ Die Importhistorie zeigt zusätzliche Prüfungen aus wiederholten oder überlapp
 **Bekannte Kontostände** stammen aus einer Bankabfrage. Fehlende oder alte Salden sind entsprechend gekennzeichnet; CSV-Umsätze ergeben keinen verlässlichen Kontostand.
 
 **Einnahmen, Ausgaben und Monatssaldo** beziehen sich auf das Buchungsdatum im ausgewählten Monat, einschließlich gebuchter Umsätze ohne Konto. Vorgemerkte Umsätze und als eigene Umbuchungen markierte Buchungen bleiben außerhalb dieser Auswertung. Erstattungen mit positivem Betrag erscheinen als Einnahmen. Alle Beträge werden centgenau berechnet.
+
+## Kategorien verstehen
+
+**Kategorien** zeigt die monatlichen Einnahmen, Ausgaben und noch nicht zugeordneten Buchungen. Im Diagramm erscheinen ausschließlich Ausgaben; klicke eine Gruppe an, um genau die zugehörigen gebuchten Ausgaben dieses Monats zu sehen. Die Gruppen „Lebensmittel“ oder „Wohnen“ helfen beim Vergleichen, verändern aber keine Beträge.
+
+**Nicht kategorisiert** heißt: Die Buchung ist bereits übernommen und mitgerechnet. Über **Buchungen zuordnen** öffnest du die betroffenen Umsätze und wählst ihre Kategorie. Fehlende Kategorien werden beim CSV-Import nicht geraten. Unter **Kategorien verwalten** kannst du eigene Gruppen anlegen, umbenennen oder deaktivieren. Löschen entfernt nur die Kategorie und ihre Zuordnungen, keine Buchungen.
 
 ## Darstellung und Fehler
 

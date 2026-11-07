@@ -54,7 +54,8 @@ onBeforeUnmount(
       <dd>Manuell · keine dauerhaft gespeicherte Bank-PIN</dd>
       <dt>Datensicherung</dt>
       <dd>
-        Tägliches verschlüsseltes Backup auf deinem Server konfigurieren; Wiederherstellung vor Produktivbetrieb prüfen.
+        Verschlüsselte Sicherungen verwaltet dein privater Server. Diese Seite zeigt keinen aktuellen Sicherungsstatus
+        an.
       </dd>
       <dt>Zugang</dt>
       <dd>Ausschließlich Heimnetz/VPN mit HTTPS.</dd>

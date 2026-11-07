@@ -6,8 +6,10 @@ import { testDatabase } from '../tests/database.js';
 import { defaultCategories } from '../apps/api/dist/default-categories.js';
 
 const empty = process.argv.includes('--empty');
-const webPort = empty ? 4322 : 4320,
-  apiPort = empty ? 4323 : 4321;
+// Each populated browser project owns its login limits and persisted records.
+const mobile = process.argv.includes('--mobile');
+const webPort = empty ? 4322 : mobile ? 4324 : 4320,
+  apiPort = webPort + 1;
 process.env.PUBLIC_APP_URL = `http://localhost:${webPort}`;
 process.env.NODE_ENV = 'test';
 const resource = await testDatabase({ isolated: true });

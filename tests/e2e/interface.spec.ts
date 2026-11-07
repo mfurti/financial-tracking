@@ -79,6 +79,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
   await page.getByRole('button', { name: 'Konto anlegen', exact: true }).click();
   await expect(page.getByText('Bitte eine gültige deutsche IBAN eingeben.', { exact: true })).toBeVisible();
   await page.goto('/categories');
+  await page.locator('summary').filter({ hasText: 'Kategorien verwalten' }).click();
   const category = `Retry ${info.project.name}`;
   await page.getByLabel('Name', { exact: true }).fill(category);
   await page.route(

@@ -1,5 +1,13 @@
 # Implementation evidence
 
+## U4 — Monthly overview, clear categories and compact navigation (2026-11-07)
+
+- U3 commit: `79e0413`. Replaced the sidebar/header hierarchy, added a compact native-disclosure mobile navigation and reusable local SVG icons. Monthly net is prominent, with income/expenses and actual data scope; source bank balances remain separately labeled. The shared expense chart links to real booked non-transfer expenses in the same month, including the explicit uncategorized bucket.
+- Categories now presents actual monthly money/counts, assignment guidance and direct filtered transaction links. Management is secondary in a disclosure; existing creation, edits and confirmed deletion remain available. Changing a month cannot leave stale totals displayed after a failed read; a retry restores the actual empty/result state. Late dashboard/category reads cannot redirect or update an abandoned page.
+- New real browser journey persists an uploaded payment, follows uncategorized records, assigns a category and verifies the exact resulting report. It also checks mobile menu navigation/outside/Escape/focus and failed-month retry. Existing form-error/retry and ledger journeys continue to exercise real persistence.
+- Visually inspected synthetic desktop/360px monthly dashboards and category views, both default modes and Dracula Settings. Removed a misleading chart booking count because the report's category count includes income as well as expense records; percentages and exact expense amounts remain visible.
+- Full 94 unit/database/HTTP/security/operations-script tests passed; build, lint, strict types and formatting passed. The first expanded combined browser run reached the unchanged 10-login/15-minute throttle because desktop/mobile shared a server. Isolated the populated browser projects by test server/database instead of relaxing production authentication. Final combined browser result is recorded with U5.
+
 ## U3 — Theme families and circular mode control (2026-11-07)
 
 - U2 commit: `5772824`. Added 18 app-adapted families in Settings, each supporting light and dark. Static CSS is generated from one typed catalog at build time; an allowlisted early script restores the device palette before mounting. Only palette identity is stored; there is no server/profile schema change.
