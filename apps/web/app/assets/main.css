@@ -588,14 +588,91 @@ small {
   box-shadow: 0 20px 80px var(--shadow);
 }
 .theme-toggle {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  justify-items: center;
   flex-shrink: 0;
   align-items: center;
-  padding: 3px;
+  width: 80px;
+  height: 44px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--ink);
+  cursor: pointer;
+}
+.theme-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 5px var(--shadow);
+  transition: transform 240ms ease;
+}
+.theme-toggle.is-dark .theme-toggle-thumb {
+  transform: translateX(36px);
+}
+.theme-toggle svg {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  transition:
+    opacity 240ms ease,
+    transform 240ms ease;
+}
+.theme-toggle .theme-moon,
+.theme-toggle.is-dark .theme-sun {
+  opacity: 0.55;
+  transform: rotate(-20deg);
+}
+.theme-toggle.is-dark .theme-moon {
+  opacity: 1;
+  transform: rotate(0);
+}
+html.theme-transition,
+html.theme-transition * {
+  transition-property: background-color, color, border-color, box-shadow;
+  transition-duration: 240ms;
+  transition-timing-function: ease;
+}
+html.theme-transition .theme-toggle-thumb {
+  transition-property: transform, background-color, box-shadow;
+}
+html.theme-transition .theme-toggle svg {
+  transition-property: opacity, transform, color;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transition,
+  html.theme-transition *,
+  .theme-toggle-thumb,
+  .theme-toggle svg {
+    transition: none !important;
+  }
+}
+.field-help {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.csv-columns {
+  align-items: start;
+}
+.import-format {
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: var(--surface);
-  gap: 2px;
+  padding: 14px;
+}
+.import-format summary {
+  cursor: pointer;
+  font-weight: 600;
 }
 .login-theme {
   position: absolute;
@@ -693,9 +770,6 @@ button:disabled {
   }
 }
 @media (max-width: 760px) {
-  .theme-toggle button {
-    min-height: 36px;
-  }
   .control,
   input[type='file'] {
     min-height: 44px;

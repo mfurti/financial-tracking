@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod';
+import { userErrorMessage } from '../utils/api-error';
 import {
   assignmentPreviewSchema,
   assignmentPreviewInputSchema,
@@ -97,7 +98,7 @@ async function compare() {
         categoryChoice: '',
       };
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = userErrorMessage(cause);
   } finally {
     busy.value = false;
   }
@@ -129,7 +130,7 @@ async function confirm() {
     reset();
     emit('complete', result);
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = userErrorMessage(cause);
   } finally {
     busy.value = false;
   }

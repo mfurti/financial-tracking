@@ -113,6 +113,14 @@ P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verif
 - [ ] Review Stage 1 jointly: layout, workflow, exact totals, CSV decisions, operations and explicit real-bank limitations. See [stage-one-acceptance.md](stage-one-acceptance.md).
 - [ ] Obtain explicit Stage 1 acceptance and separate permission before starting Stage 2. **Stop here until then.**
 
+## Stage 1 user acceptance corrections, before Stage 2
+
+- [x] Reproduce strict UTF-8 rejection with synthetic Windows-1252 bank bytes; detect supported formats, allow re-decoding without reselection and explain all import choices. Add UTF-16/Latin-9/tab metadata through shared Zod, runtime API and OpenAPI.
+- [x] Replace raw local exception/validation text with safe actionable German messages and concrete CSV row diagnostics; preserve field paths, request IDs, drafts, financial identities and partial-import consent.
+- [x] Replace three theme controls with one animated accessible light/dark button; retain initial system preference and persisted explicit choice, honor reduced motion.
+- [x] Verify 74 tests and eight desktop/mobile import/error/theme/bank-state journeys, including keyboard/reload/reduced-motion behavior. Recheck both import journeys after final focus/layout corrections; inspect synthetic screenshots.
+- [ ] Review/merge the follow-up PR after green CI and separately approve its image-only rollout. The user's actual CSV remains unverified until tested; no real financial rows were requested.
+
 ## Stage 2 — Monthly category budgets
 
 Dependencies: explicit Stage 1 acceptance and separate implementation approval.

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod';
+import { userErrorMessage } from '../../utils/api-error';
 import {
   accountSchema,
   categorySchema,
@@ -83,7 +84,7 @@ async function load(append = false) {
       if (!append) selected.value = [];
     }
   } catch (cause) {
-    if (!disposed && generation === loadGeneration) error.value = (cause as Error).message;
+    if (!disposed && generation === loadGeneration) error.value = userErrorMessage(cause);
   } finally {
     if (!disposed && generation === loadGeneration) busy.value = false;
   }
@@ -118,7 +119,7 @@ async function assign(id: string, event: Event) {
     });
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = userErrorMessage(cause);
   }
 }
 /** Save a single transfer marker without changing financial values. */
@@ -130,7 +131,7 @@ async function mark(row: Transaction) {
     });
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = userErrorMessage(cause);
   }
 }
 /** Assign a category to the explicit selected IDs. */
@@ -140,7 +141,7 @@ async function bulk() {
     await api.request('/transactions/bulk-category', z.object({ updated: z.number() }), { method: 'POST', body });
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = userErrorMessage(cause);
   }
 }
 /** Link selected opposing own-account entries after backend validation. */
@@ -152,7 +153,7 @@ async function transfer() {
     });
     await load();
   } catch (cause) {
-    error.value = (cause as Error).message;
+    error.value = userErrorMessage(cause);
   }
 }
 /** Resolve category labels including deleted assignments. */
@@ -183,7 +184,7 @@ onMounted(
       ]);
       await load();
     } catch (cause) {
-      error.value = (cause as Error).message;
+      error.value = userErrorMessage(cause);
     }
   },
 );

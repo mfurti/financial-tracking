@@ -243,11 +243,13 @@ export const csvMappingSchema = z.object({
   reference: z.string().optional(),
   currency: z.string().optional(),
 });
+export const csvEncodingSchema = z.enum(['utf-8', 'windows-1252', 'iso-8859-15', 'utf-16le', 'utf-16be']);
+export const csvDelimiterSchema = z.enum([';', ',', '\t']);
 export const csvPreviewInputSchema = z.object({
   accountId: idSchema.nullable().optional().default(null),
   content: z.string().max(10485760),
-  encoding: z.enum(['utf-8', 'windows-1252']).default('utf-8'),
-  delimiter: z.enum([';', ',']).default(';'),
+  encoding: csvEncodingSchema.default('utf-8'),
+  delimiter: csvDelimiterSchema.default(';'),
   mapping: csvMappingSchema,
 });
 export const csvPreviewSchema = z.object({

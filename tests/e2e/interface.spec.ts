@@ -3,21 +3,30 @@ import { test, expect } from '@playwright/test';
 test('themes, responsive pages, form errors, retry and session expiry', /** Browser acceptance across the real application plus explicit synthetic error states. */ async ({
   page,
 }, info) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'no-preference' });
   await page.goto('/login');
   await expect(page.locator('html')).toHaveClass(/dark/);
-  await expect(page.getByRole('button', { name: 'Darstellung: System', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  await page.getByRole('button', { name: 'Darstellung: Hell', exact: true }).click();
+  const theme = page.getByRole('button', { name: 'Dunkelmodus', exact: true });
+  await expect(theme).toHaveCount(1);
+  await expect(theme).toHaveAttribute('aria-pressed', 'true');
+  await theme.focus();
+  await page.keyboard.press('Space');
   await expect(page.locator('html')).not.toHaveClass(/dark/);
+  await expect(theme).toBeFocused();
+  await expect(page.locator('.theme-toggle-thumb')).toHaveCSS('transition-duration', '0.24s');
   await page.reload();
   await expect(page.locator('html')).not.toHaveClass(/dark/);
-  await page.getByRole('button', { name: 'Darstellung: Dunkel', exact: true }).click();
+  await theme.click();
   await page.emulateMedia({ colorScheme: 'light' });
   await page.reload();
   await expect(page.locator('html')).toHaveClass(/dark/);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await theme.click();
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
+  await expect(page.locator('.theme-toggle-thumb')).toHaveCSS('transition-duration', '0s');
+  await theme.click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.screenshot({ path: `.local/login-dark-${info.project.name}.png`, fullPage: true });
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
@@ -30,7 +39,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
   await page.keyboard.press('Enter');
   await expect(page.locator('#main-content')).toBeFocused();
   for (const mode of ['Dunkel', 'Hell']) {
-    await page.getByRole('button', { name: `Darstellung: ${mode}`, exact: true }).click();
+    if ((await theme.getAttribute('aria-pressed')) !== String(mode === 'Dunkel')) await theme.click();
     for (const path of [
       '/?month=2026-11',
       '/transactions',
@@ -108,8 +117,5 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
   await page.context().clearCookies();
   await page.getByRole('link', { name: 'Übersicht', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByRole('button', { name: 'Darstellung: Hell', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await expect(theme).toHaveAttribute('aria-pressed', 'false');
 });

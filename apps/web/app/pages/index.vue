@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod';
+import { userErrorMessage } from '../utils/api-error';
 import {
   accountSchema,
   monthlySchema,
@@ -85,7 +86,7 @@ async function load() {
   } catch (cause) {
     if (version !== loadVersion) return;
     report.value = null;
-    error.value = (cause as Error).message;
+    error.value = userErrorMessage(cause);
   } finally {
     if (version === loadVersion) busy.value = false;
   }

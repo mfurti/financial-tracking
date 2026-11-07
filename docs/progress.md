@@ -1,5 +1,21 @@
 # Implementation evidence
 
+## User acceptance: CSV encoding, import guidance and public errors (2026-11-07)
+
+- User's Sparkasse Bodensee export stopped at the strict UTF-8 decoder. Reproduced that rejection with synthetic Windows-1252 bytes containing umlauts/euro; the real bank file was neither requested nor uploaded. Added local UTF-8/Windows-1252 detection, UTF-16 BOM detection and explicit UTF-8/Windows-1252/Latin-9/UTF-16 LE/BE overrides. Raw bytes remain transient and are released on successful preview/unmount; changing format reuses the selected bytes.
+- Semicolon/comma/tab heading detection, explicit ambiguous mapping choices, reset of stale mappings, descriptions for account/format/required/optional fields, and preview/partial-import effects are visible in the import page. Shared Zod carries additive encoding/delimiter enums; HTTP/OpenAPI and existing defaults were checked together. No database migration.
+- CSV row messages now name invalid dates/amounts/missing descriptions/currencies/column counts without echoing input. Retained the existing CSV_INVALID_ROW classification after a regression exposed that changing it would bypass partial-import consent. Existing consent/reconciliation/rollback tests passed after preserving that boundary.
+- Unknown client exceptions/local Zod JSON no longer become user alerts; safe API identity and form-field paths remain available. Connection, invalid-format, oversized-file and server failures get actionable German guidance.
+- Passed 28 focused byte/CSV/error/HTTP/database tests and both real desktop/mobile import journeys, including manual bad-encoding recovery without reselection. An initial browser fixture appended an umlaut to the saved description but omitted it in a later exact-label selector; aligned the fixture and selectors, then both journeys passed. Initial sandbox build EPERM was resolved by running the same build with the approved runtime permissions; production output built successfully.
+- This source follow-up is not deployed. The user's exact export still requires their final acceptance. Theme change and final feature-wide checks are recorded separately below.
+
+## User acceptance: one animated theme control (2026-11-07)
+
+- Replaced three choices with one native button, stable accessible name Dunkelmodus and pressed state, sun/moon icons, 240 ms sliding thumb and a user-triggered color transition. Initial system preference and explicit persisted light/dark choice remain intact. Reduced motion disables both slider/icon and page-color animation. The transition timer/class is cleaned on layout unmount.
+- Existing real desktop/mobile interface tests now verify a single control, keyboard activation/focus, reload persistence despite later system changes, both theme surfaces across all pages, zero-motion behavior, form recovery and session expiry. Full suite: 74 tests and all eight browser cases passed; production builds, format/lint/strict types passed.
+- Visual inspection of synthetic desktop/mobile login and CSV captures led to top-aligned mapping controls and a persistent expanded format panel after recovery, retaining the user's context. Both affected CSV browser journeys passed again. Captures use the page top to avoid offscreen fixed elements appearing in full-page screenshots; the skip link remains reachable by keyboard.
+- Source increments: CSV/error correction `1f124bd`, followed by the theme/visual acceptance increment. API additions retain previous defaults and error classification, require the matching API for new format metadata, and introduce no schema migration. Current server remains unchanged until separate rollout approval. Real bank-file acceptance is still open.
+
 Current expansion task: [issue #3](https://github.com/mfurti/financial-tracking/issues/3), Stage 1 approved in the current checkout on `codex/3-complete-ledger-stage-one`. Initial delivery evidence below remains historical, including then-pending PR/deployment gates; it does not override later merged/deployed status recorded in the checklist. No live bank credentials have been requested or used.
 
 ## Approved production rollout and proxy DNS correction (2026-11-07)
