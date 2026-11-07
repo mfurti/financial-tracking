@@ -113,6 +113,10 @@ PR #4 was explicitly approved after green CI and merged as `c72815b`. Local main
 
 The correction branch `codex/3-publisher-digests` stays within issue #3's approved image-delivery scope. A real-shell regression with an unrelated first local alias failed before the correction. The publisher now resolves the just-pushed remote manifest using Docker's documented `buildx imagetools inspect --format '{{json .Manifest}}'` and validates its digest before constructing the canonical reference. It still requires the main push event, full revision and matching tested OCI label, and never rebuilds the image. Push/lookup failures or malformed digests stop release generation. Six publisher regressions plus two bundle tests passed; lint, formatting, root strict types and Bash syntax passed. Operations CI additionally resolves the already pinned public PostgreSQL manifest and checks its exact digest, exercising the real registry lookup without private-package credentials. See [Docker registry manifest inspection](https://docs.docker.com/reference/cli/docker/buildx/imagetools/inspect/). This small follow-up requires its own reviewed merge approval; no production change or real-bank request occurred.
 
+## Registry correction CI — Require actual PostgreSQL TCP readiness
+
+The registry-manifest smoke check passed in correction CI. Both runs at `4bcbdd4` then exposed the isolated restore readiness race: local-socket `pg_isready` accepted PostgreSQL's temporary initialization server, but the remote restore connection was refused before the final TCP server started. The publisher regression suite and normal verification passed. The correction now checks `127.0.0.1` TCP explicitly in restore/restart waits and production Compose health, preventing the same false-positive dependency gate. No production container is changed by this source patch. Current-head CI must pass before the already approved PR #5 merge.
+
 ## Historical initial delivery evidence
 
 Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issues/1).

@@ -144,7 +144,7 @@ PY
 "${compose[@]}" stop postgres
 "${compose[@]}" exec -T api node -e "fetch('http://127.0.0.1:3001/api/v1/health/ready',{signal:AbortSignal.timeout(5000)}).then(r=>process.exit(r.status===503?0:1))"
 "${compose[@]}" start postgres
-for attempt in {1..30}; do if "${compose[@]}" exec -T postgres pg_isready -U ledger -d ledger >/dev/null 2>&1; then break; fi; sleep 1; done
+for attempt in {1..30}; do if "${compose[@]}" exec -T postgres pg_isready -h 127.0.0.1 -U ledger -d ledger >/dev/null 2>&1; then break; fi; sleep 1; done
 "${compose[@]}" exec -T api node -e "fetch('http://127.0.0.1:3001/api/v1/health/ready',{signal:AbortSignal.timeout(5000)}).then(r=>process.exit(r.ok?0:1))"
 "${compose[@]}" exec -T backup /usr/local/bin/backup.sh
 archive="$(find "$ops_dir/backups" -name 'ledger-*.dump.age' -printf '%T@ %p\n' | sort -rn | head -n 1 | cut -d' ' -f2-)"
@@ -153,7 +153,7 @@ docker run --detach --rm --name "$restore_name" --network "${project}_private" \
  --mount "type=bind,src=$ops_dir/db_password,dst=/run/secrets/db_password,readonly" \
  -e POSTGRES_USER=ledger -e POSTGRES_DB=ledger -e POSTGRES_PASSWORD_FILE=/run/secrets/db_password \
  "$(docker inspect "$project-postgres-1" --format '{{.Config.Image}}')" >/dev/null
-for attempt in {1..60}; do if docker exec "$restore_name" pg_isready -U ledger -d ledger >/dev/null 2>&1; then break; fi; sleep 1; done
+for attempt in {1..60}; do if docker exec "$restore_name" pg_isready -h 127.0.0.1 -U ledger -d ledger >/dev/null 2>&1; then break; fi; sleep 1; done
 docker run --rm --network "${project}_private" --entrypoint bash \
  --mount "type=bind,src=$archive,dst=/restore/archive.age,readonly" \
  --mount "type=bind,src=$ops_dir/identity.txt,dst=/restore/identity,readonly" \
