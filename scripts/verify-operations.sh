@@ -44,19 +44,14 @@ d['services']['proxy']={
  'image':'caddy:2.10','environment':{'APP_HOST':'localhost'},'ports':['127.0.0.1:443:443'],
  'volumes':[str(root/'infrastructure/proxy/Caddyfile')+':/etc/caddy/Caddyfile:ro','caddy_data:/data','caddy_config:/config'],
  'networks':{'edge':{'aliases':['traefik']}},'depends_on':{'web':{'condition':'service_healthy'}}}
-# A second Compose parse must preserve literal shell dollar signs in healthchecks.
-def escape(value):
- if isinstance(value,str): return value.replace('$','$$')
- if isinstance(value,list): return [escape(x) for x in value]
- if isinstance(value,dict): return {k:escape(v) for k,v in value.items()}
- return value
-(p/'compose.json').write_text(json.dumps(escape(d)))
+# Compose config already re-escapes literal dollars for round trips. Do not escape them twice.
+(p/'compose.json').write_text(json.dumps(d))
 bad=json.loads(json.dumps(d)); bad['services']['migrate']['entrypoint']=['node','-e','process.exit(1)']; bad['services']['migrate']['command']=[]
-(p/'bad-migration.json').write_text(json.dumps(escape(bad)))
+(p/'bad-migration.json').write_text(json.dumps(bad))
 missing=json.loads(json.dumps(d)); missing['secrets']['db_password']['file']=str(p/'missing-secret')
-(p/'missing-secret.json').write_text(json.dumps(escape(missing)))
+(p/'missing-secret.json').write_text(json.dumps(missing))
 registry=json.loads(json.dumps(d)); registry['services']['web']['image']='127.0.0.1:1/unavailable@sha256:'+'0'*64
-(p/'registry.json').write_text(json.dumps(escape(registry)))
+(p/'registry.json').write_text(json.dumps(registry))
 PY
 compose=(docker compose --project-name "$project" -f "$ops_dir/compose.json")
 cleanup() {
@@ -72,6 +67,17 @@ cleanup() {
  done
 }
 trap cleanup EXIT
+diagnose() {
+ status=$?
+ trap - ERR
+ printf 'Isolated operations failure; synthetic-container diagnostics follow.\n' >&2
+ "${compose[@]}" ps --all || true
+ "${compose[@]}" logs --no-color --tail 25 backup || true
+ backup_id="$("${compose[@]}" ps -aq backup)" || true
+ if test -n "${backup_id:-}"; then docker inspect "$backup_id" --format '{{json .State.Health}}' || true; fi
+ exit "$status"
+}
+trap diagnose ERR
 "${compose[@]}" config --quiet
 if docker compose -p "${project}-registry" -f "$ops_dir/registry.json" pull web; then printf 'Unavailable registry unexpectedly succeeded\n' >&2; exit 1; fi
 if docker compose -p "${project}-missing" -f "$ops_dir/missing-secret.json" up -d; then printf 'Missing secret unexpectedly succeeded\n' >&2; exit 1; fi
