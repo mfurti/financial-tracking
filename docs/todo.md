@@ -103,7 +103,7 @@ P1.2: `07ebc21`; 42 tests and four browser projects passed locally; GitHub verif
 - [x] Document schema-compatible image rollback versus backup recovery, with no automatic down-migration promise.
 - [x] Create and attach [source PR #4](https://github.com/mfurti/financial-tracking/pull/4); P1.5 commit `86f7b89`, transfer correction `78f3371`. Final current-head CI remains a separate gate above; PR is unmerged.
 - [ ] After approved main merge, verify actual private GHCR publication, exact immutable digests, deployment bundle and target read-only registry pulls.
-- [ ] Repair the first main publisher failure: API push succeeded, then the first-local-RepoDigest assumption rejected its reference. Use registry manifest metadata, retain revision/main gates, and verify the correction PR plus a successful main publication.
+- [x] Implement the publisher correction in [PR #5](https://github.com/mfurti/financial-tracking/pull/5): resolve registry manifest metadata, retain revision/main gates, and pass six publisher/two bundle regressions. Actual main publication and target pulls remain part of the registry gate above; current CI controls merge readiness.
 - [ ] Recheck DHCP/exclusion/non-Docker conflicts before allocating `.33`; prepared Compose is not a live reservation.
 - [ ] Obtain production-rollout approval/window, record existing image/config state, verify a fresh pre-update backup, pause writes, run reviewed migrations and validate data/HTTPS/private access/readiness/backups before reopening.
 - [ ] Only after successful transition, remove obsolete server source/build files and old project path rules; preserve deployment files, secrets, database volume and backups.
