@@ -1,3 +1,4 @@
+import { mergeAnnotations } from './annotations.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
@@ -186,29 +187,13 @@ export class AssignmentService {
             where: { id: decision.candidateId! },
             include: details,
           });
-          if (
-            source.categoryId &&
-            candidate.categoryId &&
-            source.categoryId !== candidate.categoryId &&
-            !decision.categoryChoice
-          )
-            throw new AppError(
-              'ANNOTATION_CONFLICT',
-              'Unterschiedliche manuelle Kategorien: Quelle ausdrücklich wählen.',
-              409,
-            );
+          const annotations = mergeAnnotations(source, candidate, decision);
           if (source.transferGroupId && candidate.transferGroupId)
             throw new AppError(
               'TRANSFER_CONFLICT',
               'Beide Buchungen besitzen eine Umbuchungszuordnung. Zuordnungen zuerst ausdrücklich prüfen und aufheben.',
               409,
             );
-          const categoryId =
-            decision.categoryChoice === 'CSV'
-              ? source.categoryId
-              : decision.categoryChoice === 'BANK'
-                ? candidate.categoryId
-                : (candidate.categoryId ?? source.categoryId);
           const chosen = decision.action === 'CSV' ? source : candidate;
           const transferGroupId = candidate.transferGroupId ?? source.transferGroupId;
           await assertTransferPlacement(
@@ -233,7 +218,7 @@ export class AssignmentService {
               counterpartyName: chosen.counterpartyName,
               counterpartyIban: chosen.counterpartyIban,
               status: chosen.status,
-              categoryId,
+              ...annotations,
               isTransfer: source.isTransfer || candidate.isTransfer,
               transferGroupId,
             },

@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { applyCategoryRule } from './category-rules.js';
 import {
   csvPreviewInputSchema,
   csvPreviewSchema,
@@ -307,6 +308,7 @@ export class ImportService {
         },
       },
     });
+    await applyCategoryRule(tx, created);
     if (!forceNew) await this.observe(tx, runId, row, created.id);
     await tx.stagedRow.delete({ where: { id: staged.id } });
     return 'NEW' as const;

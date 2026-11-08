@@ -114,4 +114,45 @@ test('monthly categories explain real expenses and lead to persisted assignments
   expect(preserved.items).toHaveLength(1);
   expect(preserved.items[0].categoryId).toBeNull();
   expect(preserved.items[0].amountCents).toBe('-4225');
+  await page.getByRole('button', { name: 'Kategorienvorlagen hinzufügen', exact: true }).click();
+  await page.getByRole('button', { name: 'Vorlagen hinzufügen', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'Kategorie Mode', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Regel erstellen', exact: true }).click();
+  const ruleDialog = page.getByRole('dialog', { name: 'Regel erstellen', exact: true });
+  await ruleDialog.getByLabel('Regelname', { exact: true }).fill(`Mode ${info.project.name}`);
+  await choose(page, ruleDialog.getByLabel('Zielkategorie', { exact: true }), 'Mode');
+  await choose(page, ruleDialog.getByLabel('Vergleich', { exact: true }), 'Buchungstext enthält');
+  const ruleText = `Automatik-${info.project.name}`;
+  await ruleDialog.getByLabel('Gesuchter Text', { exact: true }).fill(ruleText);
+  await ruleDialog.getByRole('button', { name: 'Regel speichern', exact: true }).click();
+  await expect(ruleDialog).not.toBeVisible();
+  await page.goto('/imports/csv');
+  await page.getByLabel('CSV-Datei', { exact: true }).setInputFiles({
+    name: 'rule-example.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(`Datum;Betrag;Text;Bankreferenz\n12.05.2032;-19,25;${ruleText};rule-${info.project.name}\n`),
+  });
+  await expect(page).toHaveURL(/month=2032-05/);
+  await page.goto(`/transactions?search=${ruleText}`);
+  await expect(page.getByLabel(`Kategorie für ${ruleText}`, { exact: true })).toContainText('Mode');
+  await expect(page.getByRole('link', { name: new RegExp(ruleText) })).toContainText(
+    `Regel: Mode ${info.project.name}`,
+  );
+  await page.getByRole('link', { name: new RegExp(ruleText) }).click();
+  await choose(page, page.getByLabel('Kategorie zuordnen', { exact: true }), 'Nicht kategorisiert');
+  await choose(page, page.getByLabel('Fix oder variabel', { exact: true }), 'Variabel');
+  await page.getByRole('button', { name: 'Kennzeichnung speichern', exact: true }).click();
+  await page.reload();
+  await expect(page.getByLabel('Fix oder variabel', { exact: true })).toContainText('Variabel');
+  await page.goto('/categories');
+  await page.getByRole('button', { name: 'Regeln auf Bestandsbuchungen anwenden', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Bestandsbuchungen neu zuordnen?', exact: true })
+    .getByRole('button', { name: 'Jetzt anwenden', exact: true })
+    .click();
+  await expect(page.getByRole('dialog', { name: 'Bestandsbuchungen neu zuordnen?', exact: true })).not.toBeVisible();
+  const protectedRow = await (await page.request.get(`/api/v1/transactions?search=${ruleText}`)).json();
+  expect(protectedRow.items[0].categoryId).toBeNull();
+  expect(protectedRow.items[0].categoryOrigin).toBe('MANUAL');
+  expect(protectedRow.items[0].classification).toBe('VARIABLE');
 });

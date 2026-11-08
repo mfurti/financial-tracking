@@ -29,6 +29,8 @@ describe('accountless upgrade preservation', /** Run the actual new SQL over a p
     expect(row.accountId).toBe('00000000-0000-4000-8000-000000000002');
     expect(row.amountCents).toBe(9007199254740993n);
     expect(row.categoryId).toBe('00000000-0000-4000-8000-000000000003');
+    expect(row.categoryOrigin).toBe('MANUAL');
+    expect(row.classification).toBeNull();
     expect(row.isTransfer).toBe(true);
     expect(row.identities[0]!.scope).toBe(`account:${row.accountId}`);
     expect(row.identities[0]!.importRunId).toBeNull();

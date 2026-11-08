@@ -193,7 +193,22 @@ export class LedgerService {
           });
           await tx.transferGroup.delete({ where: { id: previous.transferGroupId } });
         }
-        return publicTransaction(await tx.transaction.update({ where: { id }, data: input }));
+        return publicTransaction(
+          await tx.transaction.update({
+            where: { id },
+            data: {
+              ...input,
+              ...('categoryId' in input
+                ? {
+                    categoryOrigin: 'MANUAL',
+                    categoryRuleId: null,
+                    categoryRuleName: null,
+                    categoryRuleConflict: false,
+                  }
+                : {}),
+            },
+          }),
+        );
       },
       { isolationLevel: 'Serializable' },
     );
@@ -205,8 +220,30 @@ export class LedgerService {
     const unique = [...new Set(ids)];
     if ((await this.db.transaction.count({ where: { id: { in: unique } } })) !== unique.length)
       throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden.', 404);
-    await this.db.transaction.updateMany({ where: { id: { in: unique } }, data: { categoryId } });
+    await this.db.transaction.updateMany({
+      where: { id: { in: unique } },
+      data: {
+        categoryId,
+        categoryOrigin: 'MANUAL',
+        categoryRuleId: null,
+        categoryRuleName: null,
+        categoryRuleConflict: false,
+      },
+    });
     return { updated: unique.length };
+  }
+  /** Apply a manual fixed/variable override to explicitly selected rows without changing amounts. */
+  async bulkClassification(ids: string[], classification: 'FIXED' | 'VARIABLE' | null) {
+    const unique = [...new Set(ids)];
+    return this.db.$transaction(
+      /** Reject missing selections atomically. */ async (tx) => {
+        if ((await tx.transaction.count({ where: { id: { in: unique } } })) !== unique.length)
+          throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden. Auswahl neu laden.', 404);
+        await tx.transaction.updateMany({ where: { id: { in: unique } }, data: { classification } });
+        return { updated: unique.length };
+      },
+      { isolationLevel: 'Serializable' },
+    );
   }
   /** Link one missing-side transfer or two balanced own-account transactions. */
   async createTransfer(input: z.infer<typeof transferSchema>) {

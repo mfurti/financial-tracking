@@ -77,6 +77,11 @@ export class LedgerController {
     return this.ledger.bulkCategory(input.ids, input.categoryId);
   }
   /** List active and historical categories. */
+  @Post('transactions/bulk-classification') classification(@Body() body: unknown) {
+    const input = c.bulkClassificationSchema.parse(body);
+    return this.ledger.bulkClassification(input.ids, input.classification);
+  }
+  /** List active and historical categories. */
   @Get('categories') categories() {
     return this.ledger.categories();
   }

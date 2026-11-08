@@ -116,14 +116,59 @@ export const transactionSchema = z.object({
   counterpartyIban: z.string().nullable(),
   status: transactionStatusSchema,
   categoryId: idSchema.nullable(),
+  categoryOrigin: z.enum(['NONE', 'MANUAL', 'RULE']).default('NONE'),
+  categoryRuleId: idSchema.nullable().default(null),
+  categoryRuleName: z.string().nullable().default(null),
+  categoryRuleConflict: z.boolean().default(false),
+  classification: z.enum(['FIXED', 'VARIABLE']).nullable().default(null),
   isTransfer: z.boolean(),
   transferGroupId: idSchema.nullable(),
 });
 export const transactionPatchSchema = z.object({
   categoryId: idSchema.nullable().optional(),
+  classification: z.enum(['FIXED', 'VARIABLE']).nullable().optional(),
   isTransfer: z.boolean().optional(),
 });
 export const bulkCategorySchema = z.object({ ids: z.array(idSchema).min(1).max(100), categoryId: idSchema.nullable() });
+export const bulkClassificationSchema = z.object({
+  ids: z.array(idSchema).min(1).max(100),
+  classification: z.enum(['FIXED', 'VARIABLE']).nullable(),
+});
+export const categoryRuleInputSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  categoryId: idSchema,
+  matchType: z.enum(['COUNTERPARTY', 'DESCRIPTION']),
+  text: z.string().trim().min(1).max(200),
+  direction: z.enum(['ANY', 'INCOME', 'EXPENSE']).default('ANY'),
+  priority: z.number().int().min(0).max(10000).default(100),
+  isActive: z.boolean().default(true),
+});
+export const categoryRuleSchema = categoryRuleInputSchema.extend({ id: idSchema });
+export const categoryTemplateInputSchema = z.object({
+  names: z
+    .array(
+      z.enum([
+        'Lebensmittel',
+        'Essen gehen',
+        'Mode',
+        'Technik',
+        'Wohnen',
+        'Mobilität',
+        'Gesundheit',
+        'Freizeit',
+        'Abonnements',
+        'Versicherungen',
+      ]),
+    )
+    .min(1)
+    .max(10),
+});
+export const categoryRuleBackfillSchema = z.object({ confirm: z.literal(true) });
+export const categoryRuleBackfillResultSchema = z.object({
+  updated: z.number().int(),
+  conflicting: z.number().int(),
+  protected: z.number().int(),
+});
 export const transactionQuerySchema = z
   .object({
     accountId: idSchema.optional(),
@@ -313,6 +358,7 @@ export const assignmentInputSchema = z.object({
         action: z.enum(['BANK', 'CSV', 'SEPARATE', 'SKIP']),
         candidateId: idSchema.optional(),
         categoryChoice: z.enum(['BANK', 'CSV']).optional(),
+        classificationChoice: z.enum(['BANK', 'CSV']).optional(),
       }),
     )
     .min(1)
@@ -364,6 +410,43 @@ export interface ApiContract {
 const okSchema = z.object({ ok: z.boolean() });
 /** Operation inventory shared with generated OpenAPI and contract tests. */
 export const apiContracts: Record<string, ApiContract> = {
+  categoryRules: { method: 'get', path: '/category-rules', response: z.array(categoryRuleSchema), status: 200 },
+  createCategoryRule: {
+    method: 'post',
+    path: '/category-rules',
+    request: categoryRuleInputSchema,
+    response: categoryRuleSchema,
+    status: 201,
+  },
+  patchCategoryRule: {
+    method: 'patch',
+    path: '/category-rules/{id}',
+    request: categoryRuleInputSchema.partial(),
+    response: categoryRuleSchema,
+    status: 200,
+  },
+  deleteCategoryRule: { method: 'delete', path: '/category-rules/{id}', response: okSchema, status: 200 },
+  applyCategoryRules: {
+    method: 'post',
+    path: '/category-rules/apply',
+    request: categoryRuleBackfillSchema,
+    response: categoryRuleBackfillResultSchema,
+    status: 201,
+  },
+  categoryTemplates: {
+    method: 'post',
+    path: '/categories/templates',
+    request: categoryTemplateInputSchema,
+    response: z.array(categorySchema),
+    status: 201,
+  },
+  bulkClassification: {
+    method: 'post',
+    path: '/transactions/bulk-classification',
+    request: bulkClassificationSchema,
+    response: z.object({ updated: z.number().int() }),
+    status: 201,
+  },
   health: {
     method: 'get',
     path: '/health',

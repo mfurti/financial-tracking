@@ -216,6 +216,7 @@ onBeforeUnmount(
       </div>
     </div></DisclosurePanel
   >
+  <CategoryRules :categories="categories" @changed="load" />
   <UModal
     v-model:open="deleteOpen"
     title="Kategorie löschen?"

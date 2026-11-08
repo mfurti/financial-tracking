@@ -250,6 +250,7 @@ onBeforeUnmount(
       }}</UButton>
     </div>
   </section>
+  <ClassificationEditor v-if="detail" :ids="[detail.id]" :value="detail.classification" @changed="load()" />
   <AccountAssignment
     v-if="detail?.accountId === null"
     :transaction-ids="[detail.id]"
@@ -257,6 +258,7 @@ onBeforeUnmount(
     :categories="categories"
     @complete="assigned"
   />
+
   <AccountAssignment
     v-if="!route.params.id"
     :transaction-ids="unassignedSelection"
@@ -339,6 +341,7 @@ onBeforeUnmount(
         /><UButton @click="bulk">Kategorie zuweisen</UButton
         ><UButton :disabled="selected.length > 2" variant="soft" @click="transfer">Umbuchung verknüpfen</UButton>
       </div>
+      <ClassificationEditor v-if="selected.length" :ids="selected" @changed="load()" />
       <p role="status" class="ledger-load-status">{{ busy ? 'Umsätze werden geladen …' : '' }}</p>
       <p v-if="!busy && !rows.length" class="empty-copy">
         Keine Umsätze gefunden. Passe deine Filter an oder importiere Buchungen.
@@ -353,7 +356,10 @@ onBeforeUnmount(
           ><small
             >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || 'Keine Gegenpartei'
             }}<span v-if="row.isTransfer"> · Umbuchung</span><span v-if="row.accountId === null"> · Ohne Konto</span
-            ><span v-if="row.status === 'PENDING'"> · Vorgemerkt</span></small
+            ><span v-if="row.status === 'PENDING'"> · Vorgemerkt</span
+            ><span v-if="row.categoryOrigin === 'RULE'"> · Regel: {{ row.categoryRuleName }}</span
+            ><span v-if="row.categoryRuleConflict"> · Kategorie klären: gleichrangige Regeln widersprechen sich</span
+            ><span v-if="row.classification"> · {{ row.classification === 'FIXED' ? 'Fix' : 'Variabel' }}</span></small
           ></NuxtLink
         ><ChoiceSelect
           :model-value="row.categoryId ?? ''"

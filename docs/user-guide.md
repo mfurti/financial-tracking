@@ -72,3 +72,11 @@ Datumsfelder erlauben direkte Eingabe, Kalenderauswahl und Löschen. Der Monatsf
 ## Theme-Kacheln
 
 Unter Einstellungen wählst du eine der 23 Vorschaukacheln. Die Markierung zeigt die aktive Farbwelt; Pfeiltasten bewegen den Fokus, die Leertaste wählt. Ayu Light, Dark und Mirage gibt es jeweils mit und ohne Kartenrahmen. Die Ayu-Auswahl setzt auch Hell oder Dunkel. Der Kreis wechselt zu Light und zurück zum zuletzt gewählten Dark oder Mirage; die Rahmenwahl bleibt erhalten. Vorhandene gespeicherte Farbwelten bleiben gültig.
+
+## Automatische Kategorien und Fix/Variabel
+
+Unter **Kategorien & Regeln** legst du Regeln an: Die Gegenpartei muss vollständig passen oder der Buchungstext einen bewusst gewählten Text enthalten. Groß-/Kleinschreibung spielt keine Rolle. Begrenze eine Regel bei Bedarf auf Ausgaben oder Einnahmen. Kleinere Prioritätszahlen greifen zuerst. Widersprechen sich gleichrangige Treffer, bleibt die Buchung mit Hinweis ungeklärt; es wird keine Kategorie geraten.
+
+Neue Regeln gelten für neue Buchungen. Mit **Regeln auf Bestandsbuchungen anwenden** kannst du vorhandene automatische/ungeklärte Zuordnungen ausdrücklich neu bewerten. Die Bestätigung erklärt, dass alte automatische Zuordnungen ersetzt oder entfernt werden können. Manuelle Kategorien und bewusst leere Auswahl bleiben geschützt. Die Umsatzliste zeigt den Namen einer automatisch angewendeten Regel. Löschen einer Regel entfernt keine Buchung und ändert keine bisherige Kategorie.
+
+Die Vorlagen ergänzen Alltagskategorien, etwa Mode, Technik und Essen gehen. Passende vorhandene Kategorien werden wiederverwendet, eigene Namen nicht verändert. In einem Umsatz oder nach Auswahl mehrerer Umsätze kannst du **Fix** oder **Variabel** festlegen. **Automatisch / nicht eingeordnet** entfernt diese manuelle Festlegung. Bestätigte Vertragszahlungen gelten dann als fix, alle anderen bleiben nicht eingeordnet. Diese Kennzeichnung verändert keine Beträge.

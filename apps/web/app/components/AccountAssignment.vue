@@ -21,7 +21,12 @@ const requestId = ref<string | null>(null);
 const choices = reactive<
   Record<
     string,
-    { action: '' | 'BANK' | 'CSV' | 'SEPARATE' | 'SKIP'; candidateId: string; categoryChoice: '' | 'BANK' | 'CSV' }
+    {
+      action: '' | 'BANK' | 'CSV' | 'SEPARATE' | 'SKIP';
+      candidateId: string;
+      categoryChoice: '' | 'BANK' | 'CSV';
+      classificationChoice: '' | 'BANK' | 'CSV';
+    }
   >
 >({});
 const targets = computed(
@@ -53,7 +58,13 @@ function categoryConflict(id: string) {
     /** Read the selected source annotation. */ (item) => item.incoming.transaction.id === id,
   )?.incoming.transaction;
   const target = candidate(id)?.transaction;
-  return !!source?.categoryId && !!target?.categoryId && source.categoryId !== target.categoryId;
+  return (
+    !!source &&
+    !!target &&
+    (source.categoryOrigin === 'MANUAL' || !!source.categoryId) &&
+    (target.categoryOrigin === 'MANUAL' || !!target.categoryId) &&
+    source.categoryId !== target.categoryId
+  );
 }
 /** Describe bank/CSV/legacy observations without claiming an inferred source as verified. */
 function sources(value: z.infer<typeof assignmentPreviewSchema>['items'][number]['incoming']) {
@@ -96,6 +107,7 @@ async function compare() {
         action: item.candidates.length ? '' : 'SEPARATE',
         candidateId: '',
         categoryChoice: '',
+        classificationChoice: '',
       };
   } catch (cause) {
     error.value = userErrorMessage(cause);
@@ -122,6 +134,7 @@ async function confirm() {
             action: choice.action,
             candidateId: choice.candidateId || undefined,
             categoryChoice: choice.categoryChoice || undefined,
+            classificationChoice: choice.classificationChoice || undefined,
           };
         },
       ),
@@ -271,6 +284,33 @@ async function confirm() {
               },
             ]"
         /></label>
+        <UFormField
+          v-if="
+            ['BANK', 'CSV'].includes(choices[item.incoming.transaction.id]!.action) &&
+            item.incoming.transaction.classification &&
+            candidate(item.incoming.transaction.id)?.transaction.classification &&
+            item.incoming.transaction.classification !==
+              candidate(item.incoming.transaction.id)?.transaction.classification
+          "
+          label="Abweichende Fix/Variabel-Kennzeichnung"
+          help="Beide Buchungen wurden unterschiedlich eingeordnet. Wähle, welche Entscheidung erhalten bleibt."
+        >
+          <ChoiceSelect
+            v-model="choices[item.incoming.transaction.id]!.classificationChoice"
+            :searchable="false"
+            :items="[
+              { label: 'Kennzeichnung ausdrücklich wählen', value: '' },
+              {
+                label: `CSV: ${item.incoming.transaction.classification === 'FIXED' ? 'Fix' : 'Variabel'}`,
+                value: 'CSV',
+              },
+              {
+                label: `Ziel: ${candidate(item.incoming.transaction.id)?.transaction.classification === 'FIXED' ? 'Fix' : 'Variabel'}`,
+                value: 'BANK',
+              },
+            ]"
+          />
+        </UFormField>
       </article>
       <p class="muted">
         Zusammenführen zählt die verbleibende Buchung einmal. „Separat behalten“ erhält beide Buchungen; „Überspringen“
