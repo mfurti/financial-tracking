@@ -1,5 +1,7 @@
 # Implementierungsspezifikation: Privates Haushaltsbuch mit Sparkassen-Anbindung
 
+> **Statuskorrektur, 8. November 2026:** Historischer Plan bzw. damalige Checkliste. Aktueller Lieferstand: PR #11, `d193639`, gemergt und ausgerollt. Ausschließlich [Projektstand](status.md) und [aktuelle Aufgaben](todo.md) bewerten die heutige Erfüllung. Frühere Aussagen über fehlende Analysen/Regeln/Verträge, ausstehende Lieferungen oder leere Restore-Daten beschreiben damalige Zwischenstände. Ursprüngliche Prüfpunkte unten sind keine aktuelle Offen-Liste. Budgets B1–B5, Monatsplanung P1, Detailanforderungen C1–C3/A1 und externe Abnahmen bleiben dort ausdrücklich offen.
+
 **Version:** 1.0  
 **Zielplattform:** Linux / Docker Compose  
 **Status:** Implementierungsspezifikation; FinTS-Kompatibilität noch zu prüfen
@@ -822,70 +824,70 @@ Isolierte Testdatenbank; niemals echte Bankzugangsdaten in CI.
 
 ### T1 – FinTS-Machbarkeit
 
-- [ ] T1.1 Produkt-ID und offiziellen Bankendpunkt klären.
-- [ ] T1.2 Isoliertes FinTS-Testprogramm erstellen.
-- [ ] T1.3 Anmeldung und Kontenermittlung testen.
-- [ ] T1.4 Saldo- und Umsatzabruf testen.
-- [ ] T1.5 TAN-Verfahren und Freigabefortsetzung prüfen.
-- [ ] T1.6 Fehlerfälle und Abbruch testen.
-- [ ] T1.7 Kompatibilitätsbericht und Go/No-Go dokumentieren.
+- **Ursprünglicher Prüfpunkt:** T1.1 Produkt-ID und offiziellen Bankendpunkt klären.
+- **Ursprünglicher Prüfpunkt:** T1.2 Isoliertes FinTS-Testprogramm erstellen.
+- **Ursprünglicher Prüfpunkt:** T1.3 Anmeldung und Kontenermittlung testen.
+- **Ursprünglicher Prüfpunkt:** T1.4 Saldo- und Umsatzabruf testen.
+- **Ursprünglicher Prüfpunkt:** T1.5 TAN-Verfahren und Freigabefortsetzung prüfen.
+- **Ursprünglicher Prüfpunkt:** T1.6 Fehlerfälle und Abbruch testen.
+- **Ursprünglicher Prüfpunkt:** T1.7 Kompatibilitätsbericht und Go/No-Go dokumentieren.
 
 **Abnahme:** FinTS nachgewiesen oder konkreter Blocker; CSV-Fallback eingeplant.
 
 ### T2 – Projektfundament
 
-- [ ] T2.1 pnpm-Monorepo initialisieren.
-- [ ] T2.2 NestJS/Fastify-API erstellen.
-- [ ] T2.3 Nuxt/Nuxt-UI-Frontend erstellen.
-- [ ] T2.4 PostgreSQL und Prisma einrichten.
-- [ ] T2.5 Initiale Migrationen und Constraints erstellen.
-- [ ] T2.6 Admin-Initialisierung und Passwort-Hashing.
-- [ ] T2.7 Sessions, CSRF und Rate Limiting.
-- [ ] T2.8 OpenAPI und generierten Client einrichten.
-- [ ] T2.9 CI, Linting, Typecheck, Testumgebung.
+- **Ursprünglicher Prüfpunkt:** T2.1 pnpm-Monorepo initialisieren.
+- **Ursprünglicher Prüfpunkt:** T2.2 NestJS/Fastify-API erstellen.
+- **Ursprünglicher Prüfpunkt:** T2.3 Nuxt/Nuxt-UI-Frontend erstellen.
+- **Ursprünglicher Prüfpunkt:** T2.4 PostgreSQL und Prisma einrichten.
+- **Ursprünglicher Prüfpunkt:** T2.5 Initiale Migrationen und Constraints erstellen.
+- **Ursprünglicher Prüfpunkt:** T2.6 Admin-Initialisierung und Passwort-Hashing.
+- **Ursprünglicher Prüfpunkt:** T2.7 Sessions, CSRF und Rate Limiting.
+- **Ursprünglicher Prüfpunkt:** T2.8 OpenAPI und generierten Client einrichten.
+- **Ursprünglicher Prüfpunkt:** T2.9 CI, Linting, Typecheck, Testumgebung.
 
 **Abnahme:** Startfähige Anwendung mit Login, Datenbank, Migrationen und CI.
 
 ### T3 – Import und Datenhaltung
 
-- [ ] T3.1 Bank-, Konto- und Saldo-Repositories.
-- [ ] T3.2 Transaktionsmodell und Identitätsnachweise.
-- [ ] T3.3 Normalisierung und Validierung.
-- [ ] T3.4 Dublettenerkennung und Review-Queue.
-- [ ] T3.5 Atomare Kontoübernahme.
-- [ ] T3.6 CSV-Parser und Vorschau.
-- [ ] T3.7 CSV-Commit und Fehlerbericht.
-- [ ] T3.8 FinTS-Connector integrieren, falls freigegeben.
-- [ ] T3.9 Synchronisationszustände und Parallelität.
-- [ ] T3.10 Import-Integrationstests.
+- **Ursprünglicher Prüfpunkt:** T3.1 Bank-, Konto- und Saldo-Repositories.
+- **Ursprünglicher Prüfpunkt:** T3.2 Transaktionsmodell und Identitätsnachweise.
+- **Ursprünglicher Prüfpunkt:** T3.3 Normalisierung und Validierung.
+- **Ursprünglicher Prüfpunkt:** T3.4 Dublettenerkennung und Review-Queue.
+- **Ursprünglicher Prüfpunkt:** T3.5 Atomare Kontoübernahme.
+- **Ursprünglicher Prüfpunkt:** T3.6 CSV-Parser und Vorschau.
+- **Ursprünglicher Prüfpunkt:** T3.7 CSV-Commit und Fehlerbericht.
+- **Ursprünglicher Prüfpunkt:** T3.8 FinTS-Connector integrieren, falls freigegeben.
+- **Ursprünglicher Prüfpunkt:** T3.9 Synchronisationszustände und Parallelität.
+- **Ursprünglicher Prüfpunkt:** T3.10 Import-Integrationstests.
 
 **Abnahme:** CSV zuverlässig nutzbar, FinTS gegebenenfalls integriert, keine unbemerkten Dubletten.
 
 ### T4 – Haushaltsbuch und UI
 
-- [ ] T4.1 App-Layout, Navigation und Login.
-- [ ] T4.2 Kontoübersicht und Kontodetails.
-- [ ] T4.3 Umsatzliste, Suche und Filter.
-- [ ] T4.4 Kategorienverwaltung und Mehrfachzuordnung.
-- [ ] T4.5 Umbuchungsmarkierung und Verknüpfung.
-- [ ] T4.6 Monatsauswertungs-Service.
-- [ ] T4.7 Dashboard und Monatsvergleich.
-- [ ] T4.8 CSV-Importassistent.
-- [ ] T4.9 FinTS-Synchronisationsdialog.
-- [ ] T4.10 Responsive E2E-Tests.
+- **Ursprünglicher Prüfpunkt:** T4.1 App-Layout, Navigation und Login.
+- **Ursprünglicher Prüfpunkt:** T4.2 Kontoübersicht und Kontodetails.
+- **Ursprünglicher Prüfpunkt:** T4.3 Umsatzliste, Suche und Filter.
+- **Ursprünglicher Prüfpunkt:** T4.4 Kategorienverwaltung und Mehrfachzuordnung.
+- **Ursprünglicher Prüfpunkt:** T4.5 Umbuchungsmarkierung und Verknüpfung.
+- **Ursprünglicher Prüfpunkt:** T4.6 Monatsauswertungs-Service.
+- **Ursprünglicher Prüfpunkt:** T4.7 Dashboard und Monatsvergleich.
+- **Ursprünglicher Prüfpunkt:** T4.8 CSV-Importassistent.
+- **Ursprünglicher Prüfpunkt:** T4.9 FinTS-Synchronisationsdialog.
+- **Ursprünglicher Prüfpunkt:** T4.10 Responsive E2E-Tests.
 
 **Abnahme:** Vollständig bedienbares Haushaltsbuch mit korrekten Auswertungen.
 
 ### T5 – Produktivbetrieb
 
-- [ ] T5.1 Docker-Produktionsimages.
-- [ ] T5.2 Reverse Proxy und HTTPS.
-- [ ] T5.3 Private Netzbindung und Firewall.
-- [ ] T5.4 Verschlüsselte tägliche Backups.
-- [ ] T5.5 Restore-Skript und Wiederherstellungstest.
-- [ ] T5.6 Deployment-/Update-Dokumentation.
-- [ ] T5.7 Sicherheits- und Logprüfung.
-- [ ] T5.8 Vollständige Produktivabnahme.
+- **Ursprünglicher Prüfpunkt:** T5.1 Docker-Produktionsimages.
+- **Ursprünglicher Prüfpunkt:** T5.2 Reverse Proxy und HTTPS.
+- **Ursprünglicher Prüfpunkt:** T5.3 Private Netzbindung und Firewall.
+- **Ursprünglicher Prüfpunkt:** T5.4 Verschlüsselte tägliche Backups.
+- **Ursprünglicher Prüfpunkt:** T5.5 Restore-Skript und Wiederherstellungstest.
+- **Ursprünglicher Prüfpunkt:** T5.6 Deployment-/Update-Dokumentation.
+- **Ursprünglicher Prüfpunkt:** T5.7 Sicherheits- und Logprüfung.
+- **Ursprünglicher Prüfpunkt:** T5.8 Vollständige Produktivabnahme.
 
 **Abnahme:** Sicherer Produktivbetrieb mit getesteter Wiederherstellung.
 
@@ -1005,28 +1007,28 @@ Statuspolling zunächst alle zwei Sekunden, nach 30 Sekunden auf fünf Sekunden 
 
 ## 16. Definition of Done – Gesamtprojekt
 
-- [ ] Frische Linux-Installation mit Docker Compose funktioniert.
-- [ ] Anmeldung und sichere Abmeldung funktionieren.
-- [ ] Nicht authentifizierte API-Zugriffe werden abgewiesen.
-- [ ] Bankkonten können angelegt oder importiert werden.
-- [ ] CSV-Import mit Vorschau, Validierung und Fehlerbericht funktioniert.
-- [ ] FinTS funktioniert nachweislich oder ist dokumentiert blockiert; CSV bleibt nutzbar.
-- [ ] Wiederholte/überlappende Importe erzeugen keine unbemerkten Dubletten.
-- [ ] Unklare Umsatzidentitäten können manuell geprüft werden.
-- [ ] Kontostände und Aktualisierungszeitpunkte werden korrekt angezeigt.
-- [ ] Umsätze können gesucht, gefiltert und kategorisiert werden.
-- [ ] Umbuchungen werden aus Einnahmen/Ausgaben ausgeschlossen.
-- [ ] Monatsauswertungen sind Cent-genau und basieren auf Buchungsdatum.
-- [ ] Vorgemerkte Umsätze werden separat behandelt.
-- [ ] Smartphone- und Desktop-Oberfläche sind bedienbar.
-- [ ] Fehler-, Lade- und Leerzustände sind vorhanden.
-- [ ] PIN/TAN werden nicht dauerhaft gespeichert oder protokolliert.
-- [ ] Alle verpflichtenden automatisierten Tests bestehen.
-- [ ] CI-Pipeline ist erfolgreich.
-- [ ] Tägliche verschlüsselte Backups funktionieren.
-- [ ] Restore wurde erfolgreich getestet.
-- [ ] API und Datenbank sind nicht öffentlich erreichbar.
-- [ ] Installation, Updates und Restore sind dokumentiert.
+- **Ursprünglicher Prüfpunkt:** Frische Linux-Installation mit Docker Compose funktioniert.
+- **Ursprünglicher Prüfpunkt:** Anmeldung und sichere Abmeldung funktionieren.
+- **Ursprünglicher Prüfpunkt:** Nicht authentifizierte API-Zugriffe werden abgewiesen.
+- **Ursprünglicher Prüfpunkt:** Bankkonten können angelegt oder importiert werden.
+- **Ursprünglicher Prüfpunkt:** CSV-Import mit Vorschau, Validierung und Fehlerbericht funktioniert.
+- **Ursprünglicher Prüfpunkt:** FinTS funktioniert nachweislich oder ist dokumentiert blockiert; CSV bleibt nutzbar.
+- **Ursprünglicher Prüfpunkt:** Wiederholte/überlappende Importe erzeugen keine unbemerkten Dubletten.
+- **Ursprünglicher Prüfpunkt:** Unklare Umsatzidentitäten können manuell geprüft werden.
+- **Ursprünglicher Prüfpunkt:** Kontostände und Aktualisierungszeitpunkte werden korrekt angezeigt.
+- **Ursprünglicher Prüfpunkt:** Umsätze können gesucht, gefiltert und kategorisiert werden.
+- **Ursprünglicher Prüfpunkt:** Umbuchungen werden aus Einnahmen/Ausgaben ausgeschlossen.
+- **Ursprünglicher Prüfpunkt:** Monatsauswertungen sind Cent-genau und basieren auf Buchungsdatum.
+- **Ursprünglicher Prüfpunkt:** Vorgemerkte Umsätze werden separat behandelt.
+- **Ursprünglicher Prüfpunkt:** Smartphone- und Desktop-Oberfläche sind bedienbar.
+- **Ursprünglicher Prüfpunkt:** Fehler-, Lade- und Leerzustände sind vorhanden.
+- **Ursprünglicher Prüfpunkt:** PIN/TAN werden nicht dauerhaft gespeichert oder protokolliert.
+- **Ursprünglicher Prüfpunkt:** Alle verpflichtenden automatisierten Tests bestehen.
+- **Ursprünglicher Prüfpunkt:** CI-Pipeline ist erfolgreich.
+- **Ursprünglicher Prüfpunkt:** Tägliche verschlüsselte Backups funktionieren.
+- **Ursprünglicher Prüfpunkt:** Restore wurde erfolgreich getestet.
+- **Ursprünglicher Prüfpunkt:** API und Datenbank sind nicht öffentlich erreichbar.
+- **Ursprünglicher Prüfpunkt:** Installation, Updates und Restore sind dokumentiert.
 
 ## 17. Offene externe Validierungen und Implementierungsstatus
 

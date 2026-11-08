@@ -1,8 +1,10 @@
 # Contract usability acceptance
 
+> **Current status, 2026-11-08:** PR #11 is merged and separately approved deployment `d193639` is complete. [status.md](status.md) is the current delivery/acceptance record; [todo.md](todo.md) is the only active checklist. Dated evidence below remains historical. Technical delivery does not imply full product acceptance; R1–R3 remain incomplete.
+
 ## Candidate and scope
 
-Baseline and unchanged production: `3b990ecaba356c0bfe85a79bb87915c41eac0967`. Approved plan: [contract usability](vertragsanalyse-usability-plan.md), issue #3, branch `codex/3-contracts-import-usability`. Audit `392d988` remains in ancestry. One feature PR; neither merge nor rollout is authorized by implementation approval.
+Implementation baseline: `3b990ecaba356c0bfe85a79bb87915c41eac0967`. Approved plan: [contract usability](vertragsanalyse-usability-plan.md), issue #3, former branch `codex/3-contracts-import-usability`. Audit `392d988` remains in ancestry. PR #11 was subsequently merged and separately approved rollout `d193639` completed. This record distinguishes that technical delivery from incomplete R1/R3 details and outstanding user acceptance.
 
 | Package | Source commit / result                                                                                             |
 | ------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -26,10 +28,10 @@ Baseline and unchanged production: `3b990ecaba356c0bfe85a79bb87915c41eac0967`. A
 
 ## Linux and migration delivery gates
 
-Full Linux source acceptance passed at 2f93e95 in run 42497875724: 131 tests across 24 files, all 20 browser scenarios and image-only encrypted backup/restore, including the new provenance/decision checks. This is actual container execution, distinct from the Windows checks. The final documentation update must pass current CI before merge.
+Full Linux source acceptance passed at 2f93e95 in run 42497875724: 131 tests across 24 files, all 20 browser scenarios and image-only encrypted backup/restore, including the new provenance/decision checks. This is actual container execution, distinct from the Windows checks. The final documentation head and merged main subsequently passed current CI; main run 42499226320 completed verification, operations and publication.
 
 The operations fixture now seeds creating-import ownership and both confirmed/dismissed decisions, verifies those after encrypted restore, and checks authenticated rollback preview/monthly summary on the restored runtime images. Actual Docker execution is performed by Linux CI, not claimed on this Windows workstation. CI failure artifacts include the new synthetic contract analysis/review screenshots.
 
 Two additive migrations are reviewed in [feature-migrations.md](feature-migrations.md). They do not delete financial data on deployment. Rollback deletes actual import-owned rows only after a user's preview and explicit confirmation. Existing consumers can read expanded fields, but mixed-version writes do not maintain all ownership/decision semantics; use a controlled write pause. Do not drop columns or promise historical financial restoration as application rollback.
 
-Current-head verify and operations jobs must pass before an approved merge. [PR #11](https://github.com/mfurti/financial-tracking/pull/11) has explicit merge-after-green-CI approval. Final documentation-head CI still gates that merge. Any production rollout is separately approved, uses only published immutable GitHub images and a fresh encrypted backup/restore, and requires comparison of original data before reopening writes. No server repository, production migration, reboot or real bank test is part of this source delivery. Budgets and the selected-month all-contract forecast remain separate backlog.
+[PR #11](https://github.com/mfurti/financial-tracking/pull/11) is merged as `d193639`. Its separately approved rollout used published immutable GitHub images, a fresh encrypted populated backup/isolated restore and a controlled migration pause; all original fields/rows across 17 application tables were preserved. See [status.md](status.md) for delivery evidence. No server repository, reboot or real bank test occurred. UX2 headings/text reduction and UX4 payment evidence remain R1/R3; full user acceptance remains E5/E6. Budgets and the selected-month all-contract forecast remain separate backlog. Future merges and rollouts require new concrete approvals.

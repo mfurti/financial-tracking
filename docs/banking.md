@@ -1,5 +1,7 @@
 # Bank integration
 
+> **Documentation update, 2026-11-08:** Real compatibility remains open as E1/E2 in [todo.md](todo.md). See [status.md](status.md) for delivered source and [user-guide.md](user-guide.md) for current behavior.
+
 Status: adapter implemented; **live Sparkasse Bodensee compatibility is not proven**. No product ID or real bank login has been provided. CSV remains usable independently.
 
 The user has not applied for a product registration yet. Follow the German step-by-step [registration guide](fints-registration.md), researched against the official FinTS registration/FAQ pages on 2026-11-07. No registration or bank-support message has been sent on the user's behalf. The official bank endpoint remains unconfirmed.
@@ -20,6 +22,6 @@ Synthetic acceptance covers successful method/media/app continuation through rea
 
 Before declaring live support: verify official endpoint, application product ID, login, available TAN method/media, account list, balance, complete transaction history, approval continuation, cancellation, and negative cases. Record only sanitized outcomes. Reference-less bank observations require review on repeated/overlapping imports rather than unsafe automatic matching.
 
-CSV accepts UTF-8/BOM or Windows-1252 decoded by the upload client, semicolon/comma delimiters, German signed amounts, and German/ISO dates. Limits are 10 MiB and 50,000 data rows. Mapping is explicit; invalid rows need explicit partial-import approval. Raw uploaded files are not retained; normalized preview rows are staged until commit/cancel.
+CSV supports UTF-8/BOM, Windows-1252, Latin-9 and UTF-16 LE/BE decoded by the upload client; semicolon/comma/tab delimiters, German signed amounts, German/ISO dates and Sparkasse short years (2000–2099). Recognized valid files map and import automatically without a required account. Unknown columns and invalid rows require explicit choices/partial-import approval. Limits are currently fixed at 10 MiB and 50,000 data rows. Raw uploaded files are not retained; normalized preview rows are staged until commit/cancel. Separate debit/credit columns, CSV source balances and configurable limits remain C1–C3; actual-file acceptance remains E5 in todo.md.
 
 Sources: [bank PSD2 information](https://www.sparkasse-bodensee.de/de/home/aktionen/psd2.html), [lib-fints](https://github.com/robocode13/lib-fints). LGPL-2.1-or-later applies to lib-fints; retain the dependency's license in distributed images and provide its upstream source link.

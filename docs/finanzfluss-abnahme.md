@@ -1,5 +1,7 @@
 # Finanzfluss feature acceptance
 
+> **Current status, 2026-11-08:** PR #11 is merged and separately approved deployment `d193639` is complete. [status.md](status.md) is the current delivery/acceptance record; [todo.md](todo.md) is the only active checklist. Dated evidence below remains historical. Technical delivery does not imply full product acceptance; R1–R3 remain incomplete.
+
 ## Source delivery
 
 | Package | Commit                                | Evidence                                                                                                         |
@@ -24,8 +26,8 @@
 
 Two additive migrations require a coordinated writer pause and matching images. See feature-migrations.md. Do not use old/new mixed writers for new attribution semantics. Production execution requires a new concrete rollout approval, published immutable GitHub images and fresh encrypted backup with isolated restore verification.
 
-No production deployment, reboot, real-bank access or budget implementation was performed by this feature task. Real Sparkasse compatibility still needs the application's own FinTS product registration, confirmed endpoint and user-assisted test. Everyday acceptance of the user's actual CSV remains external. A selected-month forecast total across all contracts is separate future planning work; next-due sorting and per-contract payment history are delivered here.
+The source task did not itself deploy. The subsequent separately approved PR #10 rollout completed at `3b990ec`; PR #11 is now deployed at `d193639`. No reboot, real-bank access or budget implementation occurred. Real Sparkasse compatibility still needs the application's own FinTS product registration, confirmed endpoint and user-assisted test. Everyday acceptance of the user's actual CSV remains external. A selected-month forecast total across all contracts is separate future planning work (P1); next-due sorting and per-contract payment history are delivered. Consistent field-level errors remain R2 rather than fully accepted F1/N1.
 
 ## Review and release
 
-[PR #10](https://github.com/mfurti/financial-tracking/pull/10) contains all package commits and has explicit merge-after-green-CI approval. A merge commit preserves audit 392d988 and the individual implementation commits. The final documentation head must satisfy the same current CI gate before merging. Published images and any production rollout remain distinct from source acceptance; rollout requires separate approval.
+[PR #10](https://github.com/mfurti/financial-tracking/pull/10) was merged after current green CI; its merge commit preserves audit 392d988 and the package commits. Its separately approved rollout completed. PR #11 also completed merge, publication and its separately approved rollout. Current evidence is in [status.md](status.md); future changes retain their own merge/rollout gates. Historical passing checks do not close the remaining product corrections or user acceptance.

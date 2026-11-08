@@ -20,6 +20,15 @@ test('confirmed recurring payments keep real bookings, expose contract badges an
   await choose(page, costDialog.getByLabel('Zahlungsrhythmus', { exact: true }), 'Jährlich');
   await costDialog.getByRole('button', { name: 'Vertrag bestätigen', exact: true }).click();
   await expect(page).toHaveURL(/\/contracts\/[a-f0-9-]+$/);
+  await page.getByRole('button', { name: 'Vertrag bearbeiten', exact: true }).click();
+  const editDialog = page.getByRole('dialog', { name: 'Vertrag bearbeiten', exact: true });
+  await expect(editDialog.getByLabel('Betrag in Euro', { exact: true })).toHaveCount(0);
+  const editedName = `Jahreskosten ${info.project.name} geprüft`;
+  await editDialog.getByLabel('Vertragsname', { exact: true }).fill(editedName);
+  await editDialog.getByRole('button', { name: 'Vertrag speichern', exact: true }).click();
+  await expect(editDialog).not.toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1, name: editedName, exact: true })).toBeVisible();
   await page.goto('/contracts');
   const costCard = page.getByRole('link', { name: /Durchschnittliche Fixkosten \/ Monat/ });
   await expect(costCard).toContainText('10,00');

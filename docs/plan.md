@@ -1,5 +1,7 @@
 # Personal finance tracker: initial implementation plan
 
+> **Statuskorrektur, 8. November 2026:** Historischer Plan bzw. damalige Checkliste. Aktueller Lieferstand: PR #11, `d193639`, gemergt und ausgerollt. Ausschließlich [Projektstand](status.md) und [aktuelle Aufgaben](todo.md) bewerten die heutige Erfüllung. Frühere Aussagen über fehlende Analysen/Regeln/Verträge, ausstehende Lieferungen oder leere Restore-Daten beschreiben damalige Zwischenstände. Ursprüngliche Prüfpunkte unten sind keine aktuelle Offen-Liste. Budgets B1–B5, Monatsplanung P1, Detailanforderungen C1–C3/A1 und externe Abnahmen bleiben dort ausdrücklich offen.
+
 Historical baseline for issue #1, delivered through merged PR #2. The current agreed expansion plan is [ausbauplan.md](ausbauplan.md), with the executable checklist in [todo.md](todo.md). Where requirements differ, the expansion plan takes precedence. Its approval currently covers planning/documentation only; no expansion implementation or deployment is authorized.
 
 ## Implementation precedence

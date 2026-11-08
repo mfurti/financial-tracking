@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod';
 import * as c from '@financial-tracking/contracts';
+import { contractKindOptions, contractIntervalOptions } from '../utils/contract-presentation';
 const props = defineProps<{
   contract?: z.infer<typeof c.contractSchema> | null;
   suggestion?: z.infer<typeof c.contractSuggestionSchema> | null;
@@ -14,20 +15,6 @@ const { validation, formError } = useFormFeedback();
 const error = ref('');
 const busy = ref(false);
 const baseline = ref('');
-const kinds = [
-  { label: 'Abo', value: 'SUBSCRIPTION' },
-  { label: 'Miete', value: 'RENT' },
-  { label: 'Versicherung', value: 'INSURANCE' },
-  { label: 'Energie', value: 'ENERGY' },
-  { label: 'Telefon & Internet', value: 'TELECOM' },
-  { label: 'Sonstiges', value: 'OTHER' },
-];
-const intervals = [
-  { label: 'Monatlich', value: 1 },
-  { label: 'Vierteljährlich', value: 3 },
-  { label: 'Halbjährlich', value: 6 },
-  { label: 'Jährlich', value: 12 },
-];
 const form = reactive({
   name: '',
   provider: '',
@@ -125,7 +112,7 @@ async function save() {
       ><UInput v-model="form.provider" class="w-full"
     /></UFormField>
     <UFormField name="kind" label="Vertragsart"
-      ><USelect v-model="form.kind" class="w-full" :items="kinds"
+      ><USelect v-model="form.kind" class="w-full" :items="contractKindOptions"
     /></UFormField>
     <UFormField name="accountId" label="Konto"
       ><ChoiceSelect
@@ -153,7 +140,7 @@ async function save() {
         ><UInput v-model="form.amountEuro" class="w-full" inputmode="decimal"
       /></UFormField>
       <UFormField name="intervalMonths" label="Zahlungsrhythmus"
-        ><ChoiceSelect v-model="form.intervalMonths" :searchable="false" :items="intervals"
+        ><ChoiceSelect v-model="form.intervalMonths" :searchable="false" :items="contractIntervalOptions"
       /></UFormField>
     </template>
     <p v-else class="muted">

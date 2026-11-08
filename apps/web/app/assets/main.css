@@ -347,27 +347,6 @@ small {
   color: var(--muted);
   font-size: 13px;
 }
-.category-bar {
-  margin: 23px 0;
-}
-.category-bar > div:first-child {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 13px;
-  margin-bottom: 9px;
-}
-.bar-track {
-  height: 6px;
-  background: var(--soft);
-  border-radius: 5px;
-  overflow: hidden;
-}
-.bar-track > div {
-  height: 100%;
-  background: var(--green);
-  border-radius: 5px;
-}
 .account-row,
 .transaction-row {
   display: flex;
@@ -514,57 +493,8 @@ small {
 .detail-list dd {
   overflow-wrap: anywhere;
 }
-.upload-zone {
-  border: 1px dashed var(--muted);
-  background: var(--soft);
-  padding: 30px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  border-radius: 8px;
-}
-.upload-zone span {
-  color: var(--muted);
-  font-size: 13px;
-}
-.quick-upload {
-  align-items: center;
-  justify-content: center;
-  min-height: 260px;
-  text-align: center;
-  cursor: pointer;
-}
-.quick-upload:focus-within {
-  outline: 2px solid var(--green);
-  outline-offset: 4px;
-}
-.quick-upload strong {
-  font-size: 22px;
-}
-.upload-zone .upload-action {
-  padding: 12px 22px;
-  border-radius: 12px;
-  background: var(--green);
-  color: var(--ui-text-inverted);
-  font-weight: 600;
-}
-.upload-disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
 .upload-progress p {
   margin-top: 8px;
-}
-.stepper {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 22px;
-  color: var(--muted);
-  font-size: 13px;
-}
-.stepper .selected {
-  color: var(--green);
-  font-weight: 600;
 }
 .import-row {
   display: flex;
@@ -664,30 +594,6 @@ html.theme-transition .theme-toggle svg {
   .theme-toggle svg {
     transition: none !important;
   }
-}
-.appearance-preview {
-  margin-top: 20px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 20px;
-}
-.appearance-preview > div {
-  padding: 18px;
-  border-radius: 12px;
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
-  column-gap: 12px;
-  align-items: center;
-}
-.appearance-preview span {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  grid-row: span 2;
-}
-.appearance-preview small {
-  display: block;
-  margin-top: 5px;
 }
 .field-help {
   display: block;
@@ -803,67 +709,11 @@ html[data-theme='high-contrast'] .month-balance {
   color: var(--muted);
   font-size: 12px;
 }
-.workflow-guide {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-.workflow-guide > div {
-  display: flex;
-  gap: 12px;
-}
-.workflow-guide small {
-  display: block;
-  color: var(--muted);
-  margin-top: 4px;
-}
-.guide-number {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  border-radius: 50%;
-  color: var(--green);
-  background: var(--accent-soft);
-  font-weight: 650;
-}
 .spending-overview {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
   gap: 24px;
   align-items: center;
-}
-.spending-donut {
-  width: 180px;
-  height: 180px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  margin: 12px auto;
-}
-.spending-donut > div {
-  width: 136px;
-  height: 136px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--surface);
-  text-align: center;
-}
-.spending-donut small {
-  color: var(--muted);
-  margin-bottom: 5px;
-}
-.spending-donut strong {
-  font-size: 18px;
-  letter-spacing: -0.6px;
-  overflow-wrap: anywhere;
-  max-width: 116px;
 }
 .spending-legend {
   min-width: 0;
@@ -942,21 +792,6 @@ html[data-theme='high-contrast'] .month-balance {
   color: var(--muted);
   font-size: 12px;
 }
-.category-guide {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 20px;
-  margin: 24px 0;
-}
-.category-guide > .finance-icon {
-  flex-shrink: 0;
-}
-.category-guide p {
-  color: var(--muted);
-  margin-top: 6px;
-  max-width: 650px;
-}
 .category-management > summary {
   cursor: pointer;
   font-size: 17px;
@@ -964,17 +799,6 @@ html[data-theme='high-contrast'] .month-balance {
 }
 .category-management[open] > summary {
   margin-bottom: 24px;
-}
-.category-management-entry {
-  padding: 16px 0;
-  border-bottom: 1px solid var(--line);
-}
-.category-management-entry .editable-row {
-  border: 0;
-  padding: 0 0 10px;
-}
-.category-management-entry small {
-  color: var(--muted);
 }
 .icon-button {
   width: 40px;
@@ -1043,7 +867,6 @@ html[data-theme='high-contrast'] .month-balance {
     border: 1px solid var(--line);
     border-radius: 12px;
   }
-  .category-bar > div:first-child,
   .transaction-row {
     flex-wrap: wrap;
   }
@@ -1157,14 +980,8 @@ html[data-theme='high-contrast'] .month-balance {
   .logout-label {
     display: none;
   }
-  .mobile-more,
   .mobile-nav > a {
     min-width: 0;
-  }
-  .mobile-more-trigger {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
   }
   .mobile-nav {
     display: grid;
@@ -1179,8 +996,7 @@ html[data-theme='high-contrast'] .month-balance {
     border-top: 1px solid var(--line);
     box-shadow: 0 -5px 20px var(--shadow);
   }
-  .mobile-nav > a,
-  .mobile-more-trigger {
+  .mobile-nav > a {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1193,34 +1009,12 @@ html[data-theme='high-contrast'] .month-balance {
     cursor: pointer;
     list-style: none;
   }
-  .mobile-nav > a.active,
-  .mobile-more-trigger[aria-expanded='true'] {
+  .mobile-nav > a.active {
     background: var(--accent-soft);
     color: var(--green);
   }
-  .mobile-more-menu {
-    min-width: 220px;
-    padding: 8px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    box-shadow: 0 10px 40px var(--shadow);
-  }
-  .mobile-more-menu a {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    color: var(--ink);
-    font-size: 13px;
-  }
-  .workflow-guide,
   .category-insights {
     grid-template-columns: 1fr;
-  }
-  .category-guide {
-    align-items: start;
-    flex-direction: column;
   }
 }
 .theme-tiles {

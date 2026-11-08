@@ -1,14 +1,16 @@
 # Stage 1 delivery and remaining acceptance
 
-This record separates implemented source from external/live acceptance. Budgets remain independent backlog. The latest user explicitly requests analyses/contracts and a Nuxt UI revision; its audited missing requirements are N1–N8 in todo.md, awaiting detailed planning before feature implementation.
+> **Current status, 2026-11-08:** PR #11 is merged and separately approved deployment `d193639` is complete. [status.md](status.md) is the current delivery/acceptance record; [todo.md](todo.md) is the only active checklist. Dated evidence below remains historical. Technical delivery does not imply full product acceptance; R1–R3 remain incomplete.
 
-## Latest recorded deployment: PR #8/#9
+This record preserves dated source and operational evidence. Current source/deployment and remaining acceptance are summarized in status.md. Analyses, rules and contracts are implemented; budgets and the other current gaps remain explicitly tracked in todo.md.
+
+## Historical deployment checkpoint: PR #8/#9
 
 Approved combined rollout completed at `1e33afa517c968edf6ef969c1e3f841a2db16c20`. [Main CI 42417004125](https://github.com/mfurti/financial-tracking/actions/runs/42417004125) passed 95 tests, 16 browser cases, operations/recovery and publication. A fresh write-stopped encrypted backup recovered off-server in nine seconds; every original field/count across 14 tables including migration state matched. Four services healthy, 103-second pause, zero new schema migrations, trusted HTTPS/anonymous protection/direct-IP denial verified. Current encrypted configuration was explicitly approved, copied off-server and authenticated. These are recorded completed checks, not rerun by the new To-do audit. The actual CSV retry and joint everyday-use acceptance remain open.
 
-The earlier sections below preserve historical checkpoints. Source inspection now confirms that full Nuxt UI control adoption is unfinished, and range analytics/rules/contracts are absent; the previous monthly dashboard and theme tests do not prove these new requirements.
+At that historical checkpoint, full Nuxt UI control adoption, range analytics, rules and contracts were not yet delivered. They were subsequently implemented through PR #10/#11, with remaining UI details R1–R3 tracked in todo.md.
 
-## Current deployed baseline and new review
+## Historical pre-PR #8 deployed baseline and review
 
 This section records the pre-PR #8 deployment checkpoint. For subsequent delivery and actual server revision, see the current status in [issue #3](https://github.com/mfurti/financial-tracking/issues/3).
 
@@ -16,7 +18,7 @@ PRs #4–#7 are merged. Current approved runtime is `a2ea7371b181ebbf92c17006b82
 
 The user's next review requests automatic upload/analysis, a Finanzguru-inspired redesign, a circular mode control, Settings theme families and understandable categories. These U1–U5 tasks are planned in ausbauplan.md and tracked in todo.md; they are not delivered merely because earlier UI tests passed. The records below preserve earlier rollout evidence.
 
-## Current experience revision: source acceptance
+## Historical U1–U5 source acceptance
 
 Branch `codex/3-guided-finance-experience`; U1 `52525a6`, U2 `5772824`, U3 `79e0413`, U4 `4fdc508`. No new database migration or production change.
 
@@ -78,7 +80,7 @@ node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.json scripts/verify-targe
 
 The verifier rejects CI and externally supplied `TEST_DATABASE_URL`, creates its own empty local cluster, suppresses sensitive process output and produces only boolean/hash/timing evidence. Neither the backup nor recovery keys belong in GitHub artifacts. Local helper downloads and evidence remain ignored under `.local`.
 
-## Required external decisions and work
+## Historical external checklist at the Stage-1 rollout
 
 1. Review and merge the source follow-up for bridge-qualified proxy DNS after its own CI; the production Compose correction is already active and documented above.
 2. Confirm/restrict the existing protected GHCR credential to read-only package access. Publication and actual target pulls are complete; minimal credential scope was not inspected.

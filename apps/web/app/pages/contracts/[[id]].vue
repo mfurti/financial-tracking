@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod';
 import * as c from '@financial-tracking/contracts';
-import { contractKinds } from '../../utils/contract-presentation';
+import { contractKinds, contractIntervalOptions } from '../../utils/contract-presentation';
 const api = useApi();
 const route = useRoute();
 const records = ref<z.infer<typeof c.contractSchema>[]>([]);
@@ -23,7 +23,6 @@ const to = ref('');
 const revision = reactive({ effectiveDate: '', amountEuro: '', intervalMonths: 1 });
 const editorOpen = ref(false);
 const editing = ref(false);
-const suggestion = ref<z.infer<typeof c.contractSuggestionSchema> | null>(null);
 const deleteOpen = ref(false);
 const unlinkId = ref<string | null>(null);
 const unlinkOpen = computed({
@@ -35,20 +34,6 @@ const unlinkOpen = computed({
 const loading = ref(true);
 const busy = ref(false);
 const error = ref('');
-const kinds: Record<string, string> = {
-  SUBSCRIPTION: 'Abo',
-  RENT: 'Miete',
-  INSURANCE: 'Versicherung',
-  ENERGY: 'Energie',
-  TELECOM: 'Telefon & Internet',
-  OTHER: 'Sonstiges',
-};
-const intervals = [
-  { label: 'Monatlich', value: 1 },
-  { label: 'Vierteljährlich', value: 3 },
-  { label: 'Halbjährlich', value: 6 },
-  { label: 'Jährlich', value: 12 },
-];
 let generation = 0;
 let refreshTimer: ReturnType<typeof setInterval> | undefined;
 const nextRule = computed(
@@ -111,9 +96,8 @@ async function load() {
     if (current === generation) loading.value = false;
   }
 }
-/** Create, confirm a suggestion, or edit metadata only after the user's visible action. */
-function openEditor(value?: z.infer<typeof c.contractSuggestionSchema>, edit = false) {
-  suggestion.value = value ?? null;
+/** Open manual creation or metadata editing; suggestions are handled by ContractReview. */
+function openEditor(edit = false) {
   editing.value = edit;
   editorOpen.value = true;
 }
@@ -264,10 +248,10 @@ onBeforeUnmount(
     <section class="panel mb-5">
       <div class="panel-heading">
         <div>
-          <UBadge color="neutral" variant="soft">{{ kinds[detail.kind] }}</UBadge>
+          <UBadge color="neutral" variant="soft">{{ contractKinds[detail.kind].label }}</UBadge>
           <h2>{{ detail.provider }}</h2>
         </div>
-        <UButton color="neutral" variant="outline" @click="openEditor(undefined, true)">Vertrag bearbeiten</UButton>
+        <UButton color="neutral" variant="outline" @click="openEditor(true)">Vertrag bearbeiten</UButton>
       </div>
       <p v-if="nextRule" class="muted">
         Planwert: {{ money(plannedEquivalent(nextRule.amountCents, nextRule.intervalMonths, 1)) }} / Monat (gerundet) ·
@@ -381,7 +365,10 @@ onBeforeUnmount(
         ><UFormField label="Neuer Betrag in Euro"
           ><UInput v-model="revision.amountEuro" inputmode="decimal" /></UFormField
         ><UFormField label="Neuer Rhythmus"
-          ><ChoiceSelect v-model="revision.intervalMonths" :searchable="false" :items="intervals" /></UFormField
+          ><ChoiceSelect
+            v-model="revision.intervalMonths"
+            :searchable="false"
+            :items="contractIntervalOptions" /></UFormField
         ><UButton type="submit" :loading="busy">Zukünftige Zahlungsregel speichern</UButton>
       </form></DisclosurePanel
     >
@@ -414,7 +401,7 @@ onBeforeUnmount(
             ><FinanceIcon :name="contractKinds[contract.kind].icon" /></span
           ><span
             ><strong>{{ contract.name }}</strong
-            ><small>{{ kinds[contract.kind] }} · {{ contract.provider }}</small></span
+            ><small>{{ contractKinds[contract.kind].label }} · {{ contract.provider }}</small></span
           ></span
         ><span
           ><strong :class="contract.active ? 'amount-expense' : 'muted'">{{
@@ -441,12 +428,11 @@ onBeforeUnmount(
   </template>
   <UModal
     v-model:open="editorOpen"
-    :title="editing ? 'Vertrag bearbeiten' : suggestion ? 'Vertragsvorschlag bestätigen' : 'Vertrag anlegen'"
+    :title="editing ? 'Vertrag bearbeiten' : 'Vertrag anlegen'"
     description="Vertragsprognosen erzeugen keine zusätzlichen Buchungen. Bestehende eindeutige Zahlungen werden nach Bestätigung verknüpft."
     ><template #body
       ><ContractForm
         :contract="editing ? detail : null"
-        :suggestion="suggestion"
         :accounts="accounts"
         :categories="categories"
         @saved="saved" /></template
