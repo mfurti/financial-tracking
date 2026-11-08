@@ -45,7 +45,9 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
     ),
   ).toBe(true);
   await largerHeader.evaluate(
-    /** Restore the user's normal font after the accessibility regression. */ (element) => element.remove(),
+    /** Restore the user's normal font after the accessibility regression. */ (element) => {
+      element.parentNode?.removeChild(element);
+    },
   );
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
   await page.keyboard.press('Tab');
