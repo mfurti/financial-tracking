@@ -104,6 +104,8 @@ test('monthly categories explain real expenses and lead to persisted assignments
   await page.goto('/categories?month=2031-03');
   await page.getByRole('button', { name: 'Kategorien verwalten', exact: true }).click();
   const managed = page.getByRole('group', { name: `Kategorie ${label}`, exact: true });
+  // Height animation can move a scrolled form control between pointer down and click.
+  await expect(page.locator('[data-slot="content"]').filter({ has: managed })).toHaveCSS('animation-name', 'none');
   await managed.getByRole('button', { name: 'Löschen', exact: true }).click();
   const confirmation = page.getByRole('dialog', { name: 'Kategorie löschen?', exact: true });
   await confirmation.getByRole('button', { name: 'Abbrechen', exact: true }).click();
