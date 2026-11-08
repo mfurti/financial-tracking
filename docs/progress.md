@@ -1,5 +1,17 @@
 # Implementation evidence
 
+## F0 — Approved Finanzfluss implementation (2026-11-07)
+
+- User explicitly approved implementation of the complete reviewed plan in the current checkout. Saved finanzfluss-umsetzungsplan.md with the decisions, ordered commit boundaries, API/data/recurrence/average semantics, checks and delivery gates. Audit commit 392d988 is retained on codex/3-finanzfluss-experience; issue #3 reused.
+- Synchronized active F0–F6 checklist and earlier plan references. This increment changes documentation only; no source/migration/server change or new application-test claim. New feature PR merge and production rollout remain separately approved actions.
+
+## Checklist audit and new Finanzfluss requirements (2026-11-07)
+
+- Audited source, routes/schema, theme catalog, the local Habit Tracker tile reference, recorded PR #8/#9 delivery and issue #3. Corrected stale a2ea737/held-rollout headers to the recorded 1e33afa deployment. No fresh server check, original-file acceptance or application test is claimed.
+- Reopened the overstated full Nuxt UI control requirement: selects/date/month/checkbox/disclosure controls still exist outside Nuxt UI. Existing category CRUD/monthly reporting are present; range analyses, categorization rules and contract persistence/routes/pages are absent. Theme selection remains a dropdown with one generic Ayu family.
+- Recorded requested outcomes N1–N8, with Finanzfluss as the new primary reference, Nuxt date picker, Habit-Tracker-style tiles/all six Ayu variants, clear import clarification, analyses and contracts. Kept budgets independent and real-bank/credential/reboot/original-file/joint-acceptance tasks open. Converted ongoing completion rules from false unfinished-feature checkboxes into rules.
+- This increment changes documentation only. Detailed planning for new analysis/API/contract semantics must occur in actual Plan mode per coding-workflow before feature implementation; no application, migration, dependency, server or Habit Tracker source changed.
+
 ## D1 — Confirmed Sparkasse short-year dates (2026-11-07)
 
 - Read-only aggregate diagnostics showed 74 invalid booking dates; no source values were exposed. The user confirmed `TT.MM.JJ`. Added explicit 2000–2099 normalization to the existing shared booking/value-date parser, preserving strict calendar validation, four-digit historical/ISO input, exact money, financial identity and CSV_INVALID_ROW partial-consent classification. Help and safe errors explain the supported formats/century.
@@ -237,3 +249,55 @@ Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issu
 - T5 implementation commit: `6ad379d`; validation/delivery tracking: `d9af458`.
 - After explicit publication approval, remote main was initialized with the original documentation commit `49bba21`, and `codex/1-household-ledger` was pushed. [PR #2](https://github.com/mfurti/financial-tracking/pull/2) targets main and links issue #1.
 - Both remote CI jobs passed for `d9af458`. Documentation follow-ups also require green checks on their own head. No merge or production deployment is authorized or performed.
+
+## F1 — Consistent Nuxt UI controls — 2026-11-08
+
+Replaced existing selects, checkboxes, upload, disclosures, category deletion confirmation and navigation controls with Nuxt UI. Shared date/month pickers support German calendar selection and clearing. Import history distinguishes invalid rows from possible duplicates under Buchungen klären. Preserved typed numeric TAN choices and existing import/assignment behavior.
+
+Pinned direct peers @internationalized/date 3.12.4 and @tanstack/charts 1.5.0 without upgrading Nuxt UI 4.12.0. The workspace release-age exception is restricted to that exact chart version. Lint, strict types and production builds passed. All 16 existing browser scenarios passed across the full run and focused rerun: the only initial failure was a test selecting during the previous menu exit animation; the shared helper now awaits actual listbox removal. The focused six scenarios passed, including mobile/desktop date selection and clearing, import exception recovery and navigation. Category cancellation/confirmation preserves the original transaction. No server change, bank access or new deployment.
+
+## F2 — Theme tiles and Ayu variants — 2026-11-08
+
+F1 committed as 2328a7d. Replaced the palette dropdown with 23 Nuxt UI radio cards and actual finance previews; six Ayu choices preserve brightness, panel borders and the last Dark/Mirage tone across circle changes and reloads. Existing family storage remains valid. The circular toggle now uses UButton and retains reduced-motion behavior. Twenty palette/contrast/bootstrap tests passed, together with strict types, lint, format and the web production build. Both real browser profiles passed every family in both modes, all Ayu variants, keyboard focus/selection, reload/logout persistence and overflow checks at 360/768/1024/1440 pixels. Desktop screenshot visually inspected; synthetic evidence stays ignored under .local. No production change.
+
+## F3 — Categories, literal rules and classification — 2026-11-08
+
+F2 committed as dee4bc8. Added the reviewed additive category migration, shared Zod/OpenAPI inventory, guarded endpoints and Nuxt UI management for templates and ordered literal rules. New CSV/FinTS creation applies only safe active rules; equal-priority category conflicts remain visible. Historical recategorization requires confirmation. Existing assigned categories migrate to MANUAL; deliberate clearing and manual fixed/variable metadata survive backfill, repeated imports and explicit source consolidation. Source conflicts require independent category/classification choices; rejected writes preserve original rows. Rule deletion retains origin snapshots. No financial value or identity is rewritten by the migration.
+
+All 100 unit/integration tests passed on disposable PostgreSQL, including populated initial-schema migration with exact BIGINT preservation, rule conflicts/literal matching, template reuse, manual-null protection, merge rollback/replay and real HTTP session/CSRF validation. Both extended desktop/mobile category journeys passed: template installation, rule creation, automatic CSV categorization, manual clear, variable override, reload and explicit protected backfill. Format, lint, strict types and API/web production builds passed. Migration deployment/rollback limits are documented in feature-migrations.md; production is unchanged. F4–F6 remain open.
+
+## F4 — Confirmed contracts and actual payments — 2026-11-08
+
+F3 committed as 2e174b9. Added additive contract/revision/payment models and shared Zod-backed private APIs, calendar recurrence preserving original month-end/leap anchors, user-confirmed repeated-payment suggestions, unique automatic matching after complete import/assignment batches, explicit unusual-payment consent, unlink blocking, historical rules and roll-forward next-due sorting. Nuxt UI contract forms/history connect actual transaction badges to details. Metadata/term editing and future effective amount/rhythm changes preserve prior payment rules. Removing contracts or links never deletes bank transactions. A single existing link transfers during consolidation; competing links and source overwrites that change linked financial data are rejected atomically.
+
+All 108 unit/integration tests passed, including real CSV matching, manual override, duplicate-edge ambiguity, mismatch consent, migration preservation, single-link transfer/competing-link rollback and nested HTTP session/CSRF/ownership tests. Browser acceptance found the prior response interceptor handled only the id parameter; generic named-parameter normalization and matching OpenAPI parameters now cover paymentId, with real HTTP regression proof. Both desktop/mobile contract journeys passed after that correction. Strict types, lint, formatting and API/web production builds passed. Final full-browser/visual/CI proof remains F6. No production or real-bank change.
+
+## F5 — Multi-month actual analytics and final navigation — 2026-11-08
+
+F4 committed as bd1df09. Added exact inclusive reports with a 36-calendar-month limit, completed-month averages and explicit current/future/partial/no-data exclusions. Income-only observed months count as zero expense; absent months never fabricate a denominator. Trend requires the direct calendar predecessor and omits a percentage on zero basis. Totals can exceed a single BIGINT while preserving cent strings. Accountless booked actuals count; pending/own transfers remain excluded. Manual-first classification filters are identical in report and transaction drill-down.
+
+Nuxt UI UChart now renders monthly bars and category rings; exact labels, accessible monthly tables and source links remain available. The four primary sections are Overview, Transactions, Analyses and Contracts, with secondary pages under More and categories/rules within Analyses. Overview includes separately labeled upcoming contract forecasts; importing stays prominent. Import history now separates duplicate decisions and invalid-row diagnostics with concrete consequences. Contract-only monthly/yearly planning equivalents remain separate from actual averages. Error alerts receive an explicit live alert role.
+
+Seven new pure/real-PostgreSQL/API analytics tests passed, including calendar windows, rounding, missing/clipped/current/future months, zero trends, exact values beyond Number/single-row BIGINT, account/category filters and classification drill-down. Fifteen focused analytics/contract tests passed. Both analytical browser journeys now pass: upload, observed denominator, trend, filters/drill-down, four viewport overflow checks and failure/retry. The initial full browser run had 17 passes and three test failures: the new chart selector matched a hidden nav SVG, and the desktop late-preview navigation needed the new More menu. Corrected targeted tests passed; final full-suite rerun/visual/CI proof remains F6. Desktop synthetic analysis screenshot visually inspected. No production change.
+
+## F6 — Local acceptance and restore coverage — 2026-11-08
+
+F5 committed as d31e748. Final local acceptance passed all 115 unit/integration tests and all 20 desktop/mobile/empty-account browser scenarios. The analysis journey captured and checked 360/768/1024/1440 pixels in both modes with reduced motion; desktop/light and mobile/dark synthetic layouts were visually inspected. Format, lint, strict types, Prisma validation, production builds and Bash syntax passed. Documentation coverage and Vue ordering were reviewed; no standards migration was introduced.
+
+Review corrected PATCH semantics so omitted category-rule creation defaults cannot reset priority/direction/active state; a real HTTP regression preserves all three. A minimum signed BIGINT expense cannot become a positive BIGINT contract forecast, so suggestions skip that unrepresentable case rather than failing the whole response; its regression passed. Extended Linux operations fixtures verify restore of manual provenance/classification, rule snapshots, contract/revision/payment ownership and exact analytics while keeping two actual transactions. Local Windows validation does not claim container execution: the feature PR and current-head Linux build/backup/restore CI remain pending. Production remains unchanged.
+
+## F6 — Linux browser discrepancy investigation — 2026-11-08
+
+PR #10 has explicit merge-after-green-CI approval. At 8e9333a, both Linux operations jobs passed the extended encrypted restore. Verify passed format/lint/types/Prisma/unit/build checks but failed ten browser scenarios: desktop responsive overflow and mobile pointer targets intercepted by their containers/navigation, despite the local full 20-case pass. No merge occurred. Added failure-only synthetic browser geometry/screenshots/traces and bounded interaction timeouts to identify the actual layout owners without forcing or skipping clicks. The Linux discrepancy remains under investigation.
+
+## F6 — Proven mobile viewport correction — 2026-11-08
+
+The 94dc12c Linux diagnostics identified the actual overflow owner: the header logout button ended at x=369.53 in a 360-pixel client viewport. Mobile Chrome reported innerWidth=370 while clientWidth/visual width stayed 360, explaining displaced pointer hit tests. The More trigger also exceeded its grid cell. The correction gives mobile logout an accessible 44-pixel icon button and constrains the More cell/trigger; it does not hide page overflow or force interactions. Browser overflow assertions now compare against document clientWidth, not the expanded mobile innerWidth. Added a wider-header-font regression. Current-head Linux verification remains required before the approved merge.
+
+## F6 — Linux acceptance passed — 2026-11-08
+
+Linux CI 42479998163 passed code revision 0320fd0: all 20 browser scenarios passed in 3.1 minutes, together with verification and the expanded encrypted restore. The measured mobile header overflow is fixed; client-width assertions and wider-font regression remain enabled. Acceptance/checklist/user/API/migration documentation is current. PR #10 has explicit merge-after-green-CI approval. A merge commit will preserve audit 392d988 and all scoped package commits. The final documentation commit must pass its own current CI before merge; production rollout remains separately gated.
+
+## F6 — Stable disclosure form interactions — 2026-11-08
+
+The documentation-head PR run 42480662917 exposed two intermittent category interactions, although the identical code passed the push workflow. Synthetic traces show both clicks completed while newly opened accordion content was still expanding; neither the template request nor the delete dialog was triggered. The scroll position moved during the height animation, independently of the corrected mobile viewport overflow. Shared DisclosurePanel keeps Nuxt UI and disables its content-height animation so scrolled form targets stay stationary. The category journey asserts this invariant and still exercises real pointer clicks, deletion cancellation, persistence, templates and automatic rules. Both desktop/mobile journeys passed locally; format, lint, strict workspace types and the production build passed. Current-head Linux verification and encrypted restore remain required before the already approved PR #10 merge. No production changes.

@@ -5,6 +5,11 @@ import {
   appearanceVariables,
   appearanceBootstrap,
   resolveAppearanceTheme,
+  appearanceChoices,
+  choiceTone,
+  ayuMirage,
+  resolveAyuPreference,
+  ayuStorageKey,
 } from '../apps/web/app/utils/appearance.js';
 
 /** Calculate the WCAG relative luminance of a bundled opaque sRGB color. */
@@ -25,6 +30,46 @@ function contrast(first: string, second: string) {
 }
 
 describe('device-local theme families', /** Color choices must remain readable and restore safely before mounting. */ () => {
+  it('offers six readable Ayu variants without invalidating legacy identities', /** Verify actual variant tones and allowlisted persistence, including corrupt values. */ () => {
+    expect(appearanceChoices).toHaveLength(23);
+    const variants = appearanceChoices.filter(
+      /** Inspect the six explicit choices. */ (choice) => choice.family === 'ayu',
+    );
+    expect(variants).toHaveLength(6);
+    expect(
+      new Set(appearanceChoices.map(/** Every radio requires a unique value. */ (choice) => choice.value)).size,
+    ).toBe(23);
+    for (const choice of variants) {
+      const [canvas, surface, ink, muted, accent, onAccent] = choiceTone(choice, 'light');
+      for (const background of [canvas, surface]) {
+        expect(contrast(ink, background)).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(muted, background)).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(accent, background)).toBeGreaterThanOrEqual(4.5);
+      }
+      expect(contrast(onAccent, accent)).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(
+      choiceTone(
+        variants.find(/** Mirage must not silently use Dark. */ (choice) => choice.value === 'ayu-mirage')!,
+        'light',
+      ),
+    ).toEqual(ayuMirage);
+    expect(resolveAppearanceTheme('ayu').id).toBe('ayu');
+    expect(resolveAyuPreference({ tone: 'invalid', bordered: 'false' })).toEqual({ tone: 'dark', bordered: true });
+    for (const stored of [null, '{broken', JSON.stringify({ tone: 'mirage', bordered: false })]) {
+      const dataset: Record<string, string> = {};
+      runInNewContext(appearanceBootstrap(), {
+        document: { documentElement: { dataset } },
+        localStorage: {
+          getItem: /** Restore independent family and variant keys before mount. */ (key: string) =>
+            key === ayuStorageKey ? stored : 'ayu',
+        },
+      });
+      expect(dataset.theme).toBe('ayu');
+      expect(dataset.ayuTone).toBe(stored?.startsWith('{"') ? 'mirage' : 'dark');
+      expect(dataset.ayuBorder).toBe(stored?.startsWith('{"') ? 'none' : 'visible');
+    }
+  });
   it.each(appearanceThemes)(
     '$name has readable light and dark text/actions',
     /** Check all bundled families, not just the visually inspected default. */ (theme) => {

@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { choose } from './controls.js';
+import { test, expect } from './fixtures.js';
 import type { ImportRun } from '../../packages/contracts/src/index.js';
 
 test('manual bank setup, method/media/TAN/app approval, pending, failures and cancellation', /** Test browser authorization states with explicit synthetic bank responses; ordinary authentication stays real. */ async ({
@@ -92,9 +93,9 @@ test('manual bank setup, method/media/TAN/app approval, pending, failures and ca
   await page.getByLabel('Bank-PIN', { exact: true }).fill('CANARY_BROWSER_PIN');
   await page.getByRole('button', { name: 'Aktualisieren', exact: true }).click();
   await expect(page.getByLabel('Bank-PIN', { exact: true })).toHaveValue('');
-  await page.getByLabel('TAN-Verfahren', { exact: true }).selectOption('920');
+  await choose(page, page.getByLabel('TAN-Verfahren', { exact: true }), 'Test approval');
   await page.getByRole('button', { name: 'Fortsetzen', exact: true }).click();
-  await page.getByLabel('TAN-Medium', { exact: true }).selectOption('Test phone');
+  await choose(page, page.getByLabel('TAN-Medium', { exact: true }), 'Test phone');
   await page.getByRole('button', { name: 'Fortsetzen', exact: true }).click();
   await page.getByLabel('TAN', { exact: true }).fill('CANARY_BROWSER_TAN');
   await page.getByRole('button', { name: 'Fortsetzen', exact: true }).click();

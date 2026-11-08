@@ -4,11 +4,11 @@
 
 Die App sammelt deine Buchungen und zeigt, wie viel im ausgewählten Monat eingenommen und ausgegeben wurde. Die große **Monatsbilanz** ist die Differenz dieser Geldflüsse. Sie ist kein verfügbarer Kontostand und keine Prognose. Darunter siehst du die Ausgabenverteilung und die letzten Buchungen; tatsächliche Bank-Kontostände stehen getrennt daneben.
 
-Am Computer findest du die Seiten links. Auf dem Telefon stehen **Übersicht**, **Umsätze**, **Kategorien** und **Importieren** unten. Unter **Mehr** erreichst du Konten, Importhistorie, Bankverbindungen und Einstellungen. Das Menü schließt nach der Navigation, beim Klicken außerhalb oder mit Escape. Das Zahnrad oben öffnet die Einstellungen direkt.
+Am Computer findest du die Seiten links. Auf dem Telefon stehen **Übersicht**, **Umsätze**, **Analysen** und **Verträge** unten. Unter **Mehr** erreichst du Konten, Importhistorie, Bankverbindungen und Einstellungen. Kategorien und Regeln gehören zu **Analysen**. CSV hochladen bleibt auf Übersicht und Umsätzen direkt erreichbar. Das Menü schließt nach der Navigation, beim Klicken außerhalb oder mit Escape. Das Zahnrad oben öffnet die Einstellungen direkt.
 
 ## Erste Buchungen
 
-Unter **Importieren** wählst du deine CSV-Datei aus. Die App erkennt Format und bekannte Spalten, übernimmt vollständig gültige Buchungen automatisch und öffnet die echte Monatsauswertung. Eine Bankverbindung oder Kontoanlage ist nicht nötig. Bei Dateien mit mehreren Monaten wird der letzte enthaltene Monat geöffnet; die übrigen Buchungen bleiben in ihren tatsächlichen Monaten sichtbar. Die Erfolgsmeldung zeigt neue und bereits bekannte Buchungen.
+Mit **CSV hochladen** oder **CSV importieren** wählst du deine Datei aus. Die App erkennt Format und bekannte Spalten, übernimmt vollständig gültige Buchungen automatisch und öffnet die echte Monatsauswertung. Eine Bankverbindung oder Kontoanlage ist nicht nötig. Bei Dateien mit mehreren Monaten wird der letzte enthaltene Monat geöffnet; die übrigen Buchungen bleiben in ihren tatsächlichen Monaten sichtbar. Die Erfolgsmeldung zeigt neue und bereits bekannte Buchungen.
 
 Nur bei unklaren Spalten, fehlerhaften Zeilen oder möglichen Dubletten ist eine Entscheidung nötig. Unter **Importoptionen** kannst du bei Bedarf ein bestehendes Zielkonto oder ein anderes Dateiformat wählen. Ohne Konto zählen Buchungen trotzdem sofort; eine spätere Zuordnung bleibt möglich. Es werden keine Platzhalterkonten angelegt.
 
@@ -20,7 +20,7 @@ Sparkasse-Daten wie **07.11.26** werden automatisch als **07.11.2026** gelesen, 
 
 Für den Import brauchst du **Buchungsdatum**, **Betrag** und **Buchungstext**. Verwende gültige Daten als TT.MM.JJJJ oder JJJJ-MM-TT und Beträge mit Dezimalkomma; negative Beträge sind Ausgaben. Unter **Weitere Angaben zuordnen** findest du optionale Informationen mit Erklärungen. Eine Bankreferenz darf nur genau eine Buchung identifizieren; Mandats- oder Kundenreferenzen besser leer lassen. Ohne Währungsspalte wird EUR angenommen; es findet keine Währungsumrechnung statt.
 
-Bei ungültigen Zeilen bleibt die Übernahme stehen und zeigt das konkrete Problem, etwa Datum, Betrag oder fehlenden Text. Korrigiere den Export oder bestätige ausdrücklich, nur gültige Buchungen zu übernehmen. Ohne diese Zustimmung wird kein Teilimport ausgeführt. Mögliche Dubletten landen bei den offenen Prüfungen und werden nicht still doppelt gezählt.
+Bei ungültigen Zeilen bleibt die Übernahme stehen und zeigt das konkrete Problem, etwa Datum, Betrag oder fehlenden Text. Korrigiere den Export oder bestätige ausdrücklich, nur gültige Buchungen zu übernehmen. Ohne diese Zustimmung wird kein Teilimport ausgeführt. Mögliche Dubletten landen unter **Buchungen klären** und werden nicht still doppelt gezählt.
 
 Fehlt nach der Übernahme die Serverantwort, prüft die App denselben Importstatus. Es wird nicht automatisch eine zweite Übernahme erzeugt. Mit **Importstatus prüfen** lässt sich der bestehende Vorgang erneut lesen. Beim Verlassen einer noch nicht übernommenen Vorschau wird sie abgebrochen; eine bereits laufende Übernahme wird nicht durch einen späten Seitenwechsel zurückgesetzt.
 
@@ -49,7 +49,7 @@ Die Importhistorie zeigt zusätzliche Prüfungen aus wiederholten oder überlapp
 
 **Kategorien** zeigt die monatlichen Einnahmen, Ausgaben und noch nicht zugeordneten Buchungen. Im Diagramm erscheinen ausschließlich Ausgaben; klicke eine Gruppe an, um genau die zugehörigen gebuchten Ausgaben dieses Monats zu sehen. Die Gruppen „Lebensmittel“ oder „Wohnen“ helfen beim Vergleichen, verändern aber keine Beträge.
 
-**Nicht kategorisiert** heißt: Die Buchung ist bereits übernommen und mitgerechnet. Über **Buchungen zuordnen** öffnest du die betroffenen Umsätze und wählst ihre Kategorie. Fehlende Kategorien werden beim CSV-Import nicht geraten. Unter **Kategorien verwalten** kannst du eigene Gruppen anlegen, umbenennen oder deaktivieren. Löschen entfernt nur die Kategorie und ihre Zuordnungen, keine Buchungen.
+**Nicht kategorisiert** heißt: Die Buchung ist bereits übernommen und mitgerechnet. Über **Buchungen zuordnen** öffnest du die betroffenen Umsätze und wählst ihre Kategorie. Sichere aktive Regeln können neue Buchungen automatisch kategorisieren; widersprüchliche Treffer werden nicht geraten. Unter **Kategorien verwalten** kannst du eigene Gruppen anlegen, umbenennen oder deaktivieren. Löschen entfernt nur die Kategorie und ihre Zuordnungen, keine Buchungen.
 
 ## Darstellung und Fehler
 
@@ -64,3 +64,41 @@ Der Link **Zum Inhalt springen** ist per Tabulator erreichbar. Er überspringt d
 ## Bankabruf
 
 CSV bleibt jederzeit unabhängig nutzbar. Ein echter Sparkasse-Abruf benötigt zunächst die eigene FinTS-Produktregistrierung, einen bestätigten Bankendpunkt und die separate Prüfung deines Zugangs. Die aktuelle Anleitung und der belegte Kompatibilitätsstatus stehen in [banking.md](banking.md). Eine synthetische Prüfung bestätigt keine reale Bankkompatibilität.
+
+## Datum und Auswahlfelder
+
+Datumsfelder erlauben direkte Eingabe, Kalenderauswahl und Löschen. Der Monatsfilter öffnet eine Monatsauswahl. Lange Auswahllisten lassen sich durchsuchen; mit Escape schließt du die Liste. Unter **Buchungen klären** unterscheiden die Hinweise fehlerhafte Zeilen von möglichen Doppelbuchungen. Die angezeigten Ursachen und Vergleichswerte erklären die erforderliche Entscheidung. Das Löschen einer Kategorie verlangt eine Bestätigung und erhält die Buchungen.
+
+## Theme-Kacheln
+
+Unter Einstellungen wählst du eine der 23 Vorschaukacheln. Die Markierung zeigt die aktive Farbwelt; Pfeiltasten bewegen den Fokus, die Leertaste wählt. Ayu Light, Dark und Mirage gibt es jeweils mit und ohne Kartenrahmen. Die Ayu-Auswahl setzt auch Hell oder Dunkel. Der Kreis wechselt zu Light und zurück zum zuletzt gewählten Dark oder Mirage; die Rahmenwahl bleibt erhalten. Vorhandene gespeicherte Farbwelten bleiben gültig.
+
+## Automatische Kategorien und Fix/Variabel
+
+Unter **Kategorien & Regeln** legst du Regeln an: Die Gegenpartei muss vollständig passen oder der Buchungstext einen bewusst gewählten Text enthalten. Groß-/Kleinschreibung spielt keine Rolle. Begrenze eine Regel bei Bedarf auf Ausgaben oder Einnahmen. Kleinere Prioritätszahlen greifen zuerst. Widersprechen sich gleichrangige Treffer, bleibt die Buchung mit Hinweis ungeklärt; es wird keine Kategorie geraten.
+
+Neue Regeln gelten für neue Buchungen. Mit **Regeln auf Bestandsbuchungen anwenden** kannst du vorhandene automatische/ungeklärte Zuordnungen ausdrücklich neu bewerten. Die Bestätigung erklärt, dass alte automatische Zuordnungen ersetzt oder entfernt werden können. Manuelle Kategorien und bewusst leere Auswahl bleiben geschützt. Die Umsatzliste zeigt den Namen einer automatisch angewendeten Regel. Löschen einer Regel entfernt keine Buchung und ändert keine bisherige Kategorie.
+
+Die Vorlagen ergänzen Alltagskategorien, etwa Mode, Technik und Essen gehen. Passende vorhandene Kategorien werden wiederverwendet, eigene Namen nicht verändert. In einem Umsatz oder nach Auswahl mehrerer Umsätze kannst du **Fix** oder **Variabel** festlegen. **Automatisch / nicht eingeordnet** entfernt diese manuelle Festlegung. Bestätigte Vertragszahlungen gelten dann als fix, alle anderen bleiben nicht eingeordnet. Diese Kennzeichnung verändert keine Beträge.
+
+## Verträge und wiederkehrende Zahlungen
+
+Unter **Verträge** findest du Abos, Miete, Versicherungen und andere laufende Ausgaben. Mindestens zwei passende Zahlungen mit gleichem Betrag und Gegenpartei erzeugen einen **Vorschlag**. Öffne **Vorschlag prüfen**, kontrolliere Betrag, Rhythmus und erste Fälligkeit und bestätige den Vertrag. Alternativ legst du ihn selbst an. Anbieter und Gegenpartei müssen für automatische Zuordnung vollständig übereinstimmen; ein optionales Konto begrenzt die Treffer.
+
+Ein bestätigter Vertrag markiert eindeutige tatsächliche Zahlungen automatisch, wenn Betrag und Gegenpartei passen und der Termin höchstens fünf Tage abweicht. Mehrere passende Verträge oder Buchungen bleiben offen. In den Umsätzen öffnet der Vertragsname die Details. Die Vertragsliste sortiert die nächste heutige oder zukünftige offene Fälligkeit zuerst und wird regelmäßig aktualisiert. Frühere nicht zugeordnete Termine bleiben in der Historie; fehlende Zuordnung beweist keinen Zahlungsausfall.
+
+Prognosen erzeugen keine Buchungen und erhöhen deine tatsächlichen Ausgaben nicht. Monatsenden bleiben verankert: Auf den 31. Januar folgen der letzte Februartag und der 31. März. Eine Änderung von Betrag/Rhythmus beginnt an einer gewählten zukünftigen bestehenden Fälligkeit. Frühere Regeln und Zahlungen bleiben nachvollziehbar. Das optionale Vertragsende gilt einschließlich; dein Kündigungsdatum ist eine eigene Fristangabe und versendet keine Kündigung.
+
+Bei **Buchung manuell zuordnen** suchst du eine echte Ausgabe. Prüfe deren Datum, Betrag und Gegenpartei neben der Vertragsfälligkeit. Abweichungen erfordern eine sichtbare gesonderte Bestätigung. Weder die Buchung noch die Prognose ändern dadurch ihren Betrag. Pro Fälligkeit ist eine Zahlung möglich, pro Buchung ein Vertrag; Teil- und Sammelzahlungen sind nicht vorgesehen.
+
+**Zuordnung entfernen** erhält die Bankbuchung und sperrt sofortiges automatisches Neuverknüpfen. Eine spätere ausdrückliche manuelle Zuordnung bleibt möglich. Auch das Löschen des Vertrags erhält alle Bankbuchungen und manuellen Kategorien. Falls zwei zusammenzuführende Buchungen bereits unterschiedliche Vertragslinks besitzen, prüfe und löse zuerst die betreffenden Zahlungszuordnungen. Bestätigte Vertragszahlungen gelten automatisch als fix, sofern du sie nicht manuell anders eingeordnet hast.
+
+## Analysen über mehrere Monate
+
+**Analysen** startet mit den letzten zwölf abgeschlossenen Monaten. Wähle drei, sechs oder zwölf Monate oder einen eigenen inklusiven Zeitraum bis höchstens 36 Kalendermonate. Konto- und Kategoriefilter gelten gleichermaßen für Kennzahlen, Diagramme, Tabellen und die verknüpften Umsätze. Standardmäßig zählen gebuchte Umsätze ohne Konto mit; Vormerkungen und eigene Umbuchungen bleiben ausgeschlossen. Positive Erstattungen bleiben Einnahmen.
+
+Der **Durchschnitt** verwendet ausschließlich vollständig ausgewählte, vergangene Kalendermonate mit mindestens einer relevanten Buchung. Ein Monat mit ausschließlich Einnahmen zählt mit null Ausgaben; ein Monat ohne Buchung zählt nicht. Laufende, zukünftige und nur teilweise gewählte Monate zählen zu den tatsächlichen Summen, aber nicht zum Durchschnitt. Die Tabelle nennt für jeden Monat den Ausschlussgrund und zeigt die Anzahl berücksichtigter Monate. Ohne geeignete Monate steht **Noch nicht berechenbar**. Die Anwendung kann aus vorhandenen Buchungen keine vollständige Bankhistorie ableiten.
+
+Der **Trend** vergleicht den letzten geeigneten Monat mit seinem direkten Kalendervormonat, wenn beide geeignet sind. Eine Lücke wird nicht übersprungen. Bei einer Nullbasis fehlt ausdrücklich der Prozentwert; der Cent-Unterschied bleibt verfügbar. Durchschnittswerte werden erst bei der Ausgabe auf Cent gerundet.
+
+Die Kategorienansicht zeigt Ausgabenanteile. **Fix oder variabel?** unterscheidet manuell feste/variable Ausgaben, bestätigte Vertragszahlungen als automatische Fixkosten und den noch nicht eingeordneten Rest. Diagrammauswahl und die beschrifteten Links öffnen die jeweils zugrunde liegenden Buchungen mit denselben Filtern; keine Buchung wird gesplittet. Die Tabelle enthält alle exakten Centwerte unabhängig vom Diagramm. Vertragsplanwerte pro Monat/Jahr sind getrennt beschriftete Hochrechnungen und gehören nicht zu tatsächlichen Ausgaben oder deren Durchschnitt.

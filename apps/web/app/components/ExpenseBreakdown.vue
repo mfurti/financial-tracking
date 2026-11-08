@@ -14,21 +14,6 @@ const groups = computed(
               : 1,
       ),
 );
-const gradient = computed(
-  /** Render only the server-provided proportions; monetary labels stay exact strings. */ () => {
-    let offset = 0;
-    const parts: string[] = [];
-    groups.value.forEach(
-      /** Keep a visible legend for every colored segment. */ (group, index) => {
-        const end = Math.min(100, offset + Math.max(0, group.expenseShare ?? 0) * 100);
-        parts.push(`var(--chart-${(index % 6) + 1}) ${offset}% ${end}%`);
-        offset = end;
-      },
-    );
-    if (offset < 100) parts.push(`var(--soft) ${offset}% 100%`);
-    return parts.length ? `conic-gradient(${parts.join(',')})` : 'var(--soft)';
-  },
-);
 /** Link a segment to the same month's real booked expense records. */
 function categoryLink(id: string | null) {
   return `/transactions?${new URLSearchParams({ ...monthRangeQuery(props.report.month), ...(id ? { categoryId: id } : { uncategorized: 'true' }), direction: 'EXPENSE', status: 'BOOKED', excludeTransfers: 'true' })}`;
@@ -45,16 +30,12 @@ function categoryLink(id: string | null) {
       <span class="subtle-tag">{{ monthName(report.month) }}</span>
     </div>
     <div v-if="groups.length" class="spending-overview">
-      <div
-        class="spending-donut"
-        :style="{ background: gradient }"
-        role="img"
-        :aria-label="`${money(report.expenseCents)} Ausgaben in ${groups.length} Kategorien`"
-      >
-        <div>
-          <small>Ausgegeben</small><strong>{{ money(report.expenseCents) }}</strong>
-        </div>
-      </div>
+      <ExpenseChart
+        :groups="groups"
+        :total-cents="report.expenseCents"
+        :label="`${money(report.expenseCents)} Ausgaben in ${groups.length} Kategorien`"
+        @select="navigateTo(categoryLink($event))"
+      />
       <div class="spending-legend">
         <NuxtLink
           v-for="(group, index) in groups"

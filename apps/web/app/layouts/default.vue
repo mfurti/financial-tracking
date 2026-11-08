@@ -4,12 +4,12 @@ import { userErrorMessage } from '../utils/api-error';
 const api = useApi();
 const route = useRoute();
 const error = ref('');
-const more = ref<HTMLDetailsElement | null>(null);
+const moreOpen = ref(false);
 const primaryLinks = [
   { to: '/', label: 'Übersicht', icon: 'home' },
   { to: '/transactions', label: 'Umsätze', icon: 'transactions' },
-  { to: '/categories', label: 'Kategorien', icon: 'categories' },
-  { to: '/imports/csv', label: 'Importieren', icon: 'upload' },
+  { to: '/analytics', label: 'Analysen', icon: 'categories' },
+  { to: '/contracts', label: 'Verträge', icon: 'contracts' },
 ] as const;
 const secondaryLinks = [
   { to: '/accounts', label: 'Konten', icon: 'accounts' },
@@ -27,18 +27,9 @@ const currentPage = computed(
 /** Match nested ledger/detail routes without marking both import entries active. */
 function active(path: string) {
   if (path === '/') return route.path === '/';
+  if (path === '/analytics') return route.path.startsWith('/analytics') || route.path.startsWith('/categories');
   if (path === '/imports') return route.path === '/imports';
   return route.path.startsWith(path);
-}
-/** Close the mobile disclosure and optionally return keyboard focus to its summary. */
-function closeMore(event?: KeyboardEvent) {
-  if (!more.value) return;
-  more.value.open = false;
-  if (event) more.value.querySelector('summary')?.focus();
-}
-/** Dismiss the mobile disclosure when a pointer lands outside it. */
-function outside(event: PointerEvent) {
-  if (more.value?.open && !more.value.contains(event.target as Node)) closeMore();
 }
 /** Revoke the cookie session before navigating to login. */
 async function logout() {
@@ -52,41 +43,46 @@ async function logout() {
 }
 watch(
   /** Observe page changes, not query-only filter updates. */ () => route.path,
-  /** A completed navigation dismisses the mobile menu. */ () => closeMore(),
+  /** A completed navigation dismisses the Nuxt UI menu. */ () => {
+    moreOpen.value = false;
+  },
 );
-onMounted(/** Register only a local UI pointer handler. */ () => document.addEventListener('pointerdown', outside));
-onBeforeUnmount(/** Release the shell's UI listener. */ () => document.removeEventListener('pointerdown', outside));
 </script>
 
 <template>
   <div class="app-frame">
     <a href="#main-content" class="skip-link">Zum Inhalt springen</a>
     <aside class="sidebar">
-      <NuxtLink to="/" class="brand"
-        ><span class="brand-mark">H</span><span>Haushaltsbuch<small>Dein Geld. Dein Überblick.</small></span></NuxtLink
+      <UButton variant="link" color="neutral" to="/" class="brand"
+        ><span class="brand-mark">H</span><span>Haushaltsbuch<small>Dein Geld. Dein Überblick.</small></span></UButton
       >
       <p class="nav-heading">MEIN GELD</p>
       <nav aria-label="Hauptnavigation">
-        <NuxtLink
+        <UButton
           v-for="link in primaryLinks"
           :key="link.to"
+          variant="link"
+          color="neutral"
           :to="link.to"
           :class="{ active: active(link.to) }"
           :aria-current="active(link.to) ? 'page' : undefined"
-          ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></NuxtLink
+          ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
         >
       </nav>
-      <p class="nav-heading">VERWALTEN</p>
-      <nav aria-label="Verwaltung">
-        <NuxtLink
-          v-for="link in secondaryLinks"
-          :key="link.to"
-          :to="link.to"
-          :class="{ active: active(link.to) }"
-          :aria-current="active(link.to) ? 'page' : undefined"
-          ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></NuxtLink
-        >
-      </nav>
+      <DisclosurePanel title="Mehr" class="desktop-more">
+        <nav aria-label="Verwaltung">
+          <UButton
+            v-for="link in secondaryLinks"
+            :key="link.to"
+            variant="link"
+            color="neutral"
+            :to="link.to"
+            :class="{ active: active(link.to) }"
+            :aria-current="active(link.to) ? 'page' : undefined"
+            ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
+          >
+        </nav>
+      </DisclosurePanel>
       <div class="sidebar-bottom">
         <span class="private-dot" />Dein privater Finanzbereich<small>Heimnetz & VPN · EUR</small>
       </div>
@@ -94,16 +90,30 @@ onBeforeUnmount(/** Release the shell's UI listener. */ () => document.removeEve
     <div class="main-frame">
       <header class="topbar">
         <span class="workspace-label">{{ currentPage }}</span>
-        <NuxtLink to="/" class="mobile-brand" aria-label="Haushaltsbuch Startseite"
-          ><span class="brand-mark">H</span><strong>Haushaltsbuch</strong></NuxtLink
+        <UButton variant="link" color="neutral" to="/" class="mobile-brand" aria-label="Haushaltsbuch Startseite"
+          ><span class="brand-mark">H</span><strong>Haushaltsbuch</strong></UButton
         >
         <div>
-          <ThemeToggle /><NuxtLink to="/settings" class="mobile-settings icon-button" aria-label="Einstellungen"
-            ><FinanceIcon name="settings" /></NuxtLink
+          <ThemeToggle /><UButton
+            variant="link"
+            color="neutral"
+            to="/settings"
+            class="mobile-settings icon-button"
+            aria-label="Einstellungen"
+            ><FinanceIcon name="settings" /></UButton
           ><span class="user-badge" :aria-label="`Angemeldet: ${api.session.value?.username}`">{{
             api.session.value?.username?.slice(0, 1).toUpperCase()
           }}</span
-          ><UButton size="sm" variant="ghost" color="neutral" @click="logout">Abmelden</UButton>
+          ><UButton
+            size="sm"
+            variant="ghost"
+            color="neutral"
+            class="logout-button"
+            aria-label="Abmelden"
+            title="Abmelden"
+            @click="logout"
+            ><FinanceIcon name="logout" /><span class="logout-label">Abmelden</span></UButton
+          >
         </div>
       </header>
       <main id="main-content" tabindex="-1" class="page-content">
@@ -112,22 +122,37 @@ onBeforeUnmount(/** Release the shell's UI listener. */ () => document.removeEve
       <footer class="page-footer">Deine Buchungen. Deine Auswertung. Auf deinem privaten Server.</footer>
     </div>
     <nav class="mobile-nav" aria-label="Hauptnavigation">
-      <NuxtLink
+      <UButton
         v-for="link in primaryLinks"
         :key="link.to"
+        variant="link"
+        color="neutral"
         :to="link.to"
         :class="{ active: active(link.to) }"
         :aria-current="active(link.to) ? 'page' : undefined"
-        ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></NuxtLink
+        ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
       >
-      <details ref="more" class="mobile-more" @keydown.esc="closeMore">
-        <summary><FinanceIcon name="more" /><span>Mehr</span></summary>
-        <nav aria-label="Weitere Seiten">
-          <NuxtLink v-for="link in secondaryLinks" :key="link.to" :to="link.to"
-            ><FinanceIcon :name="link.icon" />{{ link.label }}</NuxtLink
+      <div class="mobile-more">
+        <UPopover v-model:open="moreOpen">
+          <UButton color="neutral" variant="ghost" class="mobile-more-trigger" aria-label="Mehr"
+            ><FinanceIcon name="more" /><span>Mehr</span></UButton
           >
-        </nav>
-      </details>
+          <template #content
+            ><nav class="mobile-more-menu" aria-label="Weitere Seiten">
+              <UButton
+                v-for="link in secondaryLinks"
+                :key="link.to"
+                :to="link.to"
+                color="neutral"
+                variant="ghost"
+                block
+                class="justify-start"
+                ><FinanceIcon :name="link.icon" />{{ link.label }}</UButton
+              >
+            </nav></template
+          >
+        </UPopover>
+      </div>
     </nav>
   </div>
 </template>

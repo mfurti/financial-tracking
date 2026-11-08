@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { choose } from './controls.js';
+import { test, expect } from './fixtures.js';
 
 test('private ledger: login, CSV import, categorization, filters, responsive views and logout', /** Exercise real API and database rather than intercepted fixture responses. */ async ({
   page,
@@ -20,12 +21,13 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
   expect(
     await page.evaluate(
       /** Catch page-level horizontal overflow at mobile width. */ () =>
-        document.documentElement.scrollWidth <= window.innerWidth,
+        document.documentElement.scrollWidth <= document.documentElement.clientWidth,
     ),
   ).toBe(true);
   await page.screenshot({ path: `.local/dashboard-${info.project.name}.png`, fullPage: true });
-  await page.getByRole('link', { name: 'Kategorien', exact: true }).click();
-  await page.locator('summary').filter({ hasText: 'Kategorien verwalten' }).click();
+  await page.getByRole('link', { name: 'Analysen', exact: true }).click();
+  await page.getByRole('link', { name: 'Kategorien & Regeln', exact: true }).click();
+  await page.getByRole('button', { name: 'Kategorien verwalten', exact: true }).click();
   await page.getByLabel('Name', { exact: true }).fill(`Lebensmittel ${info.project.name}`);
   await page.getByRole('button', { name: 'Kategorie anlegen', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Kategoriename' }).last()).toHaveValue(/Lebensmittel|Wohnen/);
@@ -73,9 +75,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
     },
   );
   try {
-    await page
-      .getByLabel(`Kategorie für ${label}`, { exact: true })
-      .selectOption({ label: `Lebensmittel ${info.project.name}` });
+    await choose(page, page.getByLabel(`Kategorie für ${label}`, { exact: true }), `Lebensmittel ${info.project.name}`);
     await started;
     const link = page.getByRole('link', { name: new RegExp(label) });
     const href = await link.getAttribute('href');

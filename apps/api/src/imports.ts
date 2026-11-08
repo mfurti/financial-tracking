@@ -1,4 +1,6 @@
+import { matchContractPayments, assertContractPaymentPreserved } from './contract-schedule.js';
 import { Inject, Injectable } from '@nestjs/common';
+import { applyCategoryRule } from './category-rules.js';
 import {
   csvPreviewInputSchema,
   csvPreviewSchema,
@@ -109,7 +111,10 @@ export class ImportService {
     const issues = [...reviews, ...diagnostics];
     const candidates = await this.db.transaction.findMany({
       where: { id: { in: issues.flatMap(/** Collect offered candidate IDs only. */ (issue) => issue.candidateIds) } },
-      include: { identities: { include: { importRun: { select: { source: true } } } } },
+      include: {
+        identities: { include: { importRun: { select: { source: true } } } },
+        contractPayment: { include: { contract: { select: { id: true, name: true } } } },
+      },
     });
     return z.array(issueSchema).parse(
       issues.map(
@@ -307,6 +312,7 @@ export class ImportService {
         },
       },
     });
+    await applyCategoryRule(tx, created);
     if (!forceNew) await this.observe(tx, runId, row, created.id);
     await tx.stagedRow.delete({ where: { id: staged.id } });
     return 'NEW' as const;
@@ -368,6 +374,7 @@ export class ImportService {
           else if (result === 'KNOWN') known++;
           else review++;
         }
+        await matchContractPayments(tx);
         await tx.importRun.update({
           where: { id },
           data: {
@@ -440,6 +447,11 @@ export class ImportService {
               resolution.action === 'INCOMING' ? BigInt(row.amountCents) : candidate.amountCents,
             );
             if (resolution.action === 'INCOMING') {
+              await assertContractPaymentPreserved(tx, candidate, {
+                amountCents: BigInt(row.amountCents),
+                bookingDate: new Date(row.bookingDate),
+                counterpartyName: row.counterpartyName,
+              });
               await tx.transaction.update({
                 where: { id: candidate.id },
                 data: {
@@ -492,6 +504,7 @@ export class ImportService {
           } else await tx.stagedRow.delete({ where: { id: issue.stagedRow.id } });
           await tx.importRun.update({ where: { id }, data: { reviewRequiredCount: { decrement: 1 } } });
         }
+        await matchContractPayments(tx);
       },
       { timeout: 60000, isolationLevel: 'Serializable' },
     );
@@ -558,6 +571,7 @@ export class ImportService {
           else if (result === 'KNOWN') known++;
           else review++;
         }
+        await matchContractPayments(tx);
         await tx.balanceSnapshot.create({
           data: {
             accountId: current.id,

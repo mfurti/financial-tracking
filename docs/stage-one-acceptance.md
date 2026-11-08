@@ -1,6 +1,12 @@
 # Stage 1 delivery and remaining acceptance
 
-This record separates implemented source from external/live acceptance. Stage 2 budgets and Stage 3 recurring expenses remain unauthorized.
+This record separates implemented source from external/live acceptance. Budgets remain independent backlog. The latest user explicitly requests analyses/contracts and a Nuxt UI revision; its audited missing requirements are N1–N8 in todo.md, awaiting detailed planning before feature implementation.
+
+## Latest recorded deployment: PR #8/#9
+
+Approved combined rollout completed at `1e33afa517c968edf6ef969c1e3f841a2db16c20`. [Main CI 42417004125](https://github.com/mfurti/financial-tracking/actions/runs/42417004125) passed 95 tests, 16 browser cases, operations/recovery and publication. A fresh write-stopped encrypted backup recovered off-server in nine seconds; every original field/count across 14 tables including migration state matched. Four services healthy, 103-second pause, zero new schema migrations, trusted HTTPS/anonymous protection/direct-IP denial verified. Current encrypted configuration was explicitly approved, copied off-server and authenticated. These are recorded completed checks, not rerun by the new To-do audit. The actual CSV retry and joint everyday-use acceptance remain open.
+
+The earlier sections below preserve historical checkpoints. Source inspection now confirms that full Nuxt UI control adoption is unfinished, and range analytics/rules/contracts are absent; the previous monthly dashboard and theme tests do not prove these new requirements.
 
 ## Current deployed baseline and new review
 

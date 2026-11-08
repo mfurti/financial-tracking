@@ -30,8 +30,10 @@ onBeforeUnmount(
 </script>
 
 <template>
-  <button
+  <UButton
     type="button"
+    variant="ghost"
+    color="neutral"
     class="theme-toggle"
     :class="{ 'is-dark': isDark }"
     aria-label="Dunkelmodus"
@@ -55,5 +57,5 @@ onBeforeUnmount(
         <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
       </g>
     </svg>
-  </button>
+  </UButton>
 </template>

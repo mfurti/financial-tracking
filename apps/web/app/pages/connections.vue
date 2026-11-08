@@ -288,24 +288,28 @@ onBeforeUnmount(
     </p>
     <form class="form-row" @submit.prevent="start">
       <label
-        >FinTS-Verbindung<select v-model="selected" class="control">
-          <option value="">Verbindung wählen</option>
-          <option
-            v-for="connection in connections.filter((c) => c.connectorType === 'FINTS' && c.status === 'ACTIVE')"
-            :key="connection.id"
-            :value="connection.id"
-          >
-            {{ connection.name }}
-          </option>
-        </select></label
+        >FinTS-Verbindung<ChoiceSelect
+          v-model="selected"
+          :searchable="true"
+          :items="[
+            { label: `Verbindung wählen`, value: '' },
+            ...connections
+              .filter((c) => c.connectorType === 'FINTS' && c.status === 'ACTIVE')
+              .map(
+                /** Build a persisted choice. */ (connection) => ({
+                  label: `${connection.name}`,
+                  value: connection.id,
+                }),
+              ),
+          ]" /></label
       ><UFormField label="Bank-PIN"
         ><UInput
           v-model="pin"
           type="password"
           autocomplete="off"
           :disabled="!setup?.configured || (!!activeRun && !finished)" /></UFormField
-      ><label>Von (optional)<input v-model="fromDate" type="date" class="control" /></label>
-      <label>Bis (optional)<input v-model="toDate" type="date" class="control" /></label>
+      ><label>Von (optional)<DatePicker v-model="fromDate" label="Von (optional)" /></label>
+      <label>Bis (optional)<DatePicker v-model="toDate" label="Bis (optional)" /></label>
       <UButton
         type="submit"
         :loading="busy"
@@ -331,24 +335,32 @@ onBeforeUnmount(
       />
       <form v-if="activeRun.challenge" class="space-y-4 mt-4" @submit.prevent="approve">
         <p>{{ activeRun.challenge.message }}</p>
-        <select
+        <ChoiceSelect
           v-if="activeRun.challenge.type === 'SELECT_METHOD'"
-          v-model.number="method"
+          v-model="method"
           required
           aria-label="TAN-Verfahren"
-          class="control"
-        >
-          <option value="">Verfahren wählen</option>
-          <option v-for="choice in activeRun.challenge.methods" :key="choice.id" :value="choice.id">
-            {{ choice.name }}
-          </option>
-        </select>
+          :searchable="true"
+          :items="[
+            { label: `Verfahren wählen`, value: '' },
+            ...(activeRun.challenge.methods ?? []).map(
+              /** Build a persisted choice. */ (choice) => ({ label: `${choice.name}`, value: choice.id }),
+            ),
+          ]"
+        />
         <label v-if="activeRun.challenge.type === 'SELECT_MEDIA'"
-          >TAN-Medium<select v-model="medium" required class="control" aria-label="TAN-Medium">
-            <option value="">Medium wählen</option>
-            <option v-for="choice in activeRun.challenge.media" :key="choice" :value="choice">{{ choice }}</option>
-          </select></label
-        >
+          >TAN-Medium<ChoiceSelect
+            v-model="medium"
+            required
+            aria-label="TAN-Medium"
+            :searchable="true"
+            :items="[
+              { label: `Medium wählen`, value: '' },
+              ...(activeRun.challenge.media ?? []).map(
+                /** Build a persisted choice. */ (choice) => ({ label: `${choice}`, value: choice }),
+              ),
+            ]"
+        /></label>
         <UFormField v-if="activeRun.challenge.type === 'TAN'" label="TAN"
           ><UInput v-model="tan" type="password" autocomplete="off" /></UFormField
         ><UButton type="submit" :loading="busy">{{

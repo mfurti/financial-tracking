@@ -33,6 +33,16 @@ jobs:
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-diagnostics-${{ github.sha }}-${{ github.event_name }}
+          path: |
+            test-results
+            .local/analytics-*.png
+            .local/settings-tiles-*.png
+          retention-days: 3
+          include-hidden-files: true
   operations:
     runs-on: ubuntu-latest
     timeout-minutes: 20

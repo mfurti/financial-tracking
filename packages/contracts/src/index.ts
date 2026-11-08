@@ -116,16 +116,240 @@ export const transactionSchema = z.object({
   counterpartyIban: z.string().nullable(),
   status: transactionStatusSchema,
   categoryId: idSchema.nullable(),
+  categoryOrigin: z.enum(['NONE', 'MANUAL', 'RULE']).default('NONE'),
+  categoryRuleId: idSchema.nullable().default(null),
+  categoryRuleName: z.string().nullable().default(null),
+  categoryRuleConflict: z.boolean().default(false),
+  classification: z.enum(['FIXED', 'VARIABLE']).nullable().default(null),
+  effectiveClassification: z.enum(['FIXED', 'VARIABLE', 'UNCLASSIFIED']).default('UNCLASSIFIED'),
+  contractAutoBlocked: z.boolean().default(false),
+  contract: z.object({ id: idSchema, name: z.string(), dueDate: dateSchema }).nullable().default(null),
   isTransfer: z.boolean(),
   transferGroupId: idSchema.nullable(),
 });
 export const transactionPatchSchema = z.object({
   categoryId: idSchema.nullable().optional(),
+  classification: z.enum(['FIXED', 'VARIABLE']).nullable().optional(),
   isTransfer: z.boolean().optional(),
 });
 export const bulkCategorySchema = z.object({ ids: z.array(idSchema).min(1).max(100), categoryId: idSchema.nullable() });
+export const bulkClassificationSchema = z.object({
+  ids: z.array(idSchema).min(1).max(100),
+  classification: z.enum(['FIXED', 'VARIABLE']).nullable(),
+});
+export const categoryRuleInputSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  categoryId: idSchema,
+  matchType: z.enum(['COUNTERPARTY', 'DESCRIPTION']),
+  text: z.string().trim().min(1).max(200),
+  direction: z.enum(['ANY', 'INCOME', 'EXPENSE']).default('ANY'),
+  priority: z.number().int().min(0).max(10000).default(100),
+  isActive: z.boolean().default(true),
+});
+export const categoryRuleSchema = categoryRuleInputSchema.extend({ id: idSchema });
+export const categoryRulePatchSchema = categoryRuleInputSchema
+  .omit({ direction: true, priority: true, isActive: true })
+  .partial()
+  .extend({
+    direction: categoryRuleInputSchema.shape.direction.removeDefault().optional(),
+    priority: categoryRuleInputSchema.shape.priority.removeDefault().optional(),
+    isActive: categoryRuleInputSchema.shape.isActive.removeDefault().optional(),
+  });
+export const categoryTemplateInputSchema = z.object({
+  names: z
+    .array(
+      z.enum([
+        'Lebensmittel',
+        'Essen gehen',
+        'Mode',
+        'Technik',
+        'Wohnen',
+        'Mobilität',
+        'Gesundheit',
+        'Freizeit',
+        'Abonnements',
+        'Versicherungen',
+      ]),
+    )
+    .min(1)
+    .max(10),
+});
+export const categoryRuleBackfillSchema = z.object({ confirm: z.literal(true) });
+export const categoryRuleBackfillResultSchema = z.object({
+  updated: z.number().int(),
+  conflicting: z.number().int(),
+  protected: z.number().int(),
+});
+export const contractKindSchema = z.enum(['SUBSCRIPTION', 'RENT', 'INSURANCE', 'ENERGY', 'TELECOM', 'OTHER']);
+export const contractIntervalSchema = z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]);
+export const positiveCentsSchema = centsSchema.refine(
+  /** Contract forecasts are positive expense magnitudes. */ (value) => BigInt(value) > 0n,
+  'Betrag muss größer als null sein.',
+);
+export const contractInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    provider: z.string().trim().min(1).max(200),
+    kind: contractKindSchema,
+    accountId: idSchema.nullable().default(null),
+    categoryId: idSchema.nullable().default(null),
+    startDate: dateSchema,
+    endDate: dateSchema.nullable().default(null),
+    cancellationDate: dateSchema.nullable().default(null),
+    amountCents: positiveCentsSchema,
+    intervalMonths: contractIntervalSchema,
+  })
+  .refine(
+    /** The end is inclusive and never before the beginning. */ (value) =>
+      !value.endDate || value.endDate >= value.startDate,
+    { path: ['endDate'], message: 'Ende liegt vor Beginn.' },
+  );
+export const contractPatchSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  provider: z.string().trim().min(1).max(200).optional(),
+  kind: contractKindSchema.optional(),
+  accountId: idSchema.nullable().optional(),
+  categoryId: idSchema.nullable().optional(),
+  endDate: dateSchema.nullable().optional(),
+  cancellationDate: dateSchema.nullable().optional(),
+});
+export const contractRevisionInputSchema = z.object({
+  effectiveDate: dateSchema,
+  amountCents: positiveCentsSchema,
+  intervalMonths: contractIntervalSchema,
+});
+export const contractRevisionSchema = contractRevisionInputSchema.extend({ id: idSchema });
+export const contractPaymentSchema = z.object({
+  id: idSchema,
+  transactionId: idSchema,
+  revisionId: idSchema,
+  dueDate: dateSchema,
+  source: z.enum(['AUTO', 'MANUAL']),
+});
+export const contractOccurrenceSchema = z.object({
+  dueDate: dateSchema,
+  amountCents: positiveCentsSchema,
+  revisionId: idSchema,
+  payment: contractPaymentSchema.nullable(),
+});
+export const contractSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  provider: z.string(),
+  kind: contractKindSchema,
+  accountId: idSchema.nullable(),
+  categoryId: idSchema.nullable(),
+  startDate: dateSchema,
+  endDate: dateSchema.nullable(),
+  cancellationDate: dateSchema.nullable(),
+  revisions: z.array(contractRevisionSchema),
+  nextDueDate: dateSchema.nullable(),
+  nextAmountCents: positiveCentsSchema.nullable(),
+  active: z.boolean(),
+});
+export const contractPaymentsSchema = z.object({
+  from: dateSchema,
+  to: dateSchema,
+  occurrences: z.array(contractOccurrenceSchema),
+  payments: z.array(contractPaymentSchema),
+});
+export const contractPaymentsQuerySchema = z.object({ from: dateSchema.optional(), to: dateSchema.optional() });
+export const contractPaymentInputSchema = z.object({
+  transactionId: idSchema,
+  dueDate: dateSchema,
+  confirmMismatch: z.boolean().default(false),
+});
+export const contractSuggestionSchema = z.object({
+  key: z.string(),
+  provider: z.string(),
+  amountCents: positiveCentsSchema,
+  intervalMonths: contractIntervalSchema,
+  startDate: dateSchema,
+  accountId: idSchema.nullable(),
+  transactionIds: z.array(idSchema).min(2),
+  count: z.number().int().min(2),
+});
+/** Aggregated totals can exceed a single PostgreSQL BIGINT while retaining integer-cent precision. */
+export const aggregateCentsSchema = z.string().regex(/^-?(0|[1-9]\d*)$/);
+export const classificationSchema = z.enum(['FIXED', 'VARIABLE', 'UNCLASSIFIED']);
+export const analyticsOverviewQuerySchema = z
+  .object({
+    from: dateSchema.optional(),
+    to: dateSchema.optional(),
+    accountId: idSchema.optional(),
+    categoryId: idSchema.optional(),
+    unassigned: z.enum(['true', 'false']).optional(),
+    uncategorized: z.enum(['true', 'false']).optional(),
+  })
+  .refine(
+    /** Mutually exclusive identity and null filters must not silently shadow one another. */ (value) =>
+      !(value.accountId && value.unassigned === 'true') && !(value.categoryId && value.uncategorized === 'true'),
+    'Filter widersprechen sich.',
+  )
+  .refine(
+    /** Explicit ranges obey the same inclusive 36-calendar-month limit in browser and runtime. */ (value) =>
+      !value.from ||
+      !value.to ||
+      (value.from <= value.to &&
+        (Number(value.to.slice(0, 4)) - Number(value.from.slice(0, 4))) * 12 +
+          Number(value.to.slice(5, 7)) -
+          Number(value.from.slice(5, 7)) <
+          36),
+    { path: ['to'], message: 'Gültigen Zeitraum mit höchstens 36 Kalendermonaten wählen.' },
+  );
+export const analyticsExclusionSchema = z.enum(['NO_DATA', 'CURRENT', 'FUTURE', 'PARTIAL']);
+export const analyticsMonthSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  from: dateSchema,
+  to: dateSchema,
+  incomeCents: aggregateCentsSchema,
+  expenseCents: aggregateCentsSchema,
+  netCents: aggregateCentsSchema,
+  count: z.number().int(),
+  averageEligible: z.boolean(),
+  excludedReason: analyticsExclusionSchema.nullable(),
+});
+export const analyticsOverviewSchema = z.object({
+  from: dateSchema,
+  to: dateSchema,
+  months: z.array(analyticsMonthSchema),
+  incomeCents: aggregateCentsSchema,
+  expenseCents: aggregateCentsSchema,
+  netCents: aggregateCentsSchema,
+  average: z.object({
+    expenseCents: aggregateCentsSchema.nullable(),
+    monthCount: z.number().int(),
+    excludedMonths: z.array(z.object({ month: z.string(), reason: analyticsExclusionSchema })),
+  }),
+  trend: z
+    .object({
+      month: z.string(),
+      previousMonth: z.string(),
+      changeCents: aggregateCentsSchema,
+      percent: z.number().nullable(),
+    })
+    .nullable(),
+  categories: z.array(
+    z.object({
+      categoryId: idSchema.nullable(),
+      name: z.string(),
+      expenseCents: aggregateCentsSchema,
+      count: z.number().int(),
+      share: z.number(),
+    }),
+  ),
+  classification: z.array(
+    z.object({
+      classification: classificationSchema,
+      expenseCents: aggregateCentsSchema,
+      count: z.number().int(),
+      share: z.number(),
+    }),
+  ),
+});
 export const transactionQuerySchema = z
   .object({
+    classification: classificationSchema.optional(),
     accountId: idSchema.optional(),
     unassigned: z.enum(['true', 'false']).optional(),
     from: dateSchema.optional(),
@@ -313,6 +537,7 @@ export const assignmentInputSchema = z.object({
         action: z.enum(['BANK', 'CSV', 'SEPARATE', 'SKIP']),
         candidateId: idSchema.optional(),
         categoryChoice: z.enum(['BANK', 'CSV']).optional(),
+        classificationChoice: z.enum(['BANK', 'CSV']).optional(),
       }),
     )
     .min(1)
@@ -364,6 +589,106 @@ export interface ApiContract {
 const okSchema = z.object({ ok: z.boolean() });
 /** Operation inventory shared with generated OpenAPI and contract tests. */
 export const apiContracts: Record<string, ApiContract> = {
+  analyticsOverview: {
+    method: 'get',
+    path: '/analytics/overview',
+    query: analyticsOverviewQuerySchema,
+    response: analyticsOverviewSchema,
+    status: 200,
+  },
+  contracts: { method: 'get', path: '/contracts', response: z.array(contractSchema), status: 200 },
+  createContract: {
+    method: 'post',
+    path: '/contracts',
+    request: contractInputSchema,
+    response: contractSchema,
+    status: 201,
+  },
+  contractSuggestions: {
+    method: 'get',
+    path: '/contracts/suggestions',
+    response: z.array(contractSuggestionSchema),
+    status: 200,
+  },
+  contract: { method: 'get', path: '/contracts/{id}', response: contractSchema, status: 200 },
+  patchContract: {
+    method: 'patch',
+    path: '/contracts/{id}',
+    request: contractPatchSchema,
+    response: contractSchema,
+    status: 200,
+  },
+  deleteContract: {
+    method: 'delete',
+    path: '/contracts/{id}',
+    request: z.object({ confirm: z.literal(true) }),
+    response: okSchema,
+    status: 200,
+  },
+  reviseContract: {
+    method: 'post',
+    path: '/contracts/{id}/revisions',
+    request: contractRevisionInputSchema,
+    response: contractSchema,
+    status: 201,
+  },
+  contractPayments: {
+    method: 'get',
+    path: '/contracts/{id}/payments',
+    query: contractPaymentsQuerySchema,
+    response: contractPaymentsSchema,
+    status: 200,
+  },
+  linkContractPayment: {
+    method: 'post',
+    path: '/contracts/{id}/payments',
+    request: contractPaymentInputSchema,
+    response: contractPaymentSchema,
+    status: 201,
+  },
+  unlinkContractPayment: {
+    method: 'delete',
+    path: '/contracts/{id}/payments/{paymentId}',
+    response: okSchema,
+    status: 200,
+  },
+  categoryRules: { method: 'get', path: '/category-rules', response: z.array(categoryRuleSchema), status: 200 },
+  createCategoryRule: {
+    method: 'post',
+    path: '/category-rules',
+    request: categoryRuleInputSchema,
+    response: categoryRuleSchema,
+    status: 201,
+  },
+  patchCategoryRule: {
+    method: 'patch',
+    path: '/category-rules/{id}',
+    request: categoryRulePatchSchema,
+    response: categoryRuleSchema,
+    status: 200,
+  },
+  deleteCategoryRule: { method: 'delete', path: '/category-rules/{id}', response: okSchema, status: 200 },
+  applyCategoryRules: {
+    method: 'post',
+    path: '/category-rules/apply',
+    request: categoryRuleBackfillSchema,
+    response: categoryRuleBackfillResultSchema,
+    status: 201,
+  },
+  categoryTemplates: {
+    method: 'post',
+    path: '/categories/templates',
+    request: categoryTemplateInputSchema,
+    response: z.array(categorySchema),
+    status: 201,
+  },
+  bulkClassification: {
+    method: 'post',
+    path: '/transactions/bulk-classification',
+    request: bulkClassificationSchema,
+    response: z.object({ updated: z.number().int() }),
+    status: 201,
+  },
   health: {
     method: 'get',
     path: '/health',

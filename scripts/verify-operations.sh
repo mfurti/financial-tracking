@@ -118,6 +118,12 @@ INSERT INTO "Transaction" (id,"accountId","amountCents","bookingDate",descriptio
 INSERT INTO "ImportRun" (id,source,status,"importedCount","finishedAt") VALUES ('10000000-0000-4000-8000-000000000005','CSV','COMPLETED',1,NOW());
 INSERT INTO "Transaction" (id,"accountId","amountCents","bookingDate",description,"categoryId","updatedAt") VALUES ('10000000-0000-4000-8000-000000000006',NULL,-456,'2026-11-06','Synthetic unassigned restore','10000000-0000-4000-8000-000000000003',NOW());
 INSERT INTO "TransactionIdentity" (id,"transactionId","accountId",scope,"identityType","identityValue","importRunId") VALUES ('10000000-0000-4000-8000-000000000007','10000000-0000-4000-8000-000000000006',NULL,'import:10000000-0000-4000-8000-000000000005','CSV_FINGERPRINT','synthetic-source','10000000-0000-4000-8000-000000000005');
+UPDATE "Transaction" SET "categoryOrigin"='MANUAL',classification='FIXED',"contractAutoBlocked"=TRUE WHERE id='10000000-0000-4000-8000-000000000004';
+INSERT INTO "CategoryRule" (id,name,"categoryId","matchType",text,direction,priority) VALUES ('10000000-0000-4000-8000-00000000000b','Synthetic import rule','10000000-0000-4000-8000-000000000003','DESCRIPTION','Synthetic','EXPENSE',9);
+UPDATE "Transaction" SET "counterpartyName"='Synthetic subscription',"categoryOrigin"='RULE',"categoryRuleId"='10000000-0000-4000-8000-00000000000b',"categoryRuleName"='Synthetic import rule',classification='VARIABLE' WHERE id='10000000-0000-4000-8000-000000000006';
+INSERT INTO "Contract" (id,name,provider,kind,"categoryId","startDate","endDate","cancellationDate") VALUES ('10000000-0000-4000-8000-000000000008','Synthetic subscription','Synthetic subscription','SUBSCRIPTION','10000000-0000-4000-8000-000000000003','2026-11-06','2027-11-06','2027-10-06');
+INSERT INTO "ContractRevision" (id,"contractId","effectiveDate","amountCents","intervalMonths") VALUES ('10000000-0000-4000-8000-000000000009','10000000-0000-4000-8000-000000000008','2026-11-06',456,1);
+INSERT INTO "ContractPayment" (id,"contractId","revisionId","dueDate","transactionId",source) VALUES ('10000000-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000008','10000000-0000-4000-8000-000000000009','2026-11-06','10000000-0000-4000-8000-000000000006','AUTO');
 SQL
 # Synthetic credential markers exercise the real safe-error/persistence path without bank configuration.
 curl --fail --silent --show-error --cacert "$ops_dir/root.crt" -c "$ops_dir/cookies" \
@@ -177,11 +183,21 @@ const root='http://127.0.0.1:3000/api/v1';
 const login=await fetch(root+'/auth/login',{method:'POST',headers:{'content-type':'application/json',origin:'https://localhost'},body:JSON.stringify({username:'restore-check',password:'synthetic-restore-password-only'})});
 assert.equal(login.status,201);
 const headers={cookie:login.headers.get('set-cookie').split(';')[0]};
-for(const [path,count] of [['accounts',1],['categories',1],['imports',2]]) {
+for(const [path,count] of [['accounts',1],['categories',1],['imports',2],['contracts',1],['category-rules',1]]) {
  const response=await fetch(root+'/'+path,{headers}); assert.equal(response.status,200); assert.equal((await response.json()).length,count);
 }
 const transactions=await fetch(root+'/transactions',{headers});
-assert.equal(transactions.status,200); assert.equal((await transactions.json()).items.length,2);
+assert.equal(transactions.status,200);
+const restoredPage=await transactions.json(); assert.equal(restoredPage.items.length,2);
+const manual=restoredPage.items.find(/** Locate the original actual transaction after restoration. */ row=>row.id==='10000000-0000-4000-8000-000000000004');
+assert.equal(manual.categoryOrigin,'MANUAL'); assert.equal(manual.classification,'FIXED'); assert.equal(manual.contractAutoBlocked,true);
+const linked=restoredPage.items.find(/** Locate the original actual transaction after restoration. */ row=>row.id==='10000000-0000-4000-8000-000000000006');
+assert.equal(linked.categoryOrigin,'RULE'); assert.equal(linked.categoryRuleName,'Synthetic import rule'); assert.equal(linked.classification,'VARIABLE'); assert.equal(linked.effectiveClassification,'VARIABLE');
+assert.equal(linked.contract.id,'10000000-0000-4000-8000-000000000008');
+const history=await fetch(root+'/contracts/10000000-0000-4000-8000-000000000008/payments?from=2026-11-01&to=2026-11-30',{headers});
+assert.equal(history.status,200); const restoredHistory=await history.json(); assert.equal(restoredHistory.payments.length,1); assert.equal(restoredHistory.payments[0].transactionId,linked.id); assert.equal(restoredHistory.occurrences[0].amountCents,'456');
+const overview=await fetch(root+'/analytics/overview?from=2026-11-01&to=2026-11-30',{headers});
+assert.equal(overview.status,200); const actual=await overview.json(); assert.equal(actual.expenseCents,'456'); assert.equal(actual.classification.find(/** Manual variable override must survive restoring its contract link. */ row=>row.classification==='VARIABLE').expenseCents,'456');
 const report=await fetch(root+'/analytics/monthly?month=2026-11',{headers});
 assert.equal(report.status,200); assert.equal((await report.json()).netCents,'-456');
 const page=await fetch('http://127.0.0.1:3000/'); assert.equal(page.status,200);

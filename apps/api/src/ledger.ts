@@ -19,11 +19,22 @@ import {
 import type { Db } from './db.js';
 import type { Prisma, Transaction } from './generated/prisma/client.js';
 import { AppError } from './errors.js';
+import { classificationWhere } from './analytics.js';
 
 /** Serialize dates and BIGINT without exposing persistence metadata. */
-export function publicTransaction(row: Transaction) {
+export function publicTransaction(
+  row: Transaction & { contractPayment?: { dueDate: Date; contract: { id: string; name: string } } | null },
+) {
   return transactionSchema.parse({
     ...row,
+    effectiveClassification: row.classification ?? (row.contractPayment ? 'FIXED' : 'UNCLASSIFIED'),
+    contract: row.contractPayment
+      ? {
+          id: row.contractPayment.contract.id,
+          name: row.contractPayment.contract.name,
+          dueDate: row.contractPayment.dueDate.toISOString().slice(0, 10),
+        }
+      : null,
     amountCents: String(row.amountCents),
     bookingDate: row.bookingDate.toISOString().slice(0, 10),
     valueDate: row.valueDate?.toISOString().slice(0, 10) ?? null,
@@ -140,6 +151,7 @@ export class LedgerService {
   /** Search transactions with a stable date/id cursor and bounded pages. */
   async transactions(query: z.infer<typeof transactionQuerySchema>) {
     const where: Prisma.TransactionWhereInput = {
+      AND: classificationWhere(query.classification),
       accountId: query.unassigned === 'true' ? null : query.accountId,
       categoryId: query.uncategorized === 'true' ? null : query.categoryId,
       status: query.status,
@@ -158,6 +170,7 @@ export class LedgerService {
     };
     const rows = await this.db.transaction.findMany({
       where,
+      include: { contractPayment: { include: { contract: { select: { id: true, name: true } } } } },
       orderBy: [{ bookingDate: 'desc' }, { id: 'desc' }],
       cursor: query.cursor ? { id: query.cursor } : undefined,
       skip: query.cursor ? 1 : 0,
@@ -172,7 +185,10 @@ export class LedgerService {
   }
   /** Return a single transaction independent of its source. */
   async transaction(id: string) {
-    const row = await this.db.transaction.findUnique({ where: { id } });
+    const row = await this.db.transaction.findUnique({
+      where: { id },
+      include: { contractPayment: { include: { contract: { select: { id: true, name: true } } } } },
+    });
     if (!row) throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden.', 404);
     return publicTransaction(row);
   }
@@ -182,6 +198,12 @@ export class LedgerService {
       /** Validate and update the group, counterpart, and annotation as one atomic change. */ async (tx) => {
         const previous = await tx.transaction.findUnique({ where: { id } });
         if (!previous) throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden.', 404);
+        if (input.isTransfer && (await tx.contractPayment.findUnique({ where: { transactionId: id } })))
+          throw new AppError(
+            'CONTRACT_CONFLICT',
+            'Diese Ausgabe ist eine Vertragszahlung. Zahlungszuordnung vor dem Markieren als Umbuchung prüfen und entfernen.',
+            409,
+          );
         if (input.categoryId) {
           const category = await tx.category.findUnique({ where: { id: input.categoryId } });
           if (!category) throw new AppError('NOT_FOUND', 'Kategorie nicht gefunden.', 404);
@@ -193,7 +215,23 @@ export class LedgerService {
           });
           await tx.transferGroup.delete({ where: { id: previous.transferGroupId } });
         }
-        return publicTransaction(await tx.transaction.update({ where: { id }, data: input }));
+        return publicTransaction(
+          await tx.transaction.update({
+            where: { id },
+            include: { contractPayment: { include: { contract: { select: { id: true, name: true } } } } },
+            data: {
+              ...input,
+              ...('categoryId' in input
+                ? {
+                    categoryOrigin: 'MANUAL',
+                    categoryRuleId: null,
+                    categoryRuleName: null,
+                    categoryRuleConflict: false,
+                  }
+                : {}),
+            },
+          }),
+        );
       },
       { isolationLevel: 'Serializable' },
     );
@@ -205,8 +243,30 @@ export class LedgerService {
     const unique = [...new Set(ids)];
     if ((await this.db.transaction.count({ where: { id: { in: unique } } })) !== unique.length)
       throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden.', 404);
-    await this.db.transaction.updateMany({ where: { id: { in: unique } }, data: { categoryId } });
+    await this.db.transaction.updateMany({
+      where: { id: { in: unique } },
+      data: {
+        categoryId,
+        categoryOrigin: 'MANUAL',
+        categoryRuleId: null,
+        categoryRuleName: null,
+        categoryRuleConflict: false,
+      },
+    });
     return { updated: unique.length };
+  }
+  /** Apply a manual fixed/variable override to explicitly selected rows without changing amounts. */
+  async bulkClassification(ids: string[], classification: 'FIXED' | 'VARIABLE' | null) {
+    const unique = [...new Set(ids)];
+    return this.db.$transaction(
+      /** Reject missing selections atomically. */ async (tx) => {
+        if ((await tx.transaction.count({ where: { id: { in: unique } } })) !== unique.length)
+          throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden. Auswahl neu laden.', 404);
+        await tx.transaction.updateMany({ where: { id: { in: unique } }, data: { classification } });
+        return { updated: unique.length };
+      },
+      { isolationLevel: 'Serializable' },
+    );
   }
   /** Link one missing-side transfer or two balanced own-account transactions. */
   async createTransfer(input: z.infer<typeof transferSchema>) {
@@ -218,6 +278,8 @@ export class LedgerService {
           rows.some(/** Refuse membership in two groups. */ (row) => row.transferGroupId)
         )
           throw new AppError('INVALID_TRANSFER', 'Umbuchungszuordnung ungültig.', 409);
+        if (await tx.contractPayment.count({ where: { transactionId: { in: input.transactionIds } } }))
+          throw new AppError('CONTRACT_CONFLICT', 'Vertragszahlungen zuerst ausdrücklich vom Vertrag lösen.', 409);
         if (
           rows.length === 2 &&
           (rows[0]!.accountId === rows[1]!.accountId ||

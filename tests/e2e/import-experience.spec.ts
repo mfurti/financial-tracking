@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { choose } from './controls.js';
+import { test, expect } from './fixtures.js';
 
 /** Sign in only to the disposable browser fixture, never a real bank or production account. */
 async function signIn(page: import('@playwright/test').Page) {
@@ -65,14 +66,14 @@ test('only real format, mapping and invalid-row exceptions need input; abandoned
   const label = `Recovery ${info.project.name}`;
   await page.goto('/imports/csv');
   await page.getByText('Importoptionen (nur bei Bedarf)', { exact: true }).click();
-  await page.getByLabel('Kodierung', { exact: false }).selectOption('utf-8');
+  await choose(page, page.getByLabel('Kodierung', { exact: false }), 'UTF-8');
   await page.getByLabel('CSV-Datei', { exact: true }).setInputFiles({
     name: 'legacy.csv',
     mimeType: 'text/csv',
     buffer: Buffer.from(`Datum;Betrag;Text\n05.11.2026;-31,00;${label} Müller\n`, 'latin1'),
   });
   await expect(page.getByRole('alert')).toContainText('anderen Textformat');
-  await page.getByLabel('Kodierung', { exact: false }).selectOption('auto');
+  await choose(page, page.getByLabel('Kodierung', { exact: false }), 'Automatisch (empfohlen)');
   await expect(page).toHaveURL(/month=2026-11/);
   await page.goto('/imports/csv');
   await page.getByLabel('CSV-Datei', { exact: true }).setInputFiles({
@@ -96,9 +97,9 @@ test('only real format, mapping and invalid-row exceptions need input; abandoned
     buffer: Buffer.from(`Tag;Summe;Hinweis\n07.11.2026;-34,00;${label} zugeordnet\n`),
   });
   await expect(page.getByRole('heading', { name: 'Eine kurze Zuordnung fehlt' })).toBeVisible();
-  await page.getByRole('combobox', { name: /^Buchungsdatum/ }).selectOption('Tag');
-  await page.getByRole('combobox', { name: /^Betrag/ }).selectOption('Summe');
-  await page.getByRole('combobox', { name: /^Buchungstext/ }).selectOption('Hinweis');
+  await choose(page, page.getByRole('button', { name: /^Buchungsdatum/ }), 'Tag');
+  await choose(page, page.getByRole('button', { name: /^Betrag/ }), 'Summe');
+  await choose(page, page.getByRole('button', { name: /^Buchungstext/ }), 'Hinweis');
   await page.getByRole('button', { name: 'Jetzt auswerten' }).click();
   await expect(page).toHaveURL(/month=2026-11/);
 
@@ -133,7 +134,11 @@ test('only real format, mapping and invalid-row exceptions need input; abandoned
       buffer: Buffer.from(`Datum;Betrag;Text\n08.11.2026;-35,00;${label} verlassen\n`),
     });
     await staged;
-    await page.getByRole('link', { name: 'Einstellungen', exact: true }).click();
+    await page.getByRole('button', { name: 'Mehr', exact: true }).click();
+    await page
+      .getByRole('navigation', { name: info.project.name === 'mobile' ? 'Weitere Seiten' : 'Verwaltung', exact: true })
+      .getByRole('link', { name: 'Einstellungen', exact: true })
+      .click();
     await expect(page.getByRole('heading', { name: 'Einstellungen', exact: true })).toBeVisible();
     release();
     await expect

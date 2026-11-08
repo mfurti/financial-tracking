@@ -1,3 +1,5 @@
+import { mergeAnnotations } from './annotations.js';
+import { assertContractPaymentPreserved, matchContractPayments } from './contract-schedule.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
@@ -14,6 +16,7 @@ import { AppError } from './errors.js';
 import { assertTransferPlacement, linkAccountIdentities } from './transaction-invariants.js';
 
 const details = {
+  contractPayment: { include: { contract: { select: { id: true, name: true } } } },
   account: true,
   identities: { include: { importRun: { select: { source: true } } }, orderBy: { id: 'asc' as const } },
 };
@@ -186,30 +189,27 @@ export class AssignmentService {
             where: { id: decision.candidateId! },
             include: details,
           });
-          if (
-            source.categoryId &&
-            candidate.categoryId &&
-            source.categoryId !== candidate.categoryId &&
-            !decision.categoryChoice
-          )
-            throw new AppError(
-              'ANNOTATION_CONFLICT',
-              'Unterschiedliche manuelle Kategorien: Quelle ausdrücklich wählen.',
-              409,
-            );
+          const annotations = mergeAnnotations(source, candidate, decision);
           if (source.transferGroupId && candidate.transferGroupId)
             throw new AppError(
               'TRANSFER_CONFLICT',
               'Beide Buchungen besitzen eine Umbuchungszuordnung. Zuordnungen zuerst ausdrücklich prüfen und aufheben.',
               409,
             );
-          const categoryId =
-            decision.categoryChoice === 'CSV'
-              ? source.categoryId
-              : decision.categoryChoice === 'BANK'
-                ? candidate.categoryId
-                : (candidate.categoryId ?? source.categoryId);
           const chosen = decision.action === 'CSV' ? source : candidate;
+          if (source.contractPayment && candidate.contractPayment)
+            throw new AppError(
+              'CONTRACT_CONFLICT',
+              'Beide Buchungen sind Vertragszahlungen. Zahlungszuordnungen zuerst ausdrücklich prüfen und aufheben.',
+              409,
+            );
+          await assertContractPaymentPreserved(tx, source, chosen);
+          await assertContractPaymentPreserved(tx, candidate, chosen);
+          if (source.contractPayment)
+            await tx.contractPayment.update({
+              where: { id: source.contractPayment.id },
+              data: { transactionId: candidate.id },
+            });
           const transferGroupId = candidate.transferGroupId ?? source.transferGroupId;
           await assertTransferPlacement(
             tx,
@@ -233,7 +233,8 @@ export class AssignmentService {
               counterpartyName: chosen.counterpartyName,
               counterpartyIban: chosen.counterpartyIban,
               status: chosen.status,
-              categoryId,
+              ...annotations,
+              contractAutoBlocked: source.contractAutoBlocked || candidate.contractAutoBlocked,
               isTransfer: source.isTransfer || candidate.isTransfer,
               transferGroupId,
             },
@@ -242,6 +243,7 @@ export class AssignmentService {
           result.merged++;
           result.results.push({ transactionId: source.id, resultingId: candidate.id });
         }
+        await matchContractPayments(tx);
         await tx.assignmentReceipt.create({ data: { id: input.requestId, inputHash, result } });
         return result;
       },

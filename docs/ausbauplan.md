@@ -1,12 +1,20 @@
 # Household ledger expansion plan
 
-Agreed on 2026-11-07. Stage 1 is approved for [issue #3](https://github.com/mfurti/financial-tracking/issues/3); PRs #4–#7 are merged and the separately approved current deployment is `a2ea737`. P0 is complete. The user's new experience revision below is explicitly requested in the current checkout. New production rollout, real bank access and shared-host reboot remain separate gates; Stages 2/3 remain unauthorized.
+Agreed on 2026-11-07. [Issue #3](https://github.com/mfurti/financial-tracking/issues/3) remains the task record. PRs #4–#9 are merged; last verified deployment is `1e33afa`, with 95 tests/16 browser cases, exact old-table preservation and approved encrypted recovery. The latest user request selects Finanzfluss Copilot and explicitly adds consistent Nuxt UI, analyses, contracts and theme tiles. The audited missing outcomes N1–N8 are in todo.md; they are not implemented by this documentation update. New feature decisions require a detailed plan before implementation. Budgets remain independent backlog; new merge/rollout, real bank access and shared-host reboot retain separate gates.
 
 The user-provided [binding Codex plan](HAUSHALTSBUCH_CODEX_PLAN.md) refines this plan. Its initial planning-only warning describes its authoring context; the subsequent explicit implementation request and issue approval authorize P0 and Stage 1. Preserve the original plan's meaning. Its stricter requirements take precedence: direct-Macvlan bypass protection, an image-only downloadable deployment bundle, idempotent/concurrent reconciliation, IBAN normalization/checksum, and stage acceptance stops.
 
 Execution checklist: [todo.md](todo.md). Initial delivery evidence and unresolved baseline checks: [initial-implementation-checklist.md](initial-implementation-checklist.md). The original [plan.md](plan.md) and detailed specification remain historical inputs; this plan takes precedence for changed requirements.
 
-## Aktuelle Erlebnis-Überarbeitung — 2026-11-07
+## Aktueller Abgleich: Finanzfluss und konsequente Nuxt UI
+
+Die detaillierte Planung wurde anschließend im Planmodus abgeschlossen und vom Nutzer ausdrücklich zur Umsetzung im bisherigen Checkout beauftragt. Der verbindliche aktuelle Umfang und die Reihenfolge F0–F6 stehen in [finanzfluss-umsetzungsplan.md](finanzfluss-umsetzungsplan.md); der Audit-Commit 392d988 bleibt erhalten. Neue Merge-/Rollout-Freigaben bleiben erforderlich.
+
+Die bisherige Oberfläche enthält trotz vorhandener Nuxt-UI-Integration noch native Auswahl-, Datums- und andere Bedienelemente. Kategorienverwaltung und ein einzelner Monatsbericht sind vorhanden; Mehrmonatsanalysen, Regeln und Vertragspersistenz fehlen. Die Theme-Auswahl ist noch ein Dropdown mit einer generischen Ayu-Familie. N1–N8 in todo.md sammeln den aktuellen Nutzerauftrag; die detaillierte technische Planung muss insbesondere Durchschnittsnenner/Datenlücken, vergleichbare Trends, Vertragsrhythmen/Zuordnung und manuelle Kategorienpriorität festlegen. „100 % Nuxt UI“ betrifft die eingesetzten UI-Bausteine; erforderliches HTML innerhalb der Bibliothek ist kein Widerspruch.
+
+Die folgenden U1–U5- und Stufenabschnitte bleiben historische Planungsgrundlage. Der aktuelle Nutzerauftrag ersetzt Finanzguru durch Finanzfluss als Hauptreferenz und hebt die alte Budget-Abhängigkeit für den ausdrücklich angefragten Vertragsausbau auf. Er ersetzt keine fehlende gemeinsame Abnahme oder neue Merge-/Rollout-Freigabe.
+
+## Umgesetzte Erlebnis-Überarbeitung U1–U5 — 2026-11-07
 
 Die neue Nutzeranweisung verfeinert Stufe 1. Die bisherige manuelle Vorschau ist im fehlerfreien Import kein Pflichtschritt mehr. Umsetzung in geordneten, jeweils geprüften Commits:
 

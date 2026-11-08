@@ -10,7 +10,7 @@ export class ContractInterceptor implements NestInterceptor {
   /** Validate output after controller execution and before JSON serialization. */
   intercept(context: ExecutionContext, next: CallHandler) {
     const request = context.switchToHttp().getRequest<FastifyRequest>();
-    const path = request.routeOptions.url?.replace('/api/v1', '').replace(':id', '{id}');
+    const path = request.routeOptions.url?.replace('/api/v1', '').replace(/:([A-Za-z][A-Za-z0-9_]*)/g, '{$1}');
     const contract = Object.values(apiContracts).find(
       /** Match registered routes, not query text. */ (operation) =>
         operation.method === request.method.toLowerCase() && operation.path === path,

@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { choose } from './controls.js';
+import { test, expect } from './fixtures.js';
 
 test('CSV without accounts, later assignment and explicit overlap review', /** Exercise the real first-run UI and API without intercepted data. */ async ({
   page,
@@ -24,12 +25,12 @@ test('CSV without accounts, later assignment and explicit overlap review', /** E
     });
     await expect(page).not.toHaveURL(/imports\/csv/);
     if (new URL(page.url()).pathname !== '/imports') await page.goto('/imports');
-    await expect(page.getByRole('heading', { name: 'Importe & Prüfungen' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Importhistorie' })).toBeVisible();
   }
   await upload();
   await page.goto('/transactions?unassigned=true');
   await expect(page.getByRole('link', { name: new RegExp(label) })).toBeVisible();
-  await page.getByLabel(`Kategorie für ${label}`, { exact: true }).selectOption({ label: 'Lebensmittel' });
+  await choose(page, page.getByLabel(`Kategorie für ${label}`, { exact: true }), 'Lebensmittel');
   const report = await page.request.get('/api/v1/analytics/monthly?month=2026-11');
   expect(BigInt((await report.json()).expenseCents)).toBeGreaterThanOrEqual(1000n);
   await page.goto('/connections');
@@ -43,20 +44,18 @@ test('CSV without accounts, later assignment and explicit overlap review', /** E
   await page.goto('/transactions?unassigned=true');
   await page.getByRole('link', { name: new RegExp(label) }).click();
   const assignment = page.getByRole('region', { name: 'Kontozuordnung' });
-  await assignment
-    .getByLabel('Zielkonto für Zuordnung', { exact: true })
-    .selectOption({ label: `Ziel ${info.project.name}` });
+  await choose(page, assignment.getByLabel('Zielkonto für Zuordnung', { exact: true }), `Ziel ${info.project.name}`);
   await assignment.getByRole('button', { name: 'Zuordnung vergleichen', exact: true }).click();
   await expect(assignment.getByText('Keine mögliche Überschneidung gefunden.', { exact: true })).toBeVisible();
   await assignment.getByRole('button', { name: 'Zuordnung bestätigen', exact: true }).click();
   await expect(assignment).toBeHidden();
 
   await upload();
-  await page.getByLabel('Bekannte Buchung auswählen', { exact: true }).selectOption({ index: 1 });
+  await choose(page, page.getByLabel('Bekannte Buchung auswählen', { exact: true }), { index: 1 });
   await page.getByRole('button', { name: 'Vorhandene Daten behalten', exact: true }).click();
   await expect(page.getByText('Keine offenen Hinweise für diesen Import.', { exact: true })).toBeVisible();
   await upload('-11,00');
-  await page.getByLabel('Bekannte Buchung auswählen', { exact: true }).selectOption({ index: 1 });
+  await choose(page, page.getByLabel('Bekannte Buchung auswählen', { exact: true }), { index: 1 });
   await page.getByRole('button', { name: 'Importdaten übernehmen', exact: true }).click();
   await expect(page.getByText('Keine offenen Hinweise für diesen Import.', { exact: true })).toBeVisible();
   const transactions = await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`);
@@ -74,12 +73,14 @@ test('CSV without accounts, later assignment and explicit overlap review', /** E
   await expect(page.getByText('Keine offenen Hinweise für diesen Import.', { exact: true })).toBeVisible();
   await page.goto(`/transactions?unassigned=true&search=${encodeURIComponent(label)}`);
   await page.getByRole('link', { name: new RegExp(label) }).click();
-  await assignment
-    .getByLabel('Zielkonto für Zuordnung', { exact: true })
-    .selectOption({ label: `Ziel ${info.project.name}` });
+  await choose(page, assignment.getByLabel('Zielkonto für Zuordnung', { exact: true }), `Ziel ${info.project.name}`);
   await assignment.getByRole('button', { name: 'Zuordnung vergleichen', exact: true }).click();
-  await assignment.getByRole('combobox', { name: `Zielbuchung für ${label}`, exact: true }).selectOption({ index: 1 });
-  await assignment.getByRole('combobox', { name: `Entscheidung für ${label}`, exact: true }).selectOption('BANK');
+  await choose(page, assignment.getByRole('button', { name: `Zielbuchung für ${label}`, exact: true }), { index: 1 });
+  await choose(
+    page,
+    assignment.getByRole('combobox', { name: `Entscheidung für ${label}`, exact: true }),
+    'Bank-/Zieldaten übernehmen und zusammenführen',
+  );
   await assignment.getByRole('button', { name: 'Zuordnung bestätigen', exact: true }).click();
   await expect(assignment).toBeHidden();
   const consolidated = await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`);

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test('themes, responsive pages, form errors, retry and session expiry', /** Browser acceptance across the real application plus explicit synthetic error states. */ async ({
   page,
@@ -37,6 +37,18 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
   await page.goto('/?month=2026-11');
+  const largerHeader = await page.addStyleTag({ content: '.topbar { font-size: 16px; }' });
+  expect(
+    await page.evaluate(
+      /** Header controls must fit the client viewport even with wider text metrics. */ () =>
+        document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
+  await largerHeader.evaluate(
+    /** Restore the user's normal font after the accessibility regression. */ (element) => {
+      element.parentNode?.removeChild(element);
+    },
+  );
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Zum Inhalt springen' })).toBeFocused();
@@ -60,7 +72,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
       expect(
         await page.evaluate(
           /** Detect page-wide overflow rather than hiding it with CSS. */ () =>
-            document.documentElement.scrollWidth <= innerWidth,
+            document.documentElement.scrollWidth <= document.documentElement.clientWidth,
         ),
       ).toBe(true);
       expect(
@@ -73,13 +85,22 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
         await page.screenshot({ path: `.local/dashboard-${mode}-${info.project.name}.png`, fullPage: true });
     }
   }
+  await page.goto('/transactions?from=2026-11-01&to=2026-11-30');
+  await page.getByRole('button', { name: 'Von auswählen', exact: true }).click();
+  await page.screenshot({ path: `.local/date-picker-${info.project.name}.png` });
+  await page.getByRole('button', { name: /15.*November.*2026/ }).click();
+  await page.getByRole('button', { name: 'Filtern', exact: true }).click();
+  await expect(page).toHaveURL(/from=2026-11-15/);
+  await page.getByRole('button', { name: 'Von löschen', exact: true }).click();
+  await page.getByRole('button', { name: 'Filtern', exact: true }).click();
+  await expect(page).not.toHaveURL(/from=/);
   await page.goto('/accounts');
   await page.getByLabel('Name', { exact: true }).fill('Checksum validation');
   await page.getByLabel('IBAN (optional)', { exact: true }).fill('DE00370400440532013000');
   await page.getByRole('button', { name: 'Konto anlegen', exact: true }).click();
   await expect(page.getByText('Bitte eine gültige deutsche IBAN eingeben.', { exact: true })).toBeVisible();
   await page.goto('/categories');
-  await page.locator('summary').filter({ hasText: 'Kategorien verwalten' }).click();
+  await page.getByRole('button', { name: 'Kategorien verwalten', exact: true }).click();
   const category = `Retry ${info.project.name}`;
   await page.getByLabel('Name', { exact: true }).fill(category);
   await page.route(
