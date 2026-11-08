@@ -1,8 +1,19 @@
 # Expansion implementation checklist
 
+## Active approved implementation — UX0–UX5
+
+Approved [contract usability plan](vertragsanalyse-usability-plan.md), existing checkout, issue #3, branch `codex/3-contracts-import-usability`. PR #10 is merged and production rollout of `3b990ec` succeeded: fresh encrypted restore, 13 original application tables preserved, four healthy services, HTTPS/proxy/read-only analytics checks. Delivery evidence: issue #3 comment 6722694054. New merge/rollout approval remains separate.
+
+- [x] UX0: save approved plan and synchronize delivery/checklist/task record.
+- [ ] UX1: previewed, atomic CSV rollback and reupload with source/link protection.
+- [ ] UX2: permanent management links, mobile More page, clearer headings/colors/icons and concise copy.
+- [ ] UX3: monthly fixed-cost card and category/kind contract analytics.
+- [ ] UX4: editable review cards and persistent accept/dismiss/restore decisions.
+- [ ] UX5: full verification, visual acceptance, documentation and feature PR.
+
 ## Active approved implementation — F0–F6
 
-The user explicitly requested implementation of the reviewed [Finanzfluss implementation plan](finanzfluss-umsetzungsplan.md) in the current checkout. Preserve audit commit `392d988`. Branch: `codex/3-finanzfluss-experience`; issue #3. Current deployment remains the last verified `1e33afa`; no new merge/rollout/bank/reboot approval is implied.
+Historical F0–F6 implementation: [Finanzfluss implementation plan](finanzfluss-umsetzungsplan.md), preserved audit `392d988`, merged PR #10. Production was separately approved and rolled out as `3b990ec`; see the current delivery record above.
 
 - [x] F0: save the approved plan and synchronize the existing task record/checklist; relevant Markdown checks pass before commit.
 - [x] F1: consistent Nuxt UI controls, dates/months, clarification and existing keyboard/mobile journeys. Lint, strict types, production build and all 16 browser scenarios verified; focused six-case rerun passed after waiting for menu exit animations.
