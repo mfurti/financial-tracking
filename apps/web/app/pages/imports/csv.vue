@@ -313,9 +313,7 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <div>
-      <p class="eyebrow">DEINE AUSWERTUNG BEGINNT HIER</p>
       <h1>CSV importieren</h1>
-      <p class="muted">Datei auswählen. Den Rest übernehmen wir.</p>
     </div>
     <UButton to="/imports" variant="ghost">Importhistorie</UButton>
   </div>
@@ -324,7 +322,6 @@ onBeforeUnmount(
     <strong>{{
       readingFile ? 'Datei wird gelesen …' : saving ? 'Buchungen werden übernommen …' : 'Datei wird ausgewertet …'
     }}</strong>
-    <p class="muted">Format erkennen, Buchungen prüfen und deine Monatsübersicht vorbereiten.</p>
   </div>
   <section v-if="!preview" class="panel import-upload">
     <form class="space-y-6" @submit.prevent="makePreview">
@@ -333,14 +330,11 @@ onBeforeUnmount(
           v-model="selectedFile"
           accept=".csv,text/csv"
           label="CSV-Datei auswählen"
-          :description="filename || 'Dein Bankexport genügt. Kein Konto und keine Einrichtung nötig.'"
+          :description="filename || 'CSV-Bankexport'"
           :disabled="busy || readingFile"
           @update:model-value="selectFile"
       /></UFormField>
-      <p class="muted text-sm">
-        Mit der Dateiauswahl werden erkannte, gültige Buchungen automatisch übernommen und ausgewertet. Nur wenn etwas
-        unklar ist, fragen wir nach.
-      </p>
+      <p class="muted text-sm">Gültige Buchungen werden nach der Dateiauswahl automatisch übernommen.</p>
       <DisclosurePanel v-model:open="formatExpanded" class="import-format" title="Importoptionen (nur bei Bedarf)"
         ><p class="muted text-sm my-3">
           Normalerweise ist hier nichts nötig. Änderungen am Dateiformat lesen dieselbe Datei erneut.

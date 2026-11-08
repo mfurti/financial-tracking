@@ -41,6 +41,8 @@ jobs:
             test-results
             .local/analytics-*.png
             .local/settings-tiles-*.png
+            .local/contract-analysis-*.png
+            .local/contract-review-*.png
           retention-days: 3
           include-hidden-files: true
   operations:

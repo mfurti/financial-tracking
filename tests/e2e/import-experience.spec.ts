@@ -58,7 +58,9 @@ test('upload alone opens full-period analytics and recovers a lost commit respon
   ).toBe(true);
   expect(await (await page.request.get('/api/v1/accounts')).json()).toEqual(beforeAccounts);
   await page.goto('/imports');
-  const entry = page.locator('.import-entry').filter({ hasText: '22 neu' });
+  const entry = page
+    .locator('.import-entry')
+    .filter({ has: page.getByText('22 neu · 0 bekannt · 0 prüfen', { exact: true }) });
   await entry.getByRole('button', { name: 'Import rückgängig machen', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Import rückgängig machen?', exact: true });
   await expect(dialog).toContainText('22 Buchungen werden gelöscht.');

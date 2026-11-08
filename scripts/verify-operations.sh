@@ -124,6 +124,9 @@ UPDATE "Transaction" SET "counterpartyName"='Synthetic subscription',"categoryOr
 INSERT INTO "Contract" (id,name,provider,kind,"categoryId","startDate","endDate","cancellationDate") VALUES ('10000000-0000-4000-8000-000000000008','Synthetic subscription','Synthetic subscription','SUBSCRIPTION','10000000-0000-4000-8000-000000000003','2026-11-06','2027-11-06','2027-10-06');
 INSERT INTO "ContractRevision" (id,"contractId","effectiveDate","amountCents","intervalMonths") VALUES ('10000000-0000-4000-8000-000000000009','10000000-0000-4000-8000-000000000008','2026-11-06',456,1);
 INSERT INTO "ContractPayment" (id,"contractId","revisionId","dueDate","transactionId",source) VALUES ('10000000-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000008','10000000-0000-4000-8000-000000000009','2026-11-06','10000000-0000-4000-8000-000000000006','AUTO');
+UPDATE "Transaction" SET "createdByImportRunId"='10000000-0000-4000-8000-000000000005' WHERE id='10000000-0000-4000-8000-000000000006';
+INSERT INTO "ContractSuggestionDecision" (key,state) VALUES (repeat('a',64),'DISMISSED');
+INSERT INTO "ContractSuggestionDecision" (key,state,"contractId") VALUES (repeat('b',64),'CONFIRMED','10000000-0000-4000-8000-000000000008');
 SQL
 # Synthetic credential markers exercise the real safe-error/persistence path without bank configuration.
 curl --fail --silent --show-error --cacert "$ops_dir/root.crt" -c "$ops_dir/cookies" \
@@ -171,6 +174,12 @@ docker run --rm --network "${project}_private" --entrypoint bash \
  "$backup_image" -e -c '/usr/local/bin/restore.sh /restore/archive.age /restore/identity; test -z "$(find /tmp -maxdepth 1 -type f -name "tmp.*" -print -quit)"'
 restored="$(docker exec "$restore_name" psql -U ledger -d ledger -Atqc 'SELECT "amountCents"::text || '\''|'\'' || "isTransfer"::text || '\''|'\'' || c.name FROM "Transaction" t JOIN "Category" c ON c.id=t."categoryId" WHERE t.id='\''10000000-0000-4000-8000-000000000004'\''')"
 test "$restored" = '-1234|true|Synthetic category'
+docker exec -i "$restore_name" psql -U ledger -d ledger -v ON_ERROR_STOP=1 <<'SQL'
+DO $$ BEGIN
+ IF (SELECT count(*) FROM "ContractSuggestionDecision" WHERE (state='DISMISSED' AND "contractId" IS NULL) OR (state='CONFIRMED' AND "contractId"='10000000-0000-4000-8000-000000000008')) <> 2 THEN RAISE EXCEPTION 'Missing restored decisions'; END IF;
+ IF (SELECT count(*) FROM "Transaction" WHERE id='10000000-0000-4000-8000-000000000006' AND "createdByImportRunId"='10000000-0000-4000-8000-000000000005') <> 1 THEN RAISE EXCEPTION 'Missing restored origin'; END IF;
+END $$;
+SQL
 docker run --detach --rm --name "$restore_api" --network "${project}_private" \
  --mount "type=bind,src=$ops_dir/db_password,dst=/run/secrets/db_password,readonly" \
  -e DB_PASSWORD_FILE=/run/secrets/db_password -e DB_HOST="$restore_name" -e PUBLIC_APP_URL=https://localhost "$api_image" >/dev/null
@@ -194,6 +203,10 @@ assert.equal(manual.categoryOrigin,'MANUAL'); assert.equal(manual.classification
 const linked=restoredPage.items.find(/** Locate the original actual transaction after restoration. */ row=>row.id==='10000000-0000-4000-8000-000000000006');
 assert.equal(linked.categoryOrigin,'RULE'); assert.equal(linked.categoryRuleName,'Synthetic import rule'); assert.equal(linked.classification,'VARIABLE'); assert.equal(linked.effectiveClassification,'VARIABLE');
 assert.equal(linked.contract.id,'10000000-0000-4000-8000-000000000008');
+const rollback=await fetch(root+'/imports/10000000-0000-4000-8000-000000000005/rollback-preview',{headers});
+assert.equal(rollback.status,200); const impact=await rollback.json(); assert.equal(impact.owned,1); assert.equal(impact.linked,1);
+const costs=await fetch(root+'/contracts/summary',{headers}); assert.equal(costs.status,200); const summary=await costs.json();
+assert.equal(summary.monthlyCents,summary.asOf>='2026-11-06' && summary.asOf<='2027-11-06'?'456':'0');
 const history=await fetch(root+'/contracts/10000000-0000-4000-8000-000000000008/payments?from=2026-11-01&to=2026-11-30',{headers});
 assert.equal(history.status,200); const restoredHistory=await history.json(); assert.equal(restoredHistory.payments.length,1); assert.equal(restoredHistory.payments[0].transactionId,linked.id); assert.equal(restoredHistory.occurrences[0].amountCents,'456');
 const overview=await fetch(root+'/analytics/overview?from=2026-11-01&to=2026-11-30',{headers});

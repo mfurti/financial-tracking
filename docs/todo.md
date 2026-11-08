@@ -11,7 +11,7 @@ Approved [contract usability plan](vertragsanalyse-usability-plan.md), existing 
 - [x] UX4: editable review cards and persistent accept/dismiss/restore decisions.
 - [ ] UX5: full verification, visual acceptance, documentation and feature PR.
 
-## Active approved implementation — F0–F6
+## Delivered implementation — F0–F6
 
 Historical F0–F6 implementation: [Finanzfluss implementation plan](finanzfluss-umsetzungsplan.md), preserved audit `392d988`, merged PR #10. Production was separately approved and rolled out as `3b990ec`; see the current delivery record above.
 
@@ -23,7 +23,7 @@ Historical F0–F6 implementation: [Finanzfluss implementation plan](finanzfluss
 - [x] F5: exact multi-month analytics, valid average/trend denominators, breakdown/drill-down and final navigation/dashboard. Seven new calculation/API tests and both focused analytic browser journeys passed; complete suite/visual/CI acceptance continues in F6.
 - [x] F6: guide/evidence/checklist, full local checks/visual matrix and [PR #10](https://github.com/mfurti/financial-tracking/pull/10). Linux [CI 42479998163](https://github.com/mfurti/financial-tracking/actions/runs/42479998163) passed on code revision 0320fd0, including all 20 browser scenarios and extended encrypted restore. PR #10 merge after green CI is explicitly approved; production rollout remains separate.
 
-Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). [Issue #3](https://github.com/mfurti/financial-tracking/issues/3) remains open. PRs #4–#9 are merged; the last verified deployment is `1e33afa517c968edf6ef969c1e3f841a2db16c20`, web `.33`, runtime-only server. The new user instruction selects Finanzfluss Copilot as the primary reference and requests Nuxt UI consistency, analyses, contracts and theme tiles. The source audit below separates these missing features from earlier delivery. Budgets remain separate backlog; real-bank access, host reboot and any new rollout retain their own gates.
+Plan and decisions: [ausbauplan.md](ausbauplan.md), refined by the [binding user plan](HAUSHALTSBUCH_CODEX_PLAN.md). [Issue #3](https://github.com/mfurti/financial-tracking/issues/3) remains open. PRs #4–#10 are merged; the last verified deployment is `3b990ecaba356c0bfe85a79bb87915c41eac0967`, web `.33`, runtime-only server. The new user instruction selects Finanzfluss Copilot as the primary reference and requests Nuxt UI consistency, analyses, contracts and theme tiles. The source audit below separates these missing features from earlier delivery. Budgets remain separate backlog; real-bank access, host reboot and any new rollout retain their own gates.
 
 The previous checklist, including the audited delivery evidence and remaining baseline checks, is preserved in [initial-implementation-checklist.md](initial-implementation-checklist.md). Its open work is carried into the tasks below; checked historical implementation is not proof of expansion acceptance.
 
@@ -209,7 +209,8 @@ The explicit Finanzfluss implementation approval made contracts independent of b
 - [x] Match one real booking per occurrence, preserve links through consolidation and reject competing links atomically.
 - [x] Nuxt UI forms/history, light/dark styling and date/identity/mismatch/preservation tests; feature-wide proof remains F6.
 - [ ] Separate future planning enhancement: aggregate all contracts' forecast amounts due in a selected month. The approved F0–F6 plan delivers next-due ordering and per-contract history, not this aggregate budget/planning view.
-- [ ] Concrete PR merge, production delivery and user acceptance remain separately gated; source completion is not rollout evidence.
+- [x] F0–F6 delivery: PR #10 merged and 3b990ec rolled out with fresh encrypted restore and preserved data.
+- [ ] UX0–UX5 delivery: new feature PR merge, production rollout and user acceptance remain separately gated.
 
 ## Completion rules
 

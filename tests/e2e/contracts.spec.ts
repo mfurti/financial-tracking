@@ -54,10 +54,19 @@ test('confirmed recurring payments keep real bookings, expose contract badges an
   await expect(page).toHaveURL(/month=2033-02/);
   await page.goto('/contracts');
   await expect(page.getByRole('heading', { name: 'Verträge', exact: true })).toBeVisible();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Vorschläge prüfen · 2', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Vertragsvorschläge prüfen', exact: true });
   await expect(dialog.getByLabel('Anbieter / Gegenpartei', { exact: true })).toHaveValue(otherProvider);
+  await dialog.getByRole('button', { name: 'Später', exact: true }).click();
+  await expect(dialog.getByLabel('Anbieter / Gegenpartei', { exact: true })).toHaveValue(provider);
+  await dialog.getByRole('button', { name: 'Prüfung schließen', exact: true }).click();
+  await page.getByRole('button', { name: 'Vorschläge prüfen · 2', exact: true }).click();
+  await expect(dialog.getByLabel('Anbieter / Gegenpartei', { exact: true })).toHaveValue(otherProvider);
   await dialog.getByLabel('Vertragsname', { exact: true }).fill('Ungespeicherter Entwurf');
+  await dialog.getByRole('button', { name: 'Prüfung schließen', exact: true }).click();
+  const closeDiscard = page.getByRole('dialog', { name: 'Ungespeicherte Änderungen', exact: true });
+  await closeDiscard.getByRole('button', { name: 'Weiter bearbeiten', exact: true }).click();
   await dialog.getByRole('button', { name: 'Nächste Karte', exact: true }).click();
   const discard = page.getByRole('dialog', { name: 'Ungespeicherte Änderungen', exact: true });
   await discard.getByRole('button', { name: 'Weiter bearbeiten', exact: true }).click();
@@ -89,9 +98,26 @@ test('confirmed recurring payments keep real bookings, expose contract badges an
   await dialog.getByRole('button', { name: 'Kein Vertrag', exact: true }).click();
   await expect(dialog.getByLabel('Anbieter / Gegenpartei', { exact: true })).toHaveValue(provider);
   await expect(dialog.getByLabel('Betrag in Euro', { exact: true })).toHaveValue('12,34');
+  await dialog.getByRole('heading', { name: provider, exact: true }).scrollIntoViewIfNeeded();
+  await expect(dialog.getByRole('heading', { name: 'Vertragsvorschläge prüfen', exact: true })).toBeInViewport();
+  await expect(dialog.getByRole('button', { name: 'Prüfung schließen', exact: true })).toBeInViewport();
+  await page.screenshot({ path: `.local/contract-review-${info.project.name}.png` });
+  await page.route(
+    '**/api/v1/contracts',
+    /** Lose only the successful confirmation response to exercise safe retry. */ async (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
+      await route.fetch();
+      await route.abort('failed');
+    },
+  );
+  await dialog.getByRole('button', { name: 'Bestätigen & weiter', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toBeVisible();
+  expect(await (await page.request.get('/api/v1/contracts')).json()).toHaveLength(2);
+  await page.unroute('**/api/v1/contracts');
   await dialog.getByRole('button', { name: 'Bestätigen & weiter', exact: true }).click();
   await expect(dialog.getByRole('heading', { name: 'Prüfrunde abgeschlossen', exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Verträge anzeigen', exact: true }).click();
+  expect(await (await page.request.get('/api/v1/contracts')).json()).toHaveLength(2);
   await page.getByRole('link', { name: new RegExp(provider) }).click();
   await expect(page).toHaveURL(/\/contracts\/[a-f0-9-]+$/);
   await expect(page.getByRole('heading', { level: 1, name: provider })).toBeVisible();

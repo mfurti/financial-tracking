@@ -127,6 +127,27 @@ describe('previewed CSV rollback', /** Real PostgreSQL source ownership, links a
     const third = await upload(first.label, account.id);
     expect((await imports.run(third.run)).knownCount).toBe(1);
   });
+  it('rolls back every owned row beyond the bounded preview list', /** The 100-row display limit must never become a partial deletion limit. */ async () => {
+    const run = await resource.db.importRun.create({
+      data: { source: 'CSV', status: 'COMPLETED', importedCount: 101 },
+    });
+    await resource.db.transaction.createMany({
+      data: Array.from(
+        { length: 101 },
+        /** Each row has explicit authoritative ownership. */ (_, index) => ({
+          createdByImportRunId: run.id,
+          amountCents: -1n,
+          bookingDate: new Date('2033-03-01'),
+          description: `Bounded preview ${index}`,
+        }),
+      ),
+    });
+    const preview = await rollback.preview(run.id);
+    expect(preview).toMatchObject({ owned: 101, truncated: true });
+    expect(preview.items).toHaveLength(100);
+    expect(await remove(run.id)).toEqual({ deleted: 101, retained: 0 });
+    expect(await resource.db.transaction.count({ where: { createdByImportRunId: run.id } })).toBe(0);
+  });
   it('rejects stale impact and protects uncertain legacy ownership', /** No partial writes after manual edits or missing origin. */ async () => {
     const current = await upload();
     const preview = await rollback.preview(current.run);
@@ -138,6 +159,39 @@ describe('previewed CSV rollback', /** Real PostgreSQL source ownership, links a
     await resource.db.transaction.update({ where: { id: current.row.id }, data: { createdByImportRunId: null } });
     expect(await rollback.preview(current.run)).toMatchObject({ uncertain: 1, owned: 0 });
     expect(await remove(current.run, 'REMOVE', true)).toEqual({ deleted: 0, retained: 1 });
+  });
+  it('does not lose a simultaneously committed repeated source', /** A concurrent source either commits safely or retries after the serialized rollback. */ async () => {
+    const bank = await resource.db.bankConnection.create({
+      data: { name: 'Concurrent source', bankCode: '69050001', connectorType: 'CSV' },
+    });
+    const account = await resource.db.account.create({
+      data: { name: 'Concurrent account', bankConnectionId: bank.id },
+    });
+    const first = await upload(randomUUID(), account.id);
+    const second = await imports.preview({
+      accountId: account.id,
+      content: `Datum;Betrag;Text;Partner;Referenz\n01.02.2033;-12,20;${first.label};${first.label};${first.label}\n`,
+      delimiter: ';',
+      encoding: 'utf-8',
+      mapping: {
+        bookingDate: 'Datum',
+        amount: 'Betrag',
+        description: 'Text',
+        counterpartyName: 'Partner',
+        reference: 'Referenz',
+      },
+    });
+    const preview = await rollback.preview(first.run);
+    const result = await Promise.allSettled([
+      rollback.rollback(first.run, rollbackInputSchema.parse({ token: preview.token, confirm: true })),
+      imports.commit(second.run.id, false),
+    ]);
+    expect(
+      result.some(/** At least one operation makes durable progress. */ (entry) => entry.status === 'fulfilled'),
+    ).toBe(true);
+    if (result[1]!.status === 'rejected') await imports.commit(second.run.id, false);
+    expect(await resource.db.transaction.count({ where: { description: first.label } })).toBe(1);
+    expect(await resource.db.transactionIdentity.count({ where: { importRunId: second.run.id } })).toBeGreaterThan(0);
   });
   it('keeps linked payments by default and dissolves only explicitly selected links', /** Removing a payment never removes its contract or the transfer's opposite booking. */ async () => {
     for (const policy of ['KEEP', 'REMOVE'] as const) {

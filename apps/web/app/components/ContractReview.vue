@@ -223,7 +223,8 @@ onBeforeUnmount(
     description="Bearbeiten und bestätigen. Wischen blättert nur."
     :dismissible="!busy"
     :close="!busy"
-    :ui="{ content: 'max-w-2xl' }"
+    :transition="!reducedMotion"
+    :ui="{ content: 'max-w-2xl', header: 'shrink-0', body: 'min-h-0 overflow-y-auto', footer: 'shrink-0' }"
   >
     <template #body>
       <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
@@ -340,6 +341,7 @@ onBeforeUnmount(
   </UModal>
   <UModal
     :open="discardOpen"
+    :transition="!reducedMotion"
     title="Ungespeicherte Änderungen"
     description="Deine Änderungen wurden noch nicht gespeichert."
     @update:open="

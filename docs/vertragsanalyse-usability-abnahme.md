@@ -1,0 +1,33 @@
+# Contract usability acceptance
+
+## Candidate and scope
+
+Baseline and unchanged production: `3b990ecaba356c0bfe85a79bb87915c41eac0967`. Approved plan: [contract usability](vertragsanalyse-usability-plan.md), issue #3, branch `codex/3-contracts-import-usability`. Audit `392d988` remains in ancestry. One feature PR; neither merge nor rollout is authorized by implementation approval.
+
+| Package | Source commit / result                                                                                             |
+| ------- | ------------------------------------------------------------------------------------------------------------------ |
+| UX0     | `342e06e`: plan, issue and current production delivery recorded.                                                   |
+| UX1     | `564d86d`: previewed CSV rollback, provenance/link protection and reupload.                                        |
+| UX2     | `3310721`: permanent management links, mobile More page, external headings, compact accessible help, colors/icons. |
+| UX3     | `f62d67d`: exact per-contract monthly costs and category/kind drill-down.                                          |
+| UX4     | `b843a85`: editable Nuxt review cards, dirty-edit guards and durable decisions.                                    |
+| UX5     | Final documentation/regressions and Linux restore fixture; current CI evidence is tracked in issue #3.             |
+
+## Local evidence
+
+- Complete unit/integration run: 130 tests in 24 files passed. After adding the >100-row preview boundary case, all eight rollback tests passed, including the unchanged preceding cases. The candidate therefore contains 131 cases; full current-candidate Linux execution remains a separate gate.
+- Real PostgreSQL tests cover immediate-previous-schema ownership backfill, exact large BIGINT preservation, shared/unknown provenance, both contract/transfer policies, stale snapshots, concurrent confirmations, a concurrent repeated import and deletion beyond the bounded preview list.
+- HTTP tests exercise actual cookie authentication, Origin/CSRF on POST/PUT/DELETE, invalid queries/keys, shared output serialization, hash-key OpenAPI, atomic invalid confirmation and safe idempotent confirmation retry.
+- Monthly planning tests cover all four rhythms, per-row half-up rounding, exact group/total equality, inclusive terms, today's price versus future revisions, future starts, zero-rounded values and totals above an individual BIGINT ceiling.
+- Full browser suite: all 20 desktop/mobile scenarios passed. Journeys exercise upload/rollback/reupload, cancellation, duplicate decisions, manual rule protection, both analytics groupings, real carousel drag, skip/reopen, dirty-close/card navigation, persistent dismissal/restore and loss of an already committed contract-confirmation response followed by safe retry.
+- Existing appearance/accessibility tests cover all 23 tiles/six Ayu variants, early restoration, light/dark, reduced motion, keyboard/focus, 360/768/1024/1440 widths and existing bank-dialog fixtures. No real bank is contacted.
+- Format, lint, strict workspace/test types, Prisma validation, production build and Bash syntax passed. The final targeted dialog check also keeps its title/footer visible for long forms and removes modal animation under reduced motion.
+- Synthetic analytics, contract analysis and mobile review screenshots were inspected. Useful descriptions are available through labelled help popovers; important monetary meaning, errors and destructive consequences remain visible. No user financial screenshots were captured.
+
+## Linux and migration delivery gates
+
+The operations fixture now seeds creating-import ownership and both confirmed/dismissed decisions, verifies those after encrypted restore, and checks authenticated rollback preview/monthly summary on the restored runtime images. Actual Docker execution is performed by Linux CI, not claimed on this Windows workstation. CI failure artifacts include the new synthetic contract analysis/review screenshots.
+
+Two additive migrations are reviewed in [feature-migrations.md](feature-migrations.md). They do not delete financial data on deployment. Rollback deletes actual import-owned rows only after a user's preview and explicit confirmation. Existing consumers can read expanded fields, but mixed-version writes do not maintain all ownership/decision semantics; use a controlled write pause. Do not drop columns or promise historical financial restoration as application rollback.
+
+Current-head verify and operations jobs must pass before an approved merge. The feature PR remains open without concrete merge approval. Any production rollout is separately approved, uses only published immutable GitHub images and a fresh encrypted backup/restore, and requires comparison of original data before reopening writes. No server repository, production migration, reboot or real bank test is part of this source delivery. Budgets and the selected-month all-contract forecast remain separate backlog.

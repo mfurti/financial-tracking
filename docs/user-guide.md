@@ -4,7 +4,7 @@
 
 Die App sammelt deine Buchungen und zeigt, wie viel im ausgewählten Monat eingenommen und ausgegeben wurde. Die große **Monatsbilanz** ist die Differenz dieser Geldflüsse. Sie ist kein verfügbarer Kontostand und keine Prognose. Darunter siehst du die Ausgabenverteilung und die letzten Buchungen; tatsächliche Bank-Kontostände stehen getrennt daneben.
 
-Am Computer findest du die Seiten links. Auf dem Telefon stehen **Übersicht**, **Umsätze**, **Analysen** und **Verträge** unten. Unter **Mehr** erreichst du Konten, Importhistorie, Bankverbindungen und Einstellungen. Kategorien und Regeln gehören zu **Analysen**. CSV hochladen bleibt auf Übersicht und Umsätzen direkt erreichbar. Das Menü schließt nach der Navigation, beim Klicken außerhalb oder mit Escape. Das Zahnrad oben öffnet die Einstellungen direkt.
+Am Computer findest du die Seiten links. Auf dem Telefon stehen **Übersicht**, **Umsätze**, **Analysen** und **Verträge** unten. Unter **Mehr** erreichst du Konten, Importhistorie, Bankverbindungen und Einstellungen. Kategorien und Regeln gehören zu **Analysen**. CSV hochladen bleibt auf Übersicht und Umsätzen direkt erreichbar. Mehr öffnet eine eigene Übersichtsseite. Das Zahnrad oben öffnet die Einstellungen direkt.
 
 ## Erste Buchungen
 
@@ -83,7 +83,7 @@ Die Vorlagen ergänzen Alltagskategorien, etwa Mode, Technik und Essen gehen. Pa
 
 ## Verträge und wiederkehrende Zahlungen
 
-Unter **Verträge** findest du Abos, Miete, Versicherungen und andere laufende Ausgaben. Mindestens zwei passende Zahlungen mit gleichem Betrag und Gegenpartei erzeugen einen **Vorschlag**. Öffne **Vorschlag prüfen**, kontrolliere Betrag, Rhythmus und erste Fälligkeit und bestätige den Vertrag. Alternativ legst du ihn selbst an. Anbieter und Gegenpartei müssen für automatische Zuordnung vollständig übereinstimmen; ein optionales Konto begrenzt die Treffer.
+Unter **Verträge** findest du Abos, Miete, Versicherungen und andere laufende Ausgaben. Mindestens zwei passende Zahlungen mit gleichem Betrag und Gegenpartei erzeugen einen **Vorschlag**. Öffne **Vorschläge prüfen · N**, kontrolliere Betrag, Rhythmus und erste Fälligkeit und bestätige den Vertrag. Alternativ legst du ihn selbst an. Anbieter und Gegenpartei müssen für automatische Zuordnung vollständig übereinstimmen; ein optionales Konto begrenzt die Treffer.
 
 Ein bestätigter Vertrag markiert eindeutige tatsächliche Zahlungen automatisch, wenn Betrag und Gegenpartei passen und der Termin höchstens fünf Tage abweicht. Mehrere passende Verträge oder Buchungen bleiben offen. In den Umsätzen öffnet der Vertragsname die Details. Die Vertragsliste sortiert die nächste heutige oder zukünftige offene Fälligkeit zuerst und wird regelmäßig aktualisiert. Frühere nicht zugeordnete Termine bleiben in der Historie; fehlende Zuordnung beweist keinen Zahlungsausfall.
 
@@ -102,3 +102,27 @@ Der **Durchschnitt** verwendet ausschließlich vollständig ausgewählte, vergan
 Der **Trend** vergleicht den letzten geeigneten Monat mit seinem direkten Kalendervormonat, wenn beide geeignet sind. Eine Lücke wird nicht übersprungen. Bei einer Nullbasis fehlt ausdrücklich der Prozentwert; der Cent-Unterschied bleibt verfügbar. Durchschnittswerte werden erst bei der Ausgabe auf Cent gerundet.
 
 Die Kategorienansicht zeigt Ausgabenanteile. **Fix oder variabel?** unterscheidet manuell feste/variable Ausgaben, bestätigte Vertragszahlungen als automatische Fixkosten und den noch nicht eingeordneten Rest. Diagrammauswahl und die beschrifteten Links öffnen die jeweils zugrunde liegenden Buchungen mit denselben Filtern; keine Buchung wird gesplittet. Die Tabelle enthält alle exakten Centwerte unabhängig vom Diagramm. Vertragsplanwerte pro Monat/Jahr sind getrennt beschriftete Hochrechnungen und gehören nicht zu tatsächlichen Ausgaben oder deren Durchschnitt.
+
+## Import zum erneuten Testen entfernen
+
+Öffne **Importhistorie → Import rückgängig machen**. Die Vorschau zeigt, welche Buchungen entfernt werden und welche wegen weiterer Quellen oder unklarer Herkunft erhalten bleiben. Manuelle Zuordnungen gelöschter Buchungen gehen verloren.
+
+Bei Vertrags- oder Umbuchungszuordnungen wählst du im Dialog zwischen **Verknüpfte Buchungen behalten** und **Verknüpfungen und import-eigene Buchungen entfernen**. Die zweite Auswahl verlangt eine zusätzliche Bestätigung. Verträge selbst und Gegenbuchungen bleiben erhalten. Weitere Quellen und unklare Herkunft sind bei beiden Optionen geschützt.
+
+Nach **Import zurücknehmen** kannst du dieselbe Datei erneut hochladen. Entfernte Buchungen werden neu eingelesen; erhaltene Buchungen bleiben dem Dublettenschutz unterworfen. Änderungen an erhaltenen Buchungen werden nicht auf frühere Werte zurückgesetzt. Hat sich seit der Vorschau etwas geändert, lade die Vorschau neu.
+
+## Fixkosten und Vertragsanalyse
+
+Die Kachel **Durchschnittliche Fixkosten / Monat** unter **Verträge** öffnet die **Vertragsanalyse**. Jahres- und Quartalszahlungen werden anteilig auf Monate verteilt; pro Vertrag wird auf Cent gerundet. Gesamtsumme und Gruppen addieren dieselben Monatswerte. Es zählen nur heute gültige bestätigte Verträge und heute geltende Preise, keine Vorschläge oder zukünftigen Preisänderungen. **Planwert** bedeutet eine Hochrechnung, keine zusätzliche Bankbuchung.
+
+Wechsle zwischen **Kategorien** und **Vertragsarten**. Die Kategorie ist die ausdrücklich am Vertrag gewählte Kategorie; fehlt sie, steht **Ohne Kategorie**. Auswahl einer Gruppe zeigt deren Verträge mit Monatskosten, tatsächlichem Rhythmus und Detailverknüpfung.
+
+## Vertragsvorschläge einzeln prüfen
+
+**Vorschläge prüfen · N** öffnet eine Karte je Vorschlag. Bearbeite die Angaben und wähle **Bestätigen & weiter**. **Später** überspringt nur diese Prüfrunde; **Kein Vertrag** blendet dieses Muster dauerhaft aus. Unter **Ausgeblendete Vorschläge** kannst du es wiederherstellen. Eine neue Zahlung desselben Musters hebt die Ablehnung nicht auf; geänderte Beträge oder Rhythmen können neue Vorschläge ergeben.
+
+Wischen und Vor-/Zurück-Buttons wechseln ausschließlich die Karte. Ungespeicherte Änderungen werden erst nach deiner Entscheidung verworfen. Eingabefelder lösen kein Wischen aus. Geht nach dem Speichern die Antwort verloren, kannst du sicher erneut bestätigen; derselbe Vorschlag erzeugt keinen zweiten Vertrag.
+
+## Navigation und kurze Hilfen
+
+Am Desktop stehen Verwaltungslinks dauerhaft links. Mobil öffnet **Mehr** eine eigene Seite für Konten, Importe, Bankverbindungen und Einstellungen. Erklärungen sind über die mit **Hilfe** beschrifteten Fragezeichen per Klick oder Tastatur erreichbar. Wichtige Kennzeichnungen, Fehler und Löschfolgen bleiben direkt sichtbar.

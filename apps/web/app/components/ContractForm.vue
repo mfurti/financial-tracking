@@ -113,15 +113,20 @@ async function save() {
 </script>
 <template>
   <UForm ref="validation" :state="form" class="grid gap-4" @submit="save">
-    <UAlert v-if="error" role="alert" color="error" :description="error" /><HelpPopover
-      title="Vertragsangaben"
-      text="Automatische Zahlungszuordnung verlangt die genaue Gegenpartei. Die Vertragskategorie überschreibt keine manuellen Buchungskategorien. Ein Enddatum gilt einschließlich dieses Tages; ein Kündigungsdatum löst keine Kündigung aus."
-    />
-    <UFormField name="name" label="Vertragsname" required
-      ><UInput v-model="form.name" placeholder="Zum Beispiel Streaming oder Miete"
+    <UAlert v-if="error" role="alert" color="error" :description="error" />
+    <UFormField name="name" label="Vertragsname" required>
+      <template #hint
+        ><HelpPopover
+          title="Vertragsangaben"
+          text="Automatische Zahlungszuordnung verlangt die genaue Gegenpartei. Die Vertragskategorie überschreibt keine manuellen Buchungskategorien. Ein Enddatum gilt einschließlich dieses Tages; ein Kündigungsdatum löst keine Kündigung aus." /></template
+      ><UInput v-model="form.name" class="w-full" placeholder="Zum Beispiel Streaming oder Miete"
     /></UFormField>
-    <UFormField name="provider" label="Anbieter / Gegenpartei" required><UInput v-model="form.provider" /></UFormField>
-    <UFormField name="kind" label="Vertragsart"><USelect v-model="form.kind" :items="kinds" /></UFormField>
+    <UFormField name="provider" label="Anbieter / Gegenpartei" required
+      ><UInput v-model="form.provider" class="w-full"
+    /></UFormField>
+    <UFormField name="kind" label="Vertragsart"
+      ><USelect v-model="form.kind" class="w-full" :items="kinds"
+    /></UFormField>
     <UFormField name="accountId" label="Konto"
       ><ChoiceSelect
         v-model="form.accountId"
@@ -145,7 +150,7 @@ async function save() {
         ><DatePicker v-model="form.startDate" label="Erste Fälligkeit"
       /></UFormField>
       <UFormField name="amountCents" label="Betrag in Euro" required
-        ><UInput v-model="form.amountEuro" inputmode="decimal"
+        ><UInput v-model="form.amountEuro" class="w-full" inputmode="decimal"
       /></UFormField>
       <UFormField name="intervalMonths" label="Zahlungsrhythmus"
         ><ChoiceSelect v-model="form.intervalMonths" :searchable="false" :items="intervals"
