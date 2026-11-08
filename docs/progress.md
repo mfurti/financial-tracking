@@ -293,3 +293,7 @@ PR #10 has explicit merge-after-green-CI approval. At 8e9333a, both Linux operat
 ## F6 — Proven mobile viewport correction — 2026-11-08
 
 The 94dc12c Linux diagnostics identified the actual overflow owner: the header logout button ended at x=369.53 in a 360-pixel client viewport. Mobile Chrome reported innerWidth=370 while clientWidth/visual width stayed 360, explaining displaced pointer hit tests. The More trigger also exceeded its grid cell. The correction gives mobile logout an accessible 44-pixel icon button and constrains the More cell/trigger; it does not hide page overflow or force interactions. Browser overflow assertions now compare against document clientWidth, not the expanded mobile innerWidth. Added a wider-header-font regression. Current-head Linux verification remains required before the approved merge.
+
+## F6 — Linux acceptance passed — 2026-11-08
+
+Linux CI 42479998163 passed code revision 0320fd0: all 20 browser scenarios passed in 3.1 minutes, together with verification and the expanded encrypted restore. The measured mobile header overflow is fixed; client-width assertions and wider-font regression remain enabled. Acceptance/checklist/user/API/migration documentation is current. PR #10 has explicit merge-after-green-CI approval. A merge commit will preserve audit 392d988 and all scoped package commits. The final documentation commit must pass its own current CI before merge; production rollout remains separately gated.
