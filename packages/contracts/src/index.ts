@@ -271,6 +271,32 @@ export const contractSuggestionSchema = z.object({
 });
 /** Aggregated totals can exceed a single PostgreSQL BIGINT while retaining integer-cent precision. */
 export const aggregateCentsSchema = z.string().regex(/^-?(0|[1-9]\d*)$/);
+export const contractCostSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  provider: z.string(),
+  kind: contractKindSchema,
+  categoryId: idSchema.nullable(),
+  categoryName: z.string(),
+  amountCents: centsSchema,
+  intervalMonths: z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]),
+  monthlyCents: centsSchema,
+});
+export const contractCostGroupSchema = z.object({
+  key: z.string(),
+  name: z.string(),
+  monthlyCents: aggregateCentsSchema,
+  count: z.number().int().nonnegative(),
+  contractIds: z.array(idSchema),
+});
+export const contractSummarySchema = z.object({
+  asOf: dateSchema,
+  monthlyCents: aggregateCentsSchema,
+  count: z.number().int().nonnegative(),
+  contracts: z.array(contractCostSchema),
+  categories: z.array(contractCostGroupSchema),
+  kinds: z.array(contractCostGroupSchema),
+});
 export const classificationSchema = z.enum(['FIXED', 'VARIABLE', 'UNCLASSIFIED']);
 export const analyticsOverviewQuerySchema = z
   .object({
@@ -629,6 +655,7 @@ export const apiContracts: Record<string, ApiContract> = {
     status: 200,
   },
   contracts: { method: 'get', path: '/contracts', response: z.array(contractSchema), status: 200 },
+  contractSummary: { method: 'get', path: '/contracts/summary', response: contractSummarySchema, status: 200 },
   createContract: {
     method: 'post',
     path: '/contracts',

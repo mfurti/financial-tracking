@@ -15,6 +15,10 @@ export class ContractsController {
   @Get('contracts/suggestions') suggestions() {
     return this.service.suggestions();
   }
+  /** Read rounded monthly planning totals before the dynamic contract-ID route. */
+  @Get('contracts/summary') summary() {
+    return this.service.summary();
+  }
   /** Confirm a contract explicitly. */
   @Post('contracts') create(@Body() body: unknown) {
     return this.service.create(c.contractInputSchema.parse(body));

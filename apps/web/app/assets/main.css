@@ -1318,6 +1318,28 @@ html[data-theme='high-contrast'] .month-balance {
 .contract-kind-icon {
   flex-shrink: 0;
 }
+.fixed-cost-card {
+  display: grid;
+  width: 100%;
+  padding: 1.5rem;
+  text-align: left;
+  white-space: normal;
+  border-radius: 1.5rem;
+  gap: 0.7rem;
+  background: color-mix(in srgb, var(--green) 6%, var(--surface));
+}
+.fixed-cost-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+}
+.fixed-cost-value {
+  display: block;
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
 .section-heading {
   display: flex;
   align-items: center;

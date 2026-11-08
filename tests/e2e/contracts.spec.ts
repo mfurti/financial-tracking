@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures.js';
+import { choose } from './controls.js';
 
 test('confirmed recurring payments keep real bookings, expose contract badges and roll future due dates', /** Upload repeated payments, review the suggestion and preserve source data through unlink/delete. */ async ({
   page,
@@ -9,6 +10,38 @@ test('confirmed recurring payments keep real bookings, expose contract badges an
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await page.goto('/contracts');
+  await page.getByRole('button', { name: 'Vertrag anlegen', exact: true }).click();
+  const costDialog = page.getByRole('dialog', { name: 'Vertrag anlegen', exact: true });
+  await costDialog.getByLabel('Vertragsname', { exact: true }).fill(`Jahreskosten ${info.project.name}`);
+  await costDialog.getByLabel('Anbieter / Gegenpartei', { exact: true }).fill(`Jahresanbieter ${info.project.name}`);
+  await costDialog.getByLabel('Betrag in Euro', { exact: true }).fill('120,00');
+  await choose(page, costDialog.getByLabel('Zahlungsrhythmus', { exact: true }), 'Jährlich');
+  await costDialog.getByRole('button', { name: 'Vertrag bestätigen', exact: true }).click();
+  await expect(page).toHaveURL(/\/contracts\/[a-f0-9-]+$/);
+  await page.goto('/contracts');
+  const costCard = page.getByRole('link', { name: /Durchschnittliche Fixkosten \/ Monat/ });
+  await expect(costCard).toContainText('10,00');
+  await costCard.click();
+  await expect(page).toHaveURL(/\/contracts\/analysis$/);
+  await expect(page.getByRole('heading', { name: 'Vertragsanalyse', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Ohne Kategorie/ }).click();
+  await expect(page.getByRole('link', { name: new RegExp(`Jahreskosten ${info.project.name}`) })).toContainText(
+    '10,00',
+  );
+  await page.getByRole('radio', { name: 'Vertragsarten', exact: true }).check();
+  await expect(page.getByRole('button', { name: /Abo/ })).toBeVisible();
+  for (const width of [360, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        /** All cost panels must fit the real client width. */ () =>
+          document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      ),
+    ).toBe(true);
+  }
+  await page.setViewportSize({ width: info.project.name === 'mobile' ? 360 : 1440, height: 900 });
+  await page.screenshot({ path: `.local/contract-analysis-${info.project.name}.png`, fullPage: true });
   await page.goto('/imports/csv');
   await page.getByLabel('CSV-Datei', { exact: true }).setInputFiles({
     name: 'recurring.csv',

@@ -5,6 +5,7 @@ import { contractKinds } from '../../utils/contract-presentation';
 const api = useApi();
 const route = useRoute();
 const records = ref<z.infer<typeof c.contractSchema>[]>([]);
+const summary = ref<z.infer<typeof c.contractSummarySchema> | null>(null);
 const suggestions = ref<z.infer<typeof c.contractSuggestionSchema>[]>([]);
 const detail = ref<z.infer<typeof c.contractSchema> | null>(null);
 const history = ref<z.infer<typeof c.contractPaymentsSchema> | null>(null);
@@ -69,15 +70,17 @@ async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const [all, proposed, target, availableAccounts, availableCategories] = await Promise.all([
+    const [all, proposed, target, availableAccounts, availableCategories, costs] = await Promise.all([
       api.request('/contracts', z.array(c.contractSchema)),
       api.request('/contracts/suggestions', z.array(c.contractSuggestionSchema)),
       id ? api.request(`/contracts/${id}`, c.contractSchema) : Promise.resolve(null),
       api.request('/accounts', z.array(c.accountSchema)),
       api.request('/categories', z.array(c.categorySchema)),
+      api.request('/contracts/summary', c.contractSummarySchema),
     ]);
     if (current !== generation) return;
     records.value = all;
+    summary.value = costs;
     suggestions.value = proposed;
     detail.value = target;
     accounts.value = availableAccounts;
@@ -383,6 +386,16 @@ onBeforeUnmount(
     <UButton color="error" variant="ghost" @click="deleteOpen = true">Vertrag löschen</UButton>
   </template>
   <template v-else-if="!route.params.id && !loading">
+    <UButton v-if="summary" to="/contracts/analysis" color="neutral" variant="outline" class="fixed-cost-card mb-6">
+      <span class="fixed-cost-label"
+        ><FinanceIcon name="contracts" /><strong>Durchschnittliche Fixkosten / Monat</strong
+        ><UBadge variant="soft">Planwert</UBadge></span
+      >
+      <strong class="fixed-cost-value amount-expense">{{ money(summary.monthlyCents) }}</strong>
+      <span class="muted"
+        >{{ summary.count }} {{ summary.count === 1 ? 'Vertrag' : 'Verträge' }} · Analyse öffnen ›</span
+      >
+    </UButton>
     <SectionPanel title="Deine Verträge" icon="contracts" class="mb-5">
       <p v-if="!records.length" class="empty-copy">
         Noch keine Verträge. Bestätige einen Vorschlag oder lege einen Vertrag an.

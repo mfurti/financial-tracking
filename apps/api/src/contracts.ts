@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
+import { summarizeContracts } from './contract-summary.js';
 import * as c from '@financial-tracking/contracts';
 import type { Db } from './db.js';
 import type { Prisma, ContractPayment } from './generated/prisma/client.js';
@@ -52,6 +53,13 @@ function publicContract(contract: ScheduledContract & { payments: ContractPaymen
 export class ContractsService {
   /** Receive the application-owned database; no bank connection is opened by this service. */
   constructor(@Inject('DB') readonly db: Db) {}
+  /** Report today's confirmed fixed costs separately from observed bank expenses. */
+  async summary(today = berlinToday()) {
+    return summarizeContracts(
+      await this.db.contract.findMany({ include: { revisions: true, category: { select: { name: true } } } }),
+      today,
+    );
+  }
   /** Read a contract with its immutable payment history or a public not-found error. */
   private async find(id: string, tx: Prisma.TransactionClient = this.db) {
     const row = await tx.contract.findUnique({ where: { id }, include: contractDetails });

@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { z } from 'zod';
-const props = defineProps<{
-  groups: { categoryId: string | null; name: string; expenseCents: string }[];
-  totalCents: string;
-  label: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    groups: { categoryId: string | null; name: string; expenseCents: string }[];
+    totalCents: string;
+    label: string;
+    centerLabel?: string;
+    description?: string;
+  }>(),
+  { centerLabel: 'Ausgegeben', description: 'Exakte Beträge und Links zu den Buchungen stehen neben dem Diagramm.' },
+);
 const emit = defineEmits<{ select: [id: string | null] }>();
 const data = computed(
   /** Floating geometry is display-only; every shown amount uses its original integer-cent string. */ () =>
@@ -52,12 +57,13 @@ function exact(label: string) {
     :height="260"
     :legend="false"
     :aria-label="label"
-    aria-description="Exakte Beträge und Links zu den Buchungen stehen neben dem Diagramm."
+    :aria-description="description"
     @select="select"
   >
     <template #center
       ><div class="chart-center">
-        <small>Ausgegeben</small><strong>{{ money(totalCents) }}</strong>
+        <small>{{ centerLabel }}</small
+        ><strong>{{ money(totalCents) }}</strong>
       </div></template
     >
     <template #tooltip="{ rows }"
