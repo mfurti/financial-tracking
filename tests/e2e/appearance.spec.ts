@@ -60,7 +60,7 @@ test('theme tiles apply, retain Ayu brightness/borders and restore before reload
     expect(
       await page.evaluate(
         /** Detect inaccessible horizontal content at the agreed breakpoints. */ () =>
-          document.documentElement.scrollWidth <= window.innerWidth,
+          document.documentElement.scrollWidth <= document.documentElement.clientWidth,
       ),
     ).toBe(true);
   }

@@ -289,3 +289,7 @@ Review corrected PATCH semantics so omitted category-rule creation defaults cann
 ## F6 — Linux browser discrepancy investigation — 2026-11-08
 
 PR #10 has explicit merge-after-green-CI approval. At 8e9333a, both Linux operations jobs passed the extended encrypted restore. Verify passed format/lint/types/Prisma/unit/build checks but failed ten browser scenarios: desktop responsive overflow and mobile pointer targets intercepted by their containers/navigation, despite the local full 20-case pass. No merge occurred. Added failure-only synthetic browser geometry/screenshots/traces and bounded interaction timeouts to identify the actual layout owners without forcing or skipping clicks. The Linux discrepancy remains under investigation.
+
+## F6 — Proven mobile viewport correction — 2026-11-08
+
+The 94dc12c Linux diagnostics identified the actual overflow owner: the header logout button ended at x=369.53 in a 360-pixel client viewport. Mobile Chrome reported innerWidth=370 while clientWidth/visual width stayed 360, explaining displaced pointer hit tests. The More trigger also exceeded its grid cell. The correction gives mobile logout an accessible 44-pixel icon button and constrains the More cell/trigger; it does not hide page overflow or force interactions. Browser overflow assertions now compare against document clientWidth, not the expanded mobile innerWidth. Added a wider-header-font regression. Current-head Linux verification remains required before the approved merge.

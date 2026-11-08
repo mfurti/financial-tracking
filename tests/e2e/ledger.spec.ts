@@ -21,7 +21,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
   expect(
     await page.evaluate(
       /** Catch page-level horizontal overflow at mobile width. */ () =>
-        document.documentElement.scrollWidth <= window.innerWidth,
+        document.documentElement.scrollWidth <= document.documentElement.clientWidth,
     ),
   ).toBe(true);
   await page.screenshot({ path: `.local/dashboard-${info.project.name}.png`, fullPage: true });

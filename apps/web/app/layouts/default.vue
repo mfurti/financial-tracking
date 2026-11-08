@@ -104,7 +104,16 @@ watch(
           ><span class="user-badge" :aria-label="`Angemeldet: ${api.session.value?.username}`">{{
             api.session.value?.username?.slice(0, 1).toUpperCase()
           }}</span
-          ><UButton size="sm" variant="ghost" color="neutral" @click="logout">Abmelden</UButton>
+          ><UButton
+            size="sm"
+            variant="ghost"
+            color="neutral"
+            class="logout-button"
+            aria-label="Abmelden"
+            title="Abmelden"
+            @click="logout"
+            ><FinanceIcon name="logout" /><span class="logout-label">Abmelden</span></UButton
+          >
         </div>
       </header>
       <main id="main-content" tabindex="-1" class="page-content">

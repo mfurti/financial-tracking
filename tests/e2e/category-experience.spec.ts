@@ -74,7 +74,8 @@ test('monthly categories explain real expenses and lead to persisted assignments
   ).toBe('4225');
   expect(
     await page.evaluate(
-      /** Detect genuine overflow on the completed screen. */ () => document.documentElement.scrollWidth <= innerWidth,
+      /** Detect genuine overflow on the completed screen. */ () =>
+        document.documentElement.scrollWidth <= document.documentElement.clientWidth,
     ),
   ).toBe(true);
   await page.evaluate(/** Capture the full page from its actual top. */ () => window.scrollTo(0, 0));

@@ -37,6 +37,16 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
   await page.goto('/?month=2026-11');
+  const largerHeader = await page.addStyleTag({ content: '.topbar { font-size: 16px; }' });
+  expect(
+    await page.evaluate(
+      /** Header controls must fit the client viewport even with wider text metrics. */ () =>
+        document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
+  await largerHeader.evaluate(
+    /** Restore the user's normal font after the accessibility regression. */ (element) => element.remove(),
+  );
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Zum Inhalt springen' })).toBeFocused();
@@ -60,7 +70,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
       expect(
         await page.evaluate(
           /** Detect page-wide overflow rather than hiding it with CSS. */ () =>
-            document.documentElement.scrollWidth <= innerWidth,
+            document.documentElement.scrollWidth <= document.documentElement.clientWidth,
         ),
       ).toBe(true);
       expect(

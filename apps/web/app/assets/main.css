@@ -1134,6 +1134,7 @@ html[data-theme='high-contrast'] .month-balance {
   }
   .mobile-brand {
     display: flex;
+    min-width: 0;
     align-items: center;
     gap: 7px;
     color: var(--ink);
@@ -1146,6 +1147,24 @@ html[data-theme='high-contrast'] .month-balance {
   }
   .mobile-settings {
     display: flex;
+  }
+  .logout-button {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    flex-shrink: 0;
+  }
+  .logout-label {
+    display: none;
+  }
+  .mobile-more,
+  .mobile-nav > a {
+    min-width: 0;
+  }
+  .mobile-more-trigger {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
   .mobile-nav {
     display: grid;

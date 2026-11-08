@@ -48,7 +48,7 @@ test('multi-month analysis explains observed averages and drills into exact acco
       expect(
         await page.evaluate(
           /** Wide tables scroll locally rather than overflowing the page. */ () =>
-            document.documentElement.scrollWidth <= window.innerWidth,
+            document.documentElement.scrollWidth <= document.documentElement.clientWidth,
         ),
       ).toBe(true);
       if (info.project.name === 'desktop')
