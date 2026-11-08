@@ -12,6 +12,7 @@ const primaryLinks = [
   { to: '/imports/csv', label: 'Importieren', icon: 'upload' },
 ] as const;
 const secondaryLinks = [
+  { to: '/contracts', label: 'Verträge', icon: 'contracts' },
   { to: '/accounts', label: 'Konten', icon: 'accounts' },
   { to: '/imports', label: 'Importhistorie', icon: 'history' },
   { to: '/connections', label: 'Bankverbindungen', icon: 'bank' },

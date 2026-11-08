@@ -55,6 +55,7 @@ model Account {
   balances BalanceSnapshot[]
   transactions Transaction[]
   staged StagedRow[]
+  contracts Contract[]
   @@unique([bankConnectionId, bankAccountReference])
 }
 
@@ -80,6 +81,7 @@ model Category {
   sortOrder Int @default(0)
   transactions Transaction[]
   rules CategoryRule[]
+  contracts Contract[]
 }
 
 model CategoryRule {
@@ -113,6 +115,8 @@ model Transaction {
   categoryRuleName String?
   categoryRuleConflict Boolean @default(false)
   classification String?
+  contractAutoBlocked Boolean @default(false)
+  contractPayment ContractPayment?
   category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   isTransfer Boolean @default(false)
   transferGroupId String? @db.Uuid
@@ -194,4 +198,45 @@ model AssignmentReceipt {
   inputHash String
   result Json
   createdAt DateTime @default(now())
+}
+
+model Contract {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  provider String
+  kind String
+  accountId String? @db.Uuid
+  account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  categoryId String? @db.Uuid
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  startDate DateTime @db.Date
+  endDate DateTime? @db.Date
+  cancellationDate DateTime? @db.Date
+  revisions ContractRevision[]
+  payments ContractPayment[]
+}
+
+model ContractRevision {
+  id String @id @default(uuid()) @db.Uuid
+  contractId String @db.Uuid
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  effectiveDate DateTime @db.Date
+  amountCents BigInt
+  intervalMonths Int
+  payments ContractPayment[]
+  @@unique([contractId, effectiveDate])
+}
+
+model ContractPayment {
+  id String @id @default(uuid()) @db.Uuid
+  contractId String @db.Uuid
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  revisionId String @db.Uuid
+  revision ContractRevision @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  dueDate DateTime @db.Date
+  transactionId String @unique @db.Uuid
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  source String
+  createdAt DateTime @default(now())
+  @@unique([contractId, dueDate])
 }

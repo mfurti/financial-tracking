@@ -36,6 +36,7 @@ export default defineConfig({
         'import-experience.spec.ts',
         'appearance.spec.ts',
         'category-experience.spec.ts',
+        'contracts.spec.ts',
       ],
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },
     },
@@ -48,6 +49,7 @@ export default defineConfig({
         'import-experience.spec.ts',
         'appearance.spec.ts',
         'category-experience.spec.ts',
+        'contracts.spec.ts',
       ],
       use: {
         ...devices['Desktop Chrome'],

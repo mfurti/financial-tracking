@@ -233,6 +233,9 @@ onBeforeUnmount(
       <dt>Kategorie</dt>
       <dd>{{ categoryName(detail.categoryId) }}</dd>
     </dl>
+    <UButton v-if="detail.contract" :to="`/contracts/${detail.contract.id}`" size="sm" variant="soft" class="mt-4"
+      >Vertrag: {{ detail.contract.name }}</UButton
+    >
     <div class="toolbar mt-5">
       <ChoiceSelect
         :model-value="detail.categoryId ?? ''"
@@ -351,17 +354,25 @@ onBeforeUnmount(
           :model-value="selected.includes(row.id)"
           :aria-label="`${row.description} auswählen`"
           @update:model-value="selectTransaction(row.id, $event)"
-        /><NuxtLink :to="`/transactions/${row.id}`" class="ledger-description"
-          ><strong>{{ row.description }}</strong
-          ><small
-            >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || 'Keine Gegenpartei'
-            }}<span v-if="row.isTransfer"> · Umbuchung</span><span v-if="row.accountId === null"> · Ohne Konto</span
-            ><span v-if="row.status === 'PENDING'"> · Vorgemerkt</span
-            ><span v-if="row.categoryOrigin === 'RULE'"> · Regel: {{ row.categoryRuleName }}</span
-            ><span v-if="row.categoryRuleConflict"> · Kategorie klären: gleichrangige Regeln widersprechen sich</span
-            ><span v-if="row.classification"> · {{ row.classification === 'FIXED' ? 'Fix' : 'Variabel' }}</span></small
-          ></NuxtLink
-        ><ChoiceSelect
+        />
+        <div class="ledger-description">
+          <NuxtLink :to="`/transactions/${row.id}`"
+            ><strong>{{ row.description }}</strong
+            ><small
+              >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || 'Keine Gegenpartei'
+              }}<span v-if="row.isTransfer"> · Umbuchung</span><span v-if="row.accountId === null"> · Ohne Konto</span
+              ><span v-if="row.status === 'PENDING'"> · Vorgemerkt</span
+              ><span v-if="row.categoryOrigin === 'RULE'"> · Regel: {{ row.categoryRuleName }}</span
+              ><span v-if="row.categoryRuleConflict"> · Kategorie klären: gleichrangige Regeln widersprechen sich</span
+              ><span v-if="row.classification">
+                · {{ row.classification === 'FIXED' ? 'Fix' : 'Variabel' }}</span
+              ></small
+            ></NuxtLink
+          ><UButton v-if="row.contract" :to="`/contracts/${row.contract.id}`" size="xs" variant="soft" class="mt-1">{{
+            row.contract.name
+          }}</UButton>
+        </div>
+        <ChoiceSelect
           :model-value="row.categoryId ?? ''"
           :aria-label="`Kategorie für ${row.description}`"
           :searchable="true"

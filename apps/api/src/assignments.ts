@@ -1,4 +1,5 @@
 import { mergeAnnotations } from './annotations.js';
+import { assertContractPaymentPreserved, matchContractPayments } from './contract-schedule.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
@@ -15,6 +16,7 @@ import { AppError } from './errors.js';
 import { assertTransferPlacement, linkAccountIdentities } from './transaction-invariants.js';
 
 const details = {
+  contractPayment: { include: { contract: { select: { id: true, name: true } } } },
   account: true,
   identities: { include: { importRun: { select: { source: true } } }, orderBy: { id: 'asc' as const } },
 };
@@ -195,6 +197,19 @@ export class AssignmentService {
               409,
             );
           const chosen = decision.action === 'CSV' ? source : candidate;
+          if (source.contractPayment && candidate.contractPayment)
+            throw new AppError(
+              'CONTRACT_CONFLICT',
+              'Beide Buchungen sind Vertragszahlungen. Zahlungszuordnungen zuerst ausdrücklich prüfen und aufheben.',
+              409,
+            );
+          await assertContractPaymentPreserved(tx, source, chosen);
+          await assertContractPaymentPreserved(tx, candidate, chosen);
+          if (source.contractPayment)
+            await tx.contractPayment.update({
+              where: { id: source.contractPayment.id },
+              data: { transactionId: candidate.id },
+            });
           const transferGroupId = candidate.transferGroupId ?? source.transferGroupId;
           await assertTransferPlacement(
             tx,
@@ -219,6 +234,7 @@ export class AssignmentService {
               counterpartyIban: chosen.counterpartyIban,
               status: chosen.status,
               ...annotations,
+              contractAutoBlocked: source.contractAutoBlocked || candidate.contractAutoBlocked,
               isTransfer: source.isTransfer || candidate.isTransfer,
               transferGroupId,
             },
@@ -227,6 +243,7 @@ export class AssignmentService {
           result.merged++;
           result.results.push({ transactionId: source.id, resultingId: candidate.id });
         }
+        await matchContractPayments(tx);
         await tx.assignmentReceipt.create({ data: { id: input.requestId, inputHash, result } });
         return result;
       },

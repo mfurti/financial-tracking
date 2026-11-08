@@ -16,8 +16,8 @@ export function completeApiDocument(document: OpenAPIObject) {
       return rest as SchemaObject;
     };
     const parameters: ParameterObject[] = [];
-    if (contract.path.includes('{id}'))
-      parameters.push({ name: 'id', in: 'path', required: true, schema: schema(idSchema) });
+    for (const match of contract.path.matchAll(/\{([A-Za-z][A-Za-z0-9_]*)\}/g))
+      parameters.push({ name: match[1]!, in: 'path', required: true, schema: schema(idSchema) });
     if (contract.query) {
       const query = z.toJSONSchema(contract.query);
       for (const [name, property] of Object.entries(query.properties ?? {}))

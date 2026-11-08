@@ -121,6 +121,9 @@ export const transactionSchema = z.object({
   categoryRuleName: z.string().nullable().default(null),
   categoryRuleConflict: z.boolean().default(false),
   classification: z.enum(['FIXED', 'VARIABLE']).nullable().default(null),
+  effectiveClassification: z.enum(['FIXED', 'VARIABLE', 'UNCLASSIFIED']).default('UNCLASSIFIED'),
+  contractAutoBlocked: z.boolean().default(false),
+  contract: z.object({ id: idSchema, name: z.string(), dueDate: dateSchema }).nullable().default(null),
   isTransfer: z.boolean(),
   transferGroupId: idSchema.nullable(),
 });
@@ -168,6 +171,95 @@ export const categoryRuleBackfillResultSchema = z.object({
   updated: z.number().int(),
   conflicting: z.number().int(),
   protected: z.number().int(),
+});
+export const contractKindSchema = z.enum(['SUBSCRIPTION', 'RENT', 'INSURANCE', 'ENERGY', 'TELECOM', 'OTHER']);
+export const contractIntervalSchema = z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]);
+export const positiveCentsSchema = centsSchema.refine(
+  /** Contract forecasts are positive expense magnitudes. */ (value) => BigInt(value) > 0n,
+  'Betrag muss größer als null sein.',
+);
+export const contractInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    provider: z.string().trim().min(1).max(200),
+    kind: contractKindSchema,
+    accountId: idSchema.nullable().default(null),
+    categoryId: idSchema.nullable().default(null),
+    startDate: dateSchema,
+    endDate: dateSchema.nullable().default(null),
+    cancellationDate: dateSchema.nullable().default(null),
+    amountCents: positiveCentsSchema,
+    intervalMonths: contractIntervalSchema,
+  })
+  .refine(
+    /** The end is inclusive and never before the beginning. */ (value) =>
+      !value.endDate || value.endDate >= value.startDate,
+    { path: ['endDate'], message: 'Ende liegt vor Beginn.' },
+  );
+export const contractPatchSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  provider: z.string().trim().min(1).max(200).optional(),
+  kind: contractKindSchema.optional(),
+  accountId: idSchema.nullable().optional(),
+  categoryId: idSchema.nullable().optional(),
+  endDate: dateSchema.nullable().optional(),
+  cancellationDate: dateSchema.nullable().optional(),
+});
+export const contractRevisionInputSchema = z.object({
+  effectiveDate: dateSchema,
+  amountCents: positiveCentsSchema,
+  intervalMonths: contractIntervalSchema,
+});
+export const contractRevisionSchema = contractRevisionInputSchema.extend({ id: idSchema });
+export const contractPaymentSchema = z.object({
+  id: idSchema,
+  transactionId: idSchema,
+  revisionId: idSchema,
+  dueDate: dateSchema,
+  source: z.enum(['AUTO', 'MANUAL']),
+});
+export const contractOccurrenceSchema = z.object({
+  dueDate: dateSchema,
+  amountCents: positiveCentsSchema,
+  revisionId: idSchema,
+  payment: contractPaymentSchema.nullable(),
+});
+export const contractSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  provider: z.string(),
+  kind: contractKindSchema,
+  accountId: idSchema.nullable(),
+  categoryId: idSchema.nullable(),
+  startDate: dateSchema,
+  endDate: dateSchema.nullable(),
+  cancellationDate: dateSchema.nullable(),
+  revisions: z.array(contractRevisionSchema),
+  nextDueDate: dateSchema.nullable(),
+  nextAmountCents: positiveCentsSchema.nullable(),
+  active: z.boolean(),
+});
+export const contractPaymentsSchema = z.object({
+  from: dateSchema,
+  to: dateSchema,
+  occurrences: z.array(contractOccurrenceSchema),
+  payments: z.array(contractPaymentSchema),
+});
+export const contractPaymentsQuerySchema = z.object({ from: dateSchema.optional(), to: dateSchema.optional() });
+export const contractPaymentInputSchema = z.object({
+  transactionId: idSchema,
+  dueDate: dateSchema,
+  confirmMismatch: z.boolean().default(false),
+});
+export const contractSuggestionSchema = z.object({
+  key: z.string(),
+  provider: z.string(),
+  amountCents: positiveCentsSchema,
+  intervalMonths: contractIntervalSchema,
+  startDate: dateSchema,
+  accountId: idSchema.nullable(),
+  transactionIds: z.array(idSchema).min(2),
+  count: z.number().int().min(2),
 });
 export const transactionQuerySchema = z
   .object({
@@ -410,6 +502,62 @@ export interface ApiContract {
 const okSchema = z.object({ ok: z.boolean() });
 /** Operation inventory shared with generated OpenAPI and contract tests. */
 export const apiContracts: Record<string, ApiContract> = {
+  contracts: { method: 'get', path: '/contracts', response: z.array(contractSchema), status: 200 },
+  createContract: {
+    method: 'post',
+    path: '/contracts',
+    request: contractInputSchema,
+    response: contractSchema,
+    status: 201,
+  },
+  contractSuggestions: {
+    method: 'get',
+    path: '/contracts/suggestions',
+    response: z.array(contractSuggestionSchema),
+    status: 200,
+  },
+  contract: { method: 'get', path: '/contracts/{id}', response: contractSchema, status: 200 },
+  patchContract: {
+    method: 'patch',
+    path: '/contracts/{id}',
+    request: contractPatchSchema,
+    response: contractSchema,
+    status: 200,
+  },
+  deleteContract: {
+    method: 'delete',
+    path: '/contracts/{id}',
+    request: z.object({ confirm: z.literal(true) }),
+    response: okSchema,
+    status: 200,
+  },
+  reviseContract: {
+    method: 'post',
+    path: '/contracts/{id}/revisions',
+    request: contractRevisionInputSchema,
+    response: contractSchema,
+    status: 201,
+  },
+  contractPayments: {
+    method: 'get',
+    path: '/contracts/{id}/payments',
+    query: contractPaymentsQuerySchema,
+    response: contractPaymentsSchema,
+    status: 200,
+  },
+  linkContractPayment: {
+    method: 'post',
+    path: '/contracts/{id}/payments',
+    request: contractPaymentInputSchema,
+    response: contractPaymentSchema,
+    status: 201,
+  },
+  unlinkContractPayment: {
+    method: 'delete',
+    path: '/contracts/{id}/payments/{paymentId}',
+    response: okSchema,
+    status: 200,
+  },
   categoryRules: { method: 'get', path: '/category-rules', response: z.array(categoryRuleSchema), status: 200 },
   createCategoryRule: {
     method: 'post',
