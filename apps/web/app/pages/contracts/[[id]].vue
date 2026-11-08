@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod';
 import * as c from '@financial-tracking/contracts';
+import { contractKinds } from '../../utils/contract-presentation';
 const api = useApi();
 const route = useRoute();
 const records = ref<z.infer<typeof c.contractSchema>[]>([]);
@@ -247,11 +248,7 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <div>
-      <p class="eyebrow">WIEDERKEHRENDE AUSGABEN</p>
       <h1>{{ detail?.name ?? 'Verträge' }}</h1>
-      <p class="muted">
-        Abos, Miete und laufende Verpflichtungen. Fälligkeiten sind Prognosen; echte Buchungen zählen nur einmal.
-      </p>
     </div>
     <UButton @click="openEditor()">Vertrag anlegen</UButton>
   </div>
@@ -288,12 +285,12 @@ onBeforeUnmount(
         ><span v-if="detail.cancellationDate"> · Kündigungsdatum: {{ calendarDate(detail.cancellationDate) }}</span>
       </p>
     </section>
-    <section class="panel mb-5">
-      <h2>Zahlungen & Historie</h2>
-      <p class="muted mb-4">
-        „Nicht zugeordnet“ bedeutet: keine eindeutige Buchung verknüpft. Es beweist keinen Zahlungsausfall. Frühere
-        offene Termine blockieren die nächste Fälligkeit nicht.
-      </p>
+    <SectionPanel
+      help="Nicht zugeordnet bedeutet: keine eindeutige Buchung verknüpft. Es beweist keinen Zahlungsausfall. Frühere offene Termine blockieren die nächste Fälligkeit nicht."
+      title="Zahlungen & Historie"
+      icon="contracts"
+      class="mb-5"
+    >
       <div class="form-row">
         <UFormField label="Historie von"><DatePicker v-model="from" label="Historie von" /></UFormField
         ><UFormField label="Historie bis"><DatePicker v-model="to" label="Historie bis" /></UFormField
@@ -324,7 +321,7 @@ onBeforeUnmount(
         >
       </div>
       <p v-if="history && !history.occurrences.length" class="empty-copy">Keine Fälligkeiten im gewählten Zeitraum.</p>
-    </section>
+    </SectionPanel>
     <DisclosurePanel v-model:open="paymentOpen" title="Buchung manuell zuordnen" class="panel mb-5">
       <form class="grid gap-4" @submit.prevent="link">
         <p class="muted">
@@ -386,11 +383,7 @@ onBeforeUnmount(
     <UButton color="error" variant="ghost" @click="deleteOpen = true">Vertrag löschen</UButton>
   </template>
   <template v-else-if="!route.params.id && !loading">
-    <section class="panel mb-5">
-      <h2>Deine Verträge</h2>
-      <p class="muted mb-4">
-        Heute oder demnächst fällig zuerst. Bestätigte eindeutige Zahlungen werden automatisch markiert.
-      </p>
+    <SectionPanel title="Deine Verträge" icon="contracts" class="mb-5">
       <p v-if="!records.length" class="empty-copy">
         Noch keine Verträge. Bestätige einen Vorschlag oder lege einen Vertrag an.
       </p>
@@ -401,11 +394,17 @@ onBeforeUnmount(
         color="neutral"
         variant="link"
         class="contract-list-row"
+        ><span class="contract-identity"
+          ><span class="contract-kind-icon" :style="{ '--kind-color': contractKinds[contract.kind].color }"
+            ><FinanceIcon :name="contractKinds[contract.kind].icon" /></span
+          ><span
+            ><strong>{{ contract.name }}</strong
+            ><small>{{ kinds[contract.kind] }} · {{ contract.provider }}</small></span
+          ></span
         ><span
-          ><strong>{{ contract.name }}</strong
-          ><small>{{ kinds[contract.kind] }} · {{ contract.provider }}</small></span
-        ><span
-          ><strong>{{ contract.nextAmountCents ? money(contract.nextAmountCents) : '—' }}</strong
+          ><strong :class="contract.active ? 'amount-expense' : 'muted'">{{
+            contract.nextAmountCents ? money(contract.nextAmountCents) : '—'
+          }}</strong
           ><small>{{
             contract.nextDueDate
               ? calendarDate(contract.nextDueDate)
@@ -415,13 +414,12 @@ onBeforeUnmount(
           }}</small></span
         ></UButton
       >
-    </section>
-    <section class="panel">
-      <h2>Vertragsvorschläge</h2>
-      <p class="muted mb-4">
-        Mindestens zwei passende Zahlungen mit gleichem Betrag und Gegenpartei ergeben einen Vorschlag. Erst deine
-        Bestätigung erstellt einen Vertrag.
-      </p>
+    </SectionPanel>
+    <SectionPanel title="Vertragsvorschläge" icon="contracts" class="">
+      <HelpPopover
+        title="Vertragsvorschläge"
+        text="Mindestens zwei passende Zahlungen ergeben einen Vorschlag. Erst deine Bestätigung erstellt einen Vertrag."
+      />
       <p v-if="!suggestions.length" class="empty-copy">
         Noch keine eindeutigen Wiederholungen. Importiere weitere Monate oder lege einen Vertrag selbst an.
       </p>
@@ -435,7 +433,7 @@ onBeforeUnmount(
         </div>
         <UButton variant="soft" @click="openEditor(proposal)">Vorschlag prüfen</UButton>
       </div>
-    </section>
+    </SectionPanel>
   </template>
   <UModal
     v-model:open="editorOpen"

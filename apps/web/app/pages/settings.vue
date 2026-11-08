@@ -36,9 +36,7 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <div>
-      <p class="eyebrow">DEIN PRIVATER ARBEITSBEREICH</p>
       <h1>Einstellungen</h1>
-      <p class="muted">Bewusst einfach. Vollständig unter deiner Kontrolle.</p>
     </div>
   </div>
   <AppearanceSettings />
@@ -47,25 +45,18 @@ onBeforeUnmount(
       <dt>Benutzer</dt>
       <dd>{{ api.session.value?.username }}</dd>
       <dt>Währung</dt>
-      <dd>EUR · Cent-genaue Berechnung</dd>
+      <dd>EUR</dd>
       <dt>Zeitzone</dt>
       <dd>Europe/Berlin</dd>
       <dt>Bankabruf</dt>
       <dd>Manuell · keine dauerhaft gespeicherte Bank-PIN</dd>
       <dt>Datensicherung</dt>
-      <dd>
-        Verschlüsselte Sicherungen verwaltet dein privater Server. Diese Seite zeigt keinen aktuellen Sicherungsstatus
-        an.
-      </dd>
+      <dd>Verschlüsselt auf dem Server; Status hier nicht verfügbar.</dd>
       <dt>Zugang</dt>
       <dd>Ausschließlich Heimnetz/VPN mit HTTPS.</dd>
     </dl>
-    <p class="muted mt-5">
-      Anleitungen für Installation, Updates und Wiederherstellung liegen in der Projektdokumentation.
-    </p>
   </section>
-  <section class="panel mt-6">
-    <h2 class="mb-5">Passwort ändern</h2>
+  <SectionPanel title="Passwort ändern" icon="settings" class="mt-6">
     <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><UForm
       ref="validation"
       :schema="passwordChangeSchema"
@@ -78,5 +69,5 @@ onBeforeUnmount(
         ><UInput v-model="form.newPassword" type="password" autocomplete="new-password" /></UFormField
       ><UButton type="submit" :loading="busy">Passwort ändern & abmelden</UButton></UForm
     >
-  </section>
+  </SectionPanel>
 </template>

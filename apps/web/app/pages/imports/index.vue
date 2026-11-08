@@ -145,12 +145,7 @@ onMounted(load);
 <template>
   <div class="page-heading">
     <div>
-      <p class="eyebrow">NACHVOLLZIEHBAR BIS ZUR BUCHUNG</p>
       <h1>Importhistorie</h1>
-      <p class="muted">
-        Gültige Dateien werden automatisch übernommen. Hier klärst du nur fehlerhafte Zeilen und mögliche
-        Doppelbuchungen.
-      </p>
     </div>
     <div class="toolbar">
       <UButton :loading="busy" variant="ghost" @click="load">Neu laden</UButton
@@ -195,14 +190,13 @@ onMounted(load);
     <p v-if="!issues.length" class="empty-copy">Keine offenen Hinweise für diesen Import.</p>
     <section v-for="group in issueSections" :key="group.title" class="mt-5">
       <h3>{{ group.title }}</h3>
-      <p class="muted mb-4">{{ group.explanation }}</p>
+      <HelpPopover :title="group.title" :text="group.explanation" class="mb-4" />
       <article v-for="issue in group.items" :key="issue.id" class="review-card">
         <UBadge
           :color="issue.incoming ? 'warning' : 'error'"
           :label="issue.incoming ? 'Mögliche Doppelbuchung' : 'Zeile nicht übernommen'"
           class="mb-3"
         />
-        <p class="eyebrow">{{ issue.rowNumber ? `ZEILE ${issue.rowNumber}` : 'HINWEIS ZUM IMPORT' }}</p>
         <h4>{{ issue.message }}</h4>
         <div v-if="issue.incoming" class="review-incoming">
           <strong>{{ issue.incoming.description }}</strong

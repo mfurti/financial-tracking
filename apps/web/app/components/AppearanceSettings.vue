@@ -14,17 +14,12 @@ const choices = computed(
 </script>
 
 <template>
-  <section class="panel mb-6" aria-labelledby="appearance-heading">
-    <div class="panel-heading">
-      <div>
-        <p class="eyebrow">DEINE FARBWELT</p>
-        <h2 id="appearance-heading">Farben & Darstellung</h2>
-      </div>
-    </div>
-    <p class="muted mb-5">
-      Wähle eine Vorschau. Hell und Dunkel wechselst du über den Kreis. Ayu bietet Light, Dark und Mirage jeweils mit
-      und ohne Kartenrahmen. Deine Auswahl bleibt auf diesem Gerät gespeichert.
-    </p>
+  <SectionPanel title="Farben & Darstellung" icon="settings" class="mb-6">
+    <HelpPopover
+      title="Theme-Auswahl"
+      text="Hell und Dunkel wechselst du über den Kreis. Ayu bietet sechs Varianten. Deine Auswahl wird auf diesem Gerät gespeichert."
+      class="mb-4"
+    />
     <UFormField label="Helligkeit" class="mb-5 max-w-sm">
       <ChoiceSelect
         v-model="mode.preference"
@@ -67,5 +62,5 @@ const choices = computed(
         </span>
       </template>
     </URadioGroup>
-  </section>
+  </SectionPanel>
 </template>

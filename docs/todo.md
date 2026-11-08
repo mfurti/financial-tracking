@@ -6,7 +6,7 @@ Approved [contract usability plan](vertragsanalyse-usability-plan.md), existing 
 
 - [x] UX0: save approved plan and synchronize delivery/checklist/task record.
 - [x] UX1: previewed, atomic CSV rollback and reupload with source/link protection.
-- [ ] UX2: permanent management links, mobile More page, clearer headings/colors/icons and concise copy.
+- [x] UX2: permanent management links, mobile More page, clearer headings/colors/icons and concise copy.
 - [ ] UX3: monthly fixed-cost card and category/kind contract analytics.
 - [ ] UX4: editable review cards and persistent accept/dismiss/restore decisions.
 - [ ] UX5: full verification, visual acceptance, documentation and feature PR.

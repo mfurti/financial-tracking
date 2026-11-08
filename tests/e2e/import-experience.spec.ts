@@ -162,7 +162,7 @@ test('only real format, mapping and invalid-row exceptions need input; abandoned
       buffer: Buffer.from(`Datum;Betrag;Text\n08.11.2026;-35,00;${label} verlassen\n`),
     });
     await staged;
-    await page.getByRole('button', { name: 'Mehr', exact: true }).click();
+    if (info.project.name === 'mobile') await page.getByRole('link', { name: 'Mehr', exact: true }).click();
     await page
       .getByRole('navigation', { name: info.project.name === 'mobile' ? 'Weitere Seiten' : 'Verwaltung', exact: true })
       .getByRole('link', { name: 'Einstellungen', exact: true })

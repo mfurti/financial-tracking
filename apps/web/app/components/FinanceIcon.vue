@@ -2,6 +2,10 @@
 const paths = {
   calendar: 'M4 5h16v16H4Zm0 5h16M8 3v4m8-4v4',
   contracts: 'M6 3h12v18H6Zm3 5h6m-6 4h6m-6 4h4',
+  subscription: 'M4 5h16v14H4Zm6 4 5 3-5 3Z',
+  insurance: 'M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6Zm-4 9 3 3 5-6',
+  energy: 'M13 2 4 14h7l-1 8 10-13h-7Z',
+  telecom: 'M3 8a15 15 0 0 1 18 0M6 12a10 10 0 0 1 12 0m-9 4a5 5 0 0 1 6 0m-3 4h.01',
   logout: 'M9 3H4v18h5m5-15 6 6-6 6m-6-6h12',
   home: 'M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z',
   transactions: 'M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4',
