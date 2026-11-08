@@ -1104,11 +1104,14 @@ html[data-theme='high-contrast'] .month-balance {
     gap: 10px;
     grid-template-columns: 18px minmax(0, 1fr) 100px;
   }
-  .ledger-row > select {
+  .ledger-row > .choice-select {
     grid-column: 2 / 4;
+    grid-row: 2;
   }
   .ledger-row > strong {
     font-size: 13px;
+    grid-column: 3;
+    grid-row: 1;
   }
   .detail-list {
     grid-template-columns: 1fr;
@@ -1158,7 +1161,7 @@ html[data-theme='high-contrast'] .month-balance {
     box-shadow: 0 -5px 20px var(--shadow);
   }
   .mobile-nav > a,
-  .mobile-more > summary {
+  .mobile-more-trigger {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1171,18 +1174,12 @@ html[data-theme='high-contrast'] .month-balance {
     cursor: pointer;
     list-style: none;
   }
-  .mobile-more > summary::-webkit-details-marker {
-    display: none;
-  }
   .mobile-nav > a.active,
-  .mobile-more[open] > summary {
+  .mobile-more-trigger[aria-expanded='true'] {
     background: var(--accent-soft);
     color: var(--green);
   }
-  .mobile-more > nav {
-    position: absolute;
-    right: 12px;
-    bottom: calc(100% + 10px);
+  .mobile-more-menu {
     min-width: 220px;
     padding: 8px;
     background: var(--surface);
@@ -1190,7 +1187,7 @@ html[data-theme='high-contrast'] .month-balance {
     border-radius: 18px;
     box-shadow: 0 10px 40px var(--shadow);
   }
-  .mobile-more > nav a {
+  .mobile-more-menu a {
     display: flex;
     align-items: center;
     gap: 12px;

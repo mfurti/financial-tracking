@@ -34,6 +34,7 @@ const needsMapping = ref(false);
 const headers = ref<string[]>([]);
 const content = ref('');
 const filename = ref('');
+const selectedFile = shallowRef<File | null | undefined>();
 const error = ref('');
 const busy = ref(false);
 const saving = ref(false);
@@ -104,6 +105,7 @@ const missingFields = computed(
 );
 /** Discard old file state and prevent previous mappings from leaking into the next upload. */
 function resetFile() {
+  selectedFile.value = undefined;
   fileBytes.value = null;
   content.value = '';
   headers.value = [];
@@ -115,14 +117,14 @@ function resetFile() {
   Object.assign(mapping, { bookingDate: '', amount: '', description: '' });
 }
 /** Read an explicitly selected bounded file into transient page memory. */
-async function selectFile(event: Event) {
+async function selectFile(file?: File | null) {
   if (busy.value || readingFile.value) return;
   const generation = ++fileGeneration;
   error.value = '';
   resetFile();
   readingFile.value = false;
-  const file = (event.target as HTMLInputElement).files?.[0];
   if (!file) return;
+  selectedFile.value = file;
   if (file.size > 10 * 1024 * 1024) {
     error.value = 'Die Datei ist größer als 10 MiB. Exportiere im Online-Banking einen kleineren Zeitraum.';
     return;
@@ -202,6 +204,7 @@ async function finish(run: ImportRun) {
   const month = preview.value?.period?.to.slice(0, 7) ?? preview.value?.rows[0]?.bookingDate.slice(0, 7);
   content.value = '';
   fileBytes.value = null;
+  selectedFile.value = undefined;
   if (!disposed)
     await navigateTo(
       run.reviewRequiredCount
@@ -299,6 +302,7 @@ onBeforeUnmount(
   /** Raw file data never survives this view; cancel abandoned previews. */ () => {
     content.value = '';
     fileBytes.value = null;
+    selectedFile.value = undefined;
     fileGeneration++;
     disposed = true;
     if (preview.value && !committed.value && !saving.value && !commitUncertain.value) void cancel();
@@ -324,80 +328,73 @@ onBeforeUnmount(
   </div>
   <section v-if="!preview" class="panel import-upload">
     <form class="space-y-6" @submit.prevent="makePreview">
-      <label class="upload-zone quick-upload" :class="{ 'upload-disabled': busy || readingFile }">
-        <svg
-          aria-hidden="true"
-          width="36"
-          height="36"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" />
-        </svg>
-        <strong>CSV-Datei auswählen</strong
-        ><span>{{ filename || 'Dein Bankexport genügt. Kein Konto und keine Einrichtung nötig.' }}</span>
-        <span class="upload-action">Datei hochladen</span>
-        <input
-          aria-label="CSV-Datei"
-          class="sr-only"
-          type="file"
+      <UFormField label="CSV-Datei" name="file"
+        ><UFileUpload
+          v-model="selectedFile"
           accept=".csv,text/csv"
+          label="CSV-Datei auswählen"
+          :description="filename || 'Dein Bankexport genügt. Kein Konto und keine Einrichtung nötig.'"
           :disabled="busy || readingFile"
-          @change="selectFile"
-        />
-      </label>
+          @update:model-value="selectFile"
+      /></UFormField>
       <p class="muted text-sm">
         Mit der Dateiauswahl werden erkannte, gültige Buchungen automatisch übernommen und ausgewertet. Nur wenn etwas
         unklar ist, fragen wir nach.
       </p>
-      <details
-        class="import-format"
-        :open="formatExpanded"
-        @toggle="formatExpanded = ($event.target as HTMLDetailsElement).open"
-      >
-        <summary>Importoptionen (nur bei Bedarf)</summary>
-        <p class="muted text-sm my-3">
+      <DisclosurePanel v-model:open="formatExpanded" class="import-format" title="Importoptionen (nur bei Bedarf)"
+        ><p class="muted text-sm my-3">
           Normalerweise ist hier nichts nötig. Änderungen am Dateiformat lesen dieselbe Datei erneut.
         </p>
         <div class="form-row csv-columns">
           <label
-            >Zielkonto (optional)<select
+            >Zielkonto (optional)<ChoiceSelect
               v-model="accountId"
               aria-label="Zielkonto (optional)"
-              class="control"
               :disabled="busy || readingFile"
-            >
-              <option value="">Ohne Konto — später zuordnen</option>
-              <option v-for="account in accounts" :key="account.id" :value="account.id">
-                {{ account.name }}
-              </option></select
-            ><span class="field-help"
+              :searchable="true"
+              :items="[
+                { label: `Ohne Konto — später zuordnen`, value: '' },
+                ...accounts.map(
+                  /** Build a persisted choice. */ (account) => ({ label: `${account.name}`, value: account.id }),
+                ),
+              ]"
+            /><span class="field-help"
               >Ohne Konto zählen Buchungen sofort in deiner Auswertung. Eine spätere Zuordnung ist möglich.</span
             ></label
           >
           <label
-            >Kodierung<select v-model="encoding" class="control" :disabled="busy || readingFile">
-              <option value="auto">Automatisch (empfohlen)</option>
-              <option v-for="(name, value) in encodingNames" :key="value" :value="value">{{ name }}</option></select
-            ><span class="field-help"
+            >Kodierung<ChoiceSelect
+              v-model="encoding"
+              :disabled="busy || readingFile"
+              :searchable="false"
+              :items="[
+                { label: `Automatisch (empfohlen)`, value: 'auto' },
+                ...Object.entries(encodingNames).map(
+                  /** Build a format choice. */ ([value, name]) => ({ label: `${name}`, value: value }),
+                ),
+              ]"
+            /><span class="field-help"
               >Bestimmt, wie Umlaute und Sonderzeichen gelesen werden. Bei älteren Bankexporten hilft Windows-1252; für
               ein falsch dargestelltes Eurozeichen kann Latin-9 passen.</span
             ></label
           >
           <label
-            >Trennzeichen<select v-model="delimiter" class="control" :disabled="busy || readingFile">
-              <option value="auto">Automatisch (empfohlen)</option>
-              <option v-for="(name, value) in delimiterNames" :key="value" :value="value">{{ name }}</option></select
-            ><span class="field-help"
+            >Trennzeichen<ChoiceSelect
+              v-model="delimiter"
+              :disabled="busy || readingFile"
+              :searchable="false"
+              :items="[
+                { label: `Automatisch (empfohlen)`, value: 'auto' },
+                ...Object.entries(delimiterNames).map(
+                  /** Build a format choice. */ ([value, name]) => ({ label: `${name}`, value: value }),
+                ),
+              ]"
+            /><span class="field-help"
               >Zeichen zwischen den Spalten. Automatisch erkennt Semikolon, Komma oder Tabulator.</span
             ></label
           >
-        </div>
-      </details>
+        </div></DisclosurePanel
+      >
       <template v-if="needsMapping && !busy">
         <div>
           <h2>Eine kurze Zuordnung fehlt</h2>
@@ -408,24 +405,36 @@ onBeforeUnmount(
         </div>
         <div class="filter-grid csv-columns">
           <label v-for="field in requiredFields" :key="field.key"
-            >{{ field.label }} *<select v-model="mapping[field.key]" required class="control">
-              <option value="">Spalte wählen</option>
-              <option v-for="header in headers" :key="header">{{ header }}</option></select
-            ><span class="field-help">{{ field.help }}</span></label
+            >{{ field.label }} *<ChoiceSelect
+              v-model="mapping[field.key]"
+              required
+              :searchable="true"
+              :items="[
+                { label: `Spalte wählen`, value: '' },
+                ...headers.map(
+                  /** Build a persisted choice. */ (header) => ({ label: `${header}`, value: `${header}` }),
+                ),
+              ]"
+            /><span class="field-help">{{ field.help }}</span></label
           >
         </div>
-        <details class="import-format">
-          <summary>Weitere Angaben zuordnen (optional)</summary>
-          <div class="filter-grid csv-columns mt-4">
+        <DisclosurePanel class="import-format" title="Weitere Angaben zuordnen (optional)"
+          ><div class="filter-grid csv-columns mt-4">
             <label v-for="field in optionalFields" :key="field.key"
               >{{ field.label
-              }}<select v-model="mapping[field.key]" class="control">
-                <option value="">Nicht zugeordnet</option>
-                <option v-for="header in headers" :key="header">{{ header }}</option></select
-              ><span class="field-help">{{ field.help }}</span></label
+              }}<ChoiceSelect
+                v-model="mapping[field.key]"
+                :searchable="true"
+                :items="[
+                  { label: `Nicht zugeordnet`, value: '' },
+                  ...headers.map(
+                    /** Build a persisted choice. */ (header) => ({ label: `${header}`, value: `${header}` }),
+                  ),
+                ]"
+              /><span class="field-help">{{ field.help }}</span></label
             >
-          </div>
-        </details>
+          </div></DisclosurePanel
+        >
         <p v-if="missingFields.length" role="status" class="muted text-sm">
           Noch zuordnen: {{ missingFields.join(', ') }}.
         </p>
@@ -453,23 +462,25 @@ onBeforeUnmount(
         <p v-if="preview.invalidRows > 20">Weitere Hinweise findest du in der Importhistorie.</p></template
       ></UAlert
     >
-    <details v-if="preview.rows.length" class="import-format my-5">
-      <summary>Gültige Buchungen ansehen</summary>
-      <div v-for="(row, index) in preview.rows" :key="index" class="transaction-row">
+    <DisclosurePanel v-if="preview.rows.length" class="import-format my-5" title="Gültige Buchungen ansehen"
+      ><div v-for="(row, index) in preview.rows" :key="index" class="transaction-row">
         <div>
           <strong>{{ row.description }}</strong
           ><small>{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || 'Keine Gegenpartei' }}</small>
         </div>
         <strong>{{ money(row.amountCents) }}</strong>
-      </div>
-    </details>
+      </div></DisclosurePanel
+    >
     <p v-else class="muted mb-5">
       Es wurden keine gültigen Buchungen erkannt. Bitte prüfe die Zuordnung oder exportiere die Datei erneut.
     </p>
-    <label v-if="preview.invalidRows && preview.rows.length" class="block my-5"
-      ><input v-model="allowPartial" type="checkbox" :disabled="commitUncertain" /> Nur gültige Zeilen übernehmen;
-      fehlerhafte Zeilen auslassen.</label
-    >
+    <UCheckbox
+      v-if="preview.invalidRows && preview.rows.length"
+      v-model="allowPartial"
+      class="block my-5"
+      :disabled="commitUncertain"
+      label="Nur gültige Zeilen übernehmen; fehlerhafte Zeilen auslassen."
+    />
     <div class="toolbar mt-6">
       <UButton v-if="commitUncertain" :loading="busy" @click="checkImportStatus">Importstatus prüfen</UButton>
       <UButton

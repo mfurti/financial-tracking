@@ -20,7 +20,7 @@ Sparkasse-Daten wie **07.11.26** werden automatisch als **07.11.2026** gelesen, 
 
 Für den Import brauchst du **Buchungsdatum**, **Betrag** und **Buchungstext**. Verwende gültige Daten als TT.MM.JJJJ oder JJJJ-MM-TT und Beträge mit Dezimalkomma; negative Beträge sind Ausgaben. Unter **Weitere Angaben zuordnen** findest du optionale Informationen mit Erklärungen. Eine Bankreferenz darf nur genau eine Buchung identifizieren; Mandats- oder Kundenreferenzen besser leer lassen. Ohne Währungsspalte wird EUR angenommen; es findet keine Währungsumrechnung statt.
 
-Bei ungültigen Zeilen bleibt die Übernahme stehen und zeigt das konkrete Problem, etwa Datum, Betrag oder fehlenden Text. Korrigiere den Export oder bestätige ausdrücklich, nur gültige Buchungen zu übernehmen. Ohne diese Zustimmung wird kein Teilimport ausgeführt. Mögliche Dubletten landen bei den offenen Prüfungen und werden nicht still doppelt gezählt.
+Bei ungültigen Zeilen bleibt die Übernahme stehen und zeigt das konkrete Problem, etwa Datum, Betrag oder fehlenden Text. Korrigiere den Export oder bestätige ausdrücklich, nur gültige Buchungen zu übernehmen. Ohne diese Zustimmung wird kein Teilimport ausgeführt. Mögliche Dubletten landen unter **Buchungen klären** und werden nicht still doppelt gezählt.
 
 Fehlt nach der Übernahme die Serverantwort, prüft die App denselben Importstatus. Es wird nicht automatisch eine zweite Übernahme erzeugt. Mit **Importstatus prüfen** lässt sich der bestehende Vorgang erneut lesen. Beim Verlassen einer noch nicht übernommenen Vorschau wird sie abgebrochen; eine bereits laufende Übernahme wird nicht durch einen späten Seitenwechsel zurückgesetzt.
 
@@ -64,3 +64,7 @@ Der Link **Zum Inhalt springen** ist per Tabulator erreichbar. Er überspringt d
 ## Bankabruf
 
 CSV bleibt jederzeit unabhängig nutzbar. Ein echter Sparkasse-Abruf benötigt zunächst die eigene FinTS-Produktregistrierung, einen bestätigten Bankendpunkt und die separate Prüfung deines Zugangs. Die aktuelle Anleitung und der belegte Kompatibilitätsstatus stehen in [banking.md](banking.md). Eine synthetische Prüfung bestätigt keine reale Bankkompatibilität.
+
+## Datum und Auswahlfelder
+
+Datumsfelder erlauben direkte Eingabe, Kalenderauswahl und Löschen. Der Monatsfilter öffnet eine Monatsauswahl. Lange Auswahllisten lassen sich durchsuchen; mit Escape schließt du die Liste. Unter **Buchungen klären** unterscheiden die Hinweise fehlerhafte Zeilen von möglichen Doppelbuchungen. Die angezeigten Ursachen und Vergleichswerte erklären die erforderliche Entscheidung. Das Löschen einer Kategorie verlangt eine Bestätigung und erhält die Buchungen.

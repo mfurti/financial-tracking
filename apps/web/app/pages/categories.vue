@@ -31,6 +31,14 @@ const unclassifiedLink = computed(
 const error = ref('');
 const busy = ref(false);
 const loading = ref(true);
+const pendingDelete = ref<Category | null>(null);
+const deleting = ref(false);
+const deleteOpen = computed({
+  /** The dialog owns exactly one pending category. */ get: () => pendingDelete.value !== null,
+  /** Dismissing it never deletes an assignment. */ set: (open: boolean) => {
+    if (!open && !deleting.value) pendingDelete.value = null;
+  },
+});
 const form = reactive({ name: '', kind: 'EXPENSE' as 'INCOME' | 'EXPENSE' | 'BOTH' });
 const kinds = [
   { label: 'Ausgaben', value: 'EXPENSE' },
@@ -85,15 +93,24 @@ async function save(category: Category) {
 }
 /** Require explicit confirmation before clearing existing assignments. */
 async function remove(category: Category) {
-  if (!window.confirm(`Kategorie „${category.name}“ löschen? Zugeordnete Umsätze werden nicht kategorisiert.`)) return;
+  pendingDelete.value = category;
+}
+/** Delete only after the visible Nuxt UI confirmation. */
+async function confirmDelete() {
+  const category = pendingDelete.value;
+  if (!category || deleting.value) return;
+  deleting.value = true;
   try {
     await api.request(`/categories/${category.id}`, z.object({ ok: z.boolean() }), {
       method: 'DELETE',
       body: { confirm: true },
     });
+    pendingDelete.value = null;
     await load();
   } catch (cause) {
     error.value = formError(cause);
+  } finally {
+    deleting.value = false;
   }
 }
 onMounted(
@@ -124,7 +141,7 @@ onBeforeUnmount(
       </p>
     </div>
     <div class="heading-actions">
-      <label class="month-control">Monat<input v-model="month" type="month" class="control" @change="load" /></label
+      <label class="month-control">Monat<MonthPicker v-model="month" @change="load" /></label
       ><UButton variant="soft" :loading="loading" @click="load">Aktualisieren</UButton>
     </div>
   </div>
@@ -164,13 +181,8 @@ onBeforeUnmount(
       <NuxtLink :to="unclassifiedLink" class="text-link">Umsätze ohne Kategorie öffnen</NuxtLink>
     </div>
   </section>
-  <details class="panel category-management">
-    <summary>
-      <span
-        ><strong>Kategorien verwalten</strong><small>Eigene Gruppen anlegen, umbenennen oder deaktivieren</small></span
-      >
-    </summary>
-    <div class="mt-6">
+  <DisclosurePanel class="panel category-management" title="Kategorien verwalten"
+    ><div class="mt-6">
       <h2 class="mb-4">Kategorie anlegen</h2>
       <UForm ref="validation" :schema="categoryInputSchema" :state="form" class="form-row" @submit="create"
         ><UFormField label="Name" name="name"
@@ -187,15 +199,32 @@ onBeforeUnmount(
       <p v-if="!loading && !categories.length && !error" class="empty-copy">
         Noch keine Kategorien. Lege oben deine erste Kategorie an.
       </p>
-      <div v-for="category in categories" :key="category.id" class="editable-row">
+      <div
+        v-for="category in categories"
+        :key="category.id"
+        class="editable-row"
+        role="group"
+        :aria-label="`Kategorie ${category.name}`"
+      >
         <UInput v-model="category.name" aria-label="Kategoriename" /><USelect
           v-model="category.kind"
           aria-label="Kategorieart"
           :items="kinds"
-        /><label><input v-model="category.isActive" type="checkbox" /> Aktiv</label
-        ><UButton variant="soft" @click="save(category)">Speichern</UButton
+        /><UCheckbox v-model="category.isActive" label="Aktiv" /><UButton variant="soft" @click="save(category)"
+          >Speichern</UButton
         ><UButton color="error" variant="ghost" @click="remove(category)">Löschen</UButton>
       </div>
-    </div>
-  </details>
+    </div></DisclosurePanel
+  >
+  <UModal
+    v-model:open="deleteOpen"
+    title="Kategorie löschen?"
+    :description="`„${pendingDelete?.name ?? ''}“ wird entfernt. Die Buchungen bleiben erhalten und verlieren nur diese Kategorie.`"
+    :dismissible="!deleting"
+  >
+    <template #footer
+      ><UButton color="neutral" variant="outline" :disabled="deleting" @click="pendingDelete = null">Abbrechen</UButton
+      ><UButton color="error" :loading="deleting" @click="confirmDelete">Kategorie löschen</UButton></template
+    >
+  </UModal>
 </template>

@@ -249,3 +249,9 @@ Task record: [GitHub issue #1](https://github.com/mfurti/financial-tracking/issu
 - T5 implementation commit: `6ad379d`; validation/delivery tracking: `d9af458`.
 - After explicit publication approval, remote main was initialized with the original documentation commit `49bba21`, and `codex/1-household-ledger` was pushed. [PR #2](https://github.com/mfurti/financial-tracking/pull/2) targets main and links issue #1.
 - Both remote CI jobs passed for `d9af458`. Documentation follow-ups also require green checks on their own head. No merge or production deployment is authorized or performed.
+
+## F1 — Consistent Nuxt UI controls — 2026-11-08
+
+Replaced existing selects, checkboxes, upload, disclosures, category deletion confirmation and navigation controls with Nuxt UI. Shared date/month pickers support German calendar selection and clearing. Import history distinguishes invalid rows from possible duplicates under Buchungen klären. Preserved typed numeric TAN choices and existing import/assignment behavior.
+
+Pinned direct peers @internationalized/date 3.12.4 and @tanstack/charts 1.5.0 without upgrading Nuxt UI 4.12.0. The workspace release-age exception is restricted to that exact chart version. Lint, strict types and production builds passed. All 16 existing browser scenarios passed across the full run and focused rerun: the only initial failure was a test selecting during the previous menu exit animation; the shared helper now awaits actual listbox removal. The focused six scenarios passed, including mobile/desktop date selection and clearing, import exception recovery and navigation. Category cancellation/confirmation preserves the original transaction. No server change, bank access or new deployment.

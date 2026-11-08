@@ -1,3 +1,4 @@
+import { choose } from './controls.js';
 import { test, expect } from '@playwright/test';
 
 test('monthly categories explain real expenses and lead to persisted assignments', /** Verify the complete real upload-to-category journey and responsive navigation. */ async ({
@@ -10,23 +11,26 @@ test('monthly categories explain real expenses and lead to persisted assignments
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
   if (info.project.name === 'mobile') {
-    const more = page.locator('.mobile-more');
-    await more.locator('summary').click();
-    await expect(more).toHaveAttribute('open', '');
+    const more = page.getByRole('button', { name: 'Mehr', exact: true });
+    await more.click();
+    await expect(more).toHaveAttribute('aria-expanded', 'true');
     await page.keyboard.press('Escape');
-    await expect(more).not.toHaveAttribute('open');
-    await expect(more.locator('summary')).toBeFocused();
-    await more.locator('summary').click();
+    await expect(more).toHaveAttribute('aria-expanded', 'false');
+    await expect(more).toBeFocused();
+    await more.click();
     await page.getByRole('heading', { level: 1 }).click();
-    await expect(more).not.toHaveAttribute('open');
-    await more.locator('summary').click();
-    await more.getByRole('link', { name: 'Konten', exact: true }).click();
+    await expect(more).toHaveAttribute('aria-expanded', 'false');
+    await more.click();
+    await page
+      .getByRole('navigation', { name: 'Weitere Seiten' })
+      .getByRole('link', { name: 'Konten', exact: true })
+      .click();
     await expect(page).toHaveURL(/\/accounts$/);
-    await expect(more).not.toHaveAttribute('open');
+    await expect(more).toHaveAttribute('aria-expanded', 'false');
   }
   await page.goto('/categories?month=2031-03');
   await expect(page.getByRole('heading', { name: 'Kategorien & Auswertung' })).toBeVisible();
-  await page.locator('summary').filter({ hasText: 'Kategorien verwalten' }).click();
+  await page.getByRole('button', { name: 'Kategorien verwalten', exact: true }).click();
   await page.getByLabel('Name', { exact: true }).fill(label);
   await page.getByRole('button', { name: 'Kategorie anlegen', exact: true }).click();
   await expect
@@ -51,11 +55,14 @@ test('monthly categories explain real expenses and lead to persisted assignments
   await page.screenshot({ path: `.local/experience-dashboard-${info.project.name}.png`, fullPage: true });
   await page.goto('/categories?month=2031-03');
   await expect(page.getByText('So entstehen deine Kategorien', { exact: true })).toBeVisible();
-  await expect(page.locator('.category-management')).not.toHaveAttribute('open');
+  await expect(page.getByRole('button', { name: 'Kategorien verwalten', exact: true })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
   await page.getByRole('link', { name: 'Buchungen zuordnen', exact: true }).click();
   await expect(page).toHaveURL(/uncategorized=true/);
   await expect(page.getByLabel('Ohne Kategorie', { exact: true })).toBeChecked();
-  await page.getByLabel(`Kategorie für ${label}`, { exact: true }).selectOption({ label });
+  await choose(page, page.getByLabel(`Kategorie für ${label}`, { exact: true }), label);
   await expect(page.getByRole('link', { name: new RegExp(label) })).not.toBeVisible();
   await page.goto('/categories?month=2031-03');
   const category = page.locator('.spending-row').filter({ hasText: label });
@@ -86,11 +93,25 @@ test('monthly categories explain real expenses and lead to persisted assignments
       });
     },
   );
-  await page.getByLabel('Monat', { exact: true }).fill('2031-04');
-  await page.getByLabel('Monat', { exact: true }).press('Tab');
+  await page.getByRole('button', { name: 'Monat', exact: true }).click();
+  await page.getByRole('button', { name: /April/ }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.locator('.spending-panel')).not.toBeVisible();
   await page.unroute('**/api/v1/analytics/monthly?*');
   await page.getByRole('button', { name: 'Aktualisieren', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Noch keine Ausgaben in diesem Monat' })).toBeVisible();
+  await page.goto('/categories?month=2031-03');
+  await page.getByRole('button', { name: 'Kategorien verwalten', exact: true }).click();
+  const managed = page.getByRole('group', { name: `Kategorie ${label}`, exact: true });
+  await managed.getByRole('button', { name: 'Löschen', exact: true }).click();
+  const confirmation = page.getByRole('dialog', { name: 'Kategorie löschen?', exact: true });
+  await confirmation.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+  await expect(confirmation).not.toBeVisible();
+  await managed.getByRole('button', { name: 'Löschen', exact: true }).click();
+  await confirmation.getByRole('button', { name: 'Kategorie löschen', exact: true }).click();
+  await expect(confirmation).not.toBeVisible();
+  const preserved = await (await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`)).json();
+  expect(preserved.items).toHaveLength(1);
+  expect(preserved.items[0].categoryId).toBeNull();
+  expect(preserved.items[0].amountCents).toBe('-4225');
 });

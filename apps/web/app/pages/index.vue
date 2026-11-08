@@ -135,10 +135,7 @@ onBeforeUnmount(
       <p class="muted">Hier siehst du, was im gewählten Monat reinkommt, rausgeht und übrig bleibt.</p>
     </div>
     <div class="toolbar">
-      <UInput v-model="month" aria-label="Monat" type="month" @change="load" /><UButton
-        variant="ghost"
-        :loading="busy"
-        @click="load"
+      <MonthPicker v-model="month" @change="load" /><UButton variant="ghost" :loading="busy" @click="load"
         >Aktualisieren</UButton
       ><UButton to="/imports/csv">CSV hochladen</UButton>
     </div>

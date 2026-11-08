@@ -149,17 +149,19 @@ async function confirm() {
     </p>
     <div v-else class="toolbar mb-4">
       <label
-        >Zielkonto für Zuordnung<select
+        >Zielkonto für Zuordnung<ChoiceSelect
           v-model="accountId"
           :disabled="busy"
           aria-label="Zielkonto für Zuordnung"
-          class="control"
-          @change="reset"
-        >
-          <option value="">Konto wählen</option>
-          <option v-for="account in targets" :key="account.id" :value="account.id">{{ account.name }}</option>
-        </select></label
-      >
+          :searchable="true"
+          :items="[
+            { label: `Konto wählen`, value: '' },
+            ...targets.map(
+              /** Build a persisted choice. */ (account) => ({ label: `${account.name}`, value: account.id }),
+            ),
+          ]"
+          @update:model-value="reset"
+      /></label>
       <UButton :disabled="!accountId || transactionIds.length > 100" :loading="busy" variant="soft" @click="compare"
         >Zuordnung vergleichen</UButton
       >
@@ -186,18 +188,20 @@ async function confirm() {
         <template v-if="item.candidates.length">
           <label
             >Zielbuchung für {{ item.incoming.transaction.description
-            }}<select
+            }}<ChoiceSelect
               v-model="choices[item.incoming.transaction.id]!.candidateId"
-              class="control"
               :required="['BANK', 'CSV'].includes(choices[item.incoming.transaction.id]!.action)"
-            >
-              <option value="">Treffer wählen</option>
-              <option v-for="entry in item.candidates" :key="entry.transaction.id" :value="entry.transaction.id">
-                {{ calendarDate(entry.transaction.bookingDate) }} · {{ entry.transaction.description }} ·
-                {{ money(entry.transaction.amountCents) }}
-              </option>
-            </select></label
-          >
+              :searchable="true"
+              :items="[
+                { label: `Treffer wählen`, value: '' },
+                ...item.candidates.map(
+                  /** Build a persisted choice. */ (entry) => ({
+                    label: `${calendarDate(entry.transaction.bookingDate)} · ${entry.transaction.description} · ${money(entry.transaction.amountCents)}`,
+                    value: entry.transaction.id,
+                  }),
+                ),
+              ]"
+          /></label>
           <div v-if="candidate(item.incoming.transaction.id)" class="mt-4">
             <p>
               {{ candidate(item.incoming.transaction.id)!.transaction.description }} ·
@@ -218,9 +222,8 @@ async function confirm() {
               {{ candidate(item.incoming.transaction.id)!.transaction.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt'
               }}<span v-if="candidate(item.incoming.transaction.id)!.transaction.isTransfer"> · Umbuchung</span>
             </p>
-            <details>
-              <summary>Quellreferenzen vergleichen</summary>
-              <p v-for="(reference, index) in item.incoming.references" :key="`csv-${index}`" class="reference-copy">
+            <DisclosurePanel title="Quellreferenzen vergleichen"
+              ><p v-for="(reference, index) in item.incoming.references" :key="`csv-${index}`" class="reference-copy">
                 CSV · {{ reference.type }}: {{ reference.value }}
               </p>
               <p
@@ -229,38 +232,45 @@ async function confirm() {
                 class="reference-copy"
               >
                 {{ reference.source }} · {{ reference.type }}: {{ reference.value }}
-              </p>
-            </details>
+              </p></DisclosurePanel
+            >
           </div>
         </template>
         <p v-else>Keine mögliche Überschneidung gefunden.</p>
         <label
           >Entscheidung für {{ item.incoming.transaction.description
-          }}<select v-model="choices[item.incoming.transaction.id]!.action" class="control" required>
-            <option value="">Entscheidung wählen</option>
-            <option v-if="item.candidates.length" value="BANK">Bank-/Zieldaten übernehmen und zusammenführen</option>
-            <option v-if="item.candidates.length" value="CSV">CSV-Daten übernehmen und zusammenführen</option>
-            <option value="SEPARATE">Separat behalten und zuordnen</option>
-            <option value="SKIP">Zuordnung überspringen</option>
-          </select></label
-        >
+          }}<ChoiceSelect
+            v-model="choices[item.incoming.transaction.id]!.action"
+            required
+            :searchable="false"
+            :items="[
+              { label: `Entscheidung wählen`, value: '' },
+              ...(item.candidates.length
+                ? [{ label: `Bank-/Zieldaten übernehmen und zusammenführen`, value: 'BANK' }]
+                : []),
+              ...(item.candidates.length ? [{ label: `CSV-Daten übernehmen und zusammenführen`, value: 'CSV' }] : []),
+              { label: `Separat behalten und zuordnen`, value: 'SEPARATE' },
+              { label: `Zuordnung überspringen`, value: 'SKIP' },
+            ]"
+        /></label>
         <label
           v-if="
             ['BANK', 'CSV'].includes(choices[item.incoming.transaction.id]!.action) &&
             categoryConflict(item.incoming.transaction.id)
           "
-          >Abweichende manuelle Kategorie<select
+          >Abweichende manuelle Kategorie<ChoiceSelect
             v-model="choices[item.incoming.transaction.id]!.categoryChoice"
-            class="control"
             required
-          >
-            <option value="">Kategorie ausdrücklich wählen</option>
-            <option value="CSV">CSV-Kategorie: {{ category(item.incoming.transaction.categoryId) }}</option>
-            <option value="BANK">
-              Zielkategorie: {{ category(candidate(item.incoming.transaction.id)!.transaction.categoryId) }}
-            </option>
-          </select></label
-        >
+            :searchable="false"
+            :items="[
+              { label: `Kategorie ausdrücklich wählen`, value: '' },
+              { label: `CSV-Kategorie: ${category(item.incoming.transaction.categoryId)}`, value: 'CSV' },
+              {
+                label: `Zielkategorie: ${category(candidate(item.incoming.transaction.id)!.transaction.categoryId)}`,
+                value: 'BANK',
+              },
+            ]"
+        /></label>
       </article>
       <p class="muted">
         Zusammenführen zählt die verbleibende Buchung einmal. „Separat behalten“ erhält beide Buchungen; „Überspringen“

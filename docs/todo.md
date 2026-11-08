@@ -5,7 +5,7 @@
 The user explicitly requested implementation of the reviewed [Finanzfluss implementation plan](finanzfluss-umsetzungsplan.md) in the current checkout. Preserve audit commit `392d988`. Branch: `codex/3-finanzfluss-experience`; issue #3. Current deployment remains the last verified `1e33afa`; no new merge/rollout/bank/reboot approval is implied.
 
 - [x] F0: save the approved plan and synchronize the existing task record/checklist; relevant Markdown checks pass before commit.
-- [ ] F1: consistent Nuxt UI controls, dates/months, clarification and existing keyboard/mobile journeys.
+- [x] F1: consistent Nuxt UI controls, dates/months, clarification and existing keyboard/mobile journeys. Lint, strict types, production build and all 16 browser scenarios verified; focused six-case rerun passed after waiting for menu exit animations.
 - [ ] F2: theme tiles, six Ayu variants, circular Nuxt UI toggle and compatible early persistence.
 - [ ] F3: category templates/rules, manual provenance and fixed/variable metadata with additive migration, API/UI and preservation tests.
 - [ ] F4: confirmed contracts, versioned recurrence, unique payment matches, history/marking and next-due ordering with additive migration/API/UI/tests.

@@ -1,3 +1,4 @@
+import { choose } from './controls.js';
 import { test, expect } from '@playwright/test';
 import { appearanceThemes } from '../../apps/web/app/utils/appearance.js';
 
@@ -16,20 +17,22 @@ test('settings palettes apply in both modes and persist across reload and logout
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
   await page.goto('/settings');
   const select = page.getByLabel('Farbthema', { exact: true });
-  await expect(select.locator('option')).toHaveCount(18);
+  await select.click();
+  await expect(page.getByRole('option')).toHaveCount(18);
+  await page.keyboard.press('Escape');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const theme of appearanceThemes) {
-    await select.selectOption(theme.id);
+    await choose(page, select, theme.name);
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme.id);
     for (const mode of ['light', 'dark'] as const) {
-      await page.getByLabel('Helligkeit', { exact: true }).selectOption(mode);
+      await choose(page, page.getByLabel('Helligkeit', { exact: true }), mode === 'light' ? 'Hell' : 'Dunkel');
       await expect(page.locator('body')).toHaveCSS('background-color', rgb(theme[mode][0]));
       await expect(page.getByRole('heading', { name: 'Farben & Darstellung' })).toBeVisible();
     }
   }
-  await select.selectOption('dracula');
+  await choose(page, select, 'Dracula');
   await page.reload();
-  await expect(select).toHaveValue('dracula');
+  await expect(select).toContainText('Dracula');
   await expect(page.locator('body')).toHaveCSS(
     'background-color',
     rgb(appearanceThemes.find(/** Match the actual catalog entry. */ (theme) => theme.id === 'dracula')!.dark[0]),

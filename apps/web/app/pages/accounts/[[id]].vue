@@ -144,8 +144,7 @@ onMounted(
         v-model="row.bankConnectionId"
         aria-label="Bankverbindung zuordnen"
         :items="options"
-      /><label><input v-model="row.isActive" type="checkbox" /> Aktiv</label
-      ><UButton variant="soft" @click="save(row)">Speichern</UButton
+      /><UCheckbox v-model="row.isActive" label="Aktiv" /><UButton variant="soft" @click="save(row)">Speichern</UButton
       ><UButton :to="`/transactions?accountId=${row.id}`" variant="ghost">Umsätze ansehen</UButton>
     </div>
   </section>

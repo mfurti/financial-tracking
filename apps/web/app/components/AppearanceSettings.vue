@@ -23,24 +23,32 @@ const tone = computed(
     </p>
     <div class="form-row">
       <label
-        >Farbthema<select
-          :value="themeId"
+        >Farbthema<ChoiceSelect
+          :model-value="themeId"
           aria-label="Farbthema"
-          class="control"
-          @change="selectTheme(($event.target as HTMLSelectElement).value)"
-        >
-          <option v-for="theme in appearanceThemes" :key="theme.id" :value="theme.id">{{ theme.name }}</option></select
-        ><span class="field-help"
+          :searchable="true"
+          :items="[
+            ...appearanceThemes.map(
+              /** Build a persisted choice. */ (theme) => ({ label: `${theme.name}`, value: theme.id }),
+            ),
+          ]"
+          @update:model-value="selectTheme($event)"
+        /><span class="field-help"
           >{{ appearanceThemes.length }} Farbwelten, angelehnt an bekannte VS-Code-Themes und für diese App
           angepasst.</span
         ></label
       >
       <label
-        >Helligkeit<select v-model="mode.preference" aria-label="Helligkeit" class="control">
-          <option value="system">Wie mein Gerät</option>
-          <option value="light">Hell</option>
-          <option value="dark">Dunkel</option></select
-        ><span class="field-help">„Wie mein Gerät“ folgt deiner Systemeinstellung.</span></label
+        >Helligkeit<ChoiceSelect
+          v-model="mode.preference"
+          aria-label="Helligkeit"
+          :searchable="false"
+          :items="[
+            { label: `Wie mein Gerät`, value: 'system' },
+            { label: `Hell`, value: 'light' },
+            { label: `Dunkel`, value: 'dark' },
+          ]"
+        /><span class="field-help">„Wie mein Gerät“ folgt deiner Systemeinstellung.</span></label
       >
     </div>
     <div class="appearance-preview" :style="{ background: tone[0], color: tone[2] }" aria-label="Theme-Vorschau">

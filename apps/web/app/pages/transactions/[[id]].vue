@@ -23,6 +23,13 @@ const accounts = ref<Account[]>([]);
 const categories = ref<Category[]>([]);
 const selected = ref<string[]>([]);
 const bulkCategory = ref('');
+/** Keep a Nuxt UI checkbox selection explicit and stable across refreshes. */
+function selectTransaction(id: string, checked: boolean | 'indeterminate') {
+  selected.value =
+    checked === true
+      ? [...new Set([...selected.value, id])]
+      : selected.value.filter(/** Remove only the deselected transaction. */ (value) => value !== id);
+}
 const nextCursor = ref<string | null>(null);
 const error = ref('');
 const busy = ref(false);
@@ -111,11 +118,11 @@ async function more() {
   await load(true);
 }
 /** Save a category chosen in either transaction view. */
-async function assign(id: string, event: Event) {
+async function assign(id: string, categoryId: string) {
   try {
     await api.request(`/transactions/${id}`, transactionSchema, {
       method: 'PATCH',
-      body: { categoryId: (event.target as HTMLSelectElement).value || null },
+      body: { categoryId: categoryId || null },
     });
     await load();
   } catch (cause) {
@@ -227,17 +234,18 @@ onBeforeUnmount(
       <dd>{{ categoryName(detail.categoryId) }}</dd>
     </dl>
     <div class="toolbar mt-5">
-      <select
-        :value="detail.categoryId ?? ''"
+      <ChoiceSelect
+        :model-value="detail.categoryId ?? ''"
         aria-label="Kategorie zuordnen"
-        class="control"
-        @change="assign(detail.id, $event)"
-      >
-        <option value="">Nicht kategorisiert</option>
-        <option v-for="category in categories" :key="category.id" :value="category.id">
-          {{ category.name }}
-        </option></select
-      ><UButton variant="soft" @click="mark(detail)">{{
+        :searchable="true"
+        :items="[
+          { label: `Nicht kategorisiert`, value: '' },
+          ...categories.map(
+            /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
+          ),
+        ]"
+        @update:model-value="assign(detail.id, $event)"
+      /><UButton variant="soft" @click="mark(detail)">{{
         detail.isTransfer ? 'Umbuchung aufheben' : 'Als Umbuchung markieren'
       }}</UButton>
     </div>
@@ -265,34 +273,52 @@ onBeforeUnmount(
             placeholder="Text oder Gegenpartei"
             aria-label="Umsätze durchsuchen" /></label
         ><label
-          >Konto<select v-model="filter.accountId" class="control">
-            <option value="">Alle Konten</option>
-            <option value="UNASSIGNED">Ohne Konto</option>
-            <option v-for="account in accounts" :key="account.id" :value="account.id">{{ account.name }}</option>
-          </select></label
-        ><label>Von<UInput v-model="filter.from" type="date" aria-label="Von" /></label
-        ><label>Bis<UInput v-model="filter.to" type="date" aria-label="Bis" /></label
+          >Konto<ChoiceSelect
+            v-model="filter.accountId"
+            :searchable="true"
+            :items="[
+              { label: `Alle Konten`, value: '' },
+              { label: `Ohne Konto`, value: 'UNASSIGNED' },
+              ...accounts.map(
+                /** Build a persisted choice. */ (account) => ({ label: `${account.name}`, value: account.id }),
+              ),
+            ]" /></label
+        ><label>Von<DatePicker v-model="filter.from" label="Von" /></label
+        ><label>Bis<DatePicker v-model="filter.to" label="Bis" /></label
         ><label
-          >Kategorie<select v-model="filter.categoryId" class="control">
-            <option value="">Alle Kategorien</option>
-            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
-          </select></label
+          >Kategorie<ChoiceSelect
+            v-model="filter.categoryId"
+            :searchable="true"
+            :items="[
+              { label: `Alle Kategorien`, value: '' },
+              ...categories.map(
+                /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
+              ),
+            ]" /></label
         ><label
-          >Status<select v-model="filter.status" class="control">
-            <option value="">Alle Buchungen</option>
-            <option value="BOOKED">Gebucht</option>
-            <option value="PENDING">Vorgemerkt</option>
-          </select></label
+          >Status<ChoiceSelect
+            v-model="filter.status"
+            :searchable="false"
+            :items="[
+              { label: `Alle Buchungen`, value: '' },
+              { label: `Gebucht`, value: 'BOOKED' },
+              { label: `Vorgemerkt`, value: 'PENDING' },
+            ]" /></label
         ><label
-          >Richtung<select v-model="filter.direction" class="control">
-            <option value="">Einnahmen & Ausgaben</option>
-            <option value="INCOME">Einnahmen</option>
-            <option value="EXPENSE">Ausgaben</option>
-          </select></label
-        >
+          >Richtung<ChoiceSelect
+            v-model="filter.direction"
+            :searchable="false"
+            :items="[
+              { label: `Einnahmen & Ausgaben`, value: '' },
+              { label: `Einnahmen`, value: 'INCOME' },
+              { label: `Ausgaben`, value: 'EXPENSE' },
+            ]"
+        /></label>
         <div class="toolbar">
-          <label><input v-model="filter.uncategorized" type="checkbox" /> Ohne Kategorie</label
-          ><label><input v-model="filter.excludeTransfers" type="checkbox" /> Ohne Umbuchungen</label>
+          <UCheckbox v-model="filter.uncategorized" label="Ohne Kategorie" /><UCheckbox
+            v-model="filter.excludeTransfers"
+            label="Ohne Umbuchungen"
+          />
         </div>
         <UButton type="submit" :loading="busy">Filtern</UButton>
       </form>
@@ -300,12 +326,17 @@ onBeforeUnmount(
     <section class="panel">
       <div v-if="selected.length" class="toolbar mb-5">
         <span>{{ selected.length }} ausgewählt</span
-        ><select v-model="bulkCategory" aria-label="Kategorie für Auswahl" class="control">
-          <option value="">Nicht kategorisiert</option>
-          <option v-for="category in categories" :key="category.id" :value="category.id">
-            {{ category.name }}
-          </option></select
-        ><UButton @click="bulk">Kategorie zuweisen</UButton
+        ><ChoiceSelect
+          v-model="bulkCategory"
+          aria-label="Kategorie für Auswahl"
+          :searchable="true"
+          :items="[
+            { label: `Nicht kategorisiert`, value: '' },
+            ...categories.map(
+              /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
+            ),
+          ]"
+        /><UButton @click="bulk">Kategorie zuweisen</UButton
         ><UButton :disabled="selected.length > 2" variant="soft" @click="transfer">Umbuchung verknüpfen</UButton>
       </div>
       <p role="status" class="ledger-load-status">{{ busy ? 'Umsätze werden geladen …' : '' }}</p>
@@ -313,11 +344,10 @@ onBeforeUnmount(
         Keine Umsätze gefunden. Passe deine Filter an oder importiere Buchungen.
       </p>
       <div v-for="row in rows" :key="row.id" class="ledger-row">
-        <input
-          v-model="selected"
-          :value="row.id"
-          type="checkbox"
+        <UCheckbox
+          :model-value="selected.includes(row.id)"
           :aria-label="`${row.description} auswählen`"
+          @update:model-value="selectTransaction(row.id, $event)"
         /><NuxtLink :to="`/transactions/${row.id}`" class="ledger-description"
           ><strong>{{ row.description }}</strong
           ><small
@@ -325,17 +355,18 @@ onBeforeUnmount(
             }}<span v-if="row.isTransfer"> · Umbuchung</span><span v-if="row.accountId === null"> · Ohne Konto</span
             ><span v-if="row.status === 'PENDING'"> · Vorgemerkt</span></small
           ></NuxtLink
-        ><select
-          :value="row.categoryId ?? ''"
+        ><ChoiceSelect
+          :model-value="row.categoryId ?? ''"
           :aria-label="`Kategorie für ${row.description}`"
-          class="control"
-          @change="assign(row.id, $event)"
-        >
-          <option value="">Nicht kategorisiert</option>
-          <option v-for="category in categories" :key="category.id" :value="category.id">
-            {{ category.name }}
-          </option></select
-        ><strong :class="BigInt(row.amountCents) > 0n ? 'positive' : ''">{{ money(row.amountCents) }}</strong>
+          :searchable="true"
+          :items="[
+            { label: `Nicht kategorisiert`, value: '' },
+            ...categories.map(
+              /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
+            ),
+          ]"
+          @update:model-value="assign(row.id, $event)"
+        /><strong :class="BigInt(row.amountCents) > 0n ? 'positive' : ''">{{ money(row.amountCents) }}</strong>
       </div>
       <UButton v-if="nextCursor" :loading="busy" variant="soft" class="mt-5" @click="more"
         >Weitere Umsätze laden</UButton

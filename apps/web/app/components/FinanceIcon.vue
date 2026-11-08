@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const paths = {
+  calendar: 'M4 5h16v16H4Zm0 5h16M8 3v4m8-4v4',
   home: 'M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z',
   transactions: 'M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4',
   categories: 'M4 20h16M7 16v-5m5 5V4m5 12V8',
