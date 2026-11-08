@@ -1,5 +1,5 @@
 import { choose } from './controls.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test('private ledger: login, CSV import, categorization, filters, responsive views and logout', /** Exercise real API and database rather than intercepted fixture responses. */ async ({
   page,

@@ -1,5 +1,5 @@
 import { choose } from './controls.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { appearanceChoices, appearanceThemes, choiceTone } from '../../apps/web/app/utils/appearance.js';
 
 /** Convert opaque catalog swatches to the browser's computed-color representation. */

@@ -1,5 +1,5 @@
 import { choose } from './controls.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test('monthly categories explain real expenses and lead to persisted assignments', /** Verify the complete real upload-to-category journey and responsive navigation. */ async ({
   page,

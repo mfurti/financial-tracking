@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test('themes, responsive pages, form errors, retry and session expiry', /** Browser acceptance across the real application plus explicit synthetic error states. */ async ({
   page,

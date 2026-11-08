@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { choose } from './controls.js';
 
 test('multi-month analysis explains observed averages and drills into exact accountless classifications', /** Exercise real upload, report filters, chart rendering, exact tables and recoverable errors. */ async ({

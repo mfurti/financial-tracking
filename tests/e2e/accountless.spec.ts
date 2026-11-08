@@ -1,5 +1,5 @@
 import { choose } from './controls.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test('CSV without accounts, later assignment and explicit overlap review', /** Exercise the real first-run UI and API without intercepted data. */ async ({
   page,

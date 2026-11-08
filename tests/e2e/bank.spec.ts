@@ -1,5 +1,5 @@
 import { choose } from './controls.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import type { ImportRun } from '../../packages/contracts/src/index.js';
 
 test('manual bank setup, method/media/TAN/app approval, pending, failures and cancellation', /** Test browser authorization states with explicit synthetic bank responses; ordinary authentication stays real. */ async ({

@@ -1,5 +1,5 @@
 import { choose } from './controls.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 /** Sign in only to the disposable browser fixture, never a real bank or production account. */
 async function signIn(page: import('@playwright/test').Page) {

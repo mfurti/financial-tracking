@@ -5,7 +5,12 @@ export default defineConfig({
   workers: 1,
   timeout: 60000,
   fullyParallel: false,
-  use: { baseURL: 'http://localhost:4320', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
+  use: {
+    actionTimeout: 10000,
+    baseURL: 'http://localhost:4320',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
   webServer: [
     {
       command: 'node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.json scripts/e2e-server.ts',

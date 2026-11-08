@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test('confirmed recurring payments keep real bookings, expose contract badges and roll future due dates', /** Upload repeated payments, review the suggestion and preserve source data through unlink/delete. */ async ({
   page,
