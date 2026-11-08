@@ -9,7 +9,7 @@ Approved [contract usability plan](vertragsanalyse-usability-plan.md), existing 
 - [x] UX2: permanent management links, mobile More page, clearer headings/colors/icons and concise copy.
 - [x] UX3: monthly fixed-cost card and category/kind contract analytics.
 - [x] UX4: editable review cards and persistent accept/dismiss/restore decisions.
-- [ ] UX5: full verification, visual acceptance, documentation and feature PR.
+- [x] UX5: full local/visual verification and [PR #11](https://github.com/mfurti/financial-tracking/pull/11). Linux [CI 42497875724](https://github.com/mfurti/financial-tracking/actions/runs/42497875724) passed source 2f93e95: 131 tests, all 20 browser scenarios and extended encrypted restore. Merge after green current CI explicitly approved; final documentation-head checks still gate merge, and rollout remains separate.
 
 ## Delivered implementation — F0–F6
 
