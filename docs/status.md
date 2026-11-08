@@ -8,6 +8,8 @@ Prio 1 ist wieder **Finanzguru als visuelle Referenz**: kompakter App-Charakter,
 
 Synthetisch belegt: leeres automatisch gewähltes Verwendungszweck-Feld führt zur Zurückweisung trotz gefülltem Buchungstext. Ob derselbe Mechanismus die Originaldatei erklärt, ist unbestätigt. E5 bleibt offen; Produktivstand und vorhandene Testergebnisse unten ändern sich nicht.
 
+Der anschließend beauftragte [Codecheck](code-audit.md) ist abgeschlossen: alle 19 eigenen Vue-Komponenten verwendet, 16 CSS-Klassen ohne Quellverweise, ein alter nicht mehr aufgerufener Vertragsdialogzweig und doppelte UI-Metadaten gefunden. Keine direkte Abhängigkeit als sicher entfernbar belegt. API-/regulärer Web-Typecheck bestanden; Bereinigung K1 bleibt offen. Anwendungscode, Daten und Produktivstand unverändert.
+
 ## Belegter Lieferstand
 
 - PR #10 wurde als `3b990ec` gemergt und separat freigegeben ausgerollt.

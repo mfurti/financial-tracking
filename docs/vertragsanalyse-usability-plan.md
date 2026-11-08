@@ -105,3 +105,7 @@ Für spätere Korrektur Fallback-Reihenfolge und ausdrückliche manuelle Spalten
 ### Umfang und nächste Schritte
 
 Prio 1: R1, I2 und I3. R2/R3, Budgets, Monatsplanung und externe Bank-/Betriebsabnahmen bleiben offen. Bestehende UX2-/R1-Anforderungen werden erweitert; keine zusätzliche parallele UI-Roadmap angelegt. Diese Ergänzung sammelt Anforderungen und Ist-Befunde. Konkrete technische Planung/Implementierung und spätere Merge-/Rollout-Freigaben folgen separat.
+
+### Vorprüfung auf alte Codepfade
+
+Der Nutzer hat vor dem UI-Umbau einen Codecheck beauftragt. [Befunde](code-audit.md) sind dokumentiert; K1 in todo.md ist das kleine Bereinigungspaket für nicht referenzierte CSS-Reste, einen überholten lokalen Vertragsdialogzweig und doppelte UI-Metadaten. Alle eigenen Komponenten und die geprüften Betriebs-/Peer-Abhängigkeiten bleiben als verwendet eingeordnet. Keine pauschale Refaktorierung als Voraussetzung für R1. Untersuchung und Typprüfungen sind abgeschlossen, Bereinigung und deren gezielte Browserabnahme noch nicht erfolgt.
