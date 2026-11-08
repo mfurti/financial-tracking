@@ -96,7 +96,16 @@ async function load() {
     busy.value = false;
   }
 }
-/** Select a run and keep the review page bookmarkable. */
+/** Clear a removed selection before refreshing the remaining history. */
+async function removed(id: string) {
+  if (selectedRun.value === id) {
+    selectedRun.value = '';
+    issues.value = [];
+    await navigateTo('/imports');
+  }
+  await load();
+}
+/** Select a run without changing its persisted bookings. */
 async function select(id: string) {
   selectedRun.value = id;
   await navigateTo({ path: '/imports', query: { run: id } });
@@ -153,25 +162,30 @@ onMounted(load);
     <p v-if="!runs.length" class="empty-copy">
       Noch keine Importe. Starte mit einer CSV-Datei oder deiner Bankverbindung.
     </p>
-    <UButton
-      v-for="run in runs"
-      :key="run.id"
-      type="button"
-      color="neutral"
-      variant="ghost"
-      class="import-row"
-      :class="{ 'selected-row': selectedRun === run.id }"
-      @click="select(run.id)"
-    >
-      <div>
-        <strong>{{ run.source }} · {{ labels[run.status] }}</strong
-        ><small
-          >{{ observedTime(run.startedAt)
-          }}<span v-if="run.errorCode"> · Nicht abgeschlossen; bitte Hinweise prüfen</span></small
-        >
-      </div>
-      <span>{{ run.importedCount }} neu · {{ run.knownCount }} bekannt · {{ run.reviewRequiredCount }} prüfen</span>
-    </UButton>
+    <div v-for="run in runs" :key="run.id" class="import-entry">
+      <UButton
+        type="button"
+        color="neutral"
+        variant="ghost"
+        class="import-row"
+        :class="{ 'selected-row': selectedRun === run.id }"
+        @click="select(run.id)"
+      >
+        <div>
+          <strong>{{ run.source }} · {{ labels[run.status] }}</strong
+          ><small
+            >{{ observedTime(run.startedAt)
+            }}<span v-if="run.errorCode"> · Nicht abgeschlossen; bitte Hinweise prüfen</span></small
+          >
+        </div>
+        <span>{{ run.importedCount }} neu · {{ run.knownCount }} bekannt · {{ run.reviewRequiredCount }} prüfen</span>
+      </UButton>
+      <ImportRollback
+        v-if="run.source === 'CSV' && ['COMPLETED', 'PARTIAL_SUCCESS'].includes(run.status)"
+        :run-id="run.id"
+        @removed="removed(run.id)"
+      />
+    </div>
   </section>
   <section v-if="selectedRun" class="panel">
     <div class="panel-heading">

@@ -457,6 +457,38 @@ export const runSchema = z.object({
   errorCode: z.string().nullable(),
   challenge: bankChallengeSchema.nullable(),
 });
+export const rollbackInputSchema = z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/),
+  confirm: z.literal(true),
+  linked: z.enum(['KEEP', 'REMOVE']).default('KEEP'),
+  confirmLinks: z.boolean().default(false),
+});
+export const rollbackPreviewSchema = z.object({
+  runId: idSchema,
+  token: z.string().regex(/^[a-f0-9]{64}$/),
+  owned: z.number().int().nonnegative(),
+  shared: z.number().int().nonnegative(),
+  uncertain: z.number().int().nonnegative(),
+  linked: z.number().int().nonnegative(),
+  manual: z.number().int().nonnegative(),
+  items: z.array(
+    z.object({
+      id: idSchema,
+      description: z.string(),
+      amountCents: centsSchema,
+      bookingDate: dateSchema,
+      protection: z.enum(['SHARED', 'UNCERTAIN']).nullable(),
+      contractName: z.string().nullable(),
+      transfer: z.boolean(),
+      manual: z.boolean(),
+    }),
+  ),
+  truncated: z.boolean(),
+});
+export const rollbackResultSchema = z.object({
+  deleted: z.number().int().nonnegative(),
+  retained: z.number().int().nonnegative(),
+});
 export const csvMappingSchema = z.object({
   bookingDate: z.string().min(1),
   amount: z.string().min(1),
@@ -821,6 +853,19 @@ export const apiContracts: Record<string, ApiContract> = {
   },
   deleteTransfer: { method: 'delete', path: '/transfers/{id}', response: okSchema, status: 200 },
   imports: { method: 'get', path: '/imports', response: z.array(runSchema), status: 200 },
+  rollbackPreview: {
+    method: 'get',
+    path: '/imports/{id}/rollback-preview',
+    response: rollbackPreviewSchema,
+    status: 200,
+  },
+  rollbackImport: {
+    method: 'post',
+    path: '/imports/{id}/rollback',
+    request: rollbackInputSchema,
+    response: rollbackResultSchema,
+    status: 201,
+  },
   previewCsv: {
     method: 'post',
     path: '/imports/csv/preview',

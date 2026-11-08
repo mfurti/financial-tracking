@@ -292,6 +292,7 @@ export class ImportService {
       throw new AppError('IDENTITY_CONFLICT', 'Eindeutige Bankreferenz kann nicht doppelt vergeben werden.', 409);
     const created = await tx.transaction.create({
       data: {
+        createdByImportRunId: runId,
         accountId: row.accountId,
         amountCents: BigInt(row.amountCents),
         bookingDate: new Date(row.bookingDate),
@@ -320,9 +321,8 @@ export class ImportService {
 
   /** Preserve each account's source-run observation without replacing its original identity. */
   private async observe(tx: Prisma.TransactionClient, runId: string, row: NormalizedRow, transactionId: string) {
-    if (!row.accountId) return;
     const key = {
-      scope: `source:${runId}:${row.accountId}`,
+      scope: `source:${runId}:${row.accountId ?? 'unassigned'}`,
       identityType: row.identityType,
       identityValue: row.identityValue,
     };

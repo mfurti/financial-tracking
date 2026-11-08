@@ -99,6 +99,8 @@ model CategoryRule {
 
 model Transaction {
   id String @id @default(uuid()) @db.Uuid
+  createdByImportRunId String? @db.Uuid
+  createdByImportRun ImportRun? @relation("CreatedTransactions", fields: [createdByImportRunId], references: [id], onDelete: SetNull)
   accountId String? @db.Uuid
   account Account? @relation(fields: [accountId], references: [id])
   amountCents BigInt
@@ -127,6 +129,7 @@ model Transaction {
   @@index([accountId, bookingDate(sort: Desc), id(sort: Desc)])
   @@index([bookingDate, amountCents])
   @@index([categoryId])
+  @@index([createdByImportRunId])
 }
 
 model TransactionIdentity {
@@ -165,6 +168,7 @@ model ImportRun {
   staged StagedRow[]
   balances BalanceSnapshot[]
   identities TransactionIdentity[]
+  createdTransactions Transaction[] @relation("CreatedTransactions")
   @@index([startedAt])
 }
 

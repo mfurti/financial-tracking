@@ -5,7 +5,7 @@
 Approved [contract usability plan](vertragsanalyse-usability-plan.md), existing checkout, issue #3, branch `codex/3-contracts-import-usability`. PR #10 is merged and production rollout of `3b990ec` succeeded: fresh encrypted restore, 13 original application tables preserved, four healthy services, HTTPS/proxy/read-only analytics checks. Delivery evidence: issue #3 comment 6722694054. New merge/rollout approval remains separate.
 
 - [x] UX0: save approved plan and synchronize delivery/checklist/task record.
-- [ ] UX1: previewed, atomic CSV rollback and reupload with source/link protection.
+- [x] UX1: previewed, atomic CSV rollback and reupload with source/link protection.
 - [ ] UX2: permanent management links, mobile More page, clearer headings/colors/icons and concise copy.
 - [ ] UX3: monthly fixed-cost card and category/kind contract analytics.
 - [ ] UX4: editable review cards and persistent accept/dismiss/restore decisions.
