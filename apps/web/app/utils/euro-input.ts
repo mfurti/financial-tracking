@@ -9,3 +9,9 @@ export function editableEuro(cents: string) {
   const value = BigInt(cents);
   return `${value / 100n},${String(value % 100n).padStart(2, '0')}`;
 }
+/** Round a contract-only planning equivalent to cents; this never contributes to observed expense averages. */
+export function plannedEquivalent(amountCents: string, intervalMonths: number, months: 1 | 12) {
+  if (![1, 3, 6, 12].includes(intervalMonths)) throw new Error('Ungültiger Vertragsrhythmus.');
+  const divisor = BigInt(intervalMonths);
+  return String((BigInt(amountCents) * BigInt(months) + divisor / 2n) / divisor);
+}

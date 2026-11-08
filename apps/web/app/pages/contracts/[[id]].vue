@@ -48,6 +48,15 @@ const intervals = [
 ];
 let generation = 0;
 let refreshTimer: ReturnType<typeof setInterval> | undefined;
+const nextRule = computed(
+  /** Planning equivalents use the rule applicable to the next actual due date, never a bank average. */ () =>
+    detail.value?.revisions
+      .filter(
+        /** Later planned changes must not rewrite today's equivalent. */ (rule) =>
+          rule.effectiveDate <= (detail.value?.nextDueDate ?? '9999-12-31'),
+      )
+      .at(-1),
+);
 const selected = computed(
   /** Show the chosen actual booking beside the expected forecast. */ () =>
     candidates.value.find(/** Match an offered identity only. */ (row) => row.id === selectedTransaction.value),
@@ -246,7 +255,7 @@ onBeforeUnmount(
     </div>
     <UButton @click="openEditor()">Vertrag anlegen</UButton>
   </div>
-  <UAlert v-if="error" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <p v-if="loading" role="status">Verträge werden geladen …</p>
   <UButton v-if="route.params.id" to="/contracts" variant="link" class="mb-4">Alle Verträge</UButton>
   <template v-if="detail">
@@ -258,6 +267,11 @@ onBeforeUnmount(
         </div>
         <UButton color="neutral" variant="outline" @click="openEditor(undefined, true)">Vertrag bearbeiten</UButton>
       </div>
+      <p v-if="nextRule" class="muted">
+        Planwert: {{ money(plannedEquivalent(nextRule.amountCents, nextRule.intervalMonths, 1)) }} / Monat (gerundet) ·
+        {{ money(plannedEquivalent(nextRule.amountCents, nextRule.intervalMonths, 12)) }} / Jahr. Keine tatsächlichen
+        Ausgaben.
+      </p>
       <p class="balance-value">
         {{ detail.nextAmountCents ? money(detail.nextAmountCents) : 'Keine weitere Fälligkeit' }}
       </p>

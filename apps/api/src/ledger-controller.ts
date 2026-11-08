@@ -4,6 +4,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import * as c from '@financial-tracking/contracts';
 import { LedgerService } from './ledger.js';
+import { AnalyticsService } from './analytics.js';
 
 /** Connection configuration transport adapter. */
 class ConnectionInput extends createZodDto(c.connectionInputSchema) {}
@@ -20,7 +21,14 @@ class Monthly extends createZodDto(c.monthlySchema) {}
 @Controller()
 export class LedgerController {
   /** Inject ledger management explicitly. */
-  constructor(@Inject(LedgerService) private readonly ledger: LedgerService) {}
+  constructor(
+    @Inject(LedgerService) private readonly ledger: LedgerService,
+    @Inject(AnalyticsService) private readonly analytics: AnalyticsService,
+  ) {}
+  /** Read exact inclusive multi-month actuals and disclosed average denominators. */
+  @Get('analytics/overview') overview(@Query() query: unknown) {
+    return this.analytics.overview(c.analyticsOverviewQuerySchema.parse(query));
+  }
   /** List bank connections. */
   @Get('bank-connections') connections() {
     return this.ledger.connections();

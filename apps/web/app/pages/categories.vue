@@ -131,6 +131,14 @@ onBeforeUnmount(
 </script>
 
 <template>
+  <UNavigationMenu
+    :items="[
+      { label: 'Analysen', to: '/analytics', exact: true },
+      { label: 'Kategorien & Regeln', to: '/categories' },
+    ]"
+    class="mb-5"
+    aria-label="Analysebereiche"
+  />
   <div class="page-heading">
     <div>
       <p class="eyebrow">DEINE AUSGABEN VERSTEHEN</p>
@@ -176,7 +184,8 @@ onBeforeUnmount(
       <h2>So entstehen deine Kategorien</h2>
       <p>
         Öffne unter „Umsätze“ eine Buchung und wähle ihre Kategorie. Deine Auswertung wird daraus berechnet. Ein
-        CSV-Import übernimmt deine Buchungen; fehlende Kategorien werden nicht geraten.
+        CSV-Import übernimmt deine Buchungen. Sichere Regeln können neue Buchungen automatisch zuordnen; manuelle
+        Entscheidungen bleiben geschützt.
       </p>
       <NuxtLink :to="unclassifiedLink" class="text-link">Umsätze ohne Kategorie öffnen</NuxtLink>
     </div>

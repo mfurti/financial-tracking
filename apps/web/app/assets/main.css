@@ -1284,3 +1284,49 @@ html[data-theme='high-contrast'] .month-balance {
 .contract-list-row small {
   color: var(--muted);
 }
+.analytics-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 1rem;
+}
+.analytics-metrics .panel {
+  min-width: 0;
+}
+.analytics-metrics .insight-amount {
+  display: block;
+  font-size: clamp(1.1rem, 2vw, 1.7rem);
+  padding: 0.6rem 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.analytics-metrics small {
+  display: block;
+  color: var(--muted);
+}
+.analytics-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.analytics-table th,
+.analytics-table td {
+  padding: 0.8rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.chart-center {
+  text-align: center;
+  display: grid;
+  gap: 0.4rem;
+}
+.chart-center small {
+  color: var(--muted);
+}
+.chart-center strong {
+  font-size: 1.1rem;
+}

@@ -153,7 +153,7 @@ onMounted(
       Sichere Regeln ordnen neue Buchungen automatisch zu. Manuelle Kategorien und bewusst leere Zuordnungen bleiben
       geschützt. Kleinere Prioritätszahlen greifen zuerst; gleichrangige widersprüchliche Treffer bleiben offen.
     </p>
-    <UAlert v-if="error" color="error" :description="error" class="my-4" />
+    <UAlert v-if="error" role="alert" color="error" :description="error" class="my-4" />
     <p v-if="notice" role="status" class="my-4">{{ notice }}</p>
     <p v-if="!rules.length" class="empty-copy">
       Noch keine Regeln. Beginne mit einer eindeutigen Gegenpartei, zum Beispiel deinem Supermarkt.
@@ -188,7 +188,7 @@ onMounted(
     description="Nur eindeutige, bewusst gewählte Texte verwenden. Bestehende Buchungen ändern sich erst nach ausdrücklicher Bestandsaktion."
   >
     <template #body>
-      <UAlert v-if="error" color="error" :description="error" class="mb-4" />
+      <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
       <UForm ref="validation" :state="form" :schema="categoryRuleInputSchema" class="grid gap-4" @submit="save">
         <UFormField name="name" label="Regelname"><UInput v-model="form.name" /></UFormField>
         <UFormField name="categoryId" label="Zielkategorie"

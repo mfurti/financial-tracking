@@ -97,7 +97,7 @@ async function save() {
 </script>
 <template>
   <UForm ref="validation" :state="form" class="grid gap-4" @submit="save">
-    <UAlert v-if="error" color="error" :description="error" />
+    <UAlert v-if="error" role="alert" color="error" :description="error" />
     <UFormField name="name" label="Vertragsname" required
       ><UInput v-model="form.name" placeholder="Zum Beispiel Streaming oder Miete"
     /></UFormField>

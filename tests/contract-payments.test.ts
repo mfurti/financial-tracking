@@ -14,7 +14,7 @@ import { LedgerService } from '../apps/api/src/ledger.js';
 import { ImportService } from '../apps/api/src/imports.js';
 import { testDatabase } from './database.js';
 import { contractInputSchema } from '../packages/contracts/src/index.js';
-import { editableEuro, euroCents } from '../apps/web/app/utils/euro-input.js';
+import { editableEuro, euroCents, plannedEquivalent } from '../apps/web/app/utils/euro-input.js';
 
 /** Build a pure calendar fixture without any database or current-day assumptions. */
 function schedule(start: string, intervalMonths = 1): ScheduledContract {
@@ -74,6 +74,9 @@ describe('anchored calendar contracts', /** Calendar boundaries never drift afte
     expect(euroCents('90071992547409,93')).toBe('9007199254740993');
     expect(editableEuro('9007199254740993')).toBe('90071992547409,93');
     expect(() => euroCents('1e3')).toThrow();
+    expect(plannedEquivalent('1', 3, 1)).toBe('0');
+    expect(plannedEquivalent('1', 3, 12)).toBe('4');
+    expect(plannedEquivalent('3', 6, 1)).toBe('1');
   });
 });
 

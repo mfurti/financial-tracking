@@ -43,6 +43,7 @@ const filter = reactive({
   status: String(route.query.status ?? ''),
   categoryId: String(route.query.categoryId ?? ''),
   direction: String(route.query.direction ?? ''),
+  classification: String(route.query.classification ?? ''),
   uncategorized: route.query.uncategorized === 'true',
   excludeTransfers: route.query.excludeTransfers === 'true',
 });
@@ -319,6 +320,17 @@ onBeforeUnmount(
               { label: `Ausgaben`, value: 'EXPENSE' },
             ]"
         /></label>
+        <UFormField label="Fix/Variabel"
+          ><ChoiceSelect
+            v-model="filter.classification"
+            :searchable="false"
+            :items="[
+              { label: 'Alle Kennzeichnungen', value: '' },
+              { label: 'Fix', value: 'FIXED' },
+              { label: 'Variabel', value: 'VARIABLE' },
+              { label: 'Nicht eingeordnet', value: 'UNCLASSIFIED' },
+            ]"
+        /></UFormField>
         <div class="toolbar">
           <UCheckbox v-model="filter.uncategorized" label="Ohne Kategorie" /><UCheckbox
             v-model="filter.excludeTransfers"
@@ -364,8 +376,8 @@ onBeforeUnmount(
               ><span v-if="row.status === 'PENDING'"> · Vorgemerkt</span
               ><span v-if="row.categoryOrigin === 'RULE'"> · Regel: {{ row.categoryRuleName }}</span
               ><span v-if="row.categoryRuleConflict"> · Kategorie klären: gleichrangige Regeln widersprechen sich</span
-              ><span v-if="row.classification">
-                · {{ row.classification === 'FIXED' ? 'Fix' : 'Variabel' }}</span
+              ><span v-if="row.effectiveClassification !== 'UNCLASSIFIED'">
+                · {{ row.effectiveClassification === 'FIXED' ? 'Fix' : 'Variabel' }}</span
               ></small
             ></NuxtLink
           ><UButton v-if="row.contract" :to="`/contracts/${row.contract.id}`" size="xs" variant="soft" class="mt-1">{{

@@ -23,6 +23,7 @@ import { CategoryRulesController } from './category-rules-controller.js';
 import { CategoryRulesService } from './category-rules.js';
 import { ContractsController } from './contracts-controller.js';
 import { ContractsService } from './contracts.js';
+import { AnalyticsService } from './analytics.js';
 
 /** Create an application with injectable persistence for integration tests. */
 export async function createApp(
@@ -47,6 +48,7 @@ export async function createApp(
       AssignmentService,
       CategoryRulesService,
       ContractsService,
+      AnalyticsService,
       { provide: 'BANK_FACTORY', useValue: startBank },
       { provide: APP_GUARD, useClass: AuthGuard },
     ],

@@ -19,6 +19,7 @@ import {
 import type { Db } from './db.js';
 import type { Prisma, Transaction } from './generated/prisma/client.js';
 import { AppError } from './errors.js';
+import { classificationWhere } from './analytics.js';
 
 /** Serialize dates and BIGINT without exposing persistence metadata. */
 export function publicTransaction(
@@ -150,6 +151,7 @@ export class LedgerService {
   /** Search transactions with a stable date/id cursor and bounded pages. */
   async transactions(query: z.infer<typeof transactionQuerySchema>) {
     const where: Prisma.TransactionWhereInput = {
+      AND: classificationWhere(query.classification),
       accountId: query.unassigned === 'true' ? null : query.accountId,
       categoryId: query.uncategorized === 'true' ? null : query.categoryId,
       status: query.status,

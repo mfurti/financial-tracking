@@ -189,9 +189,9 @@ onBeforeUnmount(
       </div>
     </section>
     <div v-if="reviews || uncategorizedCount" class="review-summary" aria-label="Nächste Schritte">
-      <NuxtLink v-if="reviews" to="/imports">{{ reviews }} Buchungen kurz prüfen</NuxtLink
+      <NuxtLink v-if="reviews" to="/imports">{{ reviews }} Buchungen klären</NuxtLink
       ><NuxtLink v-if="uncategorizedCount" :to="uncategorizedLink"
-        >{{ uncategorizedCount }} Buchungen noch kategorisieren</NuxtLink
+        >{{ uncategorizedCount }} Kategorien ergänzen (freiwillig)</NuxtLink
       >
     </div>
     <div class="dashboard-grid">
@@ -240,6 +240,8 @@ onBeforeUnmount(
         >
       </section>
     </div>
+    <UpcomingContracts />
+    <UButton to="/analytics" variant="soft" class="mt-5">Mehrmonatsanalyse öffnen</UButton>
     <section class="panel mt-6">
       <div class="panel-heading">
         <div>

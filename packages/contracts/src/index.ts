@@ -261,8 +261,87 @@ export const contractSuggestionSchema = z.object({
   transactionIds: z.array(idSchema).min(2),
   count: z.number().int().min(2),
 });
+/** Aggregated totals can exceed a single PostgreSQL BIGINT while retaining integer-cent precision. */
+export const aggregateCentsSchema = z.string().regex(/^-?(0|[1-9]\d*)$/);
+export const classificationSchema = z.enum(['FIXED', 'VARIABLE', 'UNCLASSIFIED']);
+export const analyticsOverviewQuerySchema = z
+  .object({
+    from: dateSchema.optional(),
+    to: dateSchema.optional(),
+    accountId: idSchema.optional(),
+    categoryId: idSchema.optional(),
+    unassigned: z.enum(['true', 'false']).optional(),
+    uncategorized: z.enum(['true', 'false']).optional(),
+  })
+  .refine(
+    /** Mutually exclusive identity and null filters must not silently shadow one another. */ (value) =>
+      !(value.accountId && value.unassigned === 'true') && !(value.categoryId && value.uncategorized === 'true'),
+    'Filter widersprechen sich.',
+  )
+  .refine(
+    /** Explicit ranges obey the same inclusive 36-calendar-month limit in browser and runtime. */ (value) =>
+      !value.from ||
+      !value.to ||
+      (value.from <= value.to &&
+        (Number(value.to.slice(0, 4)) - Number(value.from.slice(0, 4))) * 12 +
+          Number(value.to.slice(5, 7)) -
+          Number(value.from.slice(5, 7)) <
+          36),
+    { path: ['to'], message: 'Gültigen Zeitraum mit höchstens 36 Kalendermonaten wählen.' },
+  );
+export const analyticsExclusionSchema = z.enum(['NO_DATA', 'CURRENT', 'FUTURE', 'PARTIAL']);
+export const analyticsMonthSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  from: dateSchema,
+  to: dateSchema,
+  incomeCents: aggregateCentsSchema,
+  expenseCents: aggregateCentsSchema,
+  netCents: aggregateCentsSchema,
+  count: z.number().int(),
+  averageEligible: z.boolean(),
+  excludedReason: analyticsExclusionSchema.nullable(),
+});
+export const analyticsOverviewSchema = z.object({
+  from: dateSchema,
+  to: dateSchema,
+  months: z.array(analyticsMonthSchema),
+  incomeCents: aggregateCentsSchema,
+  expenseCents: aggregateCentsSchema,
+  netCents: aggregateCentsSchema,
+  average: z.object({
+    expenseCents: aggregateCentsSchema.nullable(),
+    monthCount: z.number().int(),
+    excludedMonths: z.array(z.object({ month: z.string(), reason: analyticsExclusionSchema })),
+  }),
+  trend: z
+    .object({
+      month: z.string(),
+      previousMonth: z.string(),
+      changeCents: aggregateCentsSchema,
+      percent: z.number().nullable(),
+    })
+    .nullable(),
+  categories: z.array(
+    z.object({
+      categoryId: idSchema.nullable(),
+      name: z.string(),
+      expenseCents: aggregateCentsSchema,
+      count: z.number().int(),
+      share: z.number(),
+    }),
+  ),
+  classification: z.array(
+    z.object({
+      classification: classificationSchema,
+      expenseCents: aggregateCentsSchema,
+      count: z.number().int(),
+      share: z.number(),
+    }),
+  ),
+});
 export const transactionQuerySchema = z
   .object({
+    classification: classificationSchema.optional(),
     accountId: idSchema.optional(),
     unassigned: z.enum(['true', 'false']).optional(),
     from: dateSchema.optional(),
@@ -502,6 +581,13 @@ export interface ApiContract {
 const okSchema = z.object({ ok: z.boolean() });
 /** Operation inventory shared with generated OpenAPI and contract tests. */
 export const apiContracts: Record<string, ApiContract> = {
+  analyticsOverview: {
+    method: 'get',
+    path: '/analytics/overview',
+    query: analyticsOverviewQuerySchema,
+    response: analyticsOverviewSchema,
+    status: 200,
+  },
   contracts: { method: 'get', path: '/contracts', response: z.array(contractSchema), status: 200 },
   createContract: {
     method: 'post',

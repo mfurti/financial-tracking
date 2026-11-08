@@ -25,7 +25,8 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
     ),
   ).toBe(true);
   await page.screenshot({ path: `.local/dashboard-${info.project.name}.png`, fullPage: true });
-  await page.getByRole('link', { name: 'Kategorien', exact: true }).click();
+  await page.getByRole('link', { name: 'Analysen', exact: true }).click();
+  await page.getByRole('link', { name: 'Kategorien & Regeln', exact: true }).click();
   await page.getByRole('button', { name: 'Kategorien verwalten', exact: true }).click();
   await page.getByLabel('Name', { exact: true }).fill(`Lebensmittel ${info.project.name}`);
   await page.getByRole('button', { name: 'Kategorie anlegen', exact: true }).click();

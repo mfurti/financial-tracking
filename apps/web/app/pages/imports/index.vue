@@ -16,6 +16,25 @@ const route = useRoute();
 const runs = ref<ImportRun[]>([]);
 const issues = ref<z.infer<typeof issueSchema>[]>([]);
 const selectedRun = ref(String(route.query.run ?? ''));
+const issueSections = computed(
+  /** Separate decisions about real duplicate candidates from non-imported row diagnostics. */ () =>
+    [
+      {
+        title: 'Mögliche Doppelbuchungen',
+        explanation:
+          'Vorhandene Daten behalten zählt die bekannte Buchung einmal. Importdaten übernehmen ersetzt deren Quellwerte und erhält manuelle Anmerkungen. Separat behalten zählt beide Buchungen. Überspringen verwirft nur die neue Zeile.',
+        items: issues.value.filter(/** Only staged ambiguous rows require a decision. */ (issue) => !!issue.incoming),
+      },
+      {
+        title: 'Fehlerhafte Zeilen',
+        explanation:
+          'Diese Zeilen konnten nicht übernommen werden. Korrigiere die Datei und lade sie erneut hoch. Es gibt hier keine pauschale Bestätigungspflicht; bereits übernommene gültige Buchungen bleiben erhalten.',
+        items: issues.value.filter(
+          /** Diagnostics never become fake duplicate decisions. */ (issue) => !issue.incoming,
+        ),
+      },
+    ].filter(/** Hide empty groups without hiding actual issues. */ (group) => group.items.length),
+);
 const matches = reactive<Record<string, string>>({});
 const error = ref('');
 const busy = ref(false);
@@ -160,68 +179,72 @@ onMounted(load);
       <span class="subtle-tag">{{ issues.length }} Einträge angezeigt</span>
     </div>
     <p v-if="!issues.length" class="empty-copy">Keine offenen Hinweise für diesen Import.</p>
-    <article v-for="issue in issues" :key="issue.id" class="review-card">
-      <UBadge
-        :color="issue.incoming ? 'warning' : 'error'"
-        :label="issue.incoming ? 'Mögliche Doppelbuchung' : 'Zeile nicht übernommen'"
-        class="mb-3"
-      />
-      <p class="eyebrow">{{ issue.rowNumber ? `ZEILE ${issue.rowNumber}` : 'HINWEIS ZUM IMPORT' }}</p>
-      <h3>{{ issue.message }}</h3>
-      <div v-if="issue.incoming" class="review-incoming">
-        <strong>{{ issue.incoming.description }}</strong
-        ><span
-          >{{ calendarDate(issue.incoming.bookingDate) }} · {{ money(issue.incoming.amountCents) }} ·
-          {{ issue.incoming.counterpartyName || 'Keine Gegenpartei' }}</span
-        >
-      </div>
-      <template v-if="issue.incoming"
-        ><p>
-          {{ issue.incomingSource === 'FINTS' ? 'Bank' : 'CSV' }} · {{ accountName(issue.incoming.accountId) }} ·
-          {{ issue.incoming.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt' }}
-        </p>
-        <p class="reference-copy">Referenz: {{ issue.incomingReference || 'Nicht geliefert' }}</p>
-        <label
-          >Bekannte Buchung auswählen<ChoiceSelect
-            v-model="matches[issue.id]"
-            aria-label="Bekannte Buchung auswählen"
-            :searchable="true"
-            :items="[
-              { label: `Kandidat wählen`, value: '' },
-              ...(issue.candidates ?? []).map(
-                /** Build a persisted choice. */ (option) => ({
-                  label: `${calendarDate(option.bookingDate)} · ${option.description} · ${money(option.amountCents)}`,
-                  value: option.id,
-                }),
-              ),
-            ]"
-        /></label>
-        <div v-if="candidate(issue)" class="mt-4">
-          <p>
-            {{ candidate(issue)!.description }} · {{ calendarDate(candidate(issue)!.bookingDate) }} ·
-            {{ money(candidate(issue)!.amountCents) }}
-          </p>
-          <p>
-            {{ accountName(candidate(issue)!.accountId) }} ·
-            {{ candidate(issue)!.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt' }} ·
-            {{ categoryName(candidate(issue)!.categoryId)
-            }}<span v-if="candidate(issue)!.isTransfer"> · Umbuchung</span>
-          </p>
-          <p>Quelle: {{ sourceNames(issue.candidateSources?.[candidate(issue)!.id]) }}</p>
-          <p class="reference-copy">
-            Referenzen: {{ issue.candidateReferences?.[candidate(issue)!.id]?.join(', ') || 'Nicht geliefert' }}
-          </p>
+    <section v-for="group in issueSections" :key="group.title" class="mt-5">
+      <h3>{{ group.title }}</h3>
+      <p class="muted mb-4">{{ group.explanation }}</p>
+      <article v-for="issue in group.items" :key="issue.id" class="review-card">
+        <UBadge
+          :color="issue.incoming ? 'warning' : 'error'"
+          :label="issue.incoming ? 'Mögliche Doppelbuchung' : 'Zeile nicht übernommen'"
+          class="mb-3"
+        />
+        <p class="eyebrow">{{ issue.rowNumber ? `ZEILE ${issue.rowNumber}` : 'HINWEIS ZUM IMPORT' }}</p>
+        <h4>{{ issue.message }}</h4>
+        <div v-if="issue.incoming" class="review-incoming">
+          <strong>{{ issue.incoming.description }}</strong
+          ><span
+            >{{ calendarDate(issue.incoming.bookingDate) }} · {{ money(issue.incoming.amountCents) }} ·
+            {{ issue.incoming.counterpartyName || 'Keine Gegenpartei' }}</span
+          >
         </div>
-        <div class="toolbar mt-4">
-          <UButton :disabled="!matches[issue.id]" variant="soft" @click="resolve(issue.id, 'EXISTING')"
-            >Vorhandene Daten behalten</UButton
-          ><UButton :disabled="!matches[issue.id]" variant="soft" @click="resolve(issue.id, 'INCOMING')"
-            >Importdaten übernehmen</UButton
-          ><UButton variant="soft" @click="resolve(issue.id, 'NEW')">Separat behalten</UButton
-          ><UButton color="neutral" variant="ghost" @click="resolve(issue.id, 'SKIP')">Überspringen</UButton>
-        </div></template
-      >
-    </article>
+        <template v-if="issue.incoming"
+          ><p>
+            {{ issue.incomingSource === 'FINTS' ? 'Bank' : 'CSV' }} · {{ accountName(issue.incoming.accountId) }} ·
+            {{ issue.incoming.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt' }}
+          </p>
+          <p class="reference-copy">Referenz: {{ issue.incomingReference || 'Nicht geliefert' }}</p>
+          <label
+            >Bekannte Buchung auswählen<ChoiceSelect
+              v-model="matches[issue.id]"
+              aria-label="Bekannte Buchung auswählen"
+              :searchable="true"
+              :items="[
+                { label: `Kandidat wählen`, value: '' },
+                ...(issue.candidates ?? []).map(
+                  /** Build a persisted choice. */ (option) => ({
+                    label: `${calendarDate(option.bookingDate)} · ${option.description} · ${money(option.amountCents)}`,
+                    value: option.id,
+                  }),
+                ),
+              ]"
+          /></label>
+          <div v-if="candidate(issue)" class="mt-4">
+            <p>
+              {{ candidate(issue)!.description }} · {{ calendarDate(candidate(issue)!.bookingDate) }} ·
+              {{ money(candidate(issue)!.amountCents) }}
+            </p>
+            <p>
+              {{ accountName(candidate(issue)!.accountId) }} ·
+              {{ candidate(issue)!.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt' }} ·
+              {{ categoryName(candidate(issue)!.categoryId)
+              }}<span v-if="candidate(issue)!.isTransfer"> · Umbuchung</span>
+            </p>
+            <p>Quelle: {{ sourceNames(issue.candidateSources?.[candidate(issue)!.id]) }}</p>
+            <p class="reference-copy">
+              Referenzen: {{ issue.candidateReferences?.[candidate(issue)!.id]?.join(', ') || 'Nicht geliefert' }}
+            </p>
+          </div>
+          <div class="toolbar mt-4">
+            <UButton :disabled="!matches[issue.id]" variant="soft" @click="resolve(issue.id, 'EXISTING')"
+              >Vorhandene Daten behalten</UButton
+            ><UButton :disabled="!matches[issue.id]" variant="soft" @click="resolve(issue.id, 'INCOMING')"
+              >Importdaten übernehmen</UButton
+            ><UButton variant="soft" @click="resolve(issue.id, 'NEW')">Separat behalten</UButton
+            ><UButton color="neutral" variant="ghost" @click="resolve(issue.id, 'SKIP')">Überspringen</UButton>
+          </div></template
+        >
+      </article>
+    </section>
     <p v-if="issues.length >= 1000" class="muted">
       Maximal 1.000 Hinweise gleichzeitig. Nach Entscheidungen erneut laden.
     </p>

@@ -4,11 +4,11 @@
 
 Die App sammelt deine Buchungen und zeigt, wie viel im ausgewählten Monat eingenommen und ausgegeben wurde. Die große **Monatsbilanz** ist die Differenz dieser Geldflüsse. Sie ist kein verfügbarer Kontostand und keine Prognose. Darunter siehst du die Ausgabenverteilung und die letzten Buchungen; tatsächliche Bank-Kontostände stehen getrennt daneben.
 
-Am Computer findest du die Seiten links. Auf dem Telefon stehen **Übersicht**, **Umsätze**, **Kategorien** und **Importieren** unten. Unter **Mehr** erreichst du Konten, Importhistorie, Bankverbindungen und Einstellungen. Das Menü schließt nach der Navigation, beim Klicken außerhalb oder mit Escape. Das Zahnrad oben öffnet die Einstellungen direkt.
+Am Computer findest du die Seiten links. Auf dem Telefon stehen **Übersicht**, **Umsätze**, **Analysen** und **Verträge** unten. Unter **Mehr** erreichst du Konten, Importhistorie, Bankverbindungen und Einstellungen. Kategorien und Regeln gehören zu **Analysen**. CSV hochladen bleibt auf Übersicht und Umsätzen direkt erreichbar. Das Menü schließt nach der Navigation, beim Klicken außerhalb oder mit Escape. Das Zahnrad oben öffnet die Einstellungen direkt.
 
 ## Erste Buchungen
 
-Unter **Importieren** wählst du deine CSV-Datei aus. Die App erkennt Format und bekannte Spalten, übernimmt vollständig gültige Buchungen automatisch und öffnet die echte Monatsauswertung. Eine Bankverbindung oder Kontoanlage ist nicht nötig. Bei Dateien mit mehreren Monaten wird der letzte enthaltene Monat geöffnet; die übrigen Buchungen bleiben in ihren tatsächlichen Monaten sichtbar. Die Erfolgsmeldung zeigt neue und bereits bekannte Buchungen.
+Mit **CSV hochladen** oder **CSV importieren** wählst du deine Datei aus. Die App erkennt Format und bekannte Spalten, übernimmt vollständig gültige Buchungen automatisch und öffnet die echte Monatsauswertung. Eine Bankverbindung oder Kontoanlage ist nicht nötig. Bei Dateien mit mehreren Monaten wird der letzte enthaltene Monat geöffnet; die übrigen Buchungen bleiben in ihren tatsächlichen Monaten sichtbar. Die Erfolgsmeldung zeigt neue und bereits bekannte Buchungen.
 
 Nur bei unklaren Spalten, fehlerhaften Zeilen oder möglichen Dubletten ist eine Entscheidung nötig. Unter **Importoptionen** kannst du bei Bedarf ein bestehendes Zielkonto oder ein anderes Dateiformat wählen. Ohne Konto zählen Buchungen trotzdem sofort; eine spätere Zuordnung bleibt möglich. Es werden keine Platzhalterkonten angelegt.
 
@@ -49,7 +49,7 @@ Die Importhistorie zeigt zusätzliche Prüfungen aus wiederholten oder überlapp
 
 **Kategorien** zeigt die monatlichen Einnahmen, Ausgaben und noch nicht zugeordneten Buchungen. Im Diagramm erscheinen ausschließlich Ausgaben; klicke eine Gruppe an, um genau die zugehörigen gebuchten Ausgaben dieses Monats zu sehen. Die Gruppen „Lebensmittel“ oder „Wohnen“ helfen beim Vergleichen, verändern aber keine Beträge.
 
-**Nicht kategorisiert** heißt: Die Buchung ist bereits übernommen und mitgerechnet. Über **Buchungen zuordnen** öffnest du die betroffenen Umsätze und wählst ihre Kategorie. Fehlende Kategorien werden beim CSV-Import nicht geraten. Unter **Kategorien verwalten** kannst du eigene Gruppen anlegen, umbenennen oder deaktivieren. Löschen entfernt nur die Kategorie und ihre Zuordnungen, keine Buchungen.
+**Nicht kategorisiert** heißt: Die Buchung ist bereits übernommen und mitgerechnet. Über **Buchungen zuordnen** öffnest du die betroffenen Umsätze und wählst ihre Kategorie. Sichere aktive Regeln können neue Buchungen automatisch kategorisieren; widersprüchliche Treffer werden nicht geraten. Unter **Kategorien verwalten** kannst du eigene Gruppen anlegen, umbenennen oder deaktivieren. Löschen entfernt nur die Kategorie und ihre Zuordnungen, keine Buchungen.
 
 ## Darstellung und Fehler
 
@@ -92,3 +92,13 @@ Prognosen erzeugen keine Buchungen und erhöhen deine tatsächlichen Ausgaben ni
 Bei **Buchung manuell zuordnen** suchst du eine echte Ausgabe. Prüfe deren Datum, Betrag und Gegenpartei neben der Vertragsfälligkeit. Abweichungen erfordern eine sichtbare gesonderte Bestätigung. Weder die Buchung noch die Prognose ändern dadurch ihren Betrag. Pro Fälligkeit ist eine Zahlung möglich, pro Buchung ein Vertrag; Teil- und Sammelzahlungen sind nicht vorgesehen.
 
 **Zuordnung entfernen** erhält die Bankbuchung und sperrt sofortiges automatisches Neuverknüpfen. Eine spätere ausdrückliche manuelle Zuordnung bleibt möglich. Auch das Löschen des Vertrags erhält alle Bankbuchungen und manuellen Kategorien. Falls zwei zusammenzuführende Buchungen bereits unterschiedliche Vertragslinks besitzen, prüfe und löse zuerst die betreffenden Zahlungszuordnungen. Bestätigte Vertragszahlungen gelten automatisch als fix, sofern du sie nicht manuell anders eingeordnet hast.
+
+## Analysen über mehrere Monate
+
+**Analysen** startet mit den letzten zwölf abgeschlossenen Monaten. Wähle drei, sechs oder zwölf Monate oder einen eigenen inklusiven Zeitraum bis höchstens 36 Kalendermonate. Konto- und Kategoriefilter gelten gleichermaßen für Kennzahlen, Diagramme, Tabellen und die verknüpften Umsätze. Standardmäßig zählen gebuchte Umsätze ohne Konto mit; Vormerkungen und eigene Umbuchungen bleiben ausgeschlossen. Positive Erstattungen bleiben Einnahmen.
+
+Der **Durchschnitt** verwendet ausschließlich vollständig ausgewählte, vergangene Kalendermonate mit mindestens einer relevanten Buchung. Ein Monat mit ausschließlich Einnahmen zählt mit null Ausgaben; ein Monat ohne Buchung zählt nicht. Laufende, zukünftige und nur teilweise gewählte Monate zählen zu den tatsächlichen Summen, aber nicht zum Durchschnitt. Die Tabelle nennt für jeden Monat den Ausschlussgrund und zeigt die Anzahl berücksichtigter Monate. Ohne geeignete Monate steht **Noch nicht berechenbar**. Die Anwendung kann aus vorhandenen Buchungen keine vollständige Bankhistorie ableiten.
+
+Der **Trend** vergleicht den letzten geeigneten Monat mit seinem direkten Kalendervormonat, wenn beide geeignet sind. Eine Lücke wird nicht übersprungen. Bei einer Nullbasis fehlt ausdrücklich der Prozentwert; der Cent-Unterschied bleibt verfügbar. Durchschnittswerte werden erst bei der Ausgabe auf Cent gerundet.
+
+Die Kategorienansicht zeigt Ausgabenanteile. **Fix oder variabel?** unterscheidet manuell feste/variable Ausgaben, bestätigte Vertragszahlungen als automatische Fixkosten und den noch nicht eingeordneten Rest. Diagrammauswahl und die beschrifteten Links öffnen die jeweils zugrunde liegenden Buchungen mit denselben Filtern; keine Buchung wird gesplittet. Die Tabelle enthält alle exakten Centwerte unabhängig vom Diagramm. Vertragsplanwerte pro Monat/Jahr sind getrennt beschriftete Hochrechnungen und gehören nicht zu tatsächlichen Ausgaben oder deren Durchschnitt.

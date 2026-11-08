@@ -8,11 +8,10 @@ const moreOpen = ref(false);
 const primaryLinks = [
   { to: '/', label: 'Übersicht', icon: 'home' },
   { to: '/transactions', label: 'Umsätze', icon: 'transactions' },
-  { to: '/categories', label: 'Kategorien', icon: 'categories' },
-  { to: '/imports/csv', label: 'Importieren', icon: 'upload' },
+  { to: '/analytics', label: 'Analysen', icon: 'categories' },
+  { to: '/contracts', label: 'Verträge', icon: 'contracts' },
 ] as const;
 const secondaryLinks = [
-  { to: '/contracts', label: 'Verträge', icon: 'contracts' },
   { to: '/accounts', label: 'Konten', icon: 'accounts' },
   { to: '/imports', label: 'Importhistorie', icon: 'history' },
   { to: '/connections', label: 'Bankverbindungen', icon: 'bank' },
@@ -28,6 +27,7 @@ const currentPage = computed(
 /** Match nested ledger/detail routes without marking both import entries active. */
 function active(path: string) {
   if (path === '/') return route.path === '/';
+  if (path === '/analytics') return route.path.startsWith('/analytics') || route.path.startsWith('/categories');
   if (path === '/imports') return route.path === '/imports';
   return route.path.startsWith(path);
 }
@@ -69,19 +69,20 @@ watch(
           ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
         >
       </nav>
-      <p class="nav-heading">VERWALTEN</p>
-      <nav aria-label="Verwaltung">
-        <UButton
-          v-for="link in secondaryLinks"
-          :key="link.to"
-          variant="link"
-          color="neutral"
-          :to="link.to"
-          :class="{ active: active(link.to) }"
-          :aria-current="active(link.to) ? 'page' : undefined"
-          ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
-        >
-      </nav>
+      <DisclosurePanel title="Mehr" class="desktop-more">
+        <nav aria-label="Verwaltung">
+          <UButton
+            v-for="link in secondaryLinks"
+            :key="link.to"
+            variant="link"
+            color="neutral"
+            :to="link.to"
+            :class="{ active: active(link.to) }"
+            :aria-current="active(link.to) ? 'page' : undefined"
+            ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
+          >
+        </nav>
+      </DisclosurePanel>
       <div class="sidebar-bottom">
         <span class="private-dot" />Dein privater Finanzbereich<small>Heimnetz & VPN · EUR</small>
       </div>

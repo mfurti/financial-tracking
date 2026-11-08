@@ -51,6 +51,6 @@ async function save() {
         >
       </div>
     </UFormField>
-    <UAlert v-if="error" color="error" :description="error" class="mt-3" />
+    <UAlert v-if="error" role="alert" color="error" :description="error" class="mt-3" />
   </div>
 </template>
