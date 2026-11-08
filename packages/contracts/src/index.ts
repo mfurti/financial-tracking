@@ -147,6 +147,14 @@ export const categoryRuleInputSchema = z.object({
   isActive: z.boolean().default(true),
 });
 export const categoryRuleSchema = categoryRuleInputSchema.extend({ id: idSchema });
+export const categoryRulePatchSchema = categoryRuleInputSchema
+  .omit({ direction: true, priority: true, isActive: true })
+  .partial()
+  .extend({
+    direction: categoryRuleInputSchema.shape.direction.removeDefault().optional(),
+    priority: categoryRuleInputSchema.shape.priority.removeDefault().optional(),
+    isActive: categoryRuleInputSchema.shape.isActive.removeDefault().optional(),
+  });
 export const categoryTemplateInputSchema = z.object({
   names: z
     .array(
@@ -655,7 +663,7 @@ export const apiContracts: Record<string, ApiContract> = {
   patchCategoryRule: {
     method: 'patch',
     path: '/category-rules/{id}',
-    request: categoryRuleInputSchema.partial(),
+    request: categoryRulePatchSchema,
     response: categoryRuleSchema,
     status: 200,
   },

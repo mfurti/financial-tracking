@@ -210,6 +210,31 @@ describe('safe category rules and manual classifications', /** Real PostgreSQL p
       const response = await service.app.inject({ method: 'GET', url: '/api/v1/category-rules', headers });
       expect(response.statusCode).toBe(200);
       expect(Array.isArray(response.json())).toBe(true);
+      const category = await ledger.createCategory({ name: randomUUID(), kind: 'EXPENSE' });
+      const storedRule = await rules.save(
+        categoryRuleInputSchema.parse({
+          name: 'partial original',
+          categoryId: category.id,
+          matchType: 'DESCRIPTION',
+          text: 'partial',
+          direction: 'EXPENSE',
+          priority: 7,
+          isActive: false,
+        }),
+      );
+      const patched = await service.app.inject({
+        method: 'PATCH',
+        url: `/api/v1/category-rules/${storedRule.id}`,
+        headers,
+        payload: { name: 'partial renamed' },
+      });
+      expect(patched.statusCode).toBe(200);
+      expect(patched.json()).toMatchObject({
+        name: 'partial renamed',
+        direction: 'EXPENSE',
+        priority: 7,
+        isActive: false,
+      });
       expect(service.openapi.paths['/api/v1/category-rules']?.post?.requestBody).toBeDefined();
       expect(
         (

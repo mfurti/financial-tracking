@@ -39,14 +39,25 @@ test('multi-month analysis explains observed averages and drills into exact acco
   await expect(page.getByRole('row').filter({ hasText: 'März 2025' })).toContainText('Berücksichtigt');
   await expect(page.getByRole('img', { name: 'Einnahmen und Ausgaben im Monatsverlauf', exact: true })).toBeVisible();
   await page.screenshot({ path: `.local/analytics-${info.project.name}.png`, fullPage: true });
-  for (const width of [360, 768, 1024, 1440]) {
-    await page.setViewportSize({ width, height: 1000 });
-    expect(
-      await page.evaluate(
-        /** Wide tables scroll inside their own region instead of overflowing the page. */ () =>
-          document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    ).toBe(true);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  for (const mode of ['light', 'dark'] as const) {
+    const toggle = page.getByRole('button', { name: 'Dunkelmodus', exact: true });
+    if ((await toggle.getAttribute('aria-pressed')) !== String(mode === 'dark')) await toggle.click();
+    for (const width of [360, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 1000 });
+      expect(
+        await page.evaluate(
+          /** Wide tables scroll locally rather than overflowing the page. */ () =>
+            document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true);
+      if (info.project.name === 'desktop')
+        await page.screenshot({
+          path: `.local/analytics-${mode}-${width}.png`,
+          fullPage: true,
+          animations: 'disabled',
+        });
+    }
   }
   await page
     .locator('section')

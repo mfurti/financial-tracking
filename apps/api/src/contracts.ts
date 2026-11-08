@@ -315,7 +315,7 @@ export class ContractsService {
       where: {
         status: 'BOOKED',
         isTransfer: false,
-        amountCents: { lt: 0n },
+        amountCents: { lt: 0n, gte: -9223372036854775807n },
         counterpartyName: { not: null },
         contractPayment: null,
         contractAutoBlocked: false,

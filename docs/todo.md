@@ -186,22 +186,23 @@ Dependencies: explicit Stage 1 acceptance and separate implementation approval.
 - [ ] Complete applicable checks, documentation, scoped commits, and approved delivery.
 - [ ] Obtain separate Stage 2 acceptance and permission before Stage 3. **Stop here until then.**
 
-## Stage 3 — Recurring-expense planning
+## Recurring-expense source delivery — approved F4/F5 supersedes the old Stage 2 dependency
 
-Historical sequence: this originally depended on Stage 2 acceptance. The new explicit contracts request is tracked in N6 and does not require unrelated budgets first. Retain the following financial recurrence requirements in its detailed plan; this source audit does not implement them.
+The explicit Finanzfluss implementation approval made contracts independent of budget implementation. The original stage checklist is preserved in initial-implementation-checklist.md; the new source delivery maps to F4/F5 rather than claiming budget completion or production acceptance.
 
-- [ ] Define shared contracts/persistence and reviewed migration for amount, category, start, optional end, and monthly/quarterly/yearly intervals.
-- [ ] Decide end-date inclusivity and handling of partial/combined payments; default to explicit 1:1 matching, without implementing these features during Stage 1.
-- [ ] Implement create/edit/end and next-due-date calculation, preserving the intended monthly day across short months and leap years.
-- [ ] Show upcoming payments, the amounts actually due in the selected month, and a separately labeled monthly average; round only displayed fractional-cent equivalents.
-- [ ] Keep planning entries out of real transactions and actual reports; do not initiate payments or create real bookings automatically.
-- [ ] Allow explicit matching to a real transaction and prevent duplicate matching of one planned occurrence.
-- [ ] Implement responsive light/dark UI, validation, and tests for month ends, leap years, ended series, intervals, and duplicate matching.
-- [ ] Complete applicable checks, documentation, scoped commits, approved delivery, and final user acceptance.
+- [x] Shared contracts/persistence and reviewed additive migration for amount, category, start, inclusive end and monthly/quarterly/half-yearly/yearly intervals.
+- [x] Decide inclusive ending and explicit 1:1 actual payment ownership; no partial/combined payment support.
+- [x] Create/edit/end, time-effective future changes and next-due calculation, retaining month-end/leap anchors.
+- [x] Show upcoming dates/history and separately labeled rounded monthly/yearly contract planning equivalents.
+- [x] Keep forecasts out of real transactions and actual reports; no payment initiation.
+- [x] Match one real booking per occurrence, preserve links through consolidation and reject competing links atomically.
+- [x] Nuxt UI forms/history, light/dark styling and date/identity/mismatch/preservation tests; feature-wide proof remains F6.
+- [ ] Separate future planning enhancement: aggregate all contracts' forecast amounts due in a selected month. The approved F0–F6 plan delivers next-due ordering and per-contract history, not this aggregate budget/planning view.
+- [ ] Concrete PR merge, production delivery and user acceptance remain separately gated; source completion is not rollout evidence.
 
 ## Completion rules
 
-- Complete only work backed by actual code/checks/recorded acceptance; this documentation audit does not complete the new features.
+- Complete only work backed by actual code/checks/recorded acceptance; source completion and external acceptance remain distinct.
 - Preserve existing user/financial data and explicitly document any compatibility limit or external bank blocker.
 - Keep the server deployment-only and all source development local; verify no repository or build dependency remains on rocky after any approved transition.
 - Report current activity, remaining work, and required user actions at handoffs; do not claim background work that is not running.

@@ -17,7 +17,7 @@ export class CategoryRulesController {
   }
   /** Edit or disable without modifying historical annotations. */
   @Patch('category-rules/:id') patch(@Param('id') id: string, @Body() body: unknown) {
-    return this.service.save(c.categoryRuleInputSchema.partial().parse(body), c.idSchema.parse(id));
+    return this.service.save(c.categoryRulePatchSchema.parse(body), c.idSchema.parse(id));
   }
   /** Remove only the rule. */
   @Delete('category-rules/:id') remove(@Param('id') id: string) {

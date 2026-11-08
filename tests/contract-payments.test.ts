@@ -150,6 +150,15 @@ describe('confirmed contracts and actual payments', /** Exercise real uniqueness
     expect(sorted.findIndex(/** Locate earlier due date. */ (row) => row.id === earlier.id)).toBeLessThan(
       sorted.findIndex(/** Locate later obligation. */ (row) => row.id === contract.id),
     );
+    const minimumProvider = randomUUID();
+    await booking(minimumProvider, '2020-01-01', -9223372036854775808n);
+    await booking(minimumProvider, '2020-02-01', -9223372036854775808n);
+    expect(
+      (await contracts.suggestions()).some(
+        /** The minimum signed amount has no representable positive BIGINT forecast. */ (proposal) =>
+          proposal.provider === minimumProvider,
+      ),
+    ).toBe(false);
   });
   it('automatically marks new imports after the complete batch and preserves repeated imports', /** The matching hook is part of real CSV persistence. */ async () => {
     const provider = randomUUID(),
