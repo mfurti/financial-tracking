@@ -1,5 +1,7 @@
 # Private Linux deployment
 
+> **Delivery status, 2026-11-08:** Private publication, immutable target pulls, runtime-only migration and deployment are complete at `d193639`; [status.md](status.md) records the evidence. Minimal scope of the existing registry credential (E3) and separately approved shared-host reboot acceptance (E4) remain unverified. Future deployments still require their own concrete approval and the checks below.
+
 ## Production contract
 
 Source development stays local. GitHub Actions builds API/web/backup images, tests them in an isolated Linux installation, and saves the exact verified images. Only a push to main whose verify and operations jobs succeed may publish those saved images to private GHCR. The publisher checks full-revision image labels and does not rebuild after testing. It then creates a versioned downloadable deployment bundle and records published image digests in the job summary.
@@ -20,11 +22,11 @@ Web rejects direct application requests unless the socket peer resolves for `tra
 
 Preserve `household-ledger` project naming, `household-ledger_postgres_data`, existing user/category/transaction data, the database password, backup public recipients, and backup directory. Store secret files with restrictive permissions and dedicated SELinux file contexts. The bootstrap reads the password before dropping to UID/GID 1000. The private age identity stays separately managed, not in server source/configuration/images.
 
-Private GHCR pulls need protected read-only package credentials in Docker's credential configuration; never Compose environment literals. Document rotation/revocation with the operator. Actual publication/private package permissions and target-host pulls remain acceptance gates until executed; a passing local test does not prove them.
+Private GHCR pulls need protected read-only package credentials in Docker's credential configuration; never Compose environment literals. Document rotation/revocation with the operator. Actual private publication and target-host pulls have been verified through the approved rollouts. Minimal scope of the existing server credential remains unverified (E3); successful pulls do not establish it. Future candidates need their own successful publication/pull evidence.
 
 Before an approved production update, verify a fresh encrypted backup, record current image digests/configuration, agree on a maintenance window, stop writers, and run the reviewed migration on the exact candidate. A migration failure must leave access stopped without volume resets or automatic schema reversal. Image rollback requires schema compatibility; otherwise restore the tested pre-update backup into a new isolated stack with compatible images. See [recovery.md](recovery.md).
 
-The current server source tree and obsolete path rules may be removed only after approved transition and verification; never delete secrets, persistent volumes, or backups. A shared-host reboot and real-bank access require separate explicit authorization.
+The old server source tree and obsolete path rules were removed after the approved transition and verification. Keep the runtime-only layout; never delete secrets, persistent volumes, or backups as cleanup. A shared-host reboot and real-bank access require separate explicit authorization.
 
 ## Backups and evidence
 

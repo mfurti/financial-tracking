@@ -1,6 +1,8 @@
 # Contract analytics, import rollback and clearer UI
 
-Approved implementation plan, 2026-11-08. Existing checkout, issue #3, branch `codex/3-contracts-import-usability`. Preserve audit `392d988`. Current verified production is `3b990ec`; this task does not authorize another merge, rollout, bank access or reboot.
+> **Current status, 2026-11-08:** PR #11 is merged and separately approved deployment `d193639` is complete. [status.md](status.md) is the current delivery/acceptance record; [todo.md](todo.md) is the only active checklist. Dated evidence below remains historical. Technical delivery does not imply full product acceptance; R1–R3 remain incomplete.
+
+Approved implementation plan, 2026-11-08. Existing checkout, issue #3, branch `codex/3-contracts-import-usability`. Preserve audit `392d988`. The implementation baseline was `3b990ec`. PR #11 was subsequently merged and separately approved deployment `d193639` completed. No new merge, rollout, bank access or reboot is authorized by this documentation update.
 
 ## Ordered delivery
 
@@ -8,10 +10,10 @@ Each package has its own verified commit; update this record and the checklist a
 
 - [x] UX0: save this plan, synchronize todo/issue and record the completed PR #10 rollout.
 - [x] UX1: atomic CSV rollback with impact preview, stale-preview protection and selectable treatment of links.
-- [x] UX2: fixed desktop management links, mobile More page, shared section headings, colors/icons and less visible text.
+- [ ] UX2: navigation, colors and icons delivered; section headings and text reduction remain only partially complete. Finish R1 in todo.md.
 - [x] UX3: rounded monthly contract equivalents and category/kind analytics behind a clickable fixed-cost card.
-- [x] UX4: editable suggestion review cards, navigation-only swipes and durable decisions.
-- [x] UX5: complete documentation, visual/browser/API/migration checks and one feature PR; obtain concrete merge approval.
+- [ ] UX4: editable review cards, navigation-only swipes and durable decisions delivered; meaningful inline payment evidence remains R3 in todo.md.
+- [x] UX5 technical delivery: PR #11 merged, current main CI passed and separately approved rollout completed. This does not close R1/R3 or user acceptance E5/E6.
 
 ## CSV rollback
 

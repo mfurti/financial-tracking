@@ -1,16 +1,18 @@
 # Haushaltsbuch – verbindlicher Umsetzungsplan für Codex
 
+> **Statuskorrektur, 8. November 2026:** Historischer Plan bzw. damalige Checkliste. Aktueller Lieferstand: PR #11, `d193639`, gemergt und ausgerollt. Ausschließlich [Projektstand](status.md) und [aktuelle Aufgaben](todo.md) bewerten die heutige Erfüllung. Frühere Aussagen über fehlende Analysen/Regeln/Verträge, ausstehende Lieferungen oder leere Restore-Daten beschreiben damalige Zwischenstände. Ursprüngliche Prüfpunkte unten sind keine aktuelle Offen-Liste. Budgets B1–B5, Monatsplanung P1, Detailanforderungen C1–C3/A1 und externe Abnahmen bleiben dort ausdrücklich offen.
+
 > **Geprüfter Dokumentationsstand, 2026-11-07:** PR #8/#9 sind zusätzlich gemergt und als `1e33afa` auf rocky ausgerollt; 95 Tests, 16 Browserfälle und Wiederherstellung sind belegt. Die gemeinsame Abnahme und Originaldatei-Abnahme bleiben offen. Der neue Auftrag verwendet **Finanzfluss Copilot als Hauptvorbild** und ergänzt konsequente Nuxt-UI-Bedienelemente, Analysen, Verträge und Theme-Kacheln. Fehlende Funktionen und historische Erledigungen sind in [todo.md](todo.md) getrennt; dieser Abgleich implementiert keine neuen Funktionen.
 >
 > **Ursprüngliche Planungsgrenze:** Beim damaligen Anlegen dieses Dokuments waren Änderungen und Serverzugriffe ausgeschlossen. P0 und Stufe 1 wurden anschließend ausdrücklich beauftragt; neue Merge-/Rollout-Aktionen benötigen weiterhin ihre jeweilige Freigabe.
 
 ## Neuer Nutzerauftrag: Finanzfluss, Nuxt UI und verständliche Auswertungen
 
-**Nachfolgende Freigabe:** Der Nutzer hat den vollständigen Plan nach dem Planmodus ausdrücklich zur Umsetzung beauftragt. [finanzfluss-umsetzungsplan.md](finanzfluss-umsetzungsplan.md) konkretisiert den aktuellen Auftrag; F0–F6 in todo.md dokumentieren dessen tatsächlichen Fortschritt. Die folgenden Hinweise auf noch nötige Planung beschreiben den vorherigen Audit-Stand.
+**Nachfolgende Freigabe:** Der Nutzer hat den vollständigen Plan nach dem Planmodus ausdrücklich zur Umsetzung beauftragt. [finanzfluss-umsetzungsplan.md](finanzfluss-umsetzungsplan.md) konkretisiert den aktuellen Auftrag; status.md dokumentiert den tatsächlichen Lieferstand und die verbleibenden Detailanforderungen; die damalige F0–F6-Checkliste bleibt archiviert. Die folgenden Hinweise auf noch nötige Planung beschreiben den vorherigen Audit-Stand.
 
 Der Nutzer verlangt die Prüfung der offenen Aufgaben und sagt Go zum beschriebenen Ausbau: alle Bedienelemente konsistent aus Nuxt UI; Datumswahl nach dem offiziellen InputDate-Beispiel; Theme-Kacheln wie im lokalen Habit Tracker und alle sechs Ayu-Varianten; klare Importklärung und Kategorienregeln; Analysen mit Durchschnitt, Trend und Aufteilung; echte Vertrags-/Abo-/Mietübersicht. Finanzfluss ersetzt Finanzguru als Hauptreferenz für den nächsten Ausbau. Das ist kein Auftrag zum Wechsel auf eine andere UI-Bibliothek.
 
-Die Anforderungen N1–N8 in todo.md beschreiben den geprüften fehlenden Umfang. Für neue Auswertungssemantik, gemeinsame Zod/API-Verträge und Vertragspersistenz ist vor der Umsetzung ein detaillierter Plan im Planmodus nach coding-workflow nötig. Der bisherige Budget-Zwischenschritt ist keine Voraussetzung für den jetzt ausdrücklich gewünschten Vertragsausbau; Budgets selbst bleiben eigener Rückstand. Keine neue Serveränderung, kein Merge/Rollout, Bankzugriff oder Neustart ist allein mit diesem Dokumentationsabgleich freigegeben.
+Die ursprünglichen Anforderungen N1–N8 wurden anschließend geplant und umgesetzt; ihre historische Checkliste ist archiviert. Ihre aktuelle Bewertung sowie Restarbeiten R1–R3 stehen in status.md und todo.md. Der ausdrücklich freigegebene Vertragsausbau benötigt keine vorgelagerte Budgetimplementierung. Budgets und aggregierte Monatsplanung bleiben eigener Rückstand. Dieser Dokumentationsabgleich genehmigt keine neue Serveränderung, keinen Merge/Rollout, Bankzugriff oder Neustart.
 
 Referenzen: [Finanzfluss Budget-Analyse](https://www.finanzfluss.de/copilot/hilfe/budget/), [Nuxt UI InputDate als Datepicker](https://ui.nuxt.com/docs/components/input-date#as-a-date-picker), [Ayu-Varianten](https://github.com/ayu-theme/vscode-ayu). Lokales Kachelvorbild: `V:/GitHub/habit-tracker/web/app/pages/theme.vue` und `ThemePreview.vue`; keine Habit-Tracker-Dateien wurden verändert.
 
@@ -42,13 +44,13 @@ Arbeitspakete, konkrete Dateien und Prüfungen: Abschnitt „Aktuelle Erlebnis-�
 
 ### 1.1 Startprotokoll (P0)
 
-- [ ] `git status`, Branch, lokale Commits, unversionierte Dateien und vorhandene Änderungen erfassen. **Kein `git reset --hard`, `git clean` oder ungefragtes Stashing.**
-- [ ] Repository-Struktur, Paketmanager, Scripts, Dockerfiles, Compose-Dateien, GitHub-Workflows, Migrationen, Tests und Architektur lesen.
-- [ ] Bestehende To-do-, Plan-, Roadmap- und Fortschrittsdateien suchen und mit diesem Plan konsolidieren. Vorhandene Dokumente nicht durch eine zweite widersprüchliche Wahrheit ersetzen.
-- [ ] Vorhandene Funktionen in `fertig und geprüft`, `teilweise`, `fehlend`, `blockiert` einteilen; keine pauschale Neuentwicklung.
-- [ ] Baseline-Tests ausführen, soweit lokal möglich, und bestehende Fehler getrennt von neuen Regressionen protokollieren.
-- [ ] Tatsächliche Pfade, Befehle, Umgebungsvariablen und betroffene Komponenten bestimmen; hier genannte Vorschläge nicht ungeprüft als Repository-Fakten behandeln.
-- [ ] Aufgabenliste mit ID, Status, Abhängigkeit, betroffenen Dateien, Testnachweis, Commit und offenen Entscheidungen aktualisieren.
+- **Ursprünglicher Prüfpunkt:** `git status`, Branch, lokale Commits, unversionierte Dateien und vorhandene Änderungen erfassen. **Kein `git reset --hard`, `git clean` oder ungefragtes Stashing.**
+- **Ursprünglicher Prüfpunkt:** Repository-Struktur, Paketmanager, Scripts, Dockerfiles, Compose-Dateien, GitHub-Workflows, Migrationen, Tests und Architektur lesen.
+- **Ursprünglicher Prüfpunkt:** Bestehende To-do-, Plan-, Roadmap- und Fortschrittsdateien suchen und mit diesem Plan konsolidieren. Vorhandene Dokumente nicht durch eine zweite widersprüchliche Wahrheit ersetzen.
+- **Ursprünglicher Prüfpunkt:** Vorhandene Funktionen in `fertig und geprüft`, `teilweise`, `fehlend`, `blockiert` einteilen; keine pauschale Neuentwicklung.
+- **Ursprünglicher Prüfpunkt:** Baseline-Tests ausführen, soweit lokal möglich, und bestehende Fehler getrennt von neuen Regressionen protokollieren.
+- **Ursprünglicher Prüfpunkt:** Tatsächliche Pfade, Befehle, Umgebungsvariablen und betroffene Komponenten bestimmen; hier genannte Vorschläge nicht ungeprüft als Repository-Fakten behandeln.
+- **Ursprünglicher Prüfpunkt:** Aufgabenliste mit ID, Status, Abhängigkeit, betroffenen Dateien, Testnachweis, Commit und offenen Entscheidungen aktualisieren.
 
 **P0-Ergebnis:** Ist-Analyse und priorisierte, dateibezogene To-do-Liste. Vor Codeänderungen etwaige Konflikte und migrationskritische Entscheidungen benennen.
 
@@ -73,37 +75,37 @@ Arbeitspakete, konkrete Dateien und Prüfungen: Abschnitt „Aktuelle Erlebnis-�
 
 #### CI / Registry
 
-- [ ] GitHub Actions: Format, Lint, Typen, gemeinsame Zod-Verträge, Datenbank-/Integrationstests, relevante Browserprüfungen und Container-Builds verketten.
-- [ ] API-, Web- und Backup-Images erst nach erfolgreichen Pflichtprüfungen veröffentlichen; Release-Berechtigungen und Workflow-Trigger absichern.
-- [ ] Images mit vollständigem Commit-SHA taggen, OCI-Metadaten setzen, Digests im Release-/Deployment-Nachweis dokumentieren.
-- [ ] Produktions-Compose referenziert feste `sha256`-Digests; Commit-Tags allein sind nicht unveränderlich.
-- [ ] Private GHCR-Pakete als Standard. `rocky` erhält nur lesenden Paket-/Registry-Zugang; Credentials geschützt in Docker-Credential-Konfiguration, nicht in Git oder Compose-Klartext. Rotation und Widerruf dokumentieren.
-- [ ] Optional Signaturen/Provenance ergänzen, sofern mit bestehender CI sinnvoll integrierbar.
+- **Ursprünglicher Prüfpunkt:** GitHub Actions: Format, Lint, Typen, gemeinsame Zod-Verträge, Datenbank-/Integrationstests, relevante Browserprüfungen und Container-Builds verketten.
+- **Ursprünglicher Prüfpunkt:** API-, Web- und Backup-Images erst nach erfolgreichen Pflichtprüfungen veröffentlichen; Release-Berechtigungen und Workflow-Trigger absichern.
+- **Ursprünglicher Prüfpunkt:** Images mit vollständigem Commit-SHA taggen, OCI-Metadaten setzen, Digests im Release-/Deployment-Nachweis dokumentieren.
+- **Ursprünglicher Prüfpunkt:** Produktions-Compose referenziert feste `sha256`-Digests; Commit-Tags allein sind nicht unveränderlich.
+- **Ursprünglicher Prüfpunkt:** Private GHCR-Pakete als Standard. `rocky` erhält nur lesenden Paket-/Registry-Zugang; Credentials geschützt in Docker-Credential-Konfiguration, nicht in Git oder Compose-Klartext. Rotation und Widerruf dokumentieren.
+- **Ursprünglicher Prüfpunkt:** Optional Signaturen/Provenance ergänzen, sofern mit bestehender CI sinnvoll integrierbar.
 
 #### Compose / Startreihenfolge
 
-- [ ] Eigenständige Produktions-`compose.yaml` **ohne `build:` und Repository-Mounts** bereitstellen.
-- [ ] Dienste: PostgreSQL, einmaliger Migrator, API, Web, Backup. Migrator verwendet **denselben API-Image-Digest** mit Migrationskommando.
-- [ ] DB-Healthcheck; Migrator startet nach gesunder DB; API startet nur nach erfolgreich abgeschlossenem Migrator (`service_completed_successfully`). Fehlerhafte Migration verhindert API-Start.
-- [ ] Compose-Healthchecks ausdrücklich für PostgreSQL, API **inklusive DB-Bereitschaft**, Web und Alter der letzten erfolgreich abgeschlossenen Sicherung definieren.
-- [ ] Bestehendes PostgreSQL-Volume und Secrets erhalten. Nur notwendige Daten-/Secret-/Konfigurationsmounts.
-- [ ] Keine LAN-IP und keine Host-Portfreigabe für API oder DB. API und DB nur über erforderliche interne Netze erreichbar.
-- [ ] Neustart, fehlende Secrets, nicht erreichbare Registry und Migrationsfehler testen.
+- **Ursprünglicher Prüfpunkt:** Eigenständige Produktions-`compose.yaml` **ohne `build:` und Repository-Mounts** bereitstellen.
+- **Ursprünglicher Prüfpunkt:** Dienste: PostgreSQL, einmaliger Migrator, API, Web, Backup. Migrator verwendet **denselben API-Image-Digest** mit Migrationskommando.
+- **Ursprünglicher Prüfpunkt:** DB-Healthcheck; Migrator startet nach gesunder DB; API startet nur nach erfolgreich abgeschlossenem Migrator (`service_completed_successfully`). Fehlerhafte Migration verhindert API-Start.
+- **Ursprünglicher Prüfpunkt:** Compose-Healthchecks ausdrücklich für PostgreSQL, API **inklusive DB-Bereitschaft**, Web und Alter der letzten erfolgreich abgeschlossenen Sicherung definieren.
+- **Ursprünglicher Prüfpunkt:** Bestehendes PostgreSQL-Volume und Secrets erhalten. Nur notwendige Daten-/Secret-/Konfigurationsmounts.
+- **Ursprünglicher Prüfpunkt:** Keine LAN-IP und keine Host-Portfreigabe für API oder DB. API und DB nur über erforderliche interne Netze erreichbar.
+- **Ursprünglicher Prüfpunkt:** Neustart, fehlende Secrets, nicht erreichbare Registry und Migrationsfehler testen.
 
 #### Netz / Traefik
 
-- [ ] Vor Umsetzung andere Compose-Projekte, DHCP-Bereich, Reservierungen, Netzkonfiguration und IP-Konflikte **erneut** prüfen.
-- [ ] Bestehendes externes Macvlan `FRITZBOX` mit `192.168.178.0/24`, Gateway `192.168.178.1`, Parent `eno1` berücksichtigen; keine unkontrollierte Neuerstellung.
-- [ ] Webcontainer erhält **`192.168.178.33`** und zusätzlich Anbindung an `traefik-public` sowie eigenes Backend-Netz.
-- [ ] Zugriff über **`haushaltsbuch.mfurti.de`** mit vorhandenen Traefik-Zertifikaten und LAN-Beschränkung erhalten. Traefik-Netz und Service-Port eindeutig konfigurieren.
-- [ ] Prüfen, ob die direkte Macvlan-IP die Traefik-LAN-Beschränkung umgehen könnte; nötigenfalls separat absichern.
+- **Ursprünglicher Prüfpunkt:** Vor Umsetzung andere Compose-Projekte, DHCP-Bereich, Reservierungen, Netzkonfiguration und IP-Konflikte **erneut** prüfen.
+- **Ursprünglicher Prüfpunkt:** Bestehendes externes Macvlan `FRITZBOX` mit `192.168.178.0/24`, Gateway `192.168.178.1`, Parent `eno1` berücksichtigen; keine unkontrollierte Neuerstellung.
+- **Ursprünglicher Prüfpunkt:** Webcontainer erhält **`192.168.178.33`** und zusätzlich Anbindung an `traefik-public` sowie eigenes Backend-Netz.
+- **Ursprünglicher Prüfpunkt:** Zugriff über **`haushaltsbuch.mfurti.de`** mit vorhandenen Traefik-Zertifikaten und LAN-Beschränkung erhalten. Traefik-Netz und Service-Port eindeutig konfigurieren.
+- **Ursprünglicher Prüfpunkt:** Prüfen, ob die direkte Macvlan-IP die Traefik-LAN-Beschränkung umgehen könnte; nötigenfalls separat absichern.
 
 #### Backup / Aufräumen
 
-- [ ] Aufbewahrung mindestens **sieben Kalendertage**; nicht lediglich sieben Dateien. Manuelle Zusatzbackups dürfen automatische Tagessicherungen nicht verdrängen.
-- [ ] Backup-Healthcheck an Abschlusszeit der letzten erfolgreichen Sicherung binden; fehlgeschlagene oder alte Sicherungen erkennen.
-- [ ] Verschlüsselung, Speicherort, Secret-Schutz, Sicherungsintegrität und isolierten Restore dokumentieren und prüfen.
-- [ ] Bisherigen Server-Quellcode und obsolete Pfadregeln **erst nach erfolgreicher Umstellung und Prüfung** entfernen.
+- **Ursprünglicher Prüfpunkt:** Aufbewahrung mindestens **sieben Kalendertage**; nicht lediglich sieben Dateien. Manuelle Zusatzbackups dürfen automatische Tagessicherungen nicht verdrängen.
+- **Ursprünglicher Prüfpunkt:** Backup-Healthcheck an Abschlusszeit der letzten erfolgreichen Sicherung binden; fehlgeschlagene oder alte Sicherungen erkennen.
+- **Ursprünglicher Prüfpunkt:** Verschlüsselung, Speicherort, Secret-Schutz, Sicherungsintegrität und isolierten Restore dokumentieren und prüfen.
+- **Ursprünglicher Prüfpunkt:** Bisherigen Server-Quellcode und obsolete Pfadregeln **erst nach erfolgreicher Umstellung und Prüfung** entfernen.
 
 **P1.1-Abnahme:** CI veröffentlicht ausschließlich geprüfte Images; Digests fest; Compose ohne Builds/Repo; Startreihenfolge, Netze, Zugriff, Backups und Healthchecks nachweislich geprüft.
 
@@ -113,35 +115,35 @@ Arbeitspakete, konkrete Dateien und Prüfungen: Abschnitt „Aktuelle Erlebnis-�
 
 #### Modell und Identitäten
 
-- [ ] Buchungen mit tatsächlich optionaler Konto-Referenz modellieren; bestehende Konto-Zuordnungen unverändert erhalten.
-- [ ] Alle Queries und Reports auf implizite `INNER JOIN`-Annahmen prüfen; kontolose Buchungen dürfen nicht verschwinden.
-- [ ] Importlauf, Quelltyp, expliziten **nicht leeren** Identitätsbereich und Quellidentität modellieren. Nullable Konto-IDs dürfen Unique-Constraints nicht aushebeln.
-- [ ] Identitäten kontoloser Dateien zunächst importbezogen halten. Wiederholte/überlappende Dateien lösen gegebenenfalls Vergleich aus; identische Referenzen aus verschiedenen Quellen nicht blind zusammenführen.
-- [ ] Eine logische Buchung kann mehrere nachvollziehbare Quellidentitäten erhalten, wenn CSV und FinTS zusammengeführt wurden. Exakte Tabellenstruktur anhand des Bestands bestimmen.
-- [ ] Migrationen und Constraints mit vorhandenen Buchungen und Konten testen; keine Datenverluste.
+- **Ursprünglicher Prüfpunkt:** Buchungen mit tatsächlich optionaler Konto-Referenz modellieren; bestehende Konto-Zuordnungen unverändert erhalten.
+- **Ursprünglicher Prüfpunkt:** Alle Queries und Reports auf implizite `INNER JOIN`-Annahmen prüfen; kontolose Buchungen dürfen nicht verschwinden.
+- **Ursprünglicher Prüfpunkt:** Importlauf, Quelltyp, expliziten **nicht leeren** Identitätsbereich und Quellidentität modellieren. Nullable Konto-IDs dürfen Unique-Constraints nicht aushebeln.
+- **Ursprünglicher Prüfpunkt:** Identitäten kontoloser Dateien zunächst importbezogen halten. Wiederholte/überlappende Dateien lösen gegebenenfalls Vergleich aus; identische Referenzen aus verschiedenen Quellen nicht blind zusammenführen.
+- **Ursprünglicher Prüfpunkt:** Eine logische Buchung kann mehrere nachvollziehbare Quellidentitäten erhalten, wenn CSV und FinTS zusammengeführt wurden. Exakte Tabellenstruktur anhand des Bestands bestimmen.
+- **Ursprünglicher Prüfpunkt:** Migrationen und Constraints mit vorhandenen Buchungen und Konten testen; keine Datenverluste.
 
 #### Upload / Prüfung / Bestätigung
 
-- [ ] CSV direkt hochladen, Spalten zuordnen, Vorschau mit Datums-/Betrags-/Textvalidierung anzeigen und bestätigen – **auch bei leerer Kontenliste**.
-- [ ] Fehlerhafte Zeilen und Teilimporte explizit behandeln; Import nicht unbemerkt teilweise als vollständig melden.
-- [ ] Kontolose Umsätze unter **„Ohne Konto“** anzeigen; kategorisierbar; sofort in Gesamt- und Monatsauswertungen berücksichtigen.
-- [ ] Kontofilter berücksichtigen ausschließlich zugeordnete Umsätze. „Ohne Konto“ als eigene Filteroption.
-- [ ] Spätere Kontozuordnung für einzelne und mehrere Buchungen anbieten; Kategorie und Umbuchungsmarkierung erhalten.
+- **Ursprünglicher Prüfpunkt:** CSV direkt hochladen, Spalten zuordnen, Vorschau mit Datums-/Betrags-/Textvalidierung anzeigen und bestätigen – **auch bei leerer Kontenliste**.
+- **Ursprünglicher Prüfpunkt:** Fehlerhafte Zeilen und Teilimporte explizit behandeln; Import nicht unbemerkt teilweise als vollständig melden.
+- **Ursprünglicher Prüfpunkt:** Kontolose Umsätze unter **„Ohne Konto“** anzeigen; kategorisierbar; sofort in Gesamt- und Monatsauswertungen berücksichtigen.
+- **Ursprünglicher Prüfpunkt:** Kontofilter berücksichtigen ausschließlich zugeordnete Umsätze. „Ohne Konto“ als eigene Filteroption.
+- **Ursprünglicher Prüfpunkt:** Spätere Kontozuordnung für einzelne und mehrere Buchungen anbieten; Kategorie und Umbuchungsmarkierung erhalten.
 
 #### Dubletten und atomare Zusammenführung
 
-- [ ] Identische Quellidentität von **fachlich ähnlicher Buchung** unterscheiden; Ähnlichkeit ist nur ein Vorschlag.
-- [ ] Mögliche CSV-/CSV- und CSV-/FinTS-Überschneidungen mit Datum, Betrag, Text, Referenz, Quelle, Konto, Kategorie und Status vergleichbar anzeigen.
-- [ ] Pro Treffer vier Entscheidungen: **Bankdaten übernehmen**, **CSV-Daten übernehmen**, **separat behalten**, **Zuordnung überspringen**.
-- [ ] Kategorien und Umbuchungsmarkierungen standardmäßig bewahren; Konflikte vor Bestätigung anzeigen und ausdrücklich auflösen.
-- [ ] Zusammenführung und Quellidentitäts-Verknüpfung **atomar in einer Datenbanktransaktion**; keine doppelte Zählung.
-- [ ] Wiederholte Bestätigungen idempotent behandeln; parallele Änderungen/Konflikte erkennen.
-- [ ] Nach späterer Kontozuordnung erneut relevante Überschneidungen prüfen.
+- **Ursprünglicher Prüfpunkt:** Identische Quellidentität von **fachlich ähnlicher Buchung** unterscheiden; Ähnlichkeit ist nur ein Vorschlag.
+- **Ursprünglicher Prüfpunkt:** Mögliche CSV-/CSV- und CSV-/FinTS-Überschneidungen mit Datum, Betrag, Text, Referenz, Quelle, Konto, Kategorie und Status vergleichbar anzeigen.
+- **Ursprünglicher Prüfpunkt:** Pro Treffer vier Entscheidungen: **Bankdaten übernehmen**, **CSV-Daten übernehmen**, **separat behalten**, **Zuordnung überspringen**.
+- **Ursprünglicher Prüfpunkt:** Kategorien und Umbuchungsmarkierungen standardmäßig bewahren; Konflikte vor Bestätigung anzeigen und ausdrücklich auflösen.
+- **Ursprünglicher Prüfpunkt:** Zusammenführung und Quellidentitäts-Verknüpfung **atomar in einer Datenbanktransaktion**; keine doppelte Zählung.
+- **Ursprünglicher Prüfpunkt:** Wiederholte Bestätigungen idempotent behandeln; parallele Änderungen/Konflikte erkennen.
+- **Ursprünglicher Prüfpunkt:** Nach späterer Kontozuordnung erneut relevante Überschneidungen prüfen.
 
 #### Verträge und Tests
 
-- [ ] Gemeinsame Zod-Schemas, NestJS-API, OpenAPI, Importlogik und Auswertungen zusammen aktualisieren.
-- [ ] Tests: leere Kontenliste, kontoloser Upload, spätere Einzel-/Mehrfachzuordnung, alle vier Entscheidungen, wiederholte Dateien, Quellen mit gleicher Referenz, Teilimport, parallele Bestätigung, Monats- und Gesamtsummen.
+- **Ursprünglicher Prüfpunkt:** Gemeinsame Zod-Schemas, NestJS-API, OpenAPI, Importlogik und Auswertungen zusammen aktualisieren.
+- **Ursprünglicher Prüfpunkt:** Tests: leere Kontenliste, kontoloser Upload, spätere Einzel-/Mehrfachzuordnung, alle vier Entscheidungen, wiederholte Dateien, Quellen mit gleicher Referenz, Teilimport, parallele Bestätigung, Monats- und Gesamtsummen.
 
 **P1.2-Abnahme:** CSV funktioniert ohne Bank/Konto vollständig; kontolose Buchungen zählen korrekt; Zuordnung und Vergleichsentscheidungen sind sicher und nachvollziehbar.
 
@@ -149,16 +151,16 @@ Arbeitspakete, konkrete Dateien und Prüfungen: Abschnitt „Aktuelle Erlebnis-�
 
 **Ziel:** Ruhiges, konsistentes, responsives Finanzlayout mit korrekten Zuständen und zugänglicher Bedienung.
 
-- [ ] Informationsarchitektur für Dashboard, Umsätze, Importe, Konten, Bankabruf, Einstellungen konsolidieren; Budget/Fixkosten noch nicht aktivieren.
-- [ ] Konsistente Nuxt-UI-Komponenten, semantische Theme-Tokens, lesbare Tabellen, klare Navigation und verständliche Formulare verwenden.
-- [ ] Dashboard: Monatswahl inklusive Jahreswechsel, Einnahmen, Ausgaben, Differenz, Kategorien, offene Importprüfungen; kontolose Daten sichtbar kennzeichnen.
-- [ ] Einheitliche fachliche Regeln für gebucht/vorgemerkt/Umbuchung in allen Auswertungen verwenden.
-- [ ] Umsatzliste: Zeitraum-, Kategorie-, Konto-, Status- und Textfilter; Mehrfachaktionen; mobil Karten/Listen statt überbreiter Tabellen.
-- [ ] Dark-/Light-Schalter **auch auf Loginseite**. Beim ersten Besuch Systemeinstellung, ausdrückliche Auswahl lokal speichern und nach Reload erhalten; Theme-Flackern vermeiden.
-- [ ] Eigene Farben auf gemeinsame Theme-Variablen umstellen; Kontrast und Fokus prüfen.
-- [ ] Strukturierte API-Fehler mit Feldpfaden bis zu Formularfeldern durchreichen; IBAN normalisieren und Format/Prüfziffer konsistent validieren.
-- [ ] Lade-, Leer-, Fehler-, Teilimport- und abgelaufene-Sitzung-Zustände vollständig behandeln.
-- [ ] Tastaturbedienung, Dialog-Fokusführung, Fehlermeldungen und mobile Interaktion testen.
+- **Ursprünglicher Prüfpunkt:** Informationsarchitektur für Dashboard, Umsätze, Importe, Konten, Bankabruf, Einstellungen konsolidieren; Budget/Fixkosten noch nicht aktivieren.
+- **Ursprünglicher Prüfpunkt:** Konsistente Nuxt-UI-Komponenten, semantische Theme-Tokens, lesbare Tabellen, klare Navigation und verständliche Formulare verwenden.
+- **Ursprünglicher Prüfpunkt:** Dashboard: Monatswahl inklusive Jahreswechsel, Einnahmen, Ausgaben, Differenz, Kategorien, offene Importprüfungen; kontolose Daten sichtbar kennzeichnen.
+- **Ursprünglicher Prüfpunkt:** Einheitliche fachliche Regeln für gebucht/vorgemerkt/Umbuchung in allen Auswertungen verwenden.
+- **Ursprünglicher Prüfpunkt:** Umsatzliste: Zeitraum-, Kategorie-, Konto-, Status- und Textfilter; Mehrfachaktionen; mobil Karten/Listen statt überbreiter Tabellen.
+- **Ursprünglicher Prüfpunkt:** Dark-/Light-Schalter **auch auf Loginseite**. Beim ersten Besuch Systemeinstellung, ausdrückliche Auswahl lokal speichern und nach Reload erhalten; Theme-Flackern vermeiden.
+- **Ursprünglicher Prüfpunkt:** Eigene Farben auf gemeinsame Theme-Variablen umstellen; Kontrast und Fokus prüfen.
+- **Ursprünglicher Prüfpunkt:** Strukturierte API-Fehler mit Feldpfaden bis zu Formularfeldern durchreichen; IBAN normalisieren und Format/Prüfziffer konsistent validieren.
+- **Ursprünglicher Prüfpunkt:** Lade-, Leer-, Fehler-, Teilimport- und abgelaufene-Sitzung-Zustände vollständig behandeln.
+- **Ursprünglicher Prüfpunkt:** Tastaturbedienung, Dialog-Fokusführung, Fehlermeldungen und mobile Interaktion testen.
 
 **P1.3-Abnahme:** Kernabläufe auf Desktop/Mobil und in beiden Themes browsergeprüft; Formfehler verständlich und korrekt zugeordnet.
 
@@ -166,16 +168,16 @@ Arbeitspakete, konkrete Dateien und Prüfungen: Abschnitt „Aktuelle Erlebnis-�
 
 **Ziel:** Bestehenden Adapter sicher vervollständigen; CSV bleibt unabhängig davon nutzbar.
 
-- [ ] Vorhandenen FinTS-Adapter und manuellen Abruf prüfen; Kontenerkennung, Salden, Buchungen, Status, Abbruch und bankseitige Referenzen vervollständigen.
-- [ ] TAN-Verfahrenswahl, App-Freigabe, wartende Zustände, Timeout und Neustart behandeln.
-- [ ] Bei entsprechendem Schritt gemeinsam eigene FinTS-Produkt-ID registrieren und offiziellen Sparkassen-Endpunkt sowie geeigneten Zugang klären: https://www.fints.org/de/hersteller/produktregistrierung
-- [ ] **Keine fremde Produkt-ID** verwenden.
-- [ ] PIN/TAN ausschließlich im Speicher während eines **manuell gestarteten** Abrufs halten; keine Speicherung, keine automatische Wiederholung bei falscher PIN, keine sensiblen Logs.
-- [ ] Fehlende Bankkonfiguration konkret im UI erklären; CSV jederzeit ohne FinTS nutzbar halten.
-- [ ] FinTS-Buchungen mit P1.2-Quellidentitäten und Überschneidungsprüfung verbinden.
-- [ ] Adapterzustände mit simulierten Antworten testen: Erfolg, falsche PIN, TAN-Auswahl, Freigabe, Timeout, Abbruch, Neustart.
-- [ ] Echten Abruf **nur separat und mit ausdrücklicher Nutzerbeteiligung** testen; nur bereinigte Ergebnisse dokumentieren.
-- [ ] Ohne erfüllte Bankvoraussetzungen Live-Echttest ausdrücklich als **offen/blockiert** kennzeichnen, nicht als bestanden.
+- **Ursprünglicher Prüfpunkt:** Vorhandenen FinTS-Adapter und manuellen Abruf prüfen; Kontenerkennung, Salden, Buchungen, Status, Abbruch und bankseitige Referenzen vervollständigen.
+- **Ursprünglicher Prüfpunkt:** TAN-Verfahrenswahl, App-Freigabe, wartende Zustände, Timeout und Neustart behandeln.
+- **Ursprünglicher Prüfpunkt:** Bei entsprechendem Schritt gemeinsam eigene FinTS-Produkt-ID registrieren und offiziellen Sparkassen-Endpunkt sowie geeigneten Zugang klären: https://www.fints.org/de/hersteller/produktregistrierung
+- **Ursprünglicher Prüfpunkt:** **Keine fremde Produkt-ID** verwenden.
+- **Ursprünglicher Prüfpunkt:** PIN/TAN ausschließlich im Speicher während eines **manuell gestarteten** Abrufs halten; keine Speicherung, keine automatische Wiederholung bei falscher PIN, keine sensiblen Logs.
+- **Ursprünglicher Prüfpunkt:** Fehlende Bankkonfiguration konkret im UI erklären; CSV jederzeit ohne FinTS nutzbar halten.
+- **Ursprünglicher Prüfpunkt:** FinTS-Buchungen mit P1.2-Quellidentitäten und Überschneidungsprüfung verbinden.
+- **Ursprünglicher Prüfpunkt:** Adapterzustände mit simulierten Antworten testen: Erfolg, falsche PIN, TAN-Auswahl, Freigabe, Timeout, Abbruch, Neustart.
+- **Ursprünglicher Prüfpunkt:** Echten Abruf **nur separat und mit ausdrücklicher Nutzerbeteiligung** testen; nur bereinigte Ergebnisse dokumentieren.
+- **Ursprünglicher Prüfpunkt:** Ohne erfüllte Bankvoraussetzungen Live-Echttest ausdrücklich als **offen/blockiert** kennzeichnen, nicht als bestanden.
 
 **P1.4-Abnahme:** Technische Tests erfolgreich; reale Bankabnahme nur bei tatsächlich erfolgreichem Echttest.
 
@@ -183,34 +185,34 @@ Arbeitspakete, konkrete Dateien und Prüfungen: Abschnitt „Aktuelle Erlebnis-�
 
 #### Vollständige Prüfmatrix
 
-- [ ] Login, Sitzungsablauf, Login-Begrenzung, strukturierte Feldfehler, IBAN.
-- [ ] Jahres-/Monatswechsel, vorgemerkt/gebucht, Umbuchungen, Kategorien.
-- [ ] Kontoloser CSV-Import, spätere Zuordnung, Teilimport, Überschneidungen, alle vier Zusammenführungsentscheidungen, korrekte Monatsbeträge.
-- [ ] FinTS-TAN/Freigabe, Timeout, Abbruch, Neustart und fehlende Konfiguration.
-- [ ] Beide Themes, Login-Theme, Tastatur/Fokus, Mobilansicht.
-- [ ] Healthchecks, Registry-Pull, Migration, Neustart und Backup-Alter.
+- **Ursprünglicher Prüfpunkt:** Login, Sitzungsablauf, Login-Begrenzung, strukturierte Feldfehler, IBAN.
+- **Ursprünglicher Prüfpunkt:** Jahres-/Monatswechsel, vorgemerkt/gebucht, Umbuchungen, Kategorien.
+- **Ursprünglicher Prüfpunkt:** Kontoloser CSV-Import, spätere Zuordnung, Teilimport, Überschneidungen, alle vier Zusammenführungsentscheidungen, korrekte Monatsbeträge.
+- **Ursprünglicher Prüfpunkt:** FinTS-TAN/Freigabe, Timeout, Abbruch, Neustart und fehlende Konfiguration.
+- **Ursprünglicher Prüfpunkt:** Beide Themes, Login-Theme, Tastatur/Fokus, Mobilansicht.
+- **Ursprünglicher Prüfpunkt:** Healthchecks, Registry-Pull, Migration, Neustart und Backup-Alter.
 
 #### Betriebsbundle / Restore
 
-- [ ] Versioniertes, herunterladbares Betriebsbundle mit Compose, Konfigurationsvorlagen und Anleitung erstellen; **keine echten Secrets im Bundle**.
-- [ ] Neuinstallation ausschließlich aus Bundle und heruntergeladenen Registry-Images testen; kein Repository, keine Dockerfiles, keine Server-Builds.
-- [ ] **Befülltes Backup isoliert** wiederherstellen; Login, Buchungen, Kategorien, Berichte und Summen prüfen. Niemals Restore über laufende Produktionsdatenbank testen.
-- [ ] Wiederherstellungsdauer und benötigte Image-/Schema-Versionen dokumentieren.
+- **Ursprünglicher Prüfpunkt:** Versioniertes, herunterladbares Betriebsbundle mit Compose, Konfigurationsvorlagen und Anleitung erstellen; **keine echten Secrets im Bundle**.
+- **Ursprünglicher Prüfpunkt:** Neuinstallation ausschließlich aus Bundle und heruntergeladenen Registry-Images testen; kein Repository, keine Dockerfiles, keine Server-Builds.
+- **Ursprünglicher Prüfpunkt:** **Befülltes Backup isoliert** wiederherstellen; Login, Buchungen, Kategorien, Berichte und Summen prüfen. Niemals Restore über laufende Produktionsdatenbank testen.
+- **Ursprünglicher Prüfpunkt:** Wiederherstellungsdauer und benötigte Image-/Schema-Versionen dokumentieren.
 
 #### Produktivumstellung
 
-- [ ] Vorab Netzwerk/IP-Konflikte, Volumes, Secrets, Digests und freien Speicher erneut prüfen.
-- [ ] Wartungsfenster vereinbaren; schreibende Zugriffe kontrolliert stoppen.
-- [ ] Verschlüsseltes, konsistentes Backup vor Migration erzeugen und prüfen.
-- [ ] Bundle bereitstellen, Digests pullen, einmalige Migration ausführen, API/Web starten, Healthchecks und fachliche Smoke-Tests prüfen.
-- [ ] Alten Server-Quellcode und obsolete Pfadregeln erst nach erfolgreichem Betrieb entfernen.
-- [ ] Rollback nur auf altes Image, wenn Schema kompatibel; sonst geprüfter Restore mit passendem alten Softwarestand. Keine automatische Rückmigration versprechen.
+- **Ursprünglicher Prüfpunkt:** Vorab Netzwerk/IP-Konflikte, Volumes, Secrets, Digests und freien Speicher erneut prüfen.
+- **Ursprünglicher Prüfpunkt:** Wartungsfenster vereinbaren; schreibende Zugriffe kontrolliert stoppen.
+- **Ursprünglicher Prüfpunkt:** Verschlüsseltes, konsistentes Backup vor Migration erzeugen und prüfen.
+- **Ursprünglicher Prüfpunkt:** Bundle bereitstellen, Digests pullen, einmalige Migration ausführen, API/Web starten, Healthchecks und fachliche Smoke-Tests prüfen.
+- **Ursprünglicher Prüfpunkt:** Alten Server-Quellcode und obsolete Pfadregeln erst nach erfolgreichem Betrieb entfernen.
+- **Ursprünglicher Prüfpunkt:** Rollback nur auf altes Image, wenn Schema kompatibel; sonst geprüfter Restore mit passendem alten Softwarestand. Keine automatische Rückmigration versprechen.
 
 #### Verbindliche Freigabeschranke
 
-- [ ] **Gemeinsame Prüfung nach Deployment**: Bedienbarkeit, Zahlen, Importentscheidungen, Themes/Mobil, Backup-Status, Live-Status.
-- [ ] Offene Bankvoraussetzungen, nicht durchgeführte Tests und andere Einschränkungen ausdrücklich im Abnahmeprotokoll aufführen.
-- [ ] **Codex muss hier stoppen und die ausdrückliche Nutzerfreigabe für Stufe 2 abwarten.** Keine Budgetmigration, Budget-UI oder sonstige Arbeiten aus Stufe 2 vorher beginnen.
+- **Ursprünglicher Prüfpunkt:** **Gemeinsame Prüfung nach Deployment**: Bedienbarkeit, Zahlen, Importentscheidungen, Themes/Mobil, Backup-Status, Live-Status.
+- **Ursprünglicher Prüfpunkt:** Offene Bankvoraussetzungen, nicht durchgeführte Tests und andere Einschränkungen ausdrücklich im Abnahmeprotokoll aufführen.
+- **Ursprünglicher Prüfpunkt:** **Codex muss hier stoppen und die ausdrückliche Nutzerfreigabe für Stufe 2 abwarten.** Keine Budgetmigration, Budget-UI oder sonstige Arbeiten aus Stufe 2 vorher beginnen.
 
 **P1.5-Abnahme:** Tatsächliche Prüfresultate und Nutzerentscheidung dokumentiert. Eine technisch offene FinTS-Bankvoraussetzung bleibt sichtbar offen und darf nicht als erfolgreiche Live-Abnahme ausgegeben werden.
 
@@ -218,48 +220,48 @@ Arbeitspakete, konkrete Dateien und Prüfungen: Abschnitt „Aktuelle Erlebnis-�
 
 ### P2.1 Modell / Verträge
 
-- [ ] Monatsbudget pro Ausgabenkategorie (Jahr, Monat, Kategorie, Betrag/Währung) anlegen, bearbeiten, löschen und ausdrücklich aus Vormonat übernehmen.
-- [ ] Eindeutigkeit je Kategorie/Monat per DB-Constraint; bestehende Zielbudgets bei Übernahme nicht stillschweigend überschreiben.
-- [ ] Gemeinsame Zod-Verträge, NestJS-Endpunkte, OpenAPI und Berechtigungstests ergänzen.
-- [ ] Beträge centgenau speichern/rechnen (Integer-Cents oder exakte Dezimalarithmetik, keine binären Floats).
+- **Ursprünglicher Prüfpunkt:** Monatsbudget pro Ausgabenkategorie (Jahr, Monat, Kategorie, Betrag/Währung) anlegen, bearbeiten, löschen und ausdrücklich aus Vormonat übernehmen.
+- **Ursprünglicher Prüfpunkt:** Eindeutigkeit je Kategorie/Monat per DB-Constraint; bestehende Zielbudgets bei Übernahme nicht stillschweigend überschreiben.
+- **Ursprünglicher Prüfpunkt:** Gemeinsame Zod-Verträge, NestJS-Endpunkte, OpenAPI und Berechtigungstests ergänzen.
+- **Ursprünglicher Prüfpunkt:** Beträge centgenau speichern/rechnen (Integer-Cents oder exakte Dezimalarithmetik, keine binären Floats).
 
 ### P2.2 Verbrauchsregeln
 
-- [ ] Nur **gebuchte** Ausgaben berücksichtigen, einschließlich „Ohne Konto“; Umbuchungen und vorgemerkte Buchungen ausschließen.
-- [ ] Verbrauch = `max(0, Kategorieausgaben - eindeutig zugeordnete Erstattungen)`.
-- [ ] Restbetrag = `Budget - Verbrauch`; negativer Rest zeigt Überschreitung.
-- [ ] Keine automatische Budgetübertragung; Vormonatsübernahme nur nach Nutzeraktion.
-- [ ] Nachträgliche Buchungs-/Kategorienänderungen korrekt nachführen; gewöhnliche Einnahmen nicht pauschal als Erstattung behandeln.
+- **Ursprünglicher Prüfpunkt:** Nur **gebuchte** Ausgaben berücksichtigen, einschließlich „Ohne Konto“; Umbuchungen und vorgemerkte Buchungen ausschließen.
+- **Ursprünglicher Prüfpunkt:** Verbrauch = `max(0, Kategorieausgaben - eindeutig zugeordnete Erstattungen)`.
+- **Ursprünglicher Prüfpunkt:** Restbetrag = `Budget - Verbrauch`; negativer Rest zeigt Überschreitung.
+- **Ursprünglicher Prüfpunkt:** Keine automatische Budgetübertragung; Vormonatsübernahme nur nach Nutzeraktion.
+- **Ursprünglicher Prüfpunkt:** Nachträgliche Buchungs-/Kategorienänderungen korrekt nachführen; gewöhnliche Einnahmen nicht pauschal als Erstattung behandeln.
 
 ### P2.3 UI / Abnahme
 
-- [ ] Monatswahl, Budgets je Kategorie, Verbrauch, Rest, Überschreitung und Vormonatsübernahme implementieren.
-- [ ] Leere Zustände, Mobilansicht, beide Themes und Formularfehler abdecken.
-- [ ] Tests für Centbeträge, Monats-/Jahreswechsel, Erstattungen über Ausgaben, kontolose Umsätze, vorgemerkt/gebucht, Umbuchungen, nachträgliche Kategorieänderung und Übernahme-Konflikte.
-- [ ] **Eigenständige gemeinsame Abnahme; Codex stoppt vor Stufe 3 und wartet auf ausdrückliche Freigabe.**
+- **Ursprünglicher Prüfpunkt:** Monatswahl, Budgets je Kategorie, Verbrauch, Rest, Überschreitung und Vormonatsübernahme implementieren.
+- **Ursprünglicher Prüfpunkt:** Leere Zustände, Mobilansicht, beide Themes und Formularfehler abdecken.
+- **Ursprünglicher Prüfpunkt:** Tests für Centbeträge, Monats-/Jahreswechsel, Erstattungen über Ausgaben, kontolose Umsätze, vorgemerkt/gebucht, Umbuchungen, nachträgliche Kategorieänderung und Übernahme-Konflikte.
+- **Ursprünglicher Prüfpunkt:** **Eigenständige gemeinsame Abnahme; Codex stoppt vor Stufe 3 und wartet auf ausdrückliche Freigabe.**
 
 ## 4. Stufe 3 – Fixkostenplanung (nur nach Freigabe von Stufe 2)
 
 ### P3.1 Modell / Fälligkeiten
 
-- [ ] Wiederkehrende Ausgabe mit Bezeichnung, Betrag, Kategorie, Beginn, optionalem Ende und Intervall **monatlich/quartalsweise/jährlich** verwalten.
-- [ ] Planpositionen separat von echten Buchungen speichern; **keine automatischen Ist-Buchungen** erzeugen.
-- [ ] Fälligkeiten deterministisch vom ursprünglichen Startdatum ableiten. Fehlt der Ankertag im Zielmonat, letzten Kalendertag verwenden; im nächsten passenden Monat wieder ursprünglichen Tag verwenden.
-- [ ] Enddatum-Semantik eindeutig definieren und testen.
+- **Ursprünglicher Prüfpunkt:** Wiederkehrende Ausgabe mit Bezeichnung, Betrag, Kategorie, Beginn, optionalem Ende und Intervall **monatlich/quartalsweise/jährlich** verwalten.
+- **Ursprünglicher Prüfpunkt:** Planpositionen separat von echten Buchungen speichern; **keine automatischen Ist-Buchungen** erzeugen.
+- **Ursprünglicher Prüfpunkt:** Fälligkeiten deterministisch vom ursprünglichen Startdatum ableiten. Fehlt der Ankertag im Zielmonat, letzten Kalendertag verwenden; im nächsten passenden Monat wieder ursprünglichen Tag verwenden.
+- **Ursprünglicher Prüfpunkt:** Enddatum-Semantik eindeutig definieren und testen.
 
 ### P3.2 Auswertungen / Zuordnung
 
-- [ ] Nächste Fälligkeiten und **tatsächlich geplante Monatsbelastung** aus den im Monat fälligen Planpositionen berechnen.
-- [ ] **Monatsdurchschnitt separat** anzeigen: monatlich `B`, quartalsweise `B/3`, jährlich `B/12`; erst für Darstellung runden.
-- [ ] Planpositionen dürfen Ist-Auswertungen und Budgets nicht verändern.
-- [ ] Echte Buchungen nur nach ausdrücklicher Aktion zu einer konkreten Fälligkeit zuordnen; doppelte Zuordnung verhindern.
-- [ ] Für die erste Version eindeutige 1:1-Zuordnung vorsehen, soweit Bestand/Anforderungen nichts anderes erfordern; Teilzahlungen/Sammelabbuchungen als separate Entscheidung behandeln.
+- **Ursprünglicher Prüfpunkt:** Nächste Fälligkeiten und **tatsächlich geplante Monatsbelastung** aus den im Monat fälligen Planpositionen berechnen.
+- **Ursprünglicher Prüfpunkt:** **Monatsdurchschnitt separat** anzeigen: monatlich `B`, quartalsweise `B/3`, jährlich `B/12`; erst für Darstellung runden.
+- **Ursprünglicher Prüfpunkt:** Planpositionen dürfen Ist-Auswertungen und Budgets nicht verändern.
+- **Ursprünglicher Prüfpunkt:** Echte Buchungen nur nach ausdrücklicher Aktion zu einer konkreten Fälligkeit zuordnen; doppelte Zuordnung verhindern.
+- **Ursprünglicher Prüfpunkt:** Für die erste Version eindeutige 1:1-Zuordnung vorsehen, soweit Bestand/Anforderungen nichts anderes erfordern; Teilzahlungen/Sammelabbuchungen als separate Entscheidung behandeln.
 
 ### P3.3 UI / Tests / Abnahme
 
-- [ ] Fixkostenliste, Formulare, nächste Fälligkeiten, Monatsbelastung, Durchschnitt und zugeordnete Ist-Buchungen darstellen.
-- [ ] Tests für 28./29./30./31. des Monats, Schaltjahre, Quartals-/Jahreswechsel, Laufzeitende, nachträgliche Änderungen und doppelte Zuordnung.
-- [ ] Abschließende fachliche und technische Abnahme dokumentieren.
+- **Ursprünglicher Prüfpunkt:** Fixkostenliste, Formulare, nächste Fälligkeiten, Monatsbelastung, Durchschnitt und zugeordnete Ist-Buchungen darstellen.
+- **Ursprünglicher Prüfpunkt:** Tests für 28./29./30./31. des Monats, Schaltjahre, Quartals-/Jahreswechsel, Laufzeitende, nachträgliche Änderungen und doppelte Zuordnung.
+- **Ursprünglicher Prüfpunkt:** Abschließende fachliche und technische Abnahme dokumentieren.
 
 ## 5. Querschnittliche Architektur- und Qualitätsregeln
 

@@ -1,5 +1,7 @@
 # Implementation evidence
 
+> **Current status, 2026-11-08:** PR #11 is merged and separately approved deployment `d193639` is complete. [status.md](status.md) is the current delivery/acceptance record; [todo.md](todo.md) is the only active checklist. Dated evidence below remains historical. Technical delivery does not imply full product acceptance; R1–R3 remain incomplete.
+
 ## F0 — Approved Finanzfluss implementation (2026-11-07)
 
 - User explicitly approved implementation of the complete reviewed plan in the current checkout. Saved finanzfluss-umsetzungsplan.md with the decisions, ordered commit boundaries, API/data/recurrence/average semantics, checks and delivery gates. Audit commit 392d988 is retained on codex/3-finanzfluss-experience; issue #3 reused.
@@ -325,3 +327,9 @@ UX4 committed as b843a85. The full local suite passed 130 tests in 24 files; add
 ## UX5 — Linux source acceptance passed — 2026-11-08
 
 Commit 2f93e95 passed full Linux CI 42497875724: 131 tests in 24 files, all 20 desktop/mobile browser scenarios and the extended image-only encrypted restore with import ownership/suggestion decisions. UX0–UX5 source acceptance is complete and the checklist is updated. PR #11 has explicit user approval to merge after fully green current checks. This final documentation-only commit must pass its own current CI before merge. Production rollout remains separately gated; no production changes.
+
+## Documentation audit correction — 2026-11-08
+
+The user approved correction of all plans and the To-do inventory after the read-only source audit. Added status.md as the current delivery record and replaced todo.md with stable R/I/P/B/C/A/E identifiers, explicit scope boundaries and acceptance criteria. Preserved the complete previous To-do content in the documentation archive; marked old plan checklists and dated acceptance evidence historical rather than silently checking off unverified requirements. Reopened UX2/UX4 and F1/N1 details, retained budgets/month planning/older optional requirements and external gates, and recorded the completed PR #11 merge/rollout, current main CI and populated 17-table restore. No product code, schema, server configuration or live bank access changed.
+
+Documentation checks passed: repository-wide Prettier check and ESLint with zero warnings; git diff whitespace check; all 99 local Markdown file targets; 21 unique task IDs (20 genuine open tasks plus D1 documentation completion); complete preservation of the former To-do content; reopened UX2/UX4 and explicit historical checklist labels. Only Markdown under docs changed. Application type/build/unit/browser/container tests were not rerun for this documentation-only correction; their existing delivery evidence is explicitly historical. The scoped local commit is on codex/3-docs-status-audit and references issue #3; no GitHub issue mutation, push, PR, merge or production update is part of this correction.

@@ -1,5 +1,9 @@
 # Finanzfluss-orientierter Ausbau mit konsequenter Nuxt UI
 
+> **Current status, 2026-11-08:** PR #11 is merged and separately approved deployment `d193639` is complete. [status.md](status.md) is the current delivery/acceptance record; [todo.md](todo.md) is the only active checklist. Dated evidence below remains historical. Technical delivery does not imply full product acceptance; R1–R3 remain incomplete.
+
+F1/N1 is partially fulfilled because field-level errors are not consistent everywhere (R2). F4 delivers the contract core, not the deferred aggregate month forecast (P1). F6 technical delivery is complete; user acceptance remains open.
+
 Approved implementation: user supplied this plan and explicitly requested implementation in the current checkout after the Plan-mode review. Issue #3 remains the task record. Preserve audit commit `392d988`, existing financial data, CSV automation, Sparkasse date support and the recorded deployed baseline `1e33afa`. New merge and rollout approvals remain separate.
 
 ## Goal and fixed decisions
@@ -58,7 +62,7 @@ Each package includes source, meaningful tests and documentation; run applicable
 - Confirmed-contract automatic matching needs unique counterparty/amount and a due-date difference of at most five days. Multiple contracts or payments leave a proposal. One payment per contract occurrence and at most one contract per transaction, enforced in the database.
 - Manual date/amount mismatches require visible confirmation, without changing the actual amount or forecast. Unlinking blocks immediate automatic relinking until explicitly re-enabled.
 - Badge actual linked transactions with contract name and detail link. Order active contracts by today's/future next unmatched due date. Older unmatched occurrences remain history and never block the rolling list; do not claim an unlinked payment is unpaid.
-- Forecasts never create transactions or enter actual totals. Delete/unlink never deletes a bank transaction. Actual current-month dues and monthly/yearly equivalents are separately labeled; round only displayed fractional-cent averages.
+- Forecasts never create transactions or enter actual totals. Delete/unlink never deletes a bank transaction. Actual current-month dues and monthly/yearly equivalents must remain separate. Delivery correction: per-contract dues/history and monthly/yearly equivalents exist; an aggregate selected-month due total remains unimplemented as P1 in todo.md. Round only displayed fractional-cent averages.
 - APIs: /contracts CRUD, /contracts/suggestions, /contracts/{id}/payments. Resolve duplicate/account-assignment conflicts explicitly; transfer existing category origins/classification/payment links atomically or refuse a conflicting merge.
 
 ## Analytics
@@ -78,7 +82,8 @@ Each package includes source, meaningful tests and documentation; run applicable
 - Run format:check, lint, strict typechecks, Prisma validation, tests, production build and browser suite; then exact-head Linux container/backup/restore CI.
 - After user-approved merge and successful immutable main publication, a separately approved rollout requires fresh encrypted backup/recovery, recorded existing config/images, paused writers, reviewed migration, original-data preservation and target health/HTTPS/proxy checks. Keep secrets/private identity out of outputs and source. No automatic down-migration.
 
-## Status
+## Delivery and remaining scope
 
-- Implementation approval: explicit user instruction to implement the complete reviewed plan in the existing checkout.
-- F0 committed as 8f423da. F1 verified: consistent controls, calendar/month selection, keyboard/mobile journeys and safe category deletion. F1 committed as 2328a7d. F2 verified: 23 preview tiles, six Ayu variants, compatible persistence and circular Nuxt UI toggle. F2 committed as dee4bc8. F3 verified: rules/templates/manual provenance/classification, additive migration and merge preservation. F3 committed as 2e174b9. F4 verified: confirmed contracts, suggestions, anchored/versioned recurrence, unique payment ownership, history and merge preservation. F4 committed as bd1df09. F5 verified: exact multi-month reports, disclosed averages/trends, Nuxt UI charts, matching transaction filters and final navigation/dashboard. F5 committed as d31e748. F6 local verification passed: 115 tests, 20 browser scenarios and the four-width/two-mode matrix. PR #10 is open with explicit merge-after-green-CI approval. Linux CI 42479998163 passed code revision 0320fd0, including all 20 browser scenarios and encrypted contract/rule restoration. F6 source acceptance is complete; current documentation-head checks still gate merge. Production rollout requires its separate approval. Audit commit 392d988 preserved. Production unchanged at the last verified 1e33afa until a new approved rollout.
+F0–F5 source commits: 8f423da, 2328a7d, dee4bc8, 2e174b9, bd1df09 and d31e748. F6 completed technical verification and PR #10 delivery; the merge preserved audit 392d988 and package commits. PR #10 was separately approved and deployed at 3b990ec. PR #11 subsequently extended the product and is deployed at d193639 after successful main CI 42499226320.
+
+The original package checks remain historical evidence in progress.md and finanzfluss-abnahme.md. They do not establish full detail acceptance: F1/N1 field-level errors remain R2; the aggregate selected-month forecast remains P1. Current gaps, approvals and user acceptance are maintained in todo.md and status.md. No old open PR or previous deployment checkpoint is the current delivery gate.
