@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { z } from 'zod';
 import * as c from '@financial-tracking/contracts';
 import { ContractsService } from './contracts.js';
@@ -12,8 +12,17 @@ export class ContractsController {
     return this.service.list();
   }
   /** Read suggestions without accepting them. */
-  @Get('contracts/suggestions') suggestions() {
-    return this.service.suggestions();
+  @Get('contracts/suggestions') suggestions(@Query() query: unknown) {
+    return this.service.suggestions(c.suggestionQuerySchema.parse(query).dismissed === 'true');
+  }
+  /** Persist an explicit rejection, never interpreting a swipe as consent. */
+  @Put('contracts/suggestions/:key/decision') dismiss(@Param('key') key: string, @Body() body: unknown) {
+    c.suggestionDecisionSchema.parse(body);
+    return this.service.decide(c.suggestionKeySchema.parse(key), true);
+  }
+  /** Restore a previously rejected pattern without creating a contract. */
+  @Delete('contracts/suggestions/:key/decision') restore(@Param('key') key: string) {
+    return this.service.decide(c.suggestionKeySchema.parse(key), false);
   }
   /** Read rounded monthly planning totals before the dynamic contract-ID route. */
   @Get('contracts/summary') summary() {

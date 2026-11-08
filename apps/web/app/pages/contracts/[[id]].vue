@@ -5,6 +5,7 @@ import { contractKinds } from '../../utils/contract-presentation';
 const api = useApi();
 const route = useRoute();
 const records = ref<z.infer<typeof c.contractSchema>[]>([]);
+const reviewing = ref(false);
 const summary = ref<z.infer<typeof c.contractSummarySchema> | null>(null);
 const suggestions = ref<z.infer<typeof c.contractSuggestionSchema>[]>([]);
 const detail = ref<z.infer<typeof c.contractSchema> | null>(null);
@@ -65,6 +66,7 @@ const selected = computed(
 );
 /** Load list or detail with a stale-response guard across route changes. */
 async function load() {
+  if (reviewing.value) return;
   const current = ++generation,
     id = String(route.params.id ?? '');
   loading.value = true;
@@ -428,25 +430,14 @@ onBeforeUnmount(
         ></UButton
       >
     </SectionPanel>
-    <SectionPanel title="Vertragsvorschläge" icon="contracts" class="">
-      <HelpPopover
-        title="Vertragsvorschläge"
-        text="Mindestens zwei passende Zahlungen ergeben einen Vorschlag. Erst deine Bestätigung erstellt einen Vertrag."
-      />
-      <p v-if="!suggestions.length" class="empty-copy">
-        Noch keine eindeutigen Wiederholungen. Importiere weitere Monate oder lege einen Vertrag selbst an.
-      </p>
-      <div v-for="proposal in suggestions" :key="proposal.key" class="editable-row">
-        <div>
-          <strong>{{ proposal.provider }}</strong>
-          <p>
-            {{ money(proposal.amountCents) }} · alle {{ proposal.intervalMonths }} Monate ·
-            {{ proposal.count }} passende Zahlungen
-          </p>
-        </div>
-        <UButton variant="soft" @click="openEditor(proposal)">Vorschlag prüfen</UButton>
-      </div>
-    </SectionPanel>
+    <SectionPanel title="Vertragsvorschläge" icon="contracts"
+      ><ContractReview
+        :suggestions="suggestions"
+        :accounts="accounts"
+        :categories="categories"
+        @open-change="reviewing = $event"
+        @changed="load"
+    /></SectionPanel>
   </template>
   <UModal
     v-model:open="editorOpen"

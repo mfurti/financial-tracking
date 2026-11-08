@@ -209,6 +209,7 @@ model Contract {
   name String
   provider String
   kind String
+  suggestionDecision ContractSuggestionDecision?
   accountId String? @db.Uuid
   account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
   categoryId String? @db.Uuid
@@ -218,6 +219,14 @@ model Contract {
   cancellationDate DateTime? @db.Date
   revisions ContractRevision[]
   payments ContractPayment[]
+}
+
+model ContractSuggestionDecision {
+  key String @id
+  state String
+  contractId String? @unique @db.Uuid
+  contract Contract? @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 model ContractRevision {

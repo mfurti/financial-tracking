@@ -181,6 +181,9 @@ export const categoryRuleBackfillResultSchema = z.object({
   protected: z.number().int(),
 });
 export const contractKindSchema = z.enum(['SUBSCRIPTION', 'RENT', 'INSURANCE', 'ENERGY', 'TELECOM', 'OTHER']);
+export const suggestionKeySchema = z.string().regex(/^[a-f0-9]{64}$/);
+export const suggestionQuerySchema = z.object({ dismissed: z.enum(['true', 'false']).optional() });
+export const suggestionDecisionSchema = z.object({ decision: z.literal('DISMISSED') });
 export const contractIntervalSchema = z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]);
 export const positiveCentsSchema = centsSchema.refine(
   /** Contract forecasts are positive expense magnitudes. */ (value) => BigInt(value) > 0n,
@@ -198,6 +201,7 @@ export const contractInputSchema = z
     cancellationDate: dateSchema.nullable().default(null),
     amountCents: positiveCentsSchema,
     intervalMonths: contractIntervalSchema,
+    suggestionKey: suggestionKeySchema.optional(),
   })
   .refine(
     /** The end is inclusive and never before the beginning. */ (value) =>
@@ -260,7 +264,7 @@ export const contractPaymentInputSchema = z.object({
   confirmMismatch: z.boolean().default(false),
 });
 export const contractSuggestionSchema = z.object({
-  key: z.string(),
+  key: suggestionKeySchema,
   provider: z.string(),
   amountCents: positiveCentsSchema,
   intervalMonths: contractIntervalSchema,
@@ -636,7 +640,7 @@ export type Monthly = z.infer<typeof monthlySchema>;
 
 /** One public operation; schemas remain the only transport field definitions. */
 export interface ApiContract {
-  method: 'get' | 'post' | 'patch' | 'delete';
+  method: 'get' | 'post' | 'patch' | 'delete' | 'put';
   path: string;
   request?: z.ZodType;
   query?: z.ZodType;
@@ -666,7 +670,21 @@ export const apiContracts: Record<string, ApiContract> = {
   contractSuggestions: {
     method: 'get',
     path: '/contracts/suggestions',
+    query: suggestionQuerySchema,
     response: z.array(contractSuggestionSchema),
+    status: 200,
+  },
+  dismissContractSuggestion: {
+    method: 'put',
+    path: '/contracts/suggestions/{key}/decision',
+    request: suggestionDecisionSchema,
+    response: okSchema,
+    status: 200,
+  },
+  restoreContractSuggestion: {
+    method: 'delete',
+    path: '/contracts/suggestions/{key}/decision',
+    response: okSchema,
     status: 200,
   },
   contract: { method: 'get', path: '/contracts/{id}', response: contractSchema, status: 200 },

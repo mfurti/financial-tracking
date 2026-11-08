@@ -10,7 +10,7 @@ Each package has its own verified commit; update this record and the checklist a
 - [x] UX1: atomic CSV rollback with impact preview, stale-preview protection and selectable treatment of links.
 - [x] UX2: fixed desktop management links, mobile More page, shared section headings, colors/icons and less visible text.
 - [x] UX3: rounded monthly contract equivalents and category/kind analytics behind a clickable fixed-cost card.
-- [ ] UX4: editable suggestion review cards, navigation-only swipes and durable decisions.
+- [x] UX4: editable suggestion review cards, navigation-only swipes and durable decisions.
 - [ ] UX5: complete documentation, visual/browser/API/migration checks and one feature PR; obtain concrete merge approval.
 
 ## CSV rollback

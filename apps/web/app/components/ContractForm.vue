@@ -6,12 +6,14 @@ const props = defineProps<{
   suggestion?: z.infer<typeof c.contractSuggestionSchema> | null;
   accounts: c.Account[];
   categories: c.Category[];
+  submitLabel?: string;
 }>();
-const emit = defineEmits<{ saved: [id: string] }>();
+const emit = defineEmits<{ saved: [id: string]; dirty: [value: boolean]; busy: [value: boolean] }>();
 const api = useApi();
 const { validation, formError } = useFormFeedback();
 const error = ref('');
 const busy = ref(false);
+const baseline = ref('');
 const kinds = [
   { label: 'Abo', value: 'SUBSCRIPTION' },
   { label: 'Miete', value: 'RENT' },
@@ -42,7 +44,7 @@ watchEffect(
   /** Initialize only when the selected record/confirmation changes. */ () => {
     const record = props.contract,
       suggestion = props.suggestion;
-    Object.assign(form, {
+    const initial = {
       name: record?.name ?? suggestion?.provider ?? '',
       provider: record?.provider ?? suggestion?.provider ?? '',
       kind: record?.kind ?? 'SUBSCRIPTION',
@@ -56,9 +58,22 @@ watchEffect(
       cancellationDate: record?.cancellationDate ?? '',
       amountEuro: editableEuro(record?.revisions.at(-1)?.amountCents ?? suggestion?.amountCents ?? '0'),
       intervalMonths: record?.revisions.at(-1)?.intervalMonths ?? suggestion?.intervalMonths ?? 1,
-    });
+    };
+    Object.assign(form, initial);
+    baseline.value = JSON.stringify(initial);
   },
 );
+const dirty = computed(
+  /** Compare only editable local values against the current card's initial values. */ () =>
+    JSON.stringify(form) !== baseline.value,
+);
+watch(dirty, /** Let the card coordinator protect uncommitted edits. */ (value) => emit('dirty', value));
+watch(busy, /** Block carousel navigation during the actual save request. */ (value) => emit('busy', value));
+/** Reset only this local form after explicit discard; persistence remains unchanged. */
+function reset() {
+  Object.assign(form, JSON.parse(baseline.value) as typeof form);
+}
+defineExpose({ reset });
 /** Validate exact cents and explicitly confirm the contract, never merely accept a suggestion on read. */
 async function save() {
   busy.value = true;
@@ -80,6 +95,7 @@ async function save() {
           startDate: form.startDate,
           amountCents: euroCents(form.amountEuro),
           intervalMonths: form.intervalMonths,
+          suggestionKey: props.suggestion?.key,
         });
     const saved = await api.request(
       props.contract ? `/contracts/${props.contract.id}` : '/contracts',
@@ -97,19 +113,16 @@ async function save() {
 </script>
 <template>
   <UForm ref="validation" :state="form" class="grid gap-4" @submit="save">
-    <UAlert v-if="error" role="alert" color="error" :description="error" />
+    <UAlert v-if="error" role="alert" color="error" :description="error" /><HelpPopover
+      title="Vertragsangaben"
+      text="Automatische Zahlungszuordnung verlangt die genaue Gegenpartei. Die Vertragskategorie überschreibt keine manuellen Buchungskategorien. Ein Enddatum gilt einschließlich dieses Tages; ein Kündigungsdatum löst keine Kündigung aus."
+    />
     <UFormField name="name" label="Vertragsname" required
       ><UInput v-model="form.name" placeholder="Zum Beispiel Streaming oder Miete"
     /></UFormField>
-    <UFormField
-      name="provider"
-      label="Anbieter / Gegenpartei"
-      help="Für automatische Zuordnung muss dieser Name vollständig mit der Gegenpartei der Buchung übereinstimmen."
-      required
-      ><UInput v-model="form.provider"
-    /></UFormField>
+    <UFormField name="provider" label="Anbieter / Gegenpartei" required><UInput v-model="form.provider" /></UFormField>
     <UFormField name="kind" label="Vertragsart"><USelect v-model="form.kind" :items="kinds" /></UFormField>
-    <UFormField name="accountId" label="Konto" help="Optional auf ein Konto begrenzen."
+    <UFormField name="accountId" label="Konto"
       ><ChoiceSelect
         v-model="form.accountId"
         :items="[
@@ -117,10 +130,7 @@ async function save() {
           ...accounts.map(/** Bind by stable identity. */ (account) => ({ label: account.name, value: account.id })),
         ]"
     /></UFormField>
-    <UFormField
-      name="categoryId"
-      label="Vertragskategorie"
-      help="Dient der Vertragsübersicht; überschreibt keine manuellen Buchungskategorien."
+    <UFormField name="categoryId" label="Vertragskategorie"
       ><ChoiceSelect
         v-model="form.categoryId"
         :items="[
@@ -134,7 +144,7 @@ async function save() {
       <UFormField name="startDate" label="Erste Fälligkeit"
         ><DatePicker v-model="form.startDate" label="Erste Fälligkeit"
       /></UFormField>
-      <UFormField name="amountCents" label="Betrag in Euro" help="Positive Ausgabe, zum Beispiel 12,99." required
+      <UFormField name="amountCents" label="Betrag in Euro" required
         ><UInput v-model="form.amountEuro" inputmode="decimal"
       /></UFormField>
       <UFormField name="intervalMonths" label="Zahlungsrhythmus"
@@ -144,18 +154,14 @@ async function save() {
     <p v-else class="muted">
       Betrag und Rhythmus ändern sich unten über eine zukünftige Zahlungsregel. Bisherige Regeln bleiben erhalten.
     </p>
-    <UFormField
-      name="endDate"
-      label="Letzte mögliche Fälligkeit"
-      help="Optionales Ende gilt einschließlich dieses Tages."
+    <UFormField name="endDate" label="Letzte mögliche Fälligkeit"
       ><DatePicker v-model="form.endDate" label="Vertragsende"
     /></UFormField>
-    <UFormField
-      name="cancellationDate"
-      label="Kündigungsdatum"
-      help="Deine eigene Fristangabe; löst keine Kündigung aus."
+    <UFormField name="cancellationDate" label="Kündigungsdatum"
       ><DatePicker v-model="form.cancellationDate" label="Kündigungsdatum"
     /></UFormField>
-    <UButton type="submit" :loading="busy">{{ contract ? 'Vertrag speichern' : 'Vertrag bestätigen' }}</UButton>
+    <UButton type="submit" :loading="busy">{{
+      submitLabel ?? (contract ? 'Vertrag speichern' : 'Vertrag bestätigen')
+    }}</UButton>
   </UForm>
 </template>

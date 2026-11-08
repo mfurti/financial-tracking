@@ -1466,3 +1466,21 @@ html[data-theme='high-contrast'] .month-balance {
 .chart-center strong {
   font-size: 1.1rem;
 }
+.review-proposal {
+  min-width: 0;
+}
+.review-swipe-zone {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  padding: 0.5rem 0 1rem;
+  touch-action: pan-y pinch-zoom;
+  cursor: grab;
+}
+.review-swipe-zone h3 {
+  flex: 1 1 160px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}

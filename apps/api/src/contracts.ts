@@ -96,6 +96,17 @@ export class ContractsService {
     const id = await this.db.$transaction(
       /** Contract and safe initial links commit together. */ async (tx) => {
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(16817834)::text`;
+        if (input.suggestionKey) {
+          const prior = await tx.contractSuggestionDecision.findUnique({ where: { key: input.suggestionKey } });
+          if (prior?.state === 'CONFIRMED' && prior.contractId) return prior.contractId;
+          if (
+            !(await this.suggestions(false, tx)).some(
+              /** Only a still-current visible proposal can be accepted. */ (proposal) =>
+                proposal.key === input.suggestionKey,
+            )
+          )
+            throw new AppError('SUGGESTION_CHANGED', 'Vorschlag wurde geändert. Prüfliste neu laden.', 409);
+        }
         await this.references(tx, input);
         const contract = await tx.contract.create({
           data: {
@@ -116,6 +127,10 @@ export class ContractsService {
             },
           },
         });
+        if (input.suggestionKey)
+          await tx.contractSuggestionDecision.create({
+            data: { key: input.suggestionKey, state: 'CONFIRMED', contractId: contract.id },
+          });
         await matchContractPayments(tx);
         return contract.id;
       },
@@ -318,8 +333,8 @@ export class ContractsService {
     return { ok: true };
   }
   /** Suggest only repeated equal expenses with coherent calendar spacing; never create contracts. */
-  async suggestions() {
-    const rows = await this.db.transaction.findMany({
+  async suggestions(dismissed = false, tx: Prisma.TransactionClient = this.db) {
+    const rows = await tx.transaction.findMany({
       where: {
         status: 'BOOKED',
         isTransfer: false,
@@ -366,7 +381,7 @@ export class ContractsService {
       );
       if (matching.length < 2) continue;
       suggestions.push({
-        key: createHash('sha256').update(key).digest('hex'),
+        key: createHash('sha256').update(`${key}:${months}`).digest('hex'),
         provider: last.counterpartyName!,
         amountCents: String(-last.amountCents),
         intervalMonths: months,
@@ -376,6 +391,42 @@ export class ContractsService {
         count: matching.length,
       });
     }
-    return z.array(c.contractSuggestionSchema).parse(suggestions);
+    const decisions = new Map(
+      (await tx.contractSuggestionDecision.findMany()).map(
+        /** Match durable decisions to the normalized recurrence signature. */ (decision) => [
+          decision.key,
+          decision.state,
+        ],
+      ),
+    );
+    return z
+      .array(c.contractSuggestionSchema)
+      .parse(suggestions)
+      .filter(
+        /** New observations of the same dismissed pattern stay hidden. */ (proposal) =>
+          dismissed ? decisions.get(proposal.key) === 'DISMISSED' : !decisions.has(proposal.key),
+      );
+  }
+  /** Store or restore a rejection while serializing against contract confirmation. */
+  async decide(key: string, dismiss: boolean) {
+    return this.db.$transaction(
+      /** Reject stale proposals before creating a durable decision. */ async (tx) => {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(16817834)::text`;
+        const prior = await tx.contractSuggestionDecision.findUnique({ where: { key } });
+        if (!dismiss) {
+          await tx.contractSuggestionDecision.deleteMany({ where: { key, state: 'DISMISSED' } });
+        } else if (prior?.state !== 'DISMISSED') {
+          if (
+            !(await this.suggestions(false, tx)).some(
+              /** Only currently offered keys are writable decisions. */ (proposal) => proposal.key === key,
+            )
+          )
+            throw new AppError('SUGGESTION_CHANGED', 'Vorschlag wurde geändert. Prüfliste neu laden.', 409);
+          await tx.contractSuggestionDecision.create({ data: { key, state: 'DISMISSED' } });
+        }
+        return { ok: true };
+      },
+      { isolationLevel: 'Serializable' },
+    );
   }
 }

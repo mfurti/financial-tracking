@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { apiContracts, errorSchema, idSchema } from '@financial-tracking/contracts';
+import { apiContracts, errorSchema, idSchema, suggestionKeySchema } from '@financial-tracking/contracts';
 import type { OpenAPIObject, SchemaObject, ParameterObject } from '@nestjs/swagger';
 
 /** Generate documentation from the same Zod fields used at runtime and in the browser. */
@@ -17,7 +17,12 @@ export function completeApiDocument(document: OpenAPIObject) {
     };
     const parameters: ParameterObject[] = [];
     for (const match of contract.path.matchAll(/\{([A-Za-z][A-Za-z0-9_]*)\}/g))
-      parameters.push({ name: match[1]!, in: 'path', required: true, schema: schema(idSchema) });
+      parameters.push({
+        name: match[1]!,
+        in: 'path',
+        required: true,
+        schema: schema(match[1] === 'key' ? suggestionKeySchema : idSchema),
+      });
     if (contract.query) {
       const query = z.toJSONSchema(contract.query);
       for (const [name, property] of Object.entries(query.properties ?? {}))
