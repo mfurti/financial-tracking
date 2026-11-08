@@ -57,6 +57,36 @@ test('upload alone opens full-period analytics and recovers a lost commit respon
     ),
   ).toBe(true);
   expect(await (await page.request.get('/api/v1/accounts')).json()).toEqual(beforeAccounts);
+  await page.goto('/imports');
+  const entry = page
+    .locator('.import-entry')
+    .filter({ has: page.getByText('22 neu · 0 bekannt · 0 prüfen', { exact: true }) });
+  await entry.getByRole('button', { name: 'Import rückgängig machen', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Import rückgängig machen?', exact: true });
+  await expect(dialog).toContainText('22 Buchungen werden gelöscht.');
+  await dialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+  expect(
+    (await (await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`)).json()).items,
+  ).toHaveLength(22);
+  await entry.getByRole('button', { name: 'Import rückgängig machen', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Import zurücknehmen', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  expect(
+    (await (await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`)).json()).items,
+  ).toHaveLength(0);
+  await page.goto('/imports/csv');
+  await page.getByLabel('CSV-Datei', { exact: true }).setInputFiles({
+    name: 'bank.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(
+      `Auftragskonto;Buchungstag;Valutadatum;Buchungstext;Verwendungszweck;Beguenstigter/Zahlungspflichtiger;Kontonummer/IBAN;Betrag;Waehrung;Bankreferenz\n${rows.join('\n')}\n`,
+      'latin1',
+    ),
+  });
+  await expect(page).toHaveURL(/month=2026-12/);
+  expect(
+    (await (await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`)).json()).items,
+  ).toHaveLength(22);
 });
 
 test('only real format, mapping and invalid-row exceptions need input; abandoned previews cannot navigate later', /** Preserve consent and lifecycle ownership while simplifying the normal workflow. */ async ({
@@ -134,7 +164,7 @@ test('only real format, mapping and invalid-row exceptions need input; abandoned
       buffer: Buffer.from(`Datum;Betrag;Text\n08.11.2026;-35,00;${label} verlassen\n`),
     });
     await staged;
-    await page.getByRole('button', { name: 'Mehr', exact: true }).click();
+    if (info.project.name === 'mobile') await page.getByRole('link', { name: 'Mehr', exact: true }).click();
     await page
       .getByRole('navigation', { name: info.project.name === 'mobile' ? 'Weitere Seiten' : 'Verwaltung', exact: true })
       .getByRole('link', { name: 'Einstellungen', exact: true })

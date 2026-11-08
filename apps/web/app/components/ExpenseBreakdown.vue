@@ -21,14 +21,15 @@ function categoryLink(id: string | null) {
 </script>
 
 <template>
-  <section class="panel spending-panel">
-    <div class="panel-heading">
-      <div>
-        <p class="eyebrow">WOHIN DEIN GELD GEHT</p>
-        <h2>{{ title }}</h2>
-      </div>
-      <span class="subtle-tag">{{ monthName(report.month) }}</span>
-    </div>
+  <SectionPanel
+    :title="title"
+    icon="categories"
+    class="spending-panel"
+    help="Noch nicht kategorisierte Buchungen sind bereits in den Ausgaben enthalten."
+  >
+    <template #actions
+      ><span class="subtle-tag">{{ monthName(report.month) }}</span></template
+    >
     <div v-if="groups.length" class="spending-overview">
       <ExpenseChart
         :groups="groups"
@@ -60,9 +61,5 @@ function categoryLink(id: string | null) {
       <p>Lade eine CSV-Datei hoch. Deine gebuchten Ausgaben erscheinen hier automatisch.</p>
       <UButton to="/imports/csv" variant="soft">CSV hochladen</UButton>
     </div>
-    <p class="muted text-sm mt-5">
-      Kategorien bündeln ähnliche Buchungen. „Nicht kategorisiert“ bedeutet, dass die Buchungen bereits mitgezählt
-      werden, aber noch keine Kategorie haben.
-    </p>
-  </section>
+  </SectionPanel>
 </template>

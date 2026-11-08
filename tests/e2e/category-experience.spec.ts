@@ -11,22 +11,19 @@ test('monthly categories explain real expenses and lead to persisted assignments
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
   if (info.project.name === 'mobile') {
-    const more = page.getByRole('button', { name: 'Mehr', exact: true });
-    await more.click();
-    await expect(more).toHaveAttribute('aria-expanded', 'true');
-    await page.keyboard.press('Escape');
-    await expect(more).toHaveAttribute('aria-expanded', 'false');
-    await expect(more).toBeFocused();
-    await more.click();
-    await page.getByRole('heading', { level: 1 }).click();
-    await expect(more).toHaveAttribute('aria-expanded', 'false');
-    await more.click();
+    await page.getByRole('link', { name: 'Mehr', exact: true }).click();
+    await expect(page).toHaveURL(/\/more$/);
     await page
       .getByRole('navigation', { name: 'Weitere Seiten' })
       .getByRole('link', { name: 'Konten', exact: true })
       .click();
     await expect(page).toHaveURL(/\/accounts$/);
-    await expect(more).toHaveAttribute('aria-expanded', 'false');
+  } else {
+    await expect(
+      page
+        .getByRole('navigation', { name: 'Verwaltung', exact: true })
+        .getByRole('link', { name: 'Konten', exact: true }),
+    ).toBeVisible();
   }
   await page.goto('/categories?month=2031-03');
   await expect(page.getByRole('heading', { name: 'Kategorien & Auswertung' })).toBeVisible();
@@ -54,7 +51,14 @@ test('monthly categories explain real expenses and lead to persisted assignments
   await expect(page.getByRole('img', { name: /Ausgaben in/ })).toBeVisible();
   await page.screenshot({ path: `.local/experience-dashboard-${info.project.name}.png`, fullPage: true });
   await page.goto('/categories?month=2031-03');
-  await expect(page.getByText('So entstehen deine Kategorien', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Hilfe: So entstehen deine Kategorien', exact: true }).click();
+  await expect(
+    page.getByText(
+      'Ordne unter Umsätze eine Kategorie zu oder erstelle eine Regel. Manuelle Entscheidungen haben Vorrang.',
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Kategorien verwalten', exact: true })).toHaveAttribute(
     'aria-expanded',
     'false',

@@ -96,7 +96,16 @@ async function load() {
     busy.value = false;
   }
 }
-/** Select a run and keep the review page bookmarkable. */
+/** Clear a removed selection before refreshing the remaining history. */
+async function removed(id: string) {
+  if (selectedRun.value === id) {
+    selectedRun.value = '';
+    issues.value = [];
+    await navigateTo('/imports');
+  }
+  await load();
+}
+/** Select a run without changing its persisted bookings. */
 async function select(id: string) {
   selectedRun.value = id;
   await navigateTo({ path: '/imports', query: { run: id } });
@@ -136,12 +145,7 @@ onMounted(load);
 <template>
   <div class="page-heading">
     <div>
-      <p class="eyebrow">NACHVOLLZIEHBAR BIS ZUR BUCHUNG</p>
       <h1>Importhistorie</h1>
-      <p class="muted">
-        Gültige Dateien werden automatisch übernommen. Hier klärst du nur fehlerhafte Zeilen und mögliche
-        Doppelbuchungen.
-      </p>
     </div>
     <div class="toolbar">
       <UButton :loading="busy" variant="ghost" @click="load">Neu laden</UButton
@@ -153,25 +157,30 @@ onMounted(load);
     <p v-if="!runs.length" class="empty-copy">
       Noch keine Importe. Starte mit einer CSV-Datei oder deiner Bankverbindung.
     </p>
-    <UButton
-      v-for="run in runs"
-      :key="run.id"
-      type="button"
-      color="neutral"
-      variant="ghost"
-      class="import-row"
-      :class="{ 'selected-row': selectedRun === run.id }"
-      @click="select(run.id)"
-    >
-      <div>
-        <strong>{{ run.source }} · {{ labels[run.status] }}</strong
-        ><small
-          >{{ observedTime(run.startedAt)
-          }}<span v-if="run.errorCode"> · Nicht abgeschlossen; bitte Hinweise prüfen</span></small
-        >
-      </div>
-      <span>{{ run.importedCount }} neu · {{ run.knownCount }} bekannt · {{ run.reviewRequiredCount }} prüfen</span>
-    </UButton>
+    <div v-for="run in runs" :key="run.id" class="import-entry">
+      <UButton
+        type="button"
+        color="neutral"
+        variant="ghost"
+        class="import-row"
+        :class="{ 'selected-row': selectedRun === run.id }"
+        @click="select(run.id)"
+      >
+        <div>
+          <strong>{{ run.source }} · {{ labels[run.status] }}</strong
+          ><small
+            >{{ observedTime(run.startedAt)
+            }}<span v-if="run.errorCode"> · Nicht abgeschlossen; bitte Hinweise prüfen</span></small
+          >
+        </div>
+        <span>{{ run.importedCount }} neu · {{ run.knownCount }} bekannt · {{ run.reviewRequiredCount }} prüfen</span>
+      </UButton>
+      <ImportRollback
+        v-if="run.source === 'CSV' && ['COMPLETED', 'PARTIAL_SUCCESS'].includes(run.status)"
+        :run-id="run.id"
+        @removed="removed(run.id)"
+      />
+    </div>
   </section>
   <section v-if="selectedRun" class="panel">
     <div class="panel-heading">
@@ -181,14 +190,13 @@ onMounted(load);
     <p v-if="!issues.length" class="empty-copy">Keine offenen Hinweise für diesen Import.</p>
     <section v-for="group in issueSections" :key="group.title" class="mt-5">
       <h3>{{ group.title }}</h3>
-      <p class="muted mb-4">{{ group.explanation }}</p>
+      <HelpPopover :title="group.title" :text="group.explanation" class="mb-4" />
       <article v-for="issue in group.items" :key="issue.id" class="review-card">
         <UBadge
           :color="issue.incoming ? 'warning' : 'error'"
           :label="issue.incoming ? 'Mögliche Doppelbuchung' : 'Zeile nicht übernommen'"
           class="mb-3"
         />
-        <p class="eyebrow">{{ issue.rowNumber ? `ZEILE ${issue.rowNumber}` : 'HINWEIS ZUM IMPORT' }}</p>
         <h4>{{ issue.message }}</h4>
         <div v-if="issue.incoming" class="review-incoming">
           <strong>{{ issue.incoming.description }}</strong

@@ -13,7 +13,7 @@ export function useApi() {
     path: string,
     schema: z.ZodType<T>,
     options: {
-      method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+      method?: 'GET' | 'POST' | 'PATCH' | 'DELETE' | 'PUT';
       body?: unknown;
       query?: Record<string, string | number | undefined>;
     } = {},

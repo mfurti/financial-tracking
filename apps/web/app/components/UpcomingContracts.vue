@@ -43,12 +43,8 @@ onBeforeUnmount(
 );
 </script>
 <template>
-  <section class="panel mt-6">
+  <SectionPanel title="Anstehende Vertragszahlungen" icon="contracts" class="mt-6">
     <div class="panel-heading">
-      <div>
-        <p class="eyebrow">ALS NÄCHSTES</p>
-        <h2>Anstehende Vertragszahlungen</h2>
-      </div>
       <UButton to="/contracts" variant="link">Alle Verträge</UButton>
     </div>
     <p class="muted">
@@ -76,5 +72,5 @@ onBeforeUnmount(
         ><small>{{ calendarDate(contract.nextDueDate!) }}</small></span
       ><strong>{{ money(contract.nextAmountCents!) }}</strong></UButton
     >
-  </section>
+  </SectionPanel>
 </template>

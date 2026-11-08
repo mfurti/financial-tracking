@@ -4,7 +4,6 @@ import { userErrorMessage } from '../utils/api-error';
 const api = useApi();
 const route = useRoute();
 const error = ref('');
-const moreOpen = ref(false);
 const primaryLinks = [
   { to: '/', label: 'Übersicht', icon: 'home' },
   { to: '/transactions', label: 'Umsätze', icon: 'transactions' },
@@ -22,7 +21,7 @@ const currentPage = computed(
     [...primaryLinks, ...secondaryLinks].find(
       /** Exact import history must not shadow the upload route. */ (link) =>
         link.to === '/' ? route.path === '/' : route.path === link.to,
-    )?.label ?? 'Mein Haushaltsbuch',
+    )?.label ?? (route.path === '/more' ? 'Mehr' : 'Mein Haushaltsbuch'),
 );
 /** Match nested ledger/detail routes without marking both import entries active. */
 function active(path: string) {
@@ -41,12 +40,6 @@ async function logout() {
     error.value = userErrorMessage(cause);
   }
 }
-watch(
-  /** Observe page changes, not query-only filter updates. */ () => route.path,
-  /** A completed navigation dismisses the Nuxt UI menu. */ () => {
-    moreOpen.value = false;
-  },
-);
 </script>
 
 <template>
@@ -69,7 +62,8 @@ watch(
           ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
         >
       </nav>
-      <DisclosurePanel title="Mehr" class="desktop-more">
+      <div class="desktop-more">
+        <p class="nav-group-label">Verwaltung</p>
         <nav aria-label="Verwaltung">
           <UButton
             v-for="link in secondaryLinks"
@@ -82,7 +76,7 @@ watch(
             ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
           >
         </nav>
-      </DisclosurePanel>
+      </div>
       <div class="sidebar-bottom">
         <span class="private-dot" />Dein privater Finanzbereich<small>Heimnetz & VPN · EUR</small>
       </div>
@@ -132,27 +126,18 @@ watch(
         :aria-current="active(link.to) ? 'page' : undefined"
         ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
       >
-      <div class="mobile-more">
-        <UPopover v-model:open="moreOpen">
-          <UButton color="neutral" variant="ghost" class="mobile-more-trigger" aria-label="Mehr"
-            ><FinanceIcon name="more" /><span>Mehr</span></UButton
-          >
-          <template #content
-            ><nav class="mobile-more-menu" aria-label="Weitere Seiten">
-              <UButton
-                v-for="link in secondaryLinks"
-                :key="link.to"
-                :to="link.to"
-                color="neutral"
-                variant="ghost"
-                block
-                class="justify-start"
-                ><FinanceIcon :name="link.icon" />{{ link.label }}</UButton
-              >
-            </nav></template
-          >
-        </UPopover>
-      </div>
+      <UButton
+        to="/more"
+        variant="link"
+        color="neutral"
+        :class="{
+          active:
+            route.path === '/more' ||
+            secondaryLinks.some(/** Mark the management destination on its child pages. */ (link) => active(link.to)),
+        }"
+        :aria-current="route.path === '/more' ? 'page' : undefined"
+        ><FinanceIcon name="more" /><span>Mehr</span></UButton
+      >
     </nav>
   </div>
 </template>

@@ -130,9 +130,7 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <div>
-      <p class="eyebrow">DEIN GELD, VERSTÄNDLICH SORTIERT</p>
       <h1>Finanzieller Überblick</h1>
-      <p class="muted">Hier siehst du, was im gewählten Monat reinkommt, rausgeht und übrig bleibt.</p>
     </div>
     <div class="toolbar">
       <MonthPicker v-model="month" @change="load" /><UButton variant="ghost" :loading="busy" @click="load"
@@ -174,20 +172,6 @@ onBeforeUnmount(
         >{{ transactionCount }} gebuchte Umsätze · eigene Umbuchungen und vorgemerkte Zahlungen nicht mitgerechnet</span
       ><span>Auch Buchungen ohne Konto zählen mit.</span>
     </div>
-    <section v-if="!transactionCount" class="panel workflow-guide" aria-label="So funktioniert dein Haushaltsbuch">
-      <div>
-        <span class="guide-number">1</span>
-        <div><strong>Datei hochladen</strong><small>Dein CSV-Bankexport genügt.</small></div>
-      </div>
-      <div>
-        <span class="guide-number">2</span>
-        <div><strong>Automatisch auswerten</strong><small>Wir erkennen Datum, Beträge und Buchungen.</small></div>
-      </div>
-      <div>
-        <span class="guide-number">3</span>
-        <div><strong>Überblick gewinnen</strong><small>Sieh Einnahmen, Ausgaben und Kategorien.</small></div>
-      </div>
-    </section>
     <div v-if="reviews || uncategorizedCount" class="review-summary" aria-label="Nächste Schritte">
       <NuxtLink v-if="reviews" to="/imports">{{ reviews }} Buchungen klären</NuxtLink
       ><NuxtLink v-if="uncategorizedCount" :to="uncategorizedLink"
@@ -196,12 +180,8 @@ onBeforeUnmount(
     </div>
     <div class="dashboard-grid">
       <ExpenseBreakdown :report="report" />
-      <section class="panel">
+      <SectionPanel title="Deine Konten" icon="accounts">
         <div class="panel-heading">
-          <div>
-            <p class="eyebrow">GETRENNT VON DEINER MONATSBILANZ</p>
-            <h2>Deine Konten</h2>
-          </div>
           <NuxtLink to="/accounts" class="text-link">Verwalten</NuxtLink>
         </div>
         <div class="accounts-summary">
@@ -210,7 +190,7 @@ onBeforeUnmount(
           ><small>{{ balances.length }} von {{ activeCount }} aktiven Konten · von der Bank gemeldet</small>
         </div>
         <p v-if="!accounts.length" class="muted text-sm my-5">
-          Du brauchst kein Konto, um CSV-Dateien auszuwerten. Konten kannst du später hinzufügen und Buchungen zuordnen.
+          Noch keine Konten. CSV-Import funktioniert auch ohne Konto.
         </p>
         <NuxtLink v-for="account in accounts" :key="account.id" :to="`/accounts/${account.id}`" class="account-row"
           ><span class="account-icon"><FinanceIcon name="accounts" /></span>
@@ -232,22 +212,19 @@ onBeforeUnmount(
               : 'Kein Saldo'
           }}</strong></NuxtLink
         >
-        <p class="muted text-sm mt-5">
-          Eine CSV-Datei enthält Umsätze. Ein verlässlicher Kontostand kommt aus einer Bankabfrage.
-        </p>
+        <HelpPopover
+          title="Kontostände"
+          text="CSV-Dateien liefern Umsätze. Bankgemeldete Kontostände bleiben von der Monatsbilanz getrennt."
+        />
         <NuxtLink v-if="unassigned" to="/transactions?unassigned=true" class="text-link"
           >Buchungen ohne Konto ansehen</NuxtLink
         >
-      </section>
+      </SectionPanel>
     </div>
     <UpcomingContracts />
     <UButton to="/analytics" variant="soft" class="mt-5">Mehrmonatsanalyse öffnen</UButton>
-    <section class="panel mt-6">
+    <SectionPanel title="Letzte Buchungen" icon="transactions" class="mt-6">
       <div class="panel-heading">
-        <div>
-          <p class="eyebrow">DAS IST PASSIERT</p>
-          <h2>Letzte Buchungen</h2>
-        </div>
         <NuxtLink :to="transactionsLink" class="text-link">Alle anzeigen</NuxtLink>
       </div>
       <p v-if="!recent.length" class="empty-copy">
@@ -266,6 +243,6 @@ onBeforeUnmount(
         </div>
         <strong :class="BigInt(row.amountCents) > 0n ? 'positive' : ''">{{ money(row.amountCents) }}</strong></NuxtLink
       >
-    </section>
+    </SectionPanel>
   </template>
 </template>

@@ -24,6 +24,7 @@ import { CategoryRulesService } from './category-rules.js';
 import { ContractsController } from './contracts-controller.js';
 import { ContractsService } from './contracts.js';
 import { AnalyticsService } from './analytics.js';
+import { ImportRollbackService } from './import-rollback.js';
 
 /** Create an application with injectable persistence for integration tests. */
 export async function createApp(
@@ -43,6 +44,7 @@ export async function createApp(
       { provide: 'DB', useValue: db },
       AuthService,
       ImportService,
+      ImportRollbackService,
       LedgerService,
       SyncService,
       AssignmentService,

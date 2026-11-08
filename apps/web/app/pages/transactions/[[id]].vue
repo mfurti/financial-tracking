@@ -207,9 +207,7 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <div>
-      <p class="eyebrow">JEDE BUCHUNG IM BLICK</p>
       <h1>{{ route.params.id ? 'Umsatzdetails' : 'Deine Umsätze' }}</h1>
-      <p class="muted">Suchen, zuordnen und deinen Alltag verstehen.</p>
     </div>
     <UButton :to="route.params.id ? '/transactions' : '/imports/csv'" variant="soft">{{
       route.params.id ? 'Alle Umsätze' : 'CSV importieren'

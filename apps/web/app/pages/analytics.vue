@@ -120,11 +120,14 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <div>
-      <p class="eyebrow">DEIN GELD VERSTEHEN</p>
       <h1>Analysen</h1>
-      <p class="muted">Ausgaben, Durchschnitt und Entwicklung über mehrere Monate.</p>
     </div>
-    <UButton to="/imports/csv">CSV importieren</UButton>
+    <div class="toolbar">
+      <HelpPopover
+        title="So liest du diese Zahlen"
+        text="Gebuchte Umsätze einschließlich Ohne Konto zählen. Umbuchungen und Vormerkungen sind ausgeschlossen. Erstattungen sind Einnahmen. Durchschnitte berücksichtigen vollständig ausgewählte, abgeschlossene Monate mit Buchungen; vorhandene Daten beweisen keine vollständige Bankhistorie."
+      /><UButton to="/imports/csv">CSV importieren</UButton>
+    </div>
   </div>
   <UNavigationMenu :items="navigation" class="mb-5" aria-label="Analysebereiche" />
   <section class="panel mb-5">
@@ -136,13 +139,14 @@ onBeforeUnmount(
         variant="outline"
         :disabled="busy"
         @click="preset(count)"
-        >{{ count }} abgeschlossene Monate</UButton
+        >{{ count }} Monate</UButton
       >
     </div>
-    <p class="muted mb-4">
-      Standard: zwölf abgeschlossene Monate. Eigener Zeitraum: höchstens 36 Kalendermonate. Laufende Monate zählen zu
-      den tatsächlichen Summen, bleiben beim Durchschnitt ausgeschlossen.
-    </p>
+    <HelpPopover
+      title="Zeitraum"
+      text="Schnellwahl: abgeschlossene Monate. Eigener Zeitraum: maximal 36 Monate. Laufende Monate zählen zu den Summen, aber nicht zum Durchschnitt."
+      class="mb-4"
+    />
     <form class="filter-grid" @submit.prevent="apply">
       <UFormField label="Zeitraum von"><DatePicker v-model="from" label="Zeitraum von" /></UFormField
       ><UFormField label="Zeitraum bis"><DatePicker v-model="to" label="Zeitraum bis" /></UFormField
@@ -178,15 +182,23 @@ onBeforeUnmount(
     <div class="analytics-metrics mb-5">
       <section class="panel">
         <p class="muted">Einnahmen</p>
-        <UButton :to="link({ direction: 'INCOME' })" variant="link" color="neutral" class="insight-amount">{{
-          money(report.incomeCents)
-        }}</UButton>
+        <UButton
+          :to="link({ direction: 'INCOME' })"
+          variant="link"
+          color="neutral"
+          class="insight-amount amount-income"
+          >{{ money(report.incomeCents) }}</UButton
+        >
       </section>
       <section class="panel">
         <p class="muted">Ausgaben</p>
-        <UButton :to="link({ direction: 'EXPENSE' })" variant="link" color="neutral" class="insight-amount">{{
-          money(report.expenseCents)
-        }}</UButton>
+        <UButton
+          :to="link({ direction: 'EXPENSE' })"
+          variant="link"
+          color="neutral"
+          class="insight-amount amount-expense"
+          >{{ money(report.expenseCents) }}</UButton
+        >
       </section>
       <section class="panel">
         <p class="muted">Saldo der Geldflüsse</p>
@@ -197,18 +209,15 @@ onBeforeUnmount(
         <strong class="insight-amount">{{
           report.average.expenseCents === null ? 'Noch nicht berechenbar' : money(report.average.expenseCents)
         }}</strong
-        ><small>{{ report.average.monthCount }} abgeschlossene, vollständig ausgewählte Monate mit Buchungen</small>
+        ><small>Ø aus {{ report.average.monthCount }} Monaten</small>
       </section>
     </div>
-    <UAlert
-      color="neutral"
-      variant="soft"
-      title="So liest du diese Zahlen"
-      description="Gebuchte Umsätze zählen einschließlich Ohne Konto. Eigene Umbuchungen und Vormerkungen bleiben außen vor. Positive Erstattungen sind Einnahmen. Vorhandene Buchungen beweisen keine vollständige Bankhistorie."
+    <SectionPanel
+      title="Dein Monatsverlauf"
+      icon="categories"
       class="mb-5"
-    />
-    <section class="panel mb-5">
-      <h2>Dein Monatsverlauf</h2>
+      help="Der Trend vergleicht den letzten geeigneten Monat mit seinem direkten Kalendervormonat. Beide müssen vollständig ausgewählt sein und Buchungen enthalten."
+    >
       <MonthlyChart :report="report" @select="monthSelect" />
       <div v-if="report.trend" class="data-context">
         <strong
@@ -221,14 +230,10 @@ onBeforeUnmount(
           }}<span v-if="report.trend.percent === null"> · kein Prozentwert bei Nullbasis</span></span
         >
       </div>
-      <p v-else class="muted">
-        Kein vergleichbarer Trend: Der letzte geeignete Monat und sein direkter Vormonat müssen beide vollständige
-        Datenmonate im gewählten Zeitraum sein.
-      </p>
-    </section>
+      <p v-else class="muted">Noch kein vergleichbarer Trend.</p>
+    </SectionPanel>
     <div class="dashboard-grid mb-5">
-      <section class="panel">
-        <h2>Ausgaben nach Kategorien</h2>
+      <SectionPanel title="Ausgaben nach Kategorien" icon="categories">
         <ExpenseChart
           v-if="report.categories.length"
           :groups="report.categories"
@@ -252,13 +257,12 @@ onBeforeUnmount(
             ></span
           ><strong>{{ money(group.expenseCents) }}</strong></UButton
         >
-      </section>
-      <section class="panel">
-        <h2>Fix oder variabel?</h2>
-        <p class="muted mb-5">
-          Manuelle Kennzeichnung hat Vorrang. Bestätigte Vertragszahlungen gelten sonst als fix. Restliche Ausgaben
-          bleiben nicht eingeordnet.
-        </p>
+      </SectionPanel>
+      <SectionPanel
+        help="Manuelle Kennzeichnung hat Vorrang. Bestätigte Vertragszahlungen gelten sonst als fix; der Rest bleibt nicht eingeordnet."
+        title="Fix oder variabel?"
+        icon="categories"
+      >
         <UButton
           v-for="group in report.classification"
           :key="group.classification"
@@ -274,14 +278,13 @@ onBeforeUnmount(
             ></span
           ><strong>{{ money(group.expenseCents) }}</strong></UButton
         >
-      </section>
+      </SectionPanel>
     </div>
-    <section class="panel">
-      <h2>Exakte Monatswerte</h2>
-      <p class="muted mb-4">
-        Durchschnitt nur aus geeigneten Monaten. Lücken, laufende, zukünftige und angeschnittene Monate bleiben
-        sichtbar.
-      </p>
+    <SectionPanel
+      title="Exakte Monatswerte"
+      icon="categories"
+      help="Durchschnitt nur aus vollständig ausgewählten, abgeschlossenen Monaten mit Buchungen. Lücken sowie laufende und angeschnittene Monate bleiben sichtbar. Einzelne Buchungen werden nicht aufgeteilt."
+    >
       <div class="analytics-table-scroll">
         <table class="analytics-table">
           <caption class="sr-only">
@@ -316,9 +319,8 @@ onBeforeUnmount(
         </table>
       </div>
       <p class="muted mt-4">
-        {{ report.average.excludedMonths.length }} von {{ report.months.length }} Monaten ausgeschlossen. Keine einzelne
-        Buchung wird aufgeteilt.
+        {{ report.average.excludedMonths.length }} von {{ report.months.length }} Monaten ausgeschlossen.
       </p>
-    </section>
+    </SectionPanel>
   </template>
 </template>

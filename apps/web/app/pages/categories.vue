@@ -141,12 +141,7 @@ onBeforeUnmount(
   />
   <div class="page-heading">
     <div>
-      <p class="eyebrow">DEINE AUSGABEN VERSTEHEN</p>
       <h1>Kategorien & Auswertung</h1>
-      <p class="muted">
-        Sieh, wofür dein Geld ausgegeben wurde. Kategorien bündeln ähnliche Buchungen, zum Beispiel Lebensmittel oder
-        Wohnen.
-      </p>
     </div>
     <div class="heading-actions">
       <label class="month-control">Monat<MonthPicker v-model="month" @change="load" /></label
@@ -159,18 +154,15 @@ onBeforeUnmount(
     <div class="category-insights mb-6">
       <section class="panel">
         <p class="muted">Ausgegeben · {{ monthName(report.month) }}</p>
-        <strong class="insight-amount">{{ money(report.expenseCents) }}</strong
-        ><small>Gebuchte Ausgaben ohne eigene Umbuchungen</small>
+        <strong class="insight-amount">{{ money(report.expenseCents) }}</strong>
       </section>
       <section class="panel">
         <p class="muted">Eingenommen</p>
-        <strong class="insight-amount positive">{{ money(report.incomeCents) }}</strong
-        ><small>Einnahmen fließen separat in deinen Monatsüberblick ein.</small>
+        <strong class="insight-amount positive">{{ money(report.incomeCents) }}</strong>
       </section>
       <section class="panel">
         <p class="muted">Noch ohne Kategorie</p>
-        <strong class="insight-amount">{{ unclassified?.count ?? 0 }} Buchungen</strong
-        ><small>Bereits vollständig in der Auswertung enthalten.</small
+        <strong class="insight-amount">{{ unclassified?.count ?? 0 }} Buchungen</strong><small>Bereits mitgezählt</small
         ><NuxtLink v-if="unclassified?.count" :to="unclassifiedLink" class="text-link mt-3"
           >Buchungen zuordnen</NuxtLink
         >
@@ -178,18 +170,13 @@ onBeforeUnmount(
     </div>
     <ExpenseBreakdown :report="report" />
   </template>
-  <section class="panel category-guide mt-6 mb-6">
-    <FinanceIcon name="categories" />
-    <div>
-      <h2>So entstehen deine Kategorien</h2>
-      <p>
-        Öffne unter „Umsätze“ eine Buchung und wähle ihre Kategorie. Deine Auswertung wird daraus berechnet. Ein
-        CSV-Import übernimmt deine Buchungen. Sichere Regeln können neue Buchungen automatisch zuordnen; manuelle
-        Entscheidungen bleiben geschützt.
-      </p>
-      <NuxtLink :to="unclassifiedLink" class="text-link">Umsätze ohne Kategorie öffnen</NuxtLink>
-    </div>
-  </section>
+  <div class="toolbar my-5">
+    <UButton :to="unclassifiedLink" variant="soft">Umsätze ohne Kategorie öffnen</UButton
+    ><HelpPopover
+      title="So entstehen deine Kategorien"
+      text="Ordne unter Umsätze eine Kategorie zu oder erstelle eine Regel. Manuelle Entscheidungen haben Vorrang."
+    />
+  </div>
   <DisclosurePanel class="panel category-management" title="Kategorien verwalten"
     ><div class="mt-6">
       <h2 class="mb-4">Kategorie anlegen</h2>

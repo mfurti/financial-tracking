@@ -26,6 +26,16 @@ test('multi-month analysis explains observed averages and drills into exact acco
   await expect(page).toHaveURL(/month=2025-04/);
   await page.getByRole('link', { name: 'Analysen', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Analysen', exact: true })).toBeVisible();
+  const help = page.getByRole('button', { name: 'Hilfe: So liest du diese Zahlen', exact: true });
+  await help.focus();
+  await page.keyboard.press('Space');
+  await expect(page.getByText(/Gebuchte Umsätze einschließlich Ohne Konto zählen/)).toBeVisible();
+  await page.keyboard.press('Escape');
+  const exactSection = page
+    .locator('.section-block')
+    .filter({ has: page.getByRole('heading', { name: 'Exakte Monatswerte', exact: true }) });
+  await expect(exactSection.locator(':scope > .section-heading')).toContainText('Exakte Monatswerte');
+  await expect(exactSection.locator('.panel h2')).toHaveCount(0);
   await page.goto('/analytics?from=2025-01-01&to=2025-05-31&unassigned=true');
   await expect(page.getByRole('table')).toBeVisible();
   await expect(
@@ -33,7 +43,7 @@ test('multi-month analysis explains observed averages and drills into exact acco
   ).toContainText('15,00');
   await expect(
     page.locator('.analytics-metrics section').filter({ hasText: 'Durchschnittliche Ausgaben' }),
-  ).toContainText('2 abgeschlossene');
+  ).toContainText('Ø aus 2 Monaten');
   await expect(page.getByText('Ausgabentrend:', { exact: false })).toContainText('10,00');
   await expect(page.getByRole('row').filter({ hasText: 'Januar 2025' })).toContainText('Keine Buchungen');
   await expect(page.getByRole('row').filter({ hasText: 'März 2025' })).toContainText('Berücksichtigt');

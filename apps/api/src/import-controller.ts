@@ -5,6 +5,8 @@ import { csvPreviewInputSchema, csvPreviewSchema, idSchema, runSchema } from '@f
 import { ImportService } from './imports.js';
 import { SyncService } from './sync.js';
 import { bankSetup } from './bank.js';
+import { ImportRollbackService } from './import-rollback.js';
+import { rollbackInputSchema } from '@financial-tracking/contracts';
 import {
   csvCommitSchema,
   resolutionSchema,
@@ -31,6 +33,7 @@ export class ImportController {
   constructor(
     @Inject(ImportService) private readonly imports: ImportService,
     @Inject(SyncService) private readonly sync: SyncService,
+    @Inject(ImportRollbackService) private readonly rollbackService: ImportRollbackService,
   ) {}
   /** Stage a CSV preview. */
   @Post('imports/csv/preview')
@@ -81,5 +84,15 @@ export class ImportController {
   @Get('imports')
   history() {
     return this.sync.history();
+  }
+  /** Preview the protected rows and links before an authenticated destructive action. */
+  @Get('imports/:id/rollback-preview')
+  rollbackPreview(@Param('id') id: string) {
+    return this.rollbackService.preview(idSchema.parse(id));
+  }
+  /** Apply only an explicitly confirmed, still-current CSV rollback. */
+  @Post('imports/:id/rollback')
+  rollback(@Param('id') id: string, @Body() body: unknown) {
+    return this.rollbackService.rollback(idSchema.parse(id), rollbackInputSchema.parse(body));
   }
 }
