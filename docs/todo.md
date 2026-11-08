@@ -6,7 +6,7 @@ The user explicitly requested implementation of the reviewed [Finanzfluss implem
 
 - [x] F0: save the approved plan and synchronize the existing task record/checklist; relevant Markdown checks pass before commit.
 - [x] F1: consistent Nuxt UI controls, dates/months, clarification and existing keyboard/mobile journeys. Lint, strict types, production build and all 16 browser scenarios verified; focused six-case rerun passed after waiting for menu exit animations.
-- [ ] F2: theme tiles, six Ayu variants, circular Nuxt UI toggle and compatible early persistence.
+- [x] F2: 23 theme tiles, six Ayu variants, circular Nuxt UI toggle and compatible early persistence. Twenty contrast/storage tests and both browser profiles passed; all four viewport widths checked.
 - [ ] F3: category templates/rules, manual provenance and fixed/variable metadata with additive migration, API/UI and preservation tests.
 - [ ] F4: confirmed contracts, versioned recurrence, unique payment matches, history/marking and next-due ordering with additive migration/API/UI/tests.
 - [ ] F5: exact multi-month analytics, valid average/trend denominators, breakdown/drill-down and final navigation/dashboard.

@@ -1204,3 +1204,60 @@ html[data-theme='high-contrast'] .month-balance {
     flex-direction: column;
   }
 }
+.theme-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 1rem;
+}
+.theme-tile {
+  min-width: 0;
+  align-items: start;
+}
+.theme-tile-label {
+  display: block;
+  min-height: 1.5rem;
+  font-weight: 650;
+}
+.theme-finance-preview {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding: 0.75rem;
+  border-radius: 0.6rem;
+}
+.theme-preview-card {
+  display: grid;
+  padding: 0.5rem;
+  background: var(--preview-surface);
+  border: 1px solid var(--preview-border);
+  border-radius: 0.4rem;
+}
+.theme-preview-card small,
+.theme-preview-caption {
+  color: var(--preview-muted);
+  font-size: 0.7rem;
+}
+.theme-preview-card strong {
+  font-size: 0.95rem;
+}
+.theme-preview-chart {
+  display: flex;
+  align-items: end;
+  gap: 0.4rem;
+  height: 2.3rem;
+}
+.theme-preview-chart i {
+  flex: 1;
+  height: 70%;
+  background: var(--preview-accent);
+  border-radius: 0.2rem 0.2rem 0 0;
+}
+.theme-preview-chart i:nth-child(2) {
+  height: 40%;
+}
+.theme-preview-chart i:nth-child(3) {
+  height: 90%;
+}
+.theme-preview-chart i:nth-child(4) {
+  height: 55%;
+}

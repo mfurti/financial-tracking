@@ -81,4 +81,4 @@ Each package includes source, meaningful tests and documentation; run applicable
 ## Status
 
 - Implementation approval: explicit user instruction to implement the complete reviewed plan in the existing checkout.
-- F0 committed as 8f423da. F1 verified: consistent controls, calendar/month selection, keyboard/mobile journeys and safe category deletion. F2–F6 pending. Audit commit 392d988 preserved. Production unchanged at the last verified 1e33afa until a new approved rollout.
+- F0 committed as 8f423da. F1 verified: consistent controls, calendar/month selection, keyboard/mobile journeys and safe category deletion. F1 committed as 2328a7d. F2 verified: 23 preview tiles, six Ayu variants, compatible persistence and circular Nuxt UI toggle. F3–F6 pending. Audit commit 392d988 preserved. Production unchanged at the last verified 1e33afa until a new approved rollout.

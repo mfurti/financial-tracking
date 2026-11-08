@@ -125,6 +125,55 @@ export const appearanceThemes = [
 /** Known device-local theme identity, never an arbitrary CSS or extension input. */
 export type AppearanceThemeId = (typeof appearanceThemes)[number]['id'];
 
+/** Remember which dark Ayu tone and panel treatment a device last selected. */
+export type AyuPreference = { tone: 'dark' | 'mirage'; bordered: boolean };
+export const ayuStorageKey = 'haushaltsbuch-ayu';
+export const ayuMirage: ThemeTone = ['#1f2430', '#242936', '#cccac2', '#b2bbcf', '#ffcc66', '#1f2430'];
+/** A visible tile can fix Ayu brightness while ordinary families follow the independent mode. */
+export type AppearanceChoice = {
+  value: string;
+  label: string;
+  family: AppearanceThemeId;
+  mode?: 'light' | 'dark';
+  ayu?: AyuPreference;
+};
+export const appearanceChoices: AppearanceChoice[] = [
+  ...appearanceThemes
+    .filter(/** Replace the legacy Ayu family with six explicit variants. */ (theme) => theme.id !== 'ayu')
+    .map(
+      /** Keep every existing family identity valid. */ (theme) => ({
+        value: theme.id,
+        label: theme.name,
+        family: theme.id,
+      }),
+    ),
+  ...(['light', 'dark', 'mirage'] as const).flatMap(
+    /** Pair each Ayu tone with its panel treatment. */ (tone) =>
+      [true, false].map(
+        /** Encode only bundled variants. */ (bordered) => ({
+          value: `ayu-${tone}${bordered ? '' : '-borderless'}`,
+          label: `Ayu ${tone === 'light' ? 'Light' : tone === 'dark' ? 'Dark' : 'Mirage'}${bordered ? '' : ' · Ohne Rahmen'}`,
+          family: 'ayu' as const,
+          mode: tone === 'light' ? ('light' as const) : ('dark' as const),
+          ayu: { tone: tone === 'mirage' ? ('mirage' as const) : ('dark' as const), bordered },
+        }),
+      ),
+  ),
+];
+
+/** Treat corrupt or older storage as the original bordered dark Ayu palette. */
+export function resolveAyuPreference(value: unknown): AyuPreference {
+  if (!value || typeof value !== 'object') return { tone: 'dark', bordered: true };
+  const record = value as Record<string, unknown>;
+  return { tone: record.tone === 'mirage' ? 'mirage' : 'dark', bordered: record.bordered !== false };
+}
+
+/** Resolve the tile preview to exactly the same bundled tones used by the application. */
+export function choiceTone(choice: AppearanceChoice, mode: 'light' | 'dark'): ThemeTone {
+  if (choice.family === 'ayu' && choice.mode === 'dark' && choice.ayu?.tone === 'mirage') return ayuMirage;
+  return resolveAppearanceTheme(choice.family)[choice.mode ?? mode];
+}
+
 /** Invalid or missing stored preferences fall back to the default family. */
 export function resolveAppearanceTheme(value: unknown) {
   return (
@@ -176,7 +225,7 @@ export function appearanceVariables(theme: AppearanceTheme, mode: 'light' | 'dar
 
 /** Emit static palette CSS at build time so a restored preference is available before the app mounts. */
 export function appearanceStyleSheet() {
-  return appearanceThemes
+  const families = appearanceThemes
     .flatMap(
       /** Give every family both light and dark selectors. */ (theme) =>
         (['light', 'dark'] as const).map(
@@ -189,6 +238,10 @@ export function appearanceStyleSheet() {
         ),
     )
     .join('\n');
+  const mirage = Object.entries(appearanceVariables({ ...resolveAppearanceTheme('ayu'), dark: ayuMirage }, 'dark'))
+    .map(/** Emit the same semantic tokens for the alternate dark tone. */ ([key, value]) => `${key}:${value}`)
+    .join(';');
+  return `${families}\nhtml.dark[data-theme="ayu"][data-ayu-tone="mirage"]{${mirage}}\nhtml[data-theme="ayu"][data-ayu-border="none"] .panel{border-color:transparent}`;
 }
 
 /** Restore only an allowlisted family before first paint; storage denial keeps the default usable. */
@@ -196,5 +249,5 @@ export function appearanceBootstrap() {
   const ids = JSON.stringify(
     appearanceThemes.map(/** Stored values cannot introduce new styles. */ (theme) => theme.id),
   );
-  return `(()=>{let id='default';try{const value=localStorage.getItem('${appearanceStorageKey}');if(${ids}.includes(value))id=value;}catch{}document.documentElement.dataset.theme=id;})();`;
+  return `(()=>{let id='default',tone='dark',border='visible';try{const value=localStorage.getItem('${appearanceStorageKey}');if(${ids}.includes(value))id=value;const ayu=JSON.parse(localStorage.getItem('${ayuStorageKey}')||'null');if(ayu&&typeof ayu==='object'){if(ayu.tone==='mirage')tone='mirage';if(ayu.bordered===false)border='none';}}catch{}const d=document.documentElement.dataset;d.theme=id;d.ayuTone=tone;d.ayuBorder=border;})();`;
 }

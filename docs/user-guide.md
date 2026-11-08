@@ -68,3 +68,7 @@ CSV bleibt jederzeit unabhängig nutzbar. Ein echter Sparkasse-Abruf benötigt z
 ## Datum und Auswahlfelder
 
 Datumsfelder erlauben direkte Eingabe, Kalenderauswahl und Löschen. Der Monatsfilter öffnet eine Monatsauswahl. Lange Auswahllisten lassen sich durchsuchen; mit Escape schließt du die Liste. Unter **Buchungen klären** unterscheiden die Hinweise fehlerhafte Zeilen von möglichen Doppelbuchungen. Die angezeigten Ursachen und Vergleichswerte erklären die erforderliche Entscheidung. Das Löschen einer Kategorie verlangt eine Bestätigung und erhält die Buchungen.
+
+## Theme-Kacheln
+
+Unter Einstellungen wählst du eine der 23 Vorschaukacheln. Die Markierung zeigt die aktive Farbwelt; Pfeiltasten bewegen den Fokus, die Leertaste wählt. Ayu Light, Dark und Mirage gibt es jeweils mit und ohne Kartenrahmen. Die Ayu-Auswahl setzt auch Hell oder Dunkel. Der Kreis wechselt zu Light und zurück zum zuletzt gewählten Dark oder Mirage; die Rahmenwahl bleibt erhalten. Vorhandene gespeicherte Farbwelten bleiben gültig.
