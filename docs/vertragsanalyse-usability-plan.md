@@ -6,6 +6,8 @@ Approved implementation plan, 2026-11-08. Existing checkout, issue #3, branch `c
 
 ## Ordered delivery
 
+Latest reference decision: the user's new feedback makes **Finanzguru the first design reference again**. Earlier Finanzfluss-inspired analytical behavior remains valid; it is no longer the overriding visual reference. The documentation-only addition below does not authorize implementation or production changes.
+
 Each package has its own verified commit; update this record and the checklist after completion.
 
 - [x] UX0: save this plan, synchronize todo/issue and record the completed PR #10 rollout.
@@ -60,3 +62,46 @@ All transport schemas remain in `packages/contracts/src/index.ts`, shared by run
 Test real PostgreSQL upgrade/preservation, rollback/reupload accountless/account-bound, shared/legacy/manual/link cases, stale previews and concurrency. Verify all rhythms/rounding/start/end/future changes/group totals; review persistence/dirty forms/keyboard/swipes/errors. Check 360/768/1024/1440px, light/dark/themes/large values/long names/reduced motion and accessible help. Run full format/lint/types/unit/integration/build/browser plus current Linux image-only/encrypted restore CI. Keep detailed evidence, task commits and remaining external acceptance separate.
 
 One feature PR. Merge and production rollout each require concrete approval. A rollout uses published immutable images, fresh encrypted backup/restore and controlled write pause. No automatic production import removal.
+
+## Nutzerfeedback: App-Charakter und Import — 8. November 2026
+
+Auftrag: Rückmeldungen in diesen vorhandenen Plan einarbeiten, Dopplungen prüfen und mit dem aktuellen Quell-/Lieferstand abgleichen. Keine Produktimplementierung. Grundlage: acht Nutzerkommentare, Habit-Tracker-Kopf und Importfehler-Screenshot. Finanzguru hat visuell Priorität; Nuxt UI und die Architektur bleiben gesetzt. „Vollwertige App“ beschreibt hier Bedienung, Dichte und Hierarchie, keinen zusätzlich beauftragten nativen Client, Offline-Modus oder PWA-Ausbau.
+
+### Abgleich und Zuordnung ohne doppelte Aufgaben
+
+| Feedback                                    | Aktueller Stand / Beleg                                                                                              | Zuordnung                                                                  |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Kommentar 1: Monatskästen unpassend         | MonthPicker funktioniert; Monatskopf weiterhin normale Toolbar mit separatem Aktualisieren-Button.                   | R1 erweitern; keine zweite Monatswahl-Aufgabe.                             |
+| Kommentar 2: Fragezeichen                   | HelpPopover rendert wörtlich „?“, zunächst kein belegter Icon-Ladefehler. Hilfen auch separat innerhalb von Karten.  | R1: gezielte, einheitliche kontextbezogene Hilfe.                          |
+| Kommentar 3: letzte Buchungen zu groß       | Zeilen/Karten benötigen viel Höhe; Nutzer hat die Wirkung nicht abgenommen.                                          | R1: kompaktere Zeilen, weniger Wiederholungen/Leerraum.                    |
+| Kommentar 4: Überschriften ohne Mehrwert    | Layout mit workspace-label, Seiten zusätzlich H1 und teils gleichnamige Reiter.                                      | R1: klare Hierarchie statt gleicher Titel mehrfach.                        |
+| Kommentar 5: Monatskopf wie Habit Tracker   | Vorbild mit links/rechts, mittiger Periode und Heute-Aktion; Finanz-App bislang MonthPicker/Toolbar.                 | R1: Monatsnavigation nach demselben Muster.                                |
+| Kommentar 6: Einstellungen ohne Überschrift | Benutzer-/App-Informationen als section.panel mit dl ohne Abschnittstitel.                                           | Bereits R1/UX2; konkretisieren statt duplizieren.                          |
+| Kommentar 7: Helligkeit unpassend           | Separates Formularfeld „Helligkeit“ mit Select neben Theme-Kacheln und Kreisbutton.                                  | R1: kompakte Hell/Dunkel/System-Wahl, Speicherung/Theme-Paarung erhalten.  |
+| Kommentar 8: Umsatzfilter wie Büroformular  | Umfangreiche Filter dauerhaft als mehrspaltiges Formular mit Anwenden-Button.                                        | R1: kompakte Suche, weitere Filter bei Bedarf, aktive Auswahl sichtbar.    |
+| Allgemein: mehr App, weniger Text           | Vorhandene Nuxt-UI-Umstellung/Tests belegen Funktion, nicht gewünschte Gestaltung; Kopf/Fuß/Erklärblöcke zu präsent. | R1 bleibt ausdrücklich offen trotz gelieferter Navigation/Themes.          |
+| Dateiauswahl nicht intuitiv                 | UFileUpload mit „CSV-Datei auswählen“ vorhanden; automatische Verarbeitung löst Auffindbarkeit nicht.                | Neu I2, vorhandene Upload-Automatik nicht erneut als fehlend führen.       |
+| Fehlender Buchungstext                      | Textspalten-Mechanismus synthetisch nachvollzogen, echte Zeileninhalte unbekannt.                                    | Neu I3; von optionalem Soll/Haben C1 und Originaldatei-Abnahme E5 trennen. |
+
+### Interaktion und Abnahme für R1
+
+- Kompakter Monatskopf: Zurück, Monatsname/Jahr, Vorwärts und „Dieser Monat“. Direkter Monatssprung bleibt erreichbar. Jahreswechsel, Browser-Zurück/Vorwärts und month-URL-Parameter bleiben konsistent; Neuladen startet keinen Bankabruf.
+- Bilanz, Einnahmen/Ausgaben, Verteilung und letzte Buchungen benötigen weniger Fläche. Keine großen leeren Zustandskarten oder verschachtelten Kästen nur für Erklärungen; kurze Leerzustände mit passender Aktion.
+- Buchungszeilen primär Gegenpartei/Text, rechts Betrag; sekundär nur nötige Informationen. Lange Texte begrenzen, Details erreichbar halten. Auswahl, Vertragsbadge und Zuordnungen bleiben bedienbar.
+- Eine aussagekräftige Seitenüberschrift statt wiederholter gleichnamiger Kopfzeile. Vorhandene Hauptnavigation erhalten, keine parallele Navigation einführen.
+- Hilfen mit konsistentem Nuxt-UI-Symbol/Trigger dort, wo fachlich nötig. Keine unbeschrifteten/dekorativen Fragezeichen; Tastatur/Touch erhalten. Fehler, Löschfolgen und Einwilligungen sichtbar lassen.
+- Umsätze mit kompakter Suche und sichtbaren aktiven Filtern. Weitere Filter in passender Nuxt-UI-Ansicht; Datum/Konto/Kategorie/Status/Richtung/Fix-Variabel und Mehrfachaktionen erhalten. Anwenden/Zurücksetzen vor Umsetzung im Detail festlegen.
+- Einstellungen: Abschnittstitel für Benutzer-/App-Informationen, kompakte Moduswahl. Systempräferenz, Theme-Kacheln, sechs Ayu-Varianten, Kreisbutton, frühe Wiederherstellung und reduzierte Bewegung erhalten.
+- Übersicht, Umsätze, Analysen, Einstellungen und passende Vertrags-/Importansichten bei 360/768/1024/1440 Pixeln prüfen; zusätzlich kommentierte 734/879/1166 bei 884 Pixel Höhe. Pointer-Ziele, Fokus, Lesbarkeit und horizontale Überläufe prüfen. Synthetische visuelle Prüfung und Nutzerabnahme getrennt halten.
+
+### Importbefund und Grenzen für I2/I3
+
+Codebefund: suggestCsvMapping in apps/web/app/utils/csv-file.ts bevorzugt Verwendungszweck gegenüber Buchungstext. Das gemeinsame Mapping besitzt nur ein description-Feld. previewCsv in apps/api/src/csv.ts verwirft ein leeres Feld dieser Spalte ohne Prüfung einer Alternative. imports/csv.vue wiederholt denselben Fehlertext je Zeile in einem großen UAlert.
+
+Synthetisch wird eine Zeile mit gültigem Datum/Betrag, leerem Verwendungszweck und gefülltem Buchungstext als CSV_INVALID_ROW zurückgewiesen. Der Mechanismus ist reproduziert; für die Originaldatei bleiben andere Ursachen wie vollständig leere Texte möglich. Keine weiteren realen Buchungszeilen eingesehen, keine Annahme über deren Inhalt. E5 bleibt offen.
+
+Für spätere Korrektur Fallback-Reihenfolge und ausdrückliche manuelle Spaltenwahl trennen. Nötige Änderungen gemeinsam in Zod/API/Browser führen. Quellidentitäten, wiederholte Dateien, Zusammenführungen und manuelle Anmerkungen schützen. Buchungen nicht allein wegen ungünstiger automatischer Textwahl verwerfen; wirklich ungültige Zeilen weder erfinden noch still auslassen.
+
+### Umfang und nächste Schritte
+
+Prio 1: R1, I2 und I3. R2/R3, Budgets, Monatsplanung und externe Bank-/Betriebsabnahmen bleiben offen. Bestehende UX2-/R1-Anforderungen werden erweitert; keine zusätzliche parallele UI-Roadmap angelegt. Diese Ergänzung sammelt Anforderungen und Ist-Befunde. Konkrete technische Planung/Implementierung und spätere Merge-/Rollout-Freigaben folgen separat.

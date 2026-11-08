@@ -2,6 +2,12 @@
 
 Stand: 8. November 2026. Diese Seite und [todo.md](todo.md) sind die zentrale Statusquelle. Alte Pläne beschreiben Anforderungen und historische Entscheidungen, nicht automatisch den aktuellen Erledigungsstand. Aufgabe: [Issue #3](https://github.com/mfurti/financial-tracking/issues/3).
 
+## Neu aufgenommenes Nutzerfeedback
+
+Prio 1 ist wieder **Finanzguru als visuelle Referenz**: kompakter App-Charakter, weniger Text, Monatsnavigation nach Habit-Tracker-Vorbild und intuitiver Dateiupload. Acht Browserkommentare sind ohne Doppelaufgaben in R1 konkretisiert; I2 ergänzt die Upload-Interaktion, I3 den Buchungstext-Fehler mit kompakteren Diagnosen. Aufnahme/Dublettenprüfung/Ist-Abgleich sind beauftragt, die Ergänzung ist noch nicht implementiert. Details im [bestehenden Usability-Plan](vertragsanalyse-usability-plan.md#nutzerfeedback-app-charakter-und-import--8-november-2026).
+
+Synthetisch belegt: leeres automatisch gewähltes Verwendungszweck-Feld führt zur Zurückweisung trotz gefülltem Buchungstext. Ob derselbe Mechanismus die Originaldatei erklärt, ist unbestätigt. E5 bleibt offen; Produktivstand und vorhandene Testergebnisse unten ändern sich nicht.
+
 ## Belegter Lieferstand
 
 - PR #10 wurde als `3b990ec` gemergt und separat freigegeben ausgerollt.

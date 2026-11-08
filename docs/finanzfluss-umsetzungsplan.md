@@ -4,6 +4,8 @@
 
 F1/N1 is partially fulfilled because field-level errors are not consistent everywhere (R2). F4 delivers the contract core, not the deferred aggregate month forecast (P1). F6 technical delivery is complete; user acceptance remains open.
 
+**Later user decision, 2026-11-08:** Finanzguru is again the first visual reference. Keep the analytical semantics agreed here; apply the new app-density, monthly-header and import feedback through the [existing usability plan](vertragsanalyse-usability-plan.md#nutzerfeedback-app-charakter-und-import--8-november-2026), R1/I2/I3 in todo.md. The original Finanzfluss reference below describes this plan's historical design decision and no longer overrides the latest user feedback. This addition is documentation only.
+
 Approved implementation: user supplied this plan and explicitly requested implementation in the current checkout after the Plan-mode review. Issue #3 remains the task record. Preserve audit commit `392d988`, existing financial data, CSV automation, Sparkasse date support and the recorded deployed baseline `1e33afa`. New merge and rollout approvals remain separate.
 
 ## Goal and fixed decisions
