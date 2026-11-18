@@ -1,4 +1,5 @@
 import { appearanceBootstrap, appearanceStyleSheet } from './app/utils/appearance';
+import { workspacePreferencesBootstrap } from './app/utils/workspace-preferences';
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-11-06',
@@ -18,7 +19,10 @@ export default defineNuxtConfig({
     head: {
       htmlAttrs: { lang: 'de' },
       title: 'Haushaltsbuch',
-      script: [{ key: 'appearance-preference', innerHTML: appearanceBootstrap() }],
+      script: [
+        { key: 'appearance-preference', innerHTML: appearanceBootstrap() },
+        { key: 'workspace-preference', innerHTML: workspacePreferencesBootstrap() },
+      ],
       style: [{ key: 'appearance-palettes', innerHTML: appearanceStyleSheet() }],
     },
   },

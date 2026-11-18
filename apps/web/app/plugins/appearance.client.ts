@@ -1,7 +1,40 @@
 import { appearanceStorageKey, ayuStorageKey, resolveAppearanceTheme, resolveAyuPreference } from '../utils/appearance';
+import { loadWorkspacePreferences, storeWorkspacePreferences } from '../utils/workspace-preferences';
 
 export default defineNuxtPlugin(
   /** Bind the early-restored palette to reactive settings without server persistence. */ () => {
+    const { preferences, storageState } = useWorkspacePreferences();
+    const restored = loadWorkspacePreferences({
+      getItem: /** Access the browser getter inside the guarded storage boundary. */ (key) => localStorage.getItem(key),
+    });
+    preferences.value = restored.value;
+    storageState.value = restored.status;
+    useHead({
+      htmlAttrs: {
+        lang: computed(
+          /** Keep client navigation consistent with the early restored locale. */ () => preferences.value.language,
+        ),
+        'data-amounts-masked': computed(
+          /** Expose only the display preference, never financial values. */ () =>
+            String(preferences.value.maskAmounts),
+        ),
+      },
+    });
+    watch(
+      preferences,
+      /** Explicit edits may persist; restore alone never overwrites corrupt or newer stored state. */ (value) => {
+        storageState.value = storeWorkspacePreferences(
+          {
+            setItem: /** Let blocked storage retain the usable in-memory preference. */ (key, entry) =>
+              localStorage.setItem(key, entry),
+          },
+          value,
+        )
+          ? 'ready'
+          : 'unavailable';
+      },
+      { deep: true },
+    );
     const { themeId, ayu } = useAppearance();
     themeId.value = resolveAppearanceTheme(document.documentElement.dataset.theme).id;
     ayu.value = resolveAyuPreference({

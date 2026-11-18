@@ -1467,6 +1467,39 @@ html[data-theme='high-contrast'] .month-balance {
   background: var(--finance-overlay);
   backdrop-filter: blur(5px);
 }
+/* Early display masking is active before mounting; exact string/accessibility integration belongs to the locale/privacy slice. */
+html[data-amounts-masked='true']
+  :is(
+    [data-financial],
+    .stat-card strong,
+    .account-row > strong,
+    .transaction-row > strong,
+    .accounts-summary strong,
+    .detail-amount
+  ) {
+  color: transparent !important;
+  text-shadow: none !important;
+  user-select: none;
+  position: relative;
+}
+html[data-amounts-masked='true']
+  :is(
+    [data-financial],
+    .stat-card strong,
+    .account-row > strong,
+    .transaction-row > strong,
+    .accounts-summary strong,
+    .detail-amount
+  )::after {
+  content: '••••';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  font-size: 16px;
+  letter-spacing: 2px;
+}
 .finance-dialog [data-slot='header'],
 .finance-dialog [data-slot='body'],
 .finance-dialog [data-slot='footer'] {

@@ -35,6 +35,8 @@ Task-generation clarification: new `idempotencyKey` values are limited to 128 ch
 
 A versioned preference object contains language `de|en`, maskAmounts boolean, ordered unique analysis module IDs, chart choice, and validated custom light/dark semantic colors. Preserve `haushaltsbuch-palette` and `haushaltsbuch-theme`; define fallback/migration for older values. Bootstrap masking before financial content becomes visible. Custom colors must meet 4.5:1 normal text and 3:1 large text/control contrast against applicable backgrounds; invalid values never replace a working theme. These fields do not contain real financial amounts or credentials.
 
+T006 supplies a null custom-tone slot until T041's contrast-validated editor is delivered; arbitrary stored colors are never applied early. Device-local in-app notification choices are `payments` and `imports` booleans, without push/email scheduling. Full translated labels and accessible masked amount strings are integrated by T042; early display masking is not an authorization boundary.
+
 ## Isolated Synthetic State
 
 `DemoState`: schemaVersion, revision, seed identity, synthetic accounts/cash, security catalog, positions, orders, savings plans, activity, market scenario basis points, recorded demo snapshots (maximum 48), and local role demonstration entries. Use a dedicated storage key with no session or real entity IDs.
