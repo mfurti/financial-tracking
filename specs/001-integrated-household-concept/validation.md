@@ -47,3 +47,12 @@ Record actual commands/results per task, exact delivery commits in the issue, an
 - Full typecheck and production build passed; final root TypeScript, scoped ESLint/Prettier and whitespace checks passed.
 - New browser smoke initially navigated while login was still pending because login itself has a heading. Corrected to wait for authenticated root navigation; focused 390 px smoke passed.
 - Final nine-project browser smoke passed: 9/9, 1.7 minutes. This proves isolated fixture/login/account reachability, not visual feature acceptance.
+
+## T004: Shared Visual Tokens and Surfaces
+
+- Added named semantic layer/gutter/gap/radius/motion tokens and connected existing page, card, row and sticky-header surfaces without replacing palette identities or financial calculations. Nuxt UI card/modal defaults now use the same semantic surfaces.
+- New computed browser acceptance failed before the change at the real 1320 px content maximum versus required 1480 px.
+- Nuxt typecheck, production build, scoped ESLint/Prettier and whitespace checks passed.
+- Browser validation passed: 3 concept surface cases (390/768/1440 px) and 2 existing desktop/mobile interface journeys, 5/5 in 1.5 minutes. Header/gutters/radius/shadow/hover geometry verified; existing light/dark, form/retry/session behavior remained green.
+
+T004 visual observation: the synthetic 390 px overview screenshot confirms restrained card boundaries, no tile shadow, readable signed/large amounts and consistent page insets. The old overview order/density remains intentionally owned by T008/T009, so this is surface-layer acceptance rather than final concept parity.

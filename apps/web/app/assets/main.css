@@ -1278,3 +1278,91 @@ html[data-theme='high-contrast'] .month-balance {
   font-weight: 700;
   overflow-wrap: anywhere;
 }
+
+/* Shared integrated-concept geometry; palette identities and observed finance values remain independent. */
+:root {
+  --finance-canvas: var(--canvas);
+  --finance-surface: var(--surface);
+  --finance-control: var(--soft);
+  --finance-overlay: #0e1424b8;
+  --finance-content-max: 1480px;
+  --finance-gutter: 32px;
+  --finance-content-top: 24px;
+  --finance-content-bottom: 125px;
+  --finance-column-gap: 22px;
+  --finance-stack-gap: 23px;
+  --finance-module-gap: 24px;
+  --finance-tile-gap: 16px;
+  --finance-tile-radius: 22px;
+  --finance-surface-radius: 17px;
+  --finance-account-radius: 16px;
+  --finance-dialog-radius: 18px;
+  --finance-dialog-inset: 25px;
+  --finance-panel-inset: 20px;
+  --finance-tile-inset: 20px 22px;
+  --finance-stat-inset: 20px 22px;
+  --finance-row-min: 56px;
+  --finance-feedback-duration: 180ms;
+  --finance-dialog-duration: 180ms;
+  --finance-layer-navigation: 30;
+  --finance-layer-dialog: 50;
+}
+.page-content {
+  width: 100%;
+  max-width: var(--finance-content-max);
+  padding: var(--finance-content-top) var(--finance-gutter)
+    calc(var(--finance-content-bottom) + env(safe-area-inset-bottom, 0px));
+  scroll-margin-top: 90px;
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--finance-layer-navigation);
+  padding-inline: var(--finance-gutter);
+  background: var(--finance-canvas);
+}
+.panel {
+  border-radius: var(--finance-surface-radius);
+  padding: var(--finance-panel-inset);
+  background: var(--finance-surface);
+  box-shadow: none;
+}
+.stat-card {
+  padding: var(--finance-stat-inset);
+  border-radius: var(--finance-tile-radius);
+  box-shadow: none;
+}
+.panel:hover,
+.stat-card:hover,
+.account-row:hover,
+.transaction-row:hover,
+.ledger-row:hover {
+  transform: none;
+  box-shadow: none;
+}
+.dashboard-grid {
+  column-gap: var(--finance-column-gap);
+  row-gap: var(--finance-stack-gap);
+}
+.account-row,
+.transaction-row {
+  min-height: var(--finance-row-min);
+}
+.section-heading {
+  gap: 15px;
+  margin-bottom: 15px;
+}
+@media (max-width: 700px) {
+  :root {
+    --finance-gutter: 17px;
+    --finance-panel-inset: 18px;
+    --finance-tile-inset: 18px;
+    --finance-stat-inset: 14px 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --finance-feedback-duration: 0ms;
+    --finance-dialog-duration: 0ms;
+  }
+}
