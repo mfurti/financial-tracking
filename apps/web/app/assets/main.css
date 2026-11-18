@@ -636,7 +636,8 @@ html.theme-transition .theme-toggle svg {
   transform: translateY(0);
 }
 :focus-visible {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--focus, var(--green));
+  outline-offset: 3px;
 }
 button:not(:disabled),
 select:not(:disabled) {
@@ -1448,7 +1449,7 @@ html[data-theme='high-contrast'] .month-balance {
   font-size: 28px;
 }
 .finance-tile:focus-within {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--focus, var(--green));
   outline-offset: 3px;
 }
 .finance-tile:hover,
@@ -1582,7 +1583,7 @@ html[data-amounts-masked='true']
   font-weight: 650;
 }
 .finance-nav > a:focus-visible {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--focus, var(--green));
   outline-offset: 2px;
 }
 .finance-management {

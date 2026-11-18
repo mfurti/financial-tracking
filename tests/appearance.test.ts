@@ -29,7 +29,53 @@ function contrast(first: string, second: string) {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 
+/** Resolve the catalog's opaque sRGB mixtures before checking visible layer contrast. */
+function composite(value: string): string {
+  const mix = /^color-mix\(in srgb, (#[0-9a-f]{6}) (\d+)%, (#[0-9a-f]{6})\)$/.exec(value);
+  if (!mix) return value;
+  const weight = Number(mix[2]) / 100;
+  return `#${[1, 3, 5]
+    .map(
+      /** Blend display channels, never financial amounts. */ (offset) =>
+        Math.round(
+          parseInt(mix[1]!.slice(offset, offset + 2), 16) * weight +
+            parseInt(mix[3]!.slice(offset, offset + 2), 16) * (1 - weight),
+        )
+          .toString(16)
+          .padStart(2, '0'),
+    )
+    .join('')}`;
+}
+
 describe('device-local theme families', /** Color choices must remain readable and restore safely before mounting. */ () => {
+  it('keeps composited surfaces, chart keys and essential controls readable for every choice', /** Distinguish decorative dividers from required control and focus indicators. */ () => {
+    for (const choice of appearanceChoices) {
+      for (const mode of ['light', 'dark'] as const) {
+        const tone = choiceTone(choice, mode);
+        const tokens = appearanceVariables(
+          { id: choice.family, name: choice.label, light: tone, dark: tone },
+          choice.mode ?? mode,
+        );
+        for (const background of [tone[0], tone[1], composite(tokens['--soft']!)]) {
+          for (const key of ['--ink', '--muted', '--green', '--positive', '--negative'])
+            expect(contrast(tokens[key]!, background), `${choice.value}/${mode}/${key}`).toBeGreaterThanOrEqual(4.5);
+          for (const key of [
+            '--control-border',
+            '--focus',
+            ...Array.from(
+              { length: 6 },
+              /** Require every selectable diagram key to remain visible. */ (_, index) => `--chart-${index + 1}`,
+            ),
+          ])
+            expect(
+              contrast(composite(tokens[key]!), background),
+              `${choice.value}/${mode}/${key}`,
+            ).toBeGreaterThanOrEqual(3);
+        }
+        expect(tokens['--line']).toBeDefined();
+      }
+    }
+  });
   it('offers six readable Ayu variants without invalidating legacy identities', /** Verify actual variant tones and allowlisted persistence, including corrupt values. */ () => {
     expect(appearanceChoices).toHaveLength(23);
     const variants = appearanceChoices.filter(

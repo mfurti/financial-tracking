@@ -94,3 +94,11 @@ T004 visual observation: the synthetic 390 px overview screenshot confirms restr
 - Behavioral acceptance initially failed on the missing loading tiles. Production build, Nuxt/root typechecks, scoped lint/format and whitespace checks passed.
 - Browser acceptance passed 18/18 cases at 390/768/1440 px, including live resizing with retained month, cent-exact actuals, loading/error/recovery and empty data. The final pending-payment retry assertion passed separately after rebuilding; Playwright last-run status is passed with no failed tests.
 - Settled desktop screenshot visually inspected: stationary shadow-free surfaces, compact category bars, readable signed values, long labels and exact large balances. Full palette contrast and motion acceptance remain T010/T011.
+
+## T010: Semantic Contrast and Keyboard Focus
+
+- Preserved all 18 stored family identities and 23 selectable variants. Soft composited layers now use a 3% tint; essential control boundaries use readable secondary ink, independently of decorative separators. Added a semantic focus token with an external 3 px offset.
+- Replaced bright light-mode chart colors with readable mode-specific colors while retaining textual category keys, exact labels and signed financial values.
+- The new composited contrast regression failed first at the default essential control boundary (2.754:1). All 21 appearance tests now pass, including every choice/mode on canvas, card and composited soft surfaces: normal text >=4.5:1; focus/control/chart marks >=3:1.
+- Nuxt/root typechecks, production build, scoped lint/format and whitespace checks passed. Browser assertions resolve actual CSS colors including color-mix for every palette, then exercise keyboard focus and stored choice restoration. An initial added assertion incorrectly expected pointer-origin focus to have keyboard-only :focus-visible; corrected to inspect the focused radio after ArrowDown without weakening the outline checks.
+- Final desktop/mobile browser run passed 2/2 in 58.4 seconds, covering all actual palette choices, both modes, keyboard focus, no overflow and reload/logout restoration.

@@ -186,7 +186,7 @@ export function appearanceVariables(theme: AppearanceTheme, mode: 'light' | 'dar
   const [canvas, surface, ink, muted, accent, onAccent] = theme[mode];
   const contrast = theme.id === 'high-contrast';
   const line = contrast ? (mode === 'dark' ? '#ffffff' : '#000000') : `color-mix(in srgb, ${ink} 14%, ${surface})`;
-  const soft = `color-mix(in srgb, ${accent} 7%, ${surface})`;
+  const soft = `color-mix(in srgb, ${accent} 3%, ${surface})`;
   return {
     '--canvas': canvas,
     '--surface': surface,
@@ -194,7 +194,8 @@ export function appearanceVariables(theme: AppearanceTheme, mode: 'light' | 'dar
     '--ink': ink,
     '--muted': muted,
     '--line': line,
-    '--control-border': contrast ? line : `color-mix(in srgb, ${ink} 48%, ${surface})`,
+    '--control-border': muted,
+    '--focus': accent,
     '--green': accent,
     '--on-accent': onAccent,
     '--positive': mode === 'dark' ? '#65d9ae' : '#137453',
@@ -215,11 +216,11 @@ export function appearanceVariables(theme: AppearanceTheme, mode: 'light' | 'dar
     '--ui-text-highlighted': ink,
     '--ui-border': line,
     '--chart-1': accent,
-    '--chart-2': '#10b7a2',
-    '--chart-3': '#e4a652',
-    '--chart-4': '#e4829b',
-    '--chart-5': '#6a9bdb',
-    '--chart-6': '#9b91ad',
+    '--chart-2': mode === 'dark' ? '#62d9c5' : '#08786c',
+    '--chart-3': mode === 'dark' ? '#f0be70' : '#956018',
+    '--chart-4': mode === 'dark' ? '#f7a5bb' : '#aa4163',
+    '--chart-5': mode === 'dark' ? '#9cc5ff' : '#3b68a3',
+    '--chart-6': mode === 'dark' ? '#c2b0dc' : '#746087',
   };
 }
 
