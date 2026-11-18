@@ -49,6 +49,7 @@ function activate() {
     :aria-busy="state === 'loading'"
     :data-state="state"
     :data-disabled="disabled || undefined"
+    :data-interactive="(Boolean(to || actionable) && !unavailable) || undefined"
   >
     <component
       :is="target"

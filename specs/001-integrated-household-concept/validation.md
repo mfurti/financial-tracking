@@ -102,3 +102,12 @@ T004 visual observation: the synthetic 390 px overview screenshot confirms restr
 - The new composited contrast regression failed first at the default essential control boundary (2.754:1). All 21 appearance tests now pass, including every choice/mode on canvas, card and composited soft surfaces: normal text >=4.5:1; focus/control/chart marks >=3:1.
 - Nuxt/root typechecks, production build, scoped lint/format and whitespace checks passed. Browser assertions resolve actual CSS colors including color-mix for every palette, then exercise keyboard focus and stored choice restoration. An initial added assertion incorrectly expected pointer-origin focus to have keyboard-only :focus-visible; corrected to inspect the focused radio after ArrowDown without weakening the outline checks.
 - Final desktop/mobile browser run passed 2/2 in 58.4 seconds, covering all actual palette choices, both modes, keyboard focus, no overflow and reload/logout restoration.
+
+## T011: Restrained Motion and Reduced-Motion Operation
+
+- Theme preferences commit immediately; only icon opacity/color feedback lasts 180 ms. Removed icon rotation and global foreground/background interpolation to preserve financial readability during switching.
+- Actionable tile graphics may change opacity under capable-pointer hover or keyboard focus. Tiles and financial rows retain unchanged rectangles and no shadow.
+- FinanceDialog uses the existing modal lifecycle with custom 180 ms opacity-only entry/exit effects. No scale/translation is animated; native focus containment/return remains immediate.
+- Reduced motion removes decorative animations, transitions and smooth scrolling, retaining static loading messages and usable actions. The new behavior test failed first at the old 240 ms icon timing.
+- Nuxt/root typechecks, production build, scoped ESLint/Prettier and whitespace checks passed. Three-viewport browser proof inspects real live dialog keyframes/durations, immediate focus, stationary hover, Escape/return and absence of effects under reduced motion; animation observations are attached as JSON in Playwright results.
+- Final motion/primitives browser run passed 6/6 at 390/768/1440 px in 45.6 seconds. Settled mobile dialog screenshot visually inspected; bounded scrolling, readable overlay hierarchy and stationary content confirmed.

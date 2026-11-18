@@ -575,18 +575,12 @@ small {
   position: relative;
   width: 18px;
   height: 18px;
-  transition-property: opacity, transform;
-  transition-duration: 240ms;
-  transition-timing-function: ease;
-}
-html.theme-transition,
-html.theme-transition * {
-  transition-property: background-color, color, border-color, box-shadow;
-  transition-duration: 240ms;
+  transition-property: opacity, color;
+  transition-duration: var(--finance-feedback-duration, 180ms);
   transition-timing-function: ease;
 }
 html.theme-transition .theme-toggle svg {
-  transition-property: opacity, transform, color;
+  transition-property: opacity, color;
 }
 @media (prefers-reduced-motion: reduce) {
   html.theme-transition,
@@ -1423,6 +1417,16 @@ html[data-theme='high-contrast'] .month-balance {
 .finance-tile__graphic {
   flex-shrink: 0;
   color: var(--green);
+  opacity: 0.85;
+  transition: opacity var(--finance-feedback-duration) ease;
+}
+@media (hover: hover) {
+  .finance-tile[data-interactive]:hover .finance-tile__graphic {
+    opacity: 1;
+  }
+}
+.finance-tile:focus-within .finance-tile__graphic {
+  opacity: 1;
 }
 .finance-tile__chevron {
   position: absolute;
@@ -1467,6 +1471,38 @@ html[data-theme='high-contrast'] .month-balance {
 .finance-overlay {
   background: var(--finance-overlay);
   backdrop-filter: blur(5px);
+}
+.finance-dialog-motion[data-state='open'] {
+  animation: finance-dialog-in var(--finance-dialog-duration) ease-out;
+}
+.finance-dialog-motion[data-state='closed'] {
+  animation: finance-dialog-out var(--finance-dialog-duration) ease-in;
+}
+@keyframes finance-dialog-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes finance-dialog-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html,
+  html *,
+  html *::before,
+  html *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
 /* Early display masking is active before mounting; exact string/accessibility integration belongs to the locale/privacy slice. */
 html[data-amounts-masked='true']
