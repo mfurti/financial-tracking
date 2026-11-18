@@ -49,6 +49,15 @@ test('overview follows device column composition and retains exact actual-month 
     'data-layout',
     width > 1100 ? 'desktop' : width > 700 ? 'tablet' : 'mobile',
   );
+  const accountCopyWidth = await page
+    .locator('[data-overview-section="accounts"] .account-row > div')
+    .first()
+    .evaluate(
+      /** Large exact balances must not collapse the adjacent long account name into character fragments. */ (
+        element,
+      ) => element.getBoundingClientRect().width,
+    );
+  expect(accountCopyWidth).toBeGreaterThanOrEqual(150);
   expect(
     await page.evaluate(
       /** Long synthetic labels and exact large balances cannot expand the document. */ () =>

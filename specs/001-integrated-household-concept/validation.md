@@ -111,3 +111,16 @@ T004 visual observation: the synthetic 390 px overview screenshot confirms restr
 - Reduced motion removes decorative animations, transitions and smooth scrolling, retaining static loading messages and usable actions. The new behavior test failed first at the old 240 ms icon timing.
 - Nuxt/root typechecks, production build, scoped ESLint/Prettier and whitespace checks passed. Three-viewport browser proof inspects real live dialog keyframes/durations, immediate focus, stationary hover, Escape/return and absence of effects under reduced motion; animation observations are attached as JSON in Playwright results.
 - Final motion/primitives browser run passed 6/6 at 390/768/1440 px in 45.6 seconds. Settled mobile dialog screenshot visually inspected; bounded scrolling, readable overlay hierarchy and stationary content confirmed.
+
+## T012: Independent US1 Acceptance
+
+- Scope: delivered login/shared navigation, overview, existing transactions/accounts/analyses/contracts and management routes. Merchant/category analysis details, reserve/recorded wealth, investment simulation and new workspace settings are future task destinations; they are not advertised as delivered.
+- The first nine-viewport run passed 53/54 cases and exposed the 700 px live-resize boundary: rounded mobile innerWidth selected tablet after returning from 1440 px. Overview composition now uses the same media-query boundaries as CSS.
+- Visual inspection at 360 px also exposed a long account name squeezed by a beyond-Number-safe balance. Narrow account containers now place the unchanged exact balance below the label, preserving useful copy width instead of truncating either value. Added a >=150 px account-label-width regression assertion.
+- Depth: opaque navigation, canvas/card separation and dark inert dialog backdrop; ordinary financial tiles/rows remain shadow-free.
+- Spacing: computed content maximum 1480 px, horizontal gutters 32/17 px, reference gaps and radii; boundary layouts and live resize are covered by browser assertions. Narrow account balance stacking is an intentional readability adaptation.
+- Contrast: T010 proves every bundled choice/mode on actual composited layers, with normal text >=4.5:1 and informative marks/focus/control boundaries >=3:1. Decorative separators remain restrained. Monetary signs, category text keys and exact equivalent values remain visible.
+- Tiles: loading/empty/failure/retry states, stale-value suppression, observed/missing balances, long names and exact large signed cents are covered independently of screenshot shape.
+- Motion: live 180 ms opacity-only dialog keyframes, icon feedback, unchanged hover rectangles, immediate keyboard focus/return and static reduced-motion alternatives. Final acceptance retains interaction traces, screenshots and keyframe observations under ignored test-results/ and .local/.
+- Nuxt/root typechecks, rebuilt production web bundle, scoped lint/format and whitespace checks passed after the two responsive fixes. Final browser result is recorded below when the corrected run completes.
+- Final corrected acceptance passed 54/54 browser cases across all nine viewports in 3.1 minutes. All 54 interaction traces were retained. The corrected 360 px overview was visually inspected: long names and exact huge/negative/missing balances remain readable without horizontal overflow.

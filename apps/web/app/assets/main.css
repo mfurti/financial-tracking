@@ -1723,6 +1723,23 @@ html[data-amounts-masked='true']
   font-size: 16px;
   overflow-wrap: anywhere;
 }
+.finance-overview-column {
+  container-type: inline-size;
+}
+@container (max-width: 480px) {
+  .finance-overview-column .account-row {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: start;
+  }
+  .finance-overview-column .account-row > .account-icon {
+    grid-row: span 2;
+  }
+  .finance-overview-column .account-row > strong {
+    grid-column: 2;
+    overflow-wrap: anywhere;
+  }
+}
 .spending-panel--compact .spending-overview {
   display: block;
 }

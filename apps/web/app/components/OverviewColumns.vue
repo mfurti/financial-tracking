@@ -1,9 +1,5 @@
 <script setup lang="ts">
-const width = ref(import.meta.client ? window.innerWidth : 0);
-const layout = computed(
-  /** The final integrated reference uses 700 and 1100 CSS-pixel composition boundaries. */ () =>
-    width.value > 1100 ? 'desktop' : width.value > 700 ? 'tablet' : 'mobile',
-);
+const layout = ref(measuredLayout());
 const columns = computed(
   /** Group independent vertical stacks so a tall bookings list cannot push down the other column's categories. */ () =>
     layout.value === 'desktop'
@@ -15,9 +11,14 @@ const columns = computed(
           ]
         : [['bookings', 'payments', 'accounts', 'categories']],
 );
+/** The final integrated reference uses 700 and 1100 CSS-pixel composition boundaries; media queries avoid mobile innerWidth rounding after resize. */
+function measuredLayout() {
+  if (!import.meta.client || window.matchMedia('(max-width: 700px)').matches) return 'mobile';
+  return window.matchMedia('(max-width: 1100px)').matches ? 'tablet' : 'desktop';
+}
 /** Recompose slot ownership while leaving the parent page's selected month and fetched data intact. */
 function resize() {
-  width.value = window.innerWidth;
+  layout.value = measuredLayout();
 }
 onMounted(
   /** Client-first measurement is available before asynchronous overview data arrives. */ () => {
