@@ -437,6 +437,26 @@ export const monthlyQuerySchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
   accountId: idSchema.optional(),
 });
+export const monthlyReviewQuerySchema = monthlyQuerySchema;
+export const monthlyReviewSchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  scope: z.object({ from: dateSchema, to: dateSchema, accountId: idSchema.nullable() }),
+  incomeCents: aggregateCentsSchema,
+  expenseCents: aggregateCentsSchema,
+  netCents: aggregateCentsSchema,
+  bookedCount: z.number().int().nonnegative(),
+  completeness: z.object({
+    calendar: z.enum(['CLOSED', 'CURRENT', 'FUTURE']),
+    hasBookings: z.boolean(),
+    historyComplete: z.literal(false),
+  }),
+  provenance: z.object({
+    basis: z.literal('BOOKED_NON_TRANSFER'),
+    includesUnassigned: z.boolean(),
+    refunds: z.literal('INCOME'),
+  }),
+  queries: z.object({ income: transactionQuerySchema, expense: transactionQuerySchema }),
+});
 export const monthlySchema = z.object({
   month: z.string(),
   incomeCents: z.string(),
@@ -680,6 +700,13 @@ export interface ApiContract {
 const okSchema = z.object({ ok: z.boolean() });
 /** Operation inventory shared with generated OpenAPI and contract tests. */
 export const apiContracts: Record<string, ApiContract> = {
+  monthlyReview: {
+    method: 'get',
+    path: '/analytics/review',
+    query: monthlyReviewQuerySchema,
+    response: monthlyReviewSchema,
+    status: 200,
+  },
   merchantAnalytics: {
     method: 'get',
     path: '/analytics/merchants',

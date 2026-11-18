@@ -195,6 +195,35 @@ export function calculateAnalytics(rows: AnalyticsRow[], from: string, to: strin
 export class AnalyticsService {
   /** Reuse the application's private persistence. */
   constructor(@Inject('DB') readonly db: Db) {}
+  /** Reuse actual aggregation for one inclusive Berlin calendar month and publish exactly contributing query identities. */
+  async review(input: z.infer<typeof c.monthlyReviewQuerySchema>, today = berlinToday()) {
+    const from = `${input.month}-01`,
+      to = anchoredMonth(from, 0, 31);
+    const report = await this.overview({ from, to, accountId: input.accountId }, today);
+    const bookedCount = report.months[0]!.count;
+    const query = {
+      from,
+      to,
+      ...(input.accountId ? { accountId: input.accountId } : {}),
+      status: 'BOOKED' as const,
+      excludeTransfers: 'true' as const,
+    };
+    return c.monthlyReviewSchema.parse({
+      month: input.month,
+      scope: { from, to, accountId: input.accountId ?? null },
+      incomeCents: report.incomeCents,
+      expenseCents: report.expenseCents,
+      netCents: report.netCents,
+      bookedCount,
+      completeness: {
+        calendar: input.month < today.slice(0, 7) ? 'CLOSED' : input.month === today.slice(0, 7) ? 'CURRENT' : 'FUTURE',
+        hasBookings: bookedCount > 0,
+        historyComplete: false,
+      },
+      provenance: { basis: 'BOOKED_NON_TRANSFER', includesUnassigned: !input.accountId, refunds: 'INCOME' },
+      queries: { income: { ...query, direction: 'INCOME' }, expense: { ...query, direction: 'EXPENSE' } },
+    });
+  }
   /** Aggregate booked non-transfer expenses by exact trimmed source identity, preserving effective query provenance. */
   async merchants(input: z.infer<typeof c.merchantAnalyticsQuerySchema>, today = berlinToday()) {
     const { from, to } = analyticsRange(input, today);

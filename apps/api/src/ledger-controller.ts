@@ -33,6 +33,10 @@ export class LedgerController {
   @Get('analytics/merchants') merchants(@Query() query: unknown) {
     return this.analytics.merchants(c.merchantAnalyticsQuerySchema.parse(query));
   }
+  /** Read exact selected-month actuals, honest completeness metadata and reconcilable direction queries. */
+  @Get('analytics/review') review(@Query() query: unknown) {
+    return this.analytics.review(c.monthlyReviewQuerySchema.parse(query));
+  }
   /** List bank connections. */
   @Get('bank-connections') connections() {
     return this.ledger.connections();
