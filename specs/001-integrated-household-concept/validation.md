@@ -38,3 +38,12 @@ Record actual commands/results per task, exact delivery commits in the issue, an
 - Browser clock fixed to 2026-11-18 12:00 UTC, Europe/Berlin, de-DE, scale 1, reduced motion. Actual header control and applied html theme class verified; initial reference tone does not necessarily follow browser colorScheme.
 - Zero page errors and zero requested remote origins. Desktop light overview and mobile dark analyses visually inspected after the applied-theme correction; geometry and readable content confirmed for reference evidence only.
 - Script lint, formatting and artifact existence/count checks passed. No runtime product acceptance claimed.
+
+## T003: Isolated Viewport and Data Fixtures
+
+- Added 9 concept profiles: 360, 390, 700, 701, 768, 1024, 1100, 1101 and 1440 px. Every profile owns separate web/API ports and its own disposable PostgreSQL database, preserving existing desktop/mobile/empty projects. Explicit project selection starts only required owned servers.
+- Added deterministic synthetic labels and data for long names, exact 900719925474099301-cent balance, missing/negative balances, July/August/October data with September gap, refunds, unknown merchants, accountless bookings, linked transfer pair and a month-end contract.
+- Fixture integration test passed against the real analytics service, proving exact income 600299/expense 22100 cents and gap/transfer semantics. Initial test incorrectly accessed a nonexistent report.totals wrapper; corrected to the existing public report shape.
+- Full typecheck and production build passed; final root TypeScript, scoped ESLint/Prettier and whitespace checks passed.
+- New browser smoke initially navigated while login was still pending because login itself has a heading. Corrected to wait for authenticated root navigation; focused 390 px smoke passed.
+- Final nine-project browser smoke passed: 9/9, 1.7 minutes. This proves isolated fixture/login/account reachability, not visual feature acceptance.

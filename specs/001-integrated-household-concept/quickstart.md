@@ -27,7 +27,7 @@ pnpm exec playwright install chromium
 pnpm test:e2e
 ```
 
-Build precedes Playwright: `scripts/e2e-server.ts` imports compiled API and starts the built web server. The configured browser harness owns isolated test servers/databases. Existing tests use 1440 px desktop and 360 px mobile; add tablet and breakpoint cases during implementation rather than claim they exist now. `pnpm db:migrate` is not a required manual step for this guide because the disposable harness applies migrations.
+Build precedes Playwright: `scripts/e2e-server.ts` imports compiled API and starts the built web server. The configured browser harness owns isolated test servers/databases. Existing populated/empty desktop and mobile suites remain unchanged. Concept projects now cover 360, 390, 700, 701, 768, 1024, 1100, 1101 and 1440 px, each with its own server/API ports and disposable database. Explicit --project selections start only their required servers; omitted selection retains the full suite. `pnpm db:migrate` is not a required manual step for this guide because the disposable harness applies migrations.
 
 ## Acceptance Scenarios
 
@@ -64,3 +64,14 @@ Use [contracts/visual-design.md](contracts/visual-design.md) as the detailed acc
 | Animation | Record hover, theme change and dialog entry/exit with normal and reduced motion                                                                  | No tile/row displacement; restrained property-specific feedback; no decorative animation under reduced motion; usable focus throughout.            |
 
 Use settled screenshots for layout comparisons and separate recordings/interaction assertions for transition behavior. Do not claim a passing screenshot proves animation or contrast compliance.
+
+## Scoped Concept Checks
+
+```powershell
+node node_modules/@playwright/test/cli.js test tests/e2e/concept-fixture.spec.ts
+node node_modules/@playwright/test/cli.js test --project=concept-390
+node node_modules/@playwright/test/cli.js test --project=concept-768
+node node_modules/@playwright/test/cli.js test --project=concept-1440
+```
+
+Use the verified Node 24.22.1 executable on the process PATH. The concept fixture smoke checks actual login/accounts on each isolated project; subsequent feature tests add acceptance rather than treating fixture reachability as a visual pass.
