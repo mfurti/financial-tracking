@@ -3,12 +3,16 @@ import { z } from 'zod';
 import { contractSchema } from '@financial-tracking/contracts';
 const api = useApi();
 const upcoming = ref<z.infer<typeof contractSchema>[]>([]);
+const busy = ref(true);
 const error = ref('');
 let timer: ReturnType<typeof setInterval> | undefined;
 let version = 0;
+let disposed = false;
 /** Keep upcoming confirmed contracts separate from the displayed month's actual expenses. */
 async function load() {
+  if (disposed) return;
   const current = ++version;
+  busy.value = true;
   try {
     const rows = await api.request('/contracts', z.array(contractSchema));
     if (current === version) {
@@ -22,11 +26,14 @@ async function load() {
       upcoming.value = [];
       error.value = userErrorMessage(cause);
     }
+  } finally {
+    if (current === version) busy.value = false;
   }
 }
 onMounted(
   /** Refresh the Berlin next-due ordering without requiring a page reload. */ async () => {
     await load();
+    if (disposed) return;
     timer = setInterval(
       /** Avoid network requests for a hidden page. */ () => {
         if (!document.hidden) void load();
@@ -37,31 +44,33 @@ onMounted(
 );
 onBeforeUnmount(
   /** Release the timer and invalidate late responses. */ () => {
+    disposed = true;
     version++;
     if (timer) clearInterval(timer);
   },
 );
 </script>
 <template>
-  <SectionPanel title="Anstehende Vertragszahlungen" icon="contracts" class="mt-6">
-    <div class="panel-heading">
-      <UButton to="/contracts" variant="link">Alle Verträge</UButton>
-    </div>
-    <p class="muted">
-      Nächste heutige oder zukünftige offene Fälligkeit je Vertrag. Prognosen werden nicht zu den tatsächlichen Ausgaben
-      addiert.
-    </p>
+  <SectionPanel
+    title="Nächste Zahlungen"
+    icon="contracts"
+    compact
+    help="Nächste heutige oder zukünftige offene Fälligkeit je Vertrag. Prognosen werden nicht zu den tatsächlichen Ausgaben addiert."
+  >
+    <template #actions><span class="subtle-tag">Planwerte</span></template>
+    <p v-if="busy" role="status" class="empty-copy">Zahlungen werden geladen …</p>
     <UAlert v-if="error" role="alert" color="error" :description="error" class="my-3" /><UButton
       v-if="error"
       variant="soft"
+      :disabled="busy"
       @click="load"
       >Erneut laden</UButton
     >
-    <p v-if="!upcoming.length && !error" class="empty-copy">
+    <p v-if="!upcoming.length && !error && !busy" class="empty-copy">
       Keine anstehenden bestätigten Vertragszahlungen. Prüfe wiederkehrende Zahlungen unter Verträge.
     </p>
     <UButton
-      v-for="contract in upcoming"
+      v-for="contract in busy ? [] : upcoming"
       :key="contract.id"
       :to="`/contracts/${contract.id}`"
       variant="link"
@@ -72,5 +81,6 @@ onBeforeUnmount(
         ><small>{{ calendarDate(contract.nextDueDate!) }}</small></span
       ><strong>{{ money(contract.nextAmountCents!) }}</strong></UButton
     >
+    <div class="section-action"><UButton to="/contracts" variant="soft">Alle Verträge</UButton></div>
   </SectionPanel>
 </template>

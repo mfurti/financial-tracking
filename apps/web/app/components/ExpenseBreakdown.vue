@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { Monthly } from '@financial-tracking/contracts';
-const props = withDefaults(defineProps<{ report: Monthly; title?: string }>(), { title: 'Ausgaben nach Kategorien' });
+const props = withDefaults(defineProps<{ report: Monthly; title?: string; compact?: boolean }>(), {
+  title: 'Ausgaben nach Kategorien',
+  compact: false,
+});
 const groups = computed(
   /** Income-only groups must not appear as zero-value expenditure slices. */ () =>
     props.report.categories
@@ -25,6 +28,8 @@ function categoryLink(id: string | null) {
     :title="title"
     icon="categories"
     class="spending-panel"
+    :class="{ 'spending-panel--compact': compact }"
+    :compact="compact"
     help="Noch nicht kategorisierte Buchungen sind bereits in den Ausgaben enthalten."
   >
     <template #actions
@@ -32,6 +37,7 @@ function categoryLink(id: string | null) {
     >
     <div v-if="groups.length" class="spending-overview">
       <ExpenseChart
+        v-if="!compact"
         :groups="groups"
         :total-cents="report.expenseCents"
         :label="`${money(report.expenseCents)} Ausgaben in ${groups.length} Kategorien`"
@@ -43,16 +49,26 @@ function categoryLink(id: string | null) {
           :key="group.categoryId ?? 'uncategorized'"
           :to="categoryLink(group.categoryId)"
           class="spending-row"
-          ><span class="category-dot" :style="{ background: `var(--chart-${(index % 6) + 1})` }" aria-hidden="true" />
+          ><span
+            v-if="!compact"
+            class="category-dot"
+            :style="{ background: `var(--chart-${(index % 6) + 1})` }"
+            aria-hidden="true" />
           <div>
             <strong>{{ group.name }}</strong
-            ><small
+            ><small v-if="!compact"
               >{{ ((group.expenseShare ?? 0) * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 }) }} % der
               Ausgaben</small
             >
           </div>
-          <strong>{{ money(group.expenseCents) }}</strong></NuxtLink
-        >
+          <strong data-financial>{{ money(group.expenseCents) }}</strong>
+          <span v-if="compact" class="overview-category-track" aria-hidden="true"
+            ><i
+              :style="{
+                width: `${Math.min(1, Math.max(0, group.expenseShare ?? 0)) * 100}%`,
+                background: `var(--chart-${(index % 6) + 1})`,
+              }" /></span
+        ></NuxtLink>
       </div>
     </div>
     <div v-else class="empty-state">

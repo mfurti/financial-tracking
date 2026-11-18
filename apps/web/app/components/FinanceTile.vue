@@ -66,7 +66,9 @@ function activate() {
         <span v-else-if="state === 'loading'" role="status">Wird geladen …</span>
         <span v-else-if="state === 'empty'" class="finance-tile__message">{{ emptyText }}</span>
         <span v-else role="alert" class="finance-tile__message">{{ errorText }}</span>
-        <span v-if="context && state === 'ready'" class="finance-tile__context">{{ context }}</span>
+        <span v-if="(context || $slots.context) && state === 'ready'" class="finance-tile__context"
+          ><slot name="context">{{ context }}</slot></span
+        >
       </span>
       <span v-if="$slots.graphic && state === 'ready'" class="finance-tile__graphic" aria-hidden="true"
         ><slot name="graphic"

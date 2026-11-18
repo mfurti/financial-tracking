@@ -164,6 +164,7 @@ onBeforeUnmount(
     </div>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
+  <UButton v-if="error && !busy" variant="soft" class="mb-5" @click="load">Erneut versuchen</UButton>
   <UAlert
     v-if="importResult"
     role="status"
@@ -173,30 +174,43 @@ onBeforeUnmount(
     class="mb-5"
   />
   <p v-if="busy" role="status" class="muted">Dein Monat wird geladen …</p>
+  <div v-if="busy" class="stats-grid finance-overview-stats" aria-busy="true">
+    <FinanceTile
+      v-for="label in ['Monatsbilanz', 'Einnahmen', 'Ausgaben']"
+      :key="label"
+      :label="label"
+      variant="stat"
+      state="loading"
+    />
+  </div>
   <template v-else-if="report && !error">
     <p class="overview-month-phase">{{ monthPhase }}</p>
     <div class="stats-grid finance-overview-stats">
-      <section class="stat-card balance-card month-balance">
-        <p>{{ monthName(month) }} · Monatsbilanz</p>
-        <strong class="overview-net">{{ money(report.netCents) }}</strong
-        ><small>Gebuchte Einnahmen minus Ausgaben</small
-        ><small>{{ money(report.deltaCents) }} Veränderung zum Vormonat</small>
-      </section>
-      <section class="stat-card">
-        <p>Einnahmen</p>
-        <strong class="positive">{{ money(report.incomeCents) }}</strong
-        ><small>Das ist diesen Monat reingekommen.</small>
-      </section>
-      <section class="stat-card">
-        <p>Ausgaben</p>
-        <strong>{{ money(report.expenseCents) }}</strong
-        ><small>Das hast du diesen Monat ausgegeben.</small>
-      </section>
+      <FinanceTile label="Monatsbilanz" variant="stat" class="month-balance">
+        <template #value
+          ><span class="overview-net" data-financial>{{ money(report.netCents) }}</span></template
+        >
+        <template #context
+          ><span data-financial>{{ money(report.deltaCents) }}</span> zum Vormonat</template
+        >
+      </FinanceTile>
+      <FinanceTile label="Einnahmen" variant="stat"
+        ><template #value
+          ><span class="positive" data-financial>{{ money(report.incomeCents) }}</span></template
+        ></FinanceTile
+      >
+      <FinanceTile label="Ausgaben" variant="stat"
+        ><template #value
+          ><span data-financial>{{ money(report.expenseCents) }}</span></template
+        ></FinanceTile
+      >
     </div>
     <div class="data-context">
-      <span
-        >{{ transactionCount }} gebuchte Umsätze · eigene Umbuchungen und vorgemerkte Zahlungen nicht mitgerechnet</span
-      ><span>Auch Buchungen ohne Konto zählen mit.</span>
+      <span>{{ transactionCount }} gebuchte Umsätze · inklusive Buchungen ohne Konto</span>
+      <HelpPopover
+        title="Monatszahlen"
+        text="Gebuchte Einnahmen minus Ausgaben. Eigene Umbuchungen und vorgemerkte Zahlungen zählen nicht mit. Auch Buchungen ohne Konto zählen mit."
+      />
     </div>
     <div v-if="reviews || uncategorizedCount" class="review-summary" aria-label="Nächste Schritte">
       <NuxtLink v-if="reviews" to="/imports">{{ reviews }} Buchungen klären</NuxtLink
@@ -206,10 +220,7 @@ onBeforeUnmount(
     </div>
     <OverviewColumns>
       <template #bookings>
-        <SectionPanel title="Letzte Buchungen" icon="transactions" data-overview-section="bookings">
-          <div class="panel-heading">
-            <NuxtLink :to="transactionsLink" class="text-link">Alle anzeigen</NuxtLink>
-          </div>
+        <SectionPanel title="Letzte Buchungen" icon="transactions" compact data-overview-section="bookings">
           <p v-if="!recent.length" class="empty-copy">
             In diesem Monat sind noch keine Buchungen vorhanden. Lade eine Datei hoch oder wähle einen anderen Monat.
           </p>
@@ -217,30 +228,31 @@ onBeforeUnmount(
             ><span class="transaction-icon"><FinanceIcon name="transactions" /></span>
             <div>
               <strong>{{ row.counterpartyName || row.description }}</strong
-              ><small>{{ calendarDate(row.bookingDate) }} · {{ row.description }}</small
-              ><small>{{
-                row.isTransfer
-                  ? 'Eigene Umbuchung'
-                  : (report.categories.find((c) => c.categoryId === row.categoryId)?.name ?? 'Nicht kategorisiert')
-              }}</small>
+              ><small
+                >{{ calendarDate(row.bookingDate) }} ·
+                {{
+                  row.isTransfer
+                    ? 'Eigene Umbuchung'
+                    : (report.categories.find((c) => c.categoryId === row.categoryId)?.name ?? 'Nicht kategorisiert')
+                }}</small
+              >
             </div>
-            <strong :class="BigInt(row.amountCents) > 0n ? 'positive' : ''">{{
+            <strong :class="BigInt(row.amountCents) > 0n ? 'positive' : 'negative'" data-financial>{{
               money(row.amountCents)
             }}</strong></NuxtLink
           >
+          <div class="section-action"><UButton :to="transactionsLink" variant="soft">Alle Umsätze</UButton></div>
         </SectionPanel>
       </template>
       <template #payments><UpcomingContracts data-overview-section="payments" /></template>
       <template #accounts>
-        <SectionPanel title="Deine Konten" icon="accounts" data-overview-section="accounts">
-          <div class="panel-heading">
-            <NuxtLink to="/accounts" class="text-link">Verwalten</NuxtLink>
-          </div>
-          <div class="accounts-summary">
-            <small>Bekannte Kontostände</small
-            ><strong>{{ balances.length ? money(knownBalance) : 'Noch kein Saldo' }}</strong
-            ><small>{{ balances.length }} von {{ activeCount }} aktiven Konten · von der Bank gemeldet</small>
-          </div>
+        <SectionPanel
+          title="Deine Konten"
+          icon="accounts"
+          compact
+          data-overview-section="accounts"
+          help="CSV-Dateien liefern Umsätze. Bankgemeldete Kontostände bleiben von der Monatsbilanz getrennt."
+        >
           <p v-if="!accounts.length" class="muted text-sm my-5">
             Noch keine Konten. CSV-Import funktioniert auch ohne Konto.
           </p>
@@ -258,22 +270,24 @@ onBeforeUnmount(
                 >Saldo älter als 48 Stunden</small
               >
             </div>
-            <strong>{{
+            <strong data-financial>{{
               account.balances.find((b) => b.balanceType === 'BOOKED')
                 ? money(account.balances.find((b) => b.balanceType === 'BOOKED')!.amountCents)
                 : 'Kein Saldo'
             }}</strong></NuxtLink
           >
-          <HelpPopover
-            title="Kontostände"
-            text="CSV-Dateien liefern Umsätze. Bankgemeldete Kontostände bleiben von der Monatsbilanz getrennt."
-          />
+          <div class="accounts-summary">
+            <small>Bekannte Kontostände</small
+            ><strong data-financial>{{ balances.length ? money(knownBalance) : 'Noch kein Saldo' }}</strong
+            ><small>{{ balances.length }} von {{ activeCount }} aktiven Konten · von der Bank gemeldet</small>
+          </div>
           <NuxtLink v-if="unassigned" to="/transactions?unassigned=true" class="text-link"
             >Buchungen ohne Konto ansehen</NuxtLink
           >
+          <div class="section-action"><UButton to="/accounts" variant="soft">Kontenübersicht</UButton></div>
         </SectionPanel>
       </template>
-      <template #categories><ExpenseBreakdown :report="report" data-overview-section="categories" /></template>
+      <template #categories><ExpenseBreakdown :report="report" compact data-overview-section="categories" /></template>
     </OverviewColumns>
     <UButton to="/analytics" variant="soft" class="mt-5">Mehrmonatsanalyse öffnen</UButton>
   </template>

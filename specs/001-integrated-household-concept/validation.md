@@ -86,3 +86,11 @@ T004 visual observation: the synthetic 390 px overview screenshot confirms restr
 - Added previous/next/current Berlin month controls while retaining direct month selection, existing versioned loading and bookmarkable URL. Three actual-month statistics remain distinct from observed account balances and future contract obligations; current/future month context is explicit.
 - New acceptance first failed on the missing composed bookings section before implementation. Nuxt typecheck/build, scoped lint/format and whitespace checks passed.
 - Nine-width browser acceptance passed: 9/9 in 1.8 minutes. Actual section grouping, no document overflow, November net 208010 cents, October net 290177 cents and reload preservation were verified, including accountless actuals and transfer exclusion. Desktop screenshot visually inspected; copy density and compact widget variants remain T009.
+
+## T009: Compact Overview Tiles and Request States
+
+- Applied shared stat tiles and compact booking/payment/account/category sections, retaining exact monetary text, observed/missing balance provenance and detailed contextual help. Analysis charts retain their full presentation.
+- Added three reserved loading tiles, empty states, explicit report/payment retry and disabled pending retry. Disposed payment widgets cannot install a polling interval after unmount.
+- Behavioral acceptance initially failed on the missing loading tiles. Production build, Nuxt/root typechecks, scoped lint/format and whitespace checks passed.
+- Browser acceptance passed 18/18 cases at 390/768/1440 px, including live resizing with retained month, cent-exact actuals, loading/error/recovery and empty data. The final pending-payment retry assertion passed separately after rebuilding; Playwright last-run status is passed with no failed tests.
+- Settled desktop screenshot visually inspected: stationary shadow-free surfaces, compact category bars, readable signed values, long labels and exact large balances. Full palette contrast and motion acceptance remain T010/T011.

@@ -22,8 +22,8 @@ test('device locale and display masking restore early without replacing the chos
   await page.locator('input[type="password"]').fill('e2e-test-password-only');
   await page.locator('form button[type="submit"]').click();
   await page.waitForURL(/** Inspect only the completed authenticated screen. */ (url) => url.pathname === '/');
-  await expect(page.locator('.stat-card strong').first()).toBeVisible();
-  await expect(page.locator('.stat-card strong').first()).toHaveCSS('color', 'rgba(0, 0, 0, 0)');
+  await expect(page.locator('.finance-overview-stats [data-financial]').first()).toBeVisible();
+  await expect(page.locator('.finance-overview-stats [data-financial]').first()).toHaveCSS('color', 'rgba(0, 0, 0, 0)');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('html')).toHaveAttribute('data-amounts-masked', 'true');
