@@ -27,13 +27,13 @@ async function login() {
 </script>
 
 <template>
-  <main class="login-page">
+  <main class="login-page finance-login">
     <div class="login-theme"><ThemeToggle /></div>
     <section class="login-card">
       <div class="brand-mark">H</div>
-      <p class="eyebrow mt-6">DEIN PRIVATER FINANZBEREICH</p>
-      <h1>Willkommen zurück.</h1>
-      <p class="muted mb-7">Alles im Blick. In deinem Haushaltsbuch.</p>
+      <p class="eyebrow mt-6">HAUSHALTSBUCH</p>
+      <h1>Anmelden</h1>
+      <p class="muted mb-7">Dein privater Finanzbereich.</p>
       <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><UForm
         ref="validation"
         :schema="loginSchema"

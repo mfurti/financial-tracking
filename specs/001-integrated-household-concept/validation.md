@@ -72,3 +72,10 @@ T004 visual observation: the synthetic 390 px overview screenshot confirms restr
 - Added the real early head bootstrap, reactive client locale/privacy attributes and shared preference composable. Early CSS display masking precedes value rendering; full translated and accessible masked-string coverage remains T042 and is not claimed here.
 - New suite first failed because the utility module did not exist. Implemented behavior then passed 5 preference cases plus 20 existing appearance cases. Tests execute the actual head script and inspect serialized storage, including corruption/future schema/blocked getters and discarded financial/secret fields.
 - Nuxt typecheck and production build passed. Real browser checks passed 4/4 at 390/1440 px: restored locale/privacy, palette retained, authenticated display masking/reload and blocked-storage usable login. Scoped lint/format and whitespace checks passed.
+
+## T007: Shared Compact Application Shell
+
+- Replaced the desktop sidebar with one opaque responsive navigation surface, floating on larger screens and fixed full-width on phones. Accounts are a delivered primary destination; future wealth routes are not advertised yet.
+- Header retains accessible settings/theme/logout and skip navigation, without a repeated visible page heading. More uses a compact management list; login is condensed while preserving shared validation and password/session handling.
+- New shell acceptance failed before the change because the sidebar still existed. After implementation, 3 concept cases at 390/768/1440 px plus existing desktop/mobile interface journeys passed (5/5, 1.7 minutes), including selected destinations, management-child marker, no overflow, logout, both themes, field/retry and session-expiry behavior.
+- Nuxt typecheck/build, scoped lint/format and whitespace checks passed. Mobile shell screenshot visually inspected.

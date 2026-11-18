@@ -9,16 +9,18 @@ const links = [
 
 <template>
   <div class="page-heading"><h1>Mehr</h1></div>
-  <nav class="management-grid" aria-label="Weitere Seiten">
-    <UButton
-      v-for="link in links"
-      :key="link.to"
-      :to="link.to"
-      color="neutral"
-      variant="outline"
-      class="management-tile"
-      ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span
-      ><span aria-hidden="true">›</span></UButton
-    >
-  </nav>
+  <SectionPanel title="Verwalten" icon="settings">
+    <nav class="finance-management" aria-label="Weitere Seiten">
+      <UButton
+        v-for="link in links"
+        :key="link.to"
+        :to="link.to"
+        color="neutral"
+        variant="link"
+        class="finance-management-row"
+        ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span
+        ><span aria-hidden="true">›</span></UButton
+      >
+    </nav>
+  </SectionPanel>
 </template>

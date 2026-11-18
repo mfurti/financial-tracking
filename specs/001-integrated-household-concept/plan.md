@@ -3,7 +3,7 @@
 **Branch**: `13-implement-integrated-household-finance-concept` | **Date**: 2026-11-18 | **Spec**: [spec.md](spec.md)
 **Input**: `specs/001-integrated-household-concept/spec.md`
 **Issue**: [#13](https://github.com/mfurti/financial-tracking/issues/13), related to [#3](https://github.com/mfurti/financial-tracking/issues/3). Issue, linked branch and a separate planning-only commit/push were explicitly approved. The user subsequently approved the documented project rules as this feature's governance baseline and authorized speckit-implement for all 48 tasks. Merge and deployment remain separate decisions.
-**Status**: Implementation authorized; T001 baseline/reconciliation in progress. Existing project rules are the explicitly accepted governance baseline; the constitution template is not ratified.
+**Status**: Implementation authorized and in progress; per-task delivery and proof are recorded in tasks.md and validation.md. Existing project rules are the explicitly accepted governance baseline; the constitution template is not ratified.
 
 ## Summary
 
