@@ -2,9 +2,9 @@
 
 **Input**: `specs/001-integrated-household-concept/` — spec.md, plan.md, research.md, data-model.md, contracts/, quickstart.md.
 **Generated**: 2026-11-18.
-**Authorization**: Task generation was explicitly requested. The user subsequently approved feature issue #13, its linked branch in this checkout and a separate planning-only commit followed by push. Implementation, merge and deployment remain separate decisions.
+**Authorization**: The user approved task generation, issue #13, its linked branch and planning commit/push, then explicitly authorized speckit-implement for all 48 tasks using the documented project rules as governance baseline. Merge and deployment remain separate decisions.
 **Checkout**: Existing `V:/GitHub/financial-tracking`, linked branch `13-implement-integrated-household-finance-concept`, verified starting commit `1f8d113bfa9294707bcd3b6ea6a3a03e8e12ec62`, matching freshly fetched origin/main. This checkout predates the feature workflow; no additional worktree was created.
-**Governance**: The constitution remains an unratified template. Task generation is explicitly requested; constitution ratification or acceptance of another governance baseline has not been granted. Resolve this implementation prerequisite before product work; do not silently write or ratify principles.
+**Governance**: Existing documented project rules were explicitly accepted for this feature. The constitution remains an unratified template; preserve reviewer-owned checklist markers and record the specific execution decision in plan.md/validation.md. No repeated implementation or governance approval is required within this scope.
 **Tracking**: [Feature issue #13](https://github.com/mfurti/financial-tracking/issues/13), related to [stage-1 issue #3](https://github.com/mfurti/financial-tracking/issues/3). GitHub linked branch: `13-implement-integrated-household-finance-concept`. Reconcile R1/I2/I3 and the P1 contract-calendar overlap without duplicating completed work or closing unrelated external gates.
 
 ## Format and Execution Rules
@@ -191,7 +191,7 @@ Optional independent work is described below; this is not permission for agent s
 
 ## Implementation Strategy
 
-1. Issue #13, its linked branch and the planning-only commit/push are approved. Complete and verify that delivery, resolve the governance prerequisite and obtain the separate implementation decision before executing product tasks.
+1. Issue #13, linked branch and planning commit 0ae88ae are published. Governance baseline and implementation are explicitly approved. Execute from the first unfinished task; merge/deployment remain separate.
 2. Deliver **MVP = setup + foundation + US1, T001–T012**. Validate existing journeys and all five visual dimensions before extending features. No production deployment is implied.
 3. Deliver US2 and US3 as P1 increments, then US4/US5/US6 as P2 increments, preserving completed task commits.
 4. Complete final proof and use one feature issue/branch/PR chosen through the workflow. Record unavailable checks as gaps.
@@ -202,5 +202,5 @@ Optional independent work is described below; this is not permission for agent s
 - **48 tasks**, all unchecked.
 - Setup **3**, foundation **3**, US1 **6**, US2 **6**, US3 **7**, US4 **4**, US5 **6**, US6 **9**, final **4**.
 - **8 [P] tasks in four disjoint pairs**: T002/T003, T005/T006, T007/T008, T019/T020, subject to stated prerequisites.
-- Suggested MVP: **12 tasks**, T001–T012, after the separate governance/tracking/implementation decisions.
+- Suggested MVP: **12 tasks**, T001–T012, under the recorded governance/tracking/implementation approvals.
 - Planning artifacts do not constitute completed implementation tasks.

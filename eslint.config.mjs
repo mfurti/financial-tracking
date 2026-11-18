@@ -13,6 +13,7 @@ export default ts.config(
       '**/generated/**',
       '**/playwright-report/**',
       '**/test-results/**',
+      '**/coverage/**',
       '.local/**',
     ],
   },

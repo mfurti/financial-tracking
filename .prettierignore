@@ -8,3 +8,4 @@ docs/haushaltsbuch-implementierungsspezifikation.md
 playwright-report
 test-results
 .local
+.specify/feature.json

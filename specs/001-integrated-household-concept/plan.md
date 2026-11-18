@@ -2,8 +2,8 @@
 
 **Branch**: `13-implement-integrated-household-finance-concept` | **Date**: 2026-11-18 | **Spec**: [spec.md](spec.md)
 **Input**: `specs/001-integrated-household-concept/spec.md`
-**Issue**: [#13](https://github.com/mfurti/financial-tracking/issues/13), related to [#3](https://github.com/mfurti/financial-tracking/issues/3). Issue, linked branch and a separate planning-only commit/push were explicitly approved. Implementation remains a separate decision.
-**Status**: Phase 0/1 artifacts drafted; task generation explicitly requested after visual review, with tasks in [tasks.md](tasks.md). Constitutional governance remains unresolved before implementation; no implementation approval is implied.
+**Issue**: [#13](https://github.com/mfurti/financial-tracking/issues/13), related to [#3](https://github.com/mfurti/financial-tracking/issues/3). Issue, linked branch and a separate planning-only commit/push were explicitly approved. The user subsequently approved the documented project rules as this feature's governance baseline and authorized speckit-implement for all 48 tasks. Merge and deployment remain separate decisions.
+**Status**: Implementation authorized; T001 baseline/reconciliation in progress. Existing project rules are the explicitly accepted governance baseline; the constitution template is not ratified.
 
 ## Summary
 
@@ -29,15 +29,15 @@ _GATE: Check before Phase 0 and after Phase 1._
 
 `.specify/memory/constitution.md` contains only template tokens, including `[PROJECT_NAME]`, `[PRINCIPLE_1_NAME]`, and `[GOVERNANCE_RULES]`. It is not a ratified project constitution. Constitutional compliance cannot be evaluated or reported as passed. No constitution has been silently written or ratified.
 
-| Gate                                           | Before research    | After design       | Evidence / disposition                                                                                                          |
-| ---------------------------------------------- | ------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| Ratified constitutional principles available   | ERROR: unavailable | ERROR: unavailable | Task generation explicitly requested; resolve governance before declaring constitutional compliance or starting implementation. |
-| Preserve documented coding conventions         | Design conforms    | Design conforms    | `docs/coding-guidelines.md`; existing lint/format/type/CI configuration. Runtime checks remain implementation work.             |
-| Preserve exact financial and history semantics | Design conforms    | Design conforms    | Integer cents, shared Zod contracts, additive schema changes, immutable snapshot components.                                    |
-| Preserve auth/credential boundaries            | Design conforms    | Design conforms    | Existing owner singleton, cookie session/CSRF; local roles isolated.                                                            |
-| Reuse stack and constrain scope                | Design conforms    | Design conforms    | No HTML embedding, broker service, multi-user migration, dependency migration, or new delivery infrastructure.                  |
+| Gate                                           | Before research                   | After design                       | Evidence / disposition                                                                                              |
+| ---------------------------------------------- | --------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Governance baseline available                  | Constitution template unavailable | RESOLVED by explicit user decision | Existing documented project rules accepted for this feature; no constitution ratification claimed.                  |
+| Preserve documented coding conventions         | Design conforms                   | Design conforms                    | `docs/coding-guidelines.md`; existing lint/format/type/CI configuration. Runtime checks remain implementation work. |
+| Preserve exact financial and history semantics | Design conforms                   | Design conforms                    | Integer cents, shared Zod contracts, additive schema changes, immutable snapshot components.                        |
+| Preserve auth/credential boundaries            | Design conforms                   | Design conforms                    | Existing owner singleton, cookie session/CSRF; local roles isolated.                                                |
+| Reuse stack and constrain scope                | Design conforms                   | Design conforms                    | No HTML embedding, broker service, multi-user migration, dependency migration, or new delivery infrastructure.      |
 
-**Required resolution**: Establish the project's actual constitution through the constitution workflow, or explicitly approve using the existing documented project rules as this feature's governance baseline. Keep this gate visibly unresolved until that decision. The user's subsequent explicit `speckit-tasks` invocation authorizes the task breakdown despite the earlier planning stop; it does not ratify principles or authorize product implementation. Design/task artifacts are not evidence that the gate passed.
+**Resolution**: The user explicitly selected “Projektregeln verwenden und speckit-implement starten” after reviewing issue #13 and planning commit 0ae88ae. Use docs/coding-guidelines.md, the approved specification/contracts/tasks, and existing executable checks as the feature governance baseline. Preserve the constitution and reviewer-owned checklist markers unchanged; their old open marker is superseded for execution by this specific user decision.
 
 ## Project Structure
 
@@ -113,6 +113,6 @@ Treat the five visual dimensions as separate acceptance checks, not a generic sc
 
 | Issue                         | Why it exists                                                                  | Treatment                                                                 |
 | ----------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| Missing ratified constitution | Spec Kit was installed with template governance                                | Explicit unresolved gate; no implied ratification.                        |
+| Missing ratified constitution | Spec Kit was installed with template governance                                | Explicit project-rules baseline approved; no implied ratification.        |
 | New workspace persistence     | Prototype browser state is unsuitable for durable real household goals/history | Small additive records; existing balances/import runs are not repurposed. |
 | Local synthetic simulation    | Concept includes interactive demo investing and roles                          | One versioned demo store; no broker backend or authorization changes.     |

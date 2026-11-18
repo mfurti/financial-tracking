@@ -74,3 +74,59 @@ The refinement in [visual-design.md](visual-design.md) defines mandatory depth, 
 ## Review Evidence
 
 Capture matching reference and implementation screenshots at 390, 768 and 1440 px for overview, analytics, contracts/calendar, wealth/demo and settings; inspect 360/700/701/1100/1101 px for overflow and boundary placement. Check all 39 mappings for navigation/actions, and document intentional adaptations rather than silently dropping screens. Match hierarchy, spacing, density, colors and interactions; do not fabricate pixel-diff thresholds across different financial fixtures.
+
+## Task Ownership and Existing Backlog
+
+The 39 named source views map to these implementation owners. Ownership is not completion; final functional and visual acceptance is T045.
+
+| Concept ID         | Owning task |
+| ------------------ | ----------- |
+| seite-03           | T008/T009   |
+| seite-04           | T016/T022   |
+| seite-05           | T022        |
+| analysis-details   | T016        |
+| seite-07           | T022        |
+| seite-08           | T023        |
+| konten             | T019        |
+| konto-detail       | T019        |
+| scalable           | T028/T032   |
+| sparplaene         | T033        |
+| scalable-umsatz    | T033        |
+| wertpapier         | T032        |
+| seite-17           | T007        |
+| verbindungen       | T025        |
+| darstellung        | T040        |
+| seite-02           | T007        |
+| seite-09           | T023        |
+| seite-10           | T023/T024   |
+| seite-13           | T021        |
+| seite-14           | T020        |
+| seite-18           | T021        |
+| seite-19           | T021        |
+| seite-20           | T021        |
+| seite-21           | T022        |
+| seite-22           | T022        |
+| seite-23           | T023        |
+| seite-24           | T023        |
+| seite-25           | T025        |
+| seite-26           | T022        |
+| seite-06           | T015/T017   |
+| einstellungen      | T040        |
+| theme-konfigurator | T041        |
+| profil             | T037        |
+| benachrichtigungen | T039        |
+| banken             | T019        |
+| benutzer           | T043        |
+| kontogruppen       | T038        |
+| passwort           | T040        |
+| vertragskalender   | T024        |
+
+| Existing backlog               | This feature                | Boundary                                                                                                             |
+| ------------------------------ | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| docs/todo.md R1                | T004–T012 and story layouts | Compact financial UI; retain original 734/879/1166 px checks alongside new concept breakpoints.                      |
+| docs/todo.md I2                | T020                        | Visible keyboard/touch upload; retain cancellation and duplicate protections.                                        |
+| docs/todo.md I3                | T020/T021                   | Explicit known booking-text mapping fallback and compact issue groups; original-file acceptance E5 remains separate. |
+| docs/todo.md R2/R3             | T022/T023                   | Preserve field-specific errors/drafts and explain contract evidence when adapting these views.                       |
+| docs/todo.md P1                | T024                        | Exact due-month totals/calendar using existing recurrence rules; no generated transactions.                          |
+| docs/todo.md I1                | Not silently included       | Deep import-history expansion remains separate backlog.                                                              |
+| Budget/live-bank/release gates | Not included                | Preserve separate approval and external acceptance.                                                                  |

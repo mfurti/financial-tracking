@@ -12,3 +12,4 @@ test-results/
 **/secrets/
 apps/api/src/generated/
 *.tsbuildinfo
+*.log

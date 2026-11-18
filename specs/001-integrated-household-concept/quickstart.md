@@ -1,6 +1,6 @@
 # Quickstart Validation Guide
 
-This is a validation guide for the future implementation, not a claim that new routes or checks already pass. Review the generated `tasks.md` and resolve the constitutional gate in `plan.md` before separately approved product implementation.
+This is a validation guide for the future implementation, not a claim that new routes or checks already pass. The user approved the generated `tasks.md`, project-rules governance baseline and implementation; follow the per-task checks and delivery rules in `plan.md` and `tasks.md`.
 
 ## Prerequisites
 
