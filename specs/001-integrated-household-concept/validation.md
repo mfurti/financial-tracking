@@ -56,3 +56,11 @@ Record actual commands/results per task, exact delivery commits in the issue, an
 - Browser validation passed: 3 concept surface cases (390/768/1440 px) and 2 existing desktop/mobile interface journeys, 5/5 in 1.5 minutes. Header/gutters/radius/shadow/hover geometry verified; existing light/dark, form/retry/session behavior remained green.
 
 T004 visual observation: the synthetic 390 px overview screenshot confirms restrained card boundaries, no tile shadow, readable signed/large amounts and consistent page insets. The old overview order/density remains intentionally owned by T008/T009, so this is surface-layer acceptance rather than final concept parity.
+
+## T005: Reusable Finance Tiles and Dialogs
+
+- Added semantic feature/insight/account/stat tiles with label/value/context hierarchy, independent sibling actions, disabled/loading/empty/error representations and retry events; navigation and primary button actions never nest interactive controls.
+- Added the Nuxt UI dialog wrapper with native focus/dismissal behavior, bounded viewport scrolling and reference insets/radius. Existing settings owner information now uses both components without adding a showcase route or changing password behavior.
+- The new real-settings acceptance failed before implementation because the account tile did not exist. A later geometry assertion initially measured before Playwright scrolled to the offscreen tile; corrected the test to scroll first, retaining the strict stationary-hover check.
+- Focus/escape/return/reduced-motion checks passed at 390 px and then 768/1440 px. Visual review found the default overlay still winning the arbitrary utility color; replaced it with an explicit semantic overlay class and added a computed dark-backdrop assertion. Final three-viewport rerun passed: 3/3 in 34.1 seconds, including computed dark backdrop, bounded dialog, keyboard focus/return, reduced-motion operation and stationary tile geometry. Final mobile overlay screenshot visually inspected.
+- Nuxt typecheck, rebuilt production bundle, scoped ESLint/Prettier and whitespace checks passed. Async tile-state integration is exercised by owning page tasks such as T009; no fabricated financial values or real user changes.

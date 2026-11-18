@@ -40,22 +40,30 @@ onBeforeUnmount(
     </div>
   </div>
   <AppearanceSettings />
-  <section class="panel">
-    <dl class="detail-list">
-      <dt>Benutzer</dt>
-      <dd>{{ api.session.value?.username }}</dd>
-      <dt>Währung</dt>
-      <dd>EUR</dd>
-      <dt>Zeitzone</dt>
-      <dd>Europe/Berlin</dd>
-      <dt>Bankabruf</dt>
-      <dd>Manuell · keine dauerhaft gespeicherte Bank-PIN</dd>
-      <dt>Datensicherung</dt>
-      <dd>Verschlüsselt auf dem Server; Status hier nicht verfügbar.</dd>
-      <dt>Zugang</dt>
-      <dd>Ausschließlich Heimnetz/VPN mit HTTPS.</dd>
-    </dl>
-  </section>
+  <FinanceTile label="Benutzer" :value="api.session.value?.username" context="Privater Finanzbereich" variant="account">
+    <template #actions>
+      <FinanceDialog
+        title="Benutzer- und App-Informationen"
+        description="Zugang, Währung und Datensicherung deines Finanzbereichs."
+      >
+        <template #trigger><UButton type="button" variant="soft">Zugang & Datensicherung</UButton></template>
+        <dl class="detail-list">
+          <dt>Benutzer</dt>
+          <dd>{{ api.session.value?.username }}</dd>
+          <dt>Währung</dt>
+          <dd>EUR</dd>
+          <dt>Zeitzone</dt>
+          <dd>Europe/Berlin</dd>
+          <dt>Bankabruf</dt>
+          <dd>Manuell · keine dauerhaft gespeicherte Bank-PIN</dd>
+          <dt>Datensicherung</dt>
+          <dd>Verschlüsselt auf dem Server; Status hier nicht verfügbar.</dd>
+          <dt>Zugang</dt>
+          <dd>Ausschließlich Heimnetz/VPN mit HTTPS.</dd>
+        </dl>
+      </FinanceDialog>
+    </template>
+  </FinanceTile>
   <SectionPanel title="Passwort ändern" icon="settings" class="mt-6">
     <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><UForm
       ref="validation"

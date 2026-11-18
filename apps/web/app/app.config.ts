@@ -8,7 +8,7 @@ export default defineAppConfig({
     },
     modal: {
       slots: {
-        overlay: 'bg-[var(--finance-overlay)] backdrop-blur-[5px]',
+        overlay: 'finance-overlay',
         content:
           'bg-[var(--finance-surface)] text-[var(--ink)] rounded-[var(--finance-dialog-radius)] ring-1 ring-[var(--line)]',
       },
