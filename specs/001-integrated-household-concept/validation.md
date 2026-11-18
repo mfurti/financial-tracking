@@ -30,3 +30,11 @@ Original SHA-256 fingerprints were rechecked and match contracts/ui.md for PC/ta
 ## Evidence Policy
 
 Record actual commands/results per task, exact delivery commits in the issue, and unavailable checks separately. Check tasks only after relevant proof, task commit and successful immediate push. Runtime feature claims require corresponding real integration/browser evidence; references/screenshots alone do not establish financial correctness.
+
+## T002: Reference Capture
+
+- scripts/capture-concept-reference.mjs --check passed all three SHA-256 fingerprints and 39 views per format.
+- Full offline capture passed: 54 screenshots (3 devices x 2 themes x 9 screens), with visible-element computed geometry and source provenance in ignored .local/concept-reference/manifest.json. Tracked reference-index.md inventories the artifacts.
+- Browser clock fixed to 2026-11-18 12:00 UTC, Europe/Berlin, de-DE, scale 1, reduced motion. Actual header control and applied html theme class verified; initial reference tone does not necessarily follow browser colorScheme.
+- Zero page errors and zero requested remote origins. Desktop light overview and mobile dark analyses visually inspected after the applied-theme correction; geometry and readable content confirmed for reference evidence only.
+- Script lint, formatting and artifact existence/count checks passed. No runtime product acceptance claimed.
