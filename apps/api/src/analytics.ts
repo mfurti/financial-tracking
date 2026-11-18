@@ -5,6 +5,7 @@ import type { Db } from './db.js';
 import type { Prisma, Transaction } from './generated/prisma/client.js';
 import { anchoredMonth, berlinToday, isoDay } from './contract-schedule.js';
 import { AppError } from './errors.js';
+import { merchantIdentity, merchantKey } from './merchant-identity.js';
 
 /** Actual relevant bookings with optional presentation labels and confirmed payment ownership. */
 export type AnalyticsRow = Pick<Transaction, 'amountCents' | 'bookingDate' | 'categoryId' | 'classification'> & {
@@ -194,6 +195,60 @@ export function calculateAnalytics(rows: AnalyticsRow[], from: string, to: strin
 export class AnalyticsService {
   /** Reuse the application's private persistence. */
   constructor(@Inject('DB') readonly db: Db) {}
+  /** Aggregate booked non-transfer expenses by exact trimmed source identity, preserving effective query provenance. */
+  async merchants(input: z.infer<typeof c.merchantAnalyticsQuerySchema>, today = berlinToday()) {
+    const { from, to } = analyticsRange(input, today);
+    const rows = await this.db.transaction.findMany({
+      where: {
+        status: 'BOOKED',
+        isTransfer: false,
+        amountCents: { lt: 0n },
+        accountId: input.unassigned === 'true' ? null : input.accountId,
+        categoryId: input.uncategorized === 'true' ? null : input.categoryId,
+        bookingDate: { gte: new Date(from), lte: new Date(to) },
+      },
+      select: { counterpartyName: true, amountCents: true },
+    });
+    const buckets = new Map<
+      string,
+      { key: string; name: string | null; label: string; expense: bigint; count: number }
+    >();
+    let total = 0n;
+    for (const row of rows) {
+      const name = merchantIdentity(row.counterpartyName),
+        key = merchantKey(name);
+      const bucket = buckets.get(key) ?? { key, name, label: name ?? 'Unbekannter Händler', expense: 0n, count: 0 };
+      bucket.expense -= row.amountCents;
+      bucket.count++;
+      total -= row.amountCents;
+      buckets.set(key, bucket);
+    }
+    return c.merchantAnalyticsSchema.parse({
+      scope: {
+        from,
+        to,
+        accountId: input.accountId ?? null,
+        categoryId: input.categoryId ?? null,
+        unassigned: input.unassigned === 'true',
+        uncategorized: input.uncategorized === 'true',
+      },
+      expenseCents: String(total),
+      merchants: [...buckets.values()]
+        .sort(
+          /** Sort exact amounts with stable opaque identity tie-breaking. */ (a, b) =>
+            a.expense === b.expense ? a.key.localeCompare(b.key) : a.expense > b.expense ? -1 : 1,
+        )
+        .map(
+          /** Serialize arbitrary-precision aggregates only at the transport boundary. */ (bucket) => ({
+            key: bucket.key,
+            name: bucket.name,
+            label: bucket.label,
+            expenseCents: String(bucket.expense),
+            count: bucket.count,
+          }),
+        ),
+    });
+  }
   /** Apply account/category filters before aggregation; accountless bookings count by default. */
   async overview(input: z.infer<typeof c.analyticsOverviewQuerySchema>, today = berlinToday()) {
     const { from, to } = analyticsRange(input, today);

@@ -377,9 +377,38 @@ export const analyticsOverviewSchema = z.object({
     }),
   ),
 });
+/** Opaque exact-trimmed merchant identity; canonical UTF-8 contents are validated before database access. */
+export const merchantKeySchema = z
+  .string()
+  .regex(/^(unknown|name:[A-Za-z0-9_-]+)$/)
+  .describe(
+    'unknown or name: plus canonical unpadded base64url UTF-8 of an exact trimmed nonempty source name; NUL is invalid',
+  );
+export const merchantAnalyticsQuerySchema = analyticsOverviewQuerySchema;
+export const merchantAnalyticsSchema = z.object({
+  scope: z.object({
+    from: dateSchema,
+    to: dateSchema,
+    accountId: idSchema.nullable(),
+    categoryId: idSchema.nullable(),
+    unassigned: z.boolean(),
+    uncategorized: z.boolean(),
+  }),
+  expenseCents: aggregateCentsSchema,
+  merchants: z.array(
+    z.object({
+      key: merchantKeySchema,
+      name: z.string().nullable(),
+      label: z.string(),
+      expenseCents: aggregateCentsSchema,
+      count: z.number().int().nonnegative(),
+    }),
+  ),
+});
 export const transactionQuerySchema = z
   .object({
     classification: classificationSchema.optional(),
+    merchantKey: merchantKeySchema.optional(),
     accountId: idSchema.optional(),
     unassigned: z.enum(['true', 'false']).optional(),
     from: dateSchema.optional(),
@@ -651,6 +680,13 @@ export interface ApiContract {
 const okSchema = z.object({ ok: z.boolean() });
 /** Operation inventory shared with generated OpenAPI and contract tests. */
 export const apiContracts: Record<string, ApiContract> = {
+  merchantAnalytics: {
+    method: 'get',
+    path: '/analytics/merchants',
+    query: merchantAnalyticsQuerySchema,
+    response: merchantAnalyticsSchema,
+    status: 200,
+  },
   analyticsOverview: {
     method: 'get',
     path: '/analytics/overview',

@@ -26,6 +26,8 @@ All paths below are relative to the existing authenticated API. The browser cont
 
 Merchant keys encode a validated exact normalized source name or an explicit unknown sentinel; the service rejects malformed keys. The same canonical predicate is used by report and list queries. Scope is echoed in reports and copied into detail links. Preserve existing no-argument report defaults.
 
+T013 implements merchant reporting and the additive transaction filter. Keys are `unknown` or `name:` followed by canonical unpadded base64url UTF-8 of the exact trimmed nonempty name. Case and internal whitespace remain significant; invalid UTF-8, NUL, noncanonical encodings and encoded blank names reject with HTTP 400 before database reads. Null and trim-only names share the unknown bucket. SQL trimming uses the same ECMAScript whitespace set as aggregation, and the exact predicate applies before cursor pagination. Reports echo effective inclusive dates/account/category/null filters, preserve decimal-string expense totals and exclude transfers, pending records and positive refunds. Refunds remain available through the same merchant key with an income-direction detail query.
+
 ## Workspace Additions
 
 | Method / route                     | Request                              | Response / rules                                                                                                                  |

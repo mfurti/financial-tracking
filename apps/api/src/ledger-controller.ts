@@ -29,6 +29,10 @@ export class LedgerController {
   @Get('analytics/overview') overview(@Query() query: unknown) {
     return this.analytics.overview(c.analyticsOverviewQuerySchema.parse(query));
   }
+  /** Read reconcilable merchant buckets with the same effective account/category/date scope as their details. */
+  @Get('analytics/merchants') merchants(@Query() query: unknown) {
+    return this.analytics.merchants(c.merchantAnalyticsQuerySchema.parse(query));
+  }
   /** List bank connections. */
   @Get('bank-connections') connections() {
     return this.ledger.connections();
