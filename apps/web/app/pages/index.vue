@@ -50,6 +50,16 @@ const transactionsLink = computed(
 const uncategorizedLink = computed(
   /** Open real records awaiting a category. */ () => `${transactionsLink.value}&uncategorized=true`,
 );
+const monthPhase = computed(
+  /** A month selector does not establish complete bank coverage, especially for current or future periods. */ () => {
+    const current = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7);
+    return month.value === current
+      ? 'Laufender Monat · gebuchte Umsätze'
+      : month.value > current
+        ? 'Zukünftiger Monat · nur vorhandene Buchungen'
+        : 'Kalendermonat · gebuchte Umsätze';
+  },
+);
 const balances = computed(
   /** Only source-provided active booked balances contribute to the known total. */ () =>
     accounts.value
@@ -72,6 +82,18 @@ const activeCount = computed(
   /** Count accounts with missing source balances separately. */ () =>
     accounts.value.filter(/** Only active accounts count here. */ (account) => account.isActive).length,
 );
+/** Move a Berlin calendar-month identity without converting an input date through local time. */
+async function shiftMonth(offset: number) {
+  const date = new Date(`${month.value}-01T12:00:00Z`);
+  date.setUTCMonth(date.getUTCMonth() + offset);
+  month.value = date.toISOString().slice(0, 7);
+  await load();
+}
+/** Return to the current Berlin month through the same versioned data-loading path. */
+async function currentMonth() {
+  month.value = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7);
+  await load();
+}
 /** Fetch dashboard data for the selected month and keep it bookmarkable. */
 async function load() {
   if (disposed || route.path !== '/') return;
@@ -132,9 +154,12 @@ onBeforeUnmount(
     <div>
       <h1>Finanzieller Überblick</h1>
     </div>
-    <div class="toolbar">
-      <MonthPicker v-model="month" @change="load" /><UButton variant="ghost" :loading="busy" @click="load"
-        >Aktualisieren</UButton
+    <div class="toolbar finance-month-controls">
+      <UButton variant="ghost" color="neutral" aria-label="Vorheriger Monat" @click="shiftMonth(-1)">‹</UButton>
+      <MonthPicker v-model="month" @change="load" />
+      <UButton variant="ghost" color="neutral" aria-label="Nächster Monat" @click="shiftMonth(1)">›</UButton>
+      <UButton variant="ghost" @click="currentMonth">Dieser Monat</UButton>
+      <UButton variant="ghost" :loading="busy" @click="load">Aktualisieren</UButton
       ><UButton to="/imports/csv">CSV hochladen</UButton>
     </div>
   </div>
@@ -149,10 +174,11 @@ onBeforeUnmount(
   />
   <p v-if="busy" role="status" class="muted">Dein Monat wird geladen …</p>
   <template v-else-if="report && !error">
-    <div class="stats-grid">
+    <p class="overview-month-phase">{{ monthPhase }}</p>
+    <div class="stats-grid finance-overview-stats">
       <section class="stat-card balance-card month-balance">
         <p>{{ monthName(month) }} · Monatsbilanz</p>
-        <strong>{{ money(report.netCents) }}</strong
+        <strong class="overview-net">{{ money(report.netCents) }}</strong
         ><small>Gebuchte Einnahmen minus Ausgaben</small
         ><small>{{ money(report.deltaCents) }} Veränderung zum Vormonat</small>
       </section>
@@ -178,71 +204,77 @@ onBeforeUnmount(
         >{{ uncategorizedCount }} Kategorien ergänzen (freiwillig)</NuxtLink
       >
     </div>
-    <div class="dashboard-grid">
-      <ExpenseBreakdown :report="report" />
-      <SectionPanel title="Deine Konten" icon="accounts">
-        <div class="panel-heading">
-          <NuxtLink to="/accounts" class="text-link">Verwalten</NuxtLink>
-        </div>
-        <div class="accounts-summary">
-          <small>Bekannte Kontostände</small
-          ><strong>{{ balances.length ? money(knownBalance) : 'Noch kein Saldo' }}</strong
-          ><small>{{ balances.length }} von {{ activeCount }} aktiven Konten · von der Bank gemeldet</small>
-        </div>
-        <p v-if="!accounts.length" class="muted text-sm my-5">
-          Noch keine Konten. CSV-Import funktioniert auch ohne Konto.
-        </p>
-        <NuxtLink v-for="account in accounts" :key="account.id" :to="`/accounts/${account.id}`" class="account-row"
-          ><span class="account-icon"><FinanceIcon name="accounts" /></span>
-          <div>
-            <strong>{{ account.name }}</strong
-            ><small
-              >{{ account.iban ? `•••• ${account.iban.slice(-4)}` : 'Manuelles Konto' }} ·
-              {{ account.isActive ? 'Aktiv' : 'Inaktiv' }}</small
-            ><small>{{ observedTime(account.balances[0]?.observedAt ?? null) }}</small
-            ><small
-              v-if="account.balances[0] && Date.now() - Date.parse(account.balances[0].observedAt) > 48 * 3600000"
-              class="negative"
-              >Saldo älter als 48 Stunden</small
-            >
+    <OverviewColumns>
+      <template #bookings>
+        <SectionPanel title="Letzte Buchungen" icon="transactions" data-overview-section="bookings">
+          <div class="panel-heading">
+            <NuxtLink :to="transactionsLink" class="text-link">Alle anzeigen</NuxtLink>
           </div>
-          <strong>{{
-            account.balances.find((b) => b.balanceType === 'BOOKED')
-              ? money(account.balances.find((b) => b.balanceType === 'BOOKED')!.amountCents)
-              : 'Kein Saldo'
-          }}</strong></NuxtLink
-        >
-        <HelpPopover
-          title="Kontostände"
-          text="CSV-Dateien liefern Umsätze. Bankgemeldete Kontostände bleiben von der Monatsbilanz getrennt."
-        />
-        <NuxtLink v-if="unassigned" to="/transactions?unassigned=true" class="text-link"
-          >Buchungen ohne Konto ansehen</NuxtLink
-        >
-      </SectionPanel>
-    </div>
-    <UpcomingContracts />
+          <p v-if="!recent.length" class="empty-copy">
+            In diesem Monat sind noch keine Buchungen vorhanden. Lade eine Datei hoch oder wähle einen anderen Monat.
+          </p>
+          <NuxtLink v-for="row in recent" :key="row.id" :to="`/transactions/${row.id}`" class="transaction-row"
+            ><span class="transaction-icon"><FinanceIcon name="transactions" /></span>
+            <div>
+              <strong>{{ row.counterpartyName || row.description }}</strong
+              ><small>{{ calendarDate(row.bookingDate) }} · {{ row.description }}</small
+              ><small>{{
+                row.isTransfer
+                  ? 'Eigene Umbuchung'
+                  : (report.categories.find((c) => c.categoryId === row.categoryId)?.name ?? 'Nicht kategorisiert')
+              }}</small>
+            </div>
+            <strong :class="BigInt(row.amountCents) > 0n ? 'positive' : ''">{{
+              money(row.amountCents)
+            }}</strong></NuxtLink
+          >
+        </SectionPanel>
+      </template>
+      <template #payments><UpcomingContracts data-overview-section="payments" /></template>
+      <template #accounts>
+        <SectionPanel title="Deine Konten" icon="accounts" data-overview-section="accounts">
+          <div class="panel-heading">
+            <NuxtLink to="/accounts" class="text-link">Verwalten</NuxtLink>
+          </div>
+          <div class="accounts-summary">
+            <small>Bekannte Kontostände</small
+            ><strong>{{ balances.length ? money(knownBalance) : 'Noch kein Saldo' }}</strong
+            ><small>{{ balances.length }} von {{ activeCount }} aktiven Konten · von der Bank gemeldet</small>
+          </div>
+          <p v-if="!accounts.length" class="muted text-sm my-5">
+            Noch keine Konten. CSV-Import funktioniert auch ohne Konto.
+          </p>
+          <NuxtLink v-for="account in accounts" :key="account.id" :to="`/accounts/${account.id}`" class="account-row"
+            ><span class="account-icon"><FinanceIcon name="accounts" /></span>
+            <div>
+              <strong>{{ account.name }}</strong
+              ><small
+                >{{ account.iban ? `•••• ${account.iban.slice(-4)}` : 'Manuelles Konto' }} ·
+                {{ account.isActive ? 'Aktiv' : 'Inaktiv' }}</small
+              ><small>{{ observedTime(account.balances[0]?.observedAt ?? null) }}</small
+              ><small
+                v-if="account.balances[0] && Date.now() - Date.parse(account.balances[0].observedAt) > 48 * 3600000"
+                class="negative"
+                >Saldo älter als 48 Stunden</small
+              >
+            </div>
+            <strong>{{
+              account.balances.find((b) => b.balanceType === 'BOOKED')
+                ? money(account.balances.find((b) => b.balanceType === 'BOOKED')!.amountCents)
+                : 'Kein Saldo'
+            }}</strong></NuxtLink
+          >
+          <HelpPopover
+            title="Kontostände"
+            text="CSV-Dateien liefern Umsätze. Bankgemeldete Kontostände bleiben von der Monatsbilanz getrennt."
+          />
+          <NuxtLink v-if="unassigned" to="/transactions?unassigned=true" class="text-link"
+            >Buchungen ohne Konto ansehen</NuxtLink
+          >
+        </SectionPanel>
+      </template>
+      <template #categories><ExpenseBreakdown :report="report" data-overview-section="categories" /></template>
+    </OverviewColumns>
     <UButton to="/analytics" variant="soft" class="mt-5">Mehrmonatsanalyse öffnen</UButton>
-    <SectionPanel title="Letzte Buchungen" icon="transactions" class="mt-6">
-      <div class="panel-heading">
-        <NuxtLink :to="transactionsLink" class="text-link">Alle anzeigen</NuxtLink>
-      </div>
-      <p v-if="!recent.length" class="empty-copy">
-        In diesem Monat sind noch keine Buchungen vorhanden. Lade eine Datei hoch oder wähle einen anderen Monat.
-      </p>
-      <NuxtLink v-for="row in recent" :key="row.id" :to="`/transactions/${row.id}`" class="transaction-row"
-        ><span class="transaction-icon"><FinanceIcon name="transactions" /></span>
-        <div>
-          <strong>{{ row.counterpartyName || row.description }}</strong
-          ><small>{{ calendarDate(row.bookingDate) }} · {{ row.description }}</small
-          ><small>{{
-            row.isTransfer
-              ? 'Eigene Umbuchung'
-              : (report.categories.find((c) => c.categoryId === row.categoryId)?.name ?? 'Nicht kategorisiert')
-          }}</small>
-        </div>
-        <strong :class="BigInt(row.amountCents) > 0n ? 'positive' : ''">{{ money(row.amountCents) }}</strong></NuxtLink
-      >
-    </SectionPanel>
   </template>
 </template>

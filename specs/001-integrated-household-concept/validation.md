@@ -79,3 +79,10 @@ T004 visual observation: the synthetic 390 px overview screenshot confirms restr
 - Header retains accessible settings/theme/logout and skip navigation, without a repeated visible page heading. More uses a compact management list; login is condensed while preserving shared validation and password/session handling.
 - New shell acceptance failed before the change because the sidebar still existed. After implementation, 3 concept cases at 390/768/1440 px plus existing desktop/mobile interface journeys passed (5/5, 1.7 minutes), including selected destinations, management-child marker, no overflow, logout, both themes, field/retry and session-expiry behavior.
 - Nuxt typecheck/build, scoped lint/format and whitespace checks passed. Mobile shell screenshot visually inspected.
+
+## T008: Responsive Overview and Calendar-Month Navigation
+
+- Added OverviewColumns slot composition: desktop bookings | payments+accounts | categories, tablet bookings+accounts | payments+categories, phone bookings/payments/accounts/categories. Independent vertical stacks avoid cross-column row-height coupling. Resize preserves the parent selected month and reports; page-owned listeners/timers are released normally.
+- Added previous/next/current Berlin month controls while retaining direct month selection, existing versioned loading and bookmarkable URL. Three actual-month statistics remain distinct from observed account balances and future contract obligations; current/future month context is explicit.
+- New acceptance first failed on the missing composed bookings section before implementation. Nuxt typecheck/build, scoped lint/format and whitespace checks passed.
+- Nine-width browser acceptance passed: 9/9 in 1.8 minutes. Actual section grouping, no document overflow, November net 208010 cents, October net 290177 cents and reload preservation were verified, including accountless actuals and transfer exclusion. Desktop screenshot visually inspected; copy density and compact widget variants remain T009.
