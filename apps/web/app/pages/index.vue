@@ -141,6 +141,11 @@ async function load() {
   }
 }
 onMounted(load);
+onBeforeRouteLeave(
+  /** A pending navigation already owns the URL before its lazy component resolves; late overview reads must not cancel it. */ () => {
+    loadVersion++;
+  },
+);
 onBeforeUnmount(
   /** A late dashboard response cannot rewrite another page's URL. */ () => {
     disposed = true;

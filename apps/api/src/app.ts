@@ -27,6 +27,7 @@ import { AnalyticsService } from './analytics.js';
 import { ImportRollbackService } from './import-rollback.js';
 import { ReservesService } from './reserves.js';
 import { WorkspaceController } from './workspace-controller.js';
+import { WealthService } from './wealth.js';
 
 /** Create an application with injectable persistence for integration tests. */
 export async function createApp(
@@ -54,6 +55,7 @@ export async function createApp(
       CategoryRulesService,
       ContractsService,
       ReservesService,
+      WealthService,
       AnalyticsService,
       { provide: 'BANK_FACTORY', useValue: startBank },
       { provide: APP_GUARD, useClass: AuthGuard },

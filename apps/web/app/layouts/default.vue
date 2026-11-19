@@ -12,6 +12,7 @@ const primaryLinks = [
   { to: '/contracts', label: 'Verträge', icon: 'contracts' },
 ] as const;
 const secondaryLinks = [
+  { to: '/wealth', label: 'Vermögen', icon: 'history' },
   { to: '/imports', label: 'Importhistorie', icon: 'history' },
   { to: '/connections', label: 'Bankverbindungen', icon: 'bank' },
   { to: '/settings', label: 'Einstellungen', icon: 'settings' },

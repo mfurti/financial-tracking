@@ -334,6 +334,44 @@ export const wealthRecordSchema = z.object({
   idempotencyKey: wealthRecordInputSchema.shape.idempotencyKey,
   components: z.array(wealthRecordComponentSchema),
 });
+export const wealthRecordsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  cursor: idSchema.optional(),
+});
+export const wealthPreviewSchema = z.object({
+  asOf: timeSchema,
+  provenance: z.literal('OBSERVED_BOOKED_BALANCES'),
+  totalCents: aggregateCentsSchema.nullable(),
+  coverage: wealthCoverageSchema,
+  componentCount: z.number().int().nonnegative(),
+  observedCount: z.number().int().nonnegative(),
+  recordable: z.boolean(),
+  blockingReason: z
+    .enum([
+      'NO_ACCOUNTS',
+      'TOTAL_OUT_OF_RANGE',
+      'SOURCE_LABEL_TOO_LONG',
+      'SOURCE_TYPE_TOO_LONG',
+      'SOURCE_METADATA_INVALID',
+    ])
+    .nullable(),
+  components: z.array(
+    z.object({
+      accountId: idSchema,
+      sourceLabel: z.string(),
+      currency: z.string(),
+      amountCents: centsSchema.nullable(),
+      observedAt: timeSchema.nullable(),
+      sourceType: z.string(),
+      stale: z.boolean(),
+    }),
+  ),
+});
+export const wealthRecordsSchema = z.object({
+  items: z.array(wealthRecordSchema),
+  nextCursor: idSchema.nullable(),
+  preview: wealthPreviewSchema,
+});
 export const contractCalendarQuerySchema = z
   .object({
     from: dateSchema,
@@ -1028,6 +1066,20 @@ export const apiContracts: Record<string, ApiContract> = {
     request: reserveGoalInputSchema,
     response: reserveGoalSchema,
     status: 200,
+  },
+  wealthRecords: {
+    method: 'get',
+    path: '/wealth-records',
+    query: wealthRecordsQuerySchema,
+    response: wealthRecordsSchema,
+    status: 200,
+  },
+  captureWealth: {
+    method: 'post',
+    path: '/wealth-records',
+    request: wealthRecordInputSchema,
+    response: wealthRecordSchema,
+    status: 201,
   },
   balances: { method: 'get', path: '/accounts/{id}/balances', response: z.array(balanceSchema), status: 200 },
   transactions: {

@@ -4,6 +4,7 @@ import * as c from '@financial-tracking/contracts';
 import type { Db } from './db.js';
 import type { Prisma } from './generated/prisma/client.js';
 import { AppError } from './errors.js';
+import { latestBookedAccounts } from './balance-observations.js';
 
 /** Persist explicit reserve metadata and derive exact current progress only from eligible observed balances. */
 @Injectable()
@@ -15,14 +16,7 @@ export class ReservesService {
   private async read(tx: Prisma.TransactionClient, now: Date) {
     const goal = await tx.reserveGoal.findUnique({ where: { id: 1 } });
     if (!goal) throw new AppError('RESERVE_NOT_CONFIGURED', 'Reserve-Einstellungen fehlen. Migration prüfen.', 503);
-    const accounts = await tx.account.findMany({
-      where: { presentation: { reserveEligible: true } },
-      orderBy: { name: 'asc' },
-      include: {
-        presentation: true,
-        balances: { where: { balanceType: 'BOOKED' }, orderBy: [{ observedAt: 'desc' }, { id: 'desc' }], take: 1 },
-      },
-    });
+    const accounts = await latestBookedAccounts(tx, { presentation: { reserveEligible: true } });
     const eligible = accounts.filter(
       /** A designation never overrides activity or currency. */ (account) =>
         account.isActive && account.currency === 'EUR',
