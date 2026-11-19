@@ -5,6 +5,8 @@ import { WealthService } from '../apps/api/src/wealth.js';
 import { createApp } from '../apps/api/src/app.js';
 import { passwordHash } from '../apps/api/src/auth.js';
 import * as c from '../packages/contracts/src/index.js';
+import { LedgerService } from '../apps/api/src/ledger.js';
+import { ReservesService } from '../apps/api/src/reserves.js';
 
 describe('server-derived recorded wealth', /** Freeze exact observed components without fabricating reconstructed bank history. */ () => {
   let resource: Awaited<ReturnType<typeof testDatabase>>;
@@ -165,6 +167,40 @@ describe('server-derived recorded wealth', /** Freeze exact observed components 
     });
     await expect(service.capture({ idempotencyKey: 'overflow' }, now)).rejects.toThrow();
     expect(await resource.db.wealthRecord.count()).toBe(count);
+  });
+
+  it('reconciles equal-time observations across account, reserve and wealth readers', /** The same timestamp must not expose different latest booked balances in different modules. */ async () => {
+    const run = await resource.db.importRun.findFirstOrThrow();
+    await resource.db.balanceSnapshot.createMany({
+      data: [
+        { id: '00000000-0000-4000-8000-000000000001', amountCents: 3n },
+        { id: '00000000-0000-4000-8000-000000000002', amountCents: 7n },
+      ].map(
+        /** Deterministic source identities make the timestamp tie a reproducible financial comparison. */ (row) => ({
+          ...row,
+          accountId: known,
+          importRunId: run.id,
+          balanceType: 'BOOKED',
+          observedAt: now,
+          source: 'CSV',
+        }),
+      ),
+    });
+    const account = await new LedgerService(resource.db).account(known);
+    expect(
+      account.balances.find(
+        /** Compare the account card's actual booked source, not available funds. */ (item) =>
+          item.balanceType === 'BOOKED',
+      )?.amountCents,
+    ).toBe('7');
+    const reserves = new ReservesService(resource.db);
+    await reserves.setPresentation(known, { reserveEligible: true });
+    expect((await reserves.goal(now)).currentCents).toBe('7');
+    expect(
+      (await service.list(c.wealthRecordsQuerySchema.parse({}), now)).preview.components.find(
+        /** All current modules must agree on this exact account observation. */ (item) => item.accountId === known,
+      )?.amountCents,
+    ).toBe('7');
   });
 
   it('distinguishes all-unknown coverage from a later genuinely observed zero', /** Empty sources cannot fabricate a record; unknown component cents never become an observed zero. */ async () => {

@@ -6,7 +6,67 @@ const api = useApi();
 const route = useRoute();
 const router = useRouter();
 const { preferences, updatePreferences } = useWorkspacePreferences();
-const availableModules: readonly AnalysisModuleId[] = ['months', 'categories', 'merchants'];
+const availableModules: readonly AnalysisModuleId[] = [
+  'months',
+  'categories',
+  'merchants',
+  'history',
+  'reserve',
+  'contracts',
+];
+/** Delivered global modules retain their own state without masking a valid scoped transaction report. */
+type WorkspaceModule = 'history' | 'reserve' | 'contracts';
+const moduleState = reactive<Record<WorkspaceModule, 'loading' | 'ready' | 'error'>>({
+  history: 'loading',
+  reserve: 'loading',
+  contracts: 'loading',
+});
+const moduleErrors = reactive<Record<WorkspaceModule, string>>({ history: '', reserve: '', contracts: '' });
+const moduleGeneration: Record<WorkspaceModule, number> = { history: 0, reserve: 0, contracts: 0 };
+const reserve = ref<z.infer<typeof c.reserveGoalSchema> | null>(null);
+const wealth = ref<z.infer<typeof c.wealthRecordsSchema> | null>(null);
+const contractCosts = ref<z.infer<typeof c.contractSummarySchema> | null>(null);
+const latestWealth = computed(
+  /** Show only a real saved observation, never the live preview as historical wealth. */ () => wealth.value?.items[0],
+);
+const latestWealthKnown = computed(
+  /** An all-unknown partial record must not appear as an observed zero. */ () =>
+    latestWealth.value?.components.some(
+      /** Explicit zero/negative components are real observations. */ (item) => item.amountCents !== null,
+    ) ?? false,
+);
+const reserveStale = computed(
+  /** Preserve freshness disclosure on the compact global reserve tile. */ () =>
+    reserve.value?.components.filter(/** Count only observed sources marked stale. */ (item) => item.stale).length ?? 0,
+);
+let disposed = false;
+/** Read each delivered workspace module independently; these values explicitly ignore transaction-report filters. */
+async function loadWorkspaceModule(id: WorkspaceModule) {
+  const request = ++moduleGeneration[id];
+  moduleState[id] = 'loading';
+  moduleErrors[id] = '';
+  try {
+    if (id === 'reserve') {
+      const value = await api.request('/reserve-goal', c.reserveGoalSchema);
+      if (disposed || request !== moduleGeneration[id]) return;
+      reserve.value = value;
+    } else if (id === 'history') {
+      const value = await api.request('/wealth-records', c.wealthRecordsSchema, { query: { limit: 1 } });
+      if (disposed || request !== moduleGeneration[id]) return;
+      wealth.value = value;
+    } else {
+      const value = await api.request('/contracts/summary', c.contractSummarySchema);
+      if (disposed || request !== moduleGeneration[id]) return;
+      contractCosts.value = value;
+    }
+    moduleState[id] = 'ready';
+  } catch (cause) {
+    if (!disposed && request === moduleGeneration[id]) {
+      moduleState[id] = 'error';
+      moduleErrors[id] = userErrorMessage(cause);
+    }
+  }
+}
 const appliedFilters = ref<z.infer<typeof c.analyticsOverviewQuerySchema>>({});
 const report = ref<z.infer<typeof c.analyticsOverviewSchema> | null>(null);
 const merchants = ref<z.infer<typeof c.merchantAnalyticsSchema> | null>(null);
@@ -148,10 +208,17 @@ async function monthSelect(month: string, direction: 'INCOME' | 'EXPENSE') {
   );
   if (row) await navigateTo(link({ from: row.from, to: row.to, direction }));
 }
-onMounted(load);
+onMounted(
+  /** Scoped reports and global modules load independently; one optional failure never hides valid actual totals. */ () => {
+    void load();
+    for (const id of ['history', 'reserve', 'contracts'] as const) void loadWorkspaceModule(id);
+  },
+);
 onBeforeUnmount(
   /** Invalidate outstanding reads when leaving analyses. */ () => {
     generation++;
+    disposed = true;
+    for (const id of ['history', 'reserve', 'contracts'] as const) moduleGeneration[id]++;
   },
 );
 </script>
@@ -279,7 +346,71 @@ onBeforeUnmount(
         :months-href="analysisAnchor('monatsverlauf')"
         :categories-href="analysisAnchor('kategorien')"
         :merchants-href="analysisAnchor('haendler')"
-      />
+      >
+        <template #history>
+          <FinanceTile
+            label="Aufgezeichnetes Vermögen"
+            :state="moduleState.history"
+            :error-text="moduleErrors.history"
+            :value="
+              !latestWealth
+                ? 'Noch keine Aufzeichnungen'
+                : latestWealthKnown
+                  ? money(latestWealth.totalCents)
+                  : 'Keine bekannten Beträge'
+            "
+            :financial="latestWealthKnown"
+            :context="
+              latestWealth
+                ? `Gesamter Arbeitsbereich · ${observedTime(latestWealth.recordedAt)} · unabhängig vom Umsatzfilter`
+                : 'Gesamter Arbeitsbereich · nur ausdrücklich aufgezeichnete Beobachtungen'
+            "
+            to="/wealth"
+            @retry="loadWorkspaceModule('history')"
+            ><template #graphic><FinanceIcon name="history" /></template
+          ></FinanceTile>
+        </template>
+        <template #reserve>
+          <FinanceTile
+            label="Notgroschen"
+            :state="moduleState.reserve"
+            :error-text="moduleErrors.reserve"
+            :value="
+              reserve?.currentCents === null || !reserve ? 'Keine beobachtete Reserve' : money(reserve.currentCents)
+            "
+            :financial="reserve?.currentCents !== null && Boolean(reserve)"
+            to="/wealth"
+            @retry="loadWorkspaceModule('reserve')"
+          >
+            <template #context
+              ><span v-if="reserve"
+                >Gesamte Reserve · Ziel: <span data-financial>{{ money(reserve.targetCents) }}</span> ·
+                {{ reserve.observedCount }} von {{ reserve.eligibleCount }} Quellen beobachtet<span v-if="reserveStale">
+                  · {{ reserveStale }} älter als 48 Stunden</span
+                ></span
+              ><span class="block">Unabhängig vom Umsatzfilter</span></template
+            >
+            <template #graphic><FinanceIcon name="accounts" /></template>
+          </FinanceTile>
+        </template>
+        <template #contracts>
+          <FinanceTile
+            label="Vertragskosten"
+            :state="moduleState.contracts"
+            :error-text="moduleErrors.contracts"
+            :value="contractCosts ? money(contractCosts.monthlyCents) : undefined"
+            financial
+            :context="
+              contractCosts
+                ? `${contractCosts.count} bestätigte Verträge · globaler Planwert / Monat · ${calendarDate(contractCosts.asOf)} · unabhängig vom Umsatzfilter`
+                : undefined
+            "
+            to="/contracts/analysis"
+            @retry="loadWorkspaceModule('contracts')"
+            ><template #graphic><FinanceIcon name="contracts" /></template
+          ></FinanceTile>
+        </template>
+      </AnalysisModuleGrid>
     </SectionPanel>
     <div class="toolbar finance-chart-choice" role="group" aria-label="Diagrammdarstellung">
       <UButton
@@ -424,3 +555,19 @@ onBeforeUnmount(
     </SectionPanel>
   </template>
 </template>
+
+<style scoped>
+.filter-grid > * {
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>

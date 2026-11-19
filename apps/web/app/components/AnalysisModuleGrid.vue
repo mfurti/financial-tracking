@@ -23,7 +23,12 @@ const visible = computed(
 
 <template>
   <div class="finance-feature-grid">
-    <div v-for="id in visible" :key="id" :data-analysis-module="id">
+    <div
+      v-for="id in visible"
+      :key="id"
+      :data-analysis-module="id"
+      :data-analysis-scope="['history', 'reserve', 'contracts'].includes(id) ? 'workspace' : 'report'"
+    >
       <slot :name="id">
         <FinanceTile
           v-if="id === 'months'"

@@ -17,7 +17,7 @@ test('analysis modules retain selected order, cancellation and chart preference 
   await page.waitForURL(/** Complete login before device-local module editing. */ (url) => url.pathname === '/');
   await page.goto('/analytics?from=2026-07-01&to=2026-10-31');
   const modules = page.locator('[data-analysis-module]');
-  await expect(modules).toHaveCount(3);
+  await expect(modules).toHaveCount(6);
   expect(
     await modules.evaluateAll(
       /** Inspect actual visible order rather than stored data alone. */ (elements) =>
@@ -26,16 +26,16 @@ test('analysis modules retain selected order, cancellation and chart preference 
             element.getAttribute('data-analysis-module'),
         ),
     ),
-  ).toEqual(['months', 'categories', 'merchants']);
+  ).toEqual(['months', 'categories', 'merchants', 'history', 'reserve', 'contracts']);
   const trigger = page.getByRole('button', { name: 'Analysen anpassen', exact: true });
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Deine Analysen anpassen', exact: true });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('checkbox')).toHaveCount(6);
-  await expect(dialog.getByRole('checkbox', { name: 'Aufgezeichnetes Vermögen', exact: true })).toBeDisabled();
+  await expect(dialog.getByRole('checkbox', { name: 'Aufgezeichnetes Vermögen', exact: true })).toBeEnabled();
   await dialog.getByRole('checkbox', { name: 'Kategorien', exact: true }).uncheck();
   await dialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
-  await expect(modules).toHaveCount(3);
+  await expect(modules).toHaveCount(6);
   await trigger.click();
   await expect(dialog.getByRole('checkbox', { name: 'Kategorien', exact: true })).toBeChecked();
   await dialog.getByRole('checkbox', { name: 'Kategorien', exact: true }).uncheck();
@@ -48,10 +48,10 @@ test('analysis modules retain selected order, cancellation and chart preference 
           /** Read visible identities in DOM order. */ (element) => element.getAttribute('data-analysis-module'),
         ),
     ),
-  ).toEqual(['merchants', 'months']);
+  ).toEqual(['merchants', 'months', 'history', 'reserve', 'contracts']);
   await page.getByRole('button', { name: 'Ringdiagramme', exact: true }).click();
   await page.reload();
-  await expect(modules).toHaveCount(2);
+  await expect(modules).toHaveCount(5);
   await expect(modules.first()).toHaveAttribute('data-analysis-module', 'merchants');
   await expect(page.getByRole('button', { name: 'Ringdiagramme', exact: true })).toHaveAttribute(
     'aria-pressed',
@@ -76,6 +76,8 @@ test('analysis modules retain selected order, cancellation and chart preference 
   await trigger.click();
   await dialog.getByRole('checkbox', { name: 'Händler', exact: true }).uncheck();
   await dialog.getByRole('checkbox', { name: 'Monatsvergleich', exact: true }).uncheck();
+  for (const label of ['Aufgezeichnetes Vermögen', 'Notgroschen', 'Vertragskosten'])
+    await dialog.getByRole('checkbox', { name: label, exact: true }).uncheck();
   await dialog.getByRole('button', { name: 'Auswahl speichern', exact: true }).click();
   await expect(modules).toHaveCount(0);
   await expect(page.getByText(/Keine Analysen ausgewählt/)).toBeVisible();

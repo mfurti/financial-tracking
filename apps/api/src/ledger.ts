@@ -66,7 +66,7 @@ export class LedgerService {
     const records = await this.db.account.findMany({
       where: id ? { id } : {},
       orderBy: { name: 'asc' },
-      include: { balances: { orderBy: { observedAt: 'desc' }, distinct: ['balanceType'] } },
+      include: { balances: { orderBy: [{ observedAt: 'desc' }, { id: 'desc' }], distinct: ['balanceType'] } },
     });
     return records.map(
       /** Convert database timestamps and amounts at the boundary. */ (row) =>
