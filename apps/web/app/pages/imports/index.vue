@@ -40,6 +40,8 @@ const error = ref('');
 const busy = ref(false);
 const accounts = ref<Account[]>([]);
 const categories = ref<Category[]>([]);
+let generation = 0;
+let disposed = false;
 /** Resolve only the currently offered comparison target. */
 function candidate(issue: z.infer<typeof issueSchema>) {
   return issue.candidates?.find(
@@ -80,20 +82,26 @@ const labels: Record<string, string> = {
 };
 /** Load recent history and the selected review queue. */
 async function load() {
+  const request = ++generation;
+  const run = selectedRun.value;
   busy.value = true;
   error.value = '';
   try {
-    [runs.value, accounts.value, categories.value] = await Promise.all([
+    const [history, accountRows, categoryRows] = await Promise.all([
       api.request('/imports', z.array(runSchema)),
       api.request('/accounts', z.array(accountSchema)),
       api.request('/categories', z.array(categorySchema)),
     ]);
-    if (selectedRun.value)
-      issues.value = await api.request(`/imports/${selectedRun.value}/issues`, z.array(issueSchema));
+    const queue = run ? await api.request(`/imports/${run}/issues`, z.array(issueSchema)) : [];
+    if (disposed || request !== generation) return;
+    runs.value = history;
+    accounts.value = accountRows;
+    categories.value = categoryRows;
+    issues.value = queue;
   } catch (cause) {
-    error.value = userErrorMessage(cause);
+    if (!disposed && request === generation) error.value = userErrorMessage(cause);
   } finally {
-    busy.value = false;
+    if (!disposed && request === generation) busy.value = false;
   }
 }
 /** Clear a removed selection before refreshing the remaining history. */
@@ -107,6 +115,7 @@ async function removed(id: string) {
 }
 /** Select a run without changing its persisted bookings. */
 async function select(id: string) {
+  if (selectedRun.value !== id) issues.value = [];
   selectedRun.value = id;
   await navigateTo({ path: '/imports', query: { run: id } });
   await load();
@@ -140,6 +149,22 @@ async function resolve(issueId: string, action: 'NEW' | 'MATCH' | 'SKIP' | 'EXIS
   }
 }
 onMounted(load);
+watch(
+  /** Restore the selected review when browser history changes its bookmark. */ () => route.query.run,
+  /** A different run owns a different queue; never show the previous run's candidates. */ (value) => {
+    const id = typeof value === 'string' ? value : '';
+    if (id === selectedRun.value) return;
+    selectedRun.value = id;
+    issues.value = [];
+    void load();
+  },
+);
+onBeforeUnmount(
+  /** Late history and queue reads cannot publish into an abandoned maintenance view. */ () => {
+    disposed = true;
+    generation++;
+  },
+);
 </script>
 
 <template>
@@ -153,114 +178,194 @@ onMounted(load);
     </div>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
-  <section class="panel mb-6">
-    <p v-if="!runs.length" class="empty-copy">
-      Noch keine Importe. Starte mit einer CSV-Datei oder deiner Bankverbindung.
-    </p>
-    <div v-for="run in runs" :key="run.id" class="import-entry">
-      <UButton
-        type="button"
-        color="neutral"
-        variant="ghost"
-        class="import-row"
-        :class="{ 'selected-row': selectedRun === run.id }"
-        @click="select(run.id)"
-      >
-        <div>
-          <strong>{{ run.source }} · {{ labels[run.status] }}</strong
-          ><small
-            >{{ observedTime(run.startedAt)
-            }}<span v-if="run.errorCode"> · Nicht abgeschlossen; bitte Hinweise prüfen</span></small
-          >
-        </div>
-        <span>{{ run.importedCount }} neu · {{ run.knownCount }} bekannt · {{ run.reviewRequiredCount }} prüfen</span>
-      </UButton>
-      <ImportRollback
-        v-if="run.source === 'CSV' && ['COMPLETED', 'PARTIAL_SUCCESS'].includes(run.status)"
-        :run-id="run.id"
-        @removed="removed(run.id)"
-      />
-    </div>
-  </section>
-  <section v-if="selectedRun" class="panel">
-    <div class="panel-heading">
-      <h2>Buchungen klären</h2>
-      <span class="subtle-tag">{{ issues.length }} Einträge angezeigt</span>
-    </div>
-    <p v-if="!issues.length" class="empty-copy">Keine offenen Hinweise für diesen Import.</p>
-    <section v-for="group in issueSections" :key="group.title" class="mt-5">
-      <h3>{{ group.title }}</h3>
-      <HelpPopover :title="group.title" :text="group.explanation" class="mb-4" />
-      <article v-for="issue in group.items" :key="issue.id" class="review-card">
-        <UBadge
-          :color="issue.incoming ? 'warning' : 'error'"
-          :label="issue.incoming ? 'Mögliche Doppelbuchung' : 'Zeile nicht übernommen'"
-          class="mb-3"
-        />
-        <h4>{{ issue.message }}</h4>
-        <div v-if="issue.incoming" class="review-incoming">
-          <strong>{{ issue.incoming.description }}</strong
-          ><span
-            >{{ calendarDate(issue.incoming.bookingDate) }} · {{ money(issue.incoming.amountCents) }} ·
-            {{ issue.incoming.counterpartyName || 'Keine Gegenpartei' }}</span
-          >
-        </div>
-        <template v-if="issue.incoming"
-          ><p>
-            {{ issue.incomingSource === 'FINTS' ? 'Bank' : 'CSV' }} · {{ accountName(issue.incoming.accountId) }} ·
-            {{ issue.incoming.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt' }}
-          </p>
-          <p class="reference-copy">Referenz: {{ issue.incomingReference || 'Nicht geliefert' }}</p>
-          <label
-            >Bekannte Buchung auswählen<ChoiceSelect
-              v-model="matches[issue.id]"
-              aria-label="Bekannte Buchung auswählen"
-              :searchable="true"
-              :items="[
-                { label: `Kandidat wählen`, value: '' },
-                ...(issue.candidates ?? []).map(
-                  /** Build a persisted choice. */ (option) => ({
-                    label: `${calendarDate(option.bookingDate)} · ${option.description} · ${money(option.amountCents)}`,
-                    value: option.id,
-                  }),
-                ),
-              ]"
-          /></label>
-          <div v-if="candidate(issue)" class="mt-4">
-            <p>
-              {{ candidate(issue)!.description }} · {{ calendarDate(candidate(issue)!.bookingDate) }} ·
-              {{ money(candidate(issue)!.amountCents) }}
-            </p>
-            <p>
-              {{ accountName(candidate(issue)!.accountId) }} ·
-              {{ candidate(issue)!.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt' }} ·
-              {{ categoryName(candidate(issue)!.categoryId)
-              }}<span v-if="candidate(issue)!.isTransfer"> · Umbuchung</span>
-            </p>
-            <p>Quelle: {{ sourceNames(issue.candidateSources?.[candidate(issue)!.id]) }}</p>
-            <p class="reference-copy">
-              Referenzen: {{ issue.candidateReferences?.[candidate(issue)!.id]?.join(', ') || 'Nicht geliefert' }}
-            </p>
-          </div>
-          <div class="toolbar mt-4">
-            <UButton :disabled="!matches[issue.id]" variant="soft" @click="resolve(issue.id, 'EXISTING')"
-              >Vorhandene Daten behalten</UButton
-            ><UButton :disabled="!matches[issue.id]" variant="soft" @click="resolve(issue.id, 'INCOMING')"
-              >Importdaten übernehmen</UButton
-            ><UButton variant="soft" @click="resolve(issue.id, 'NEW')">Separat behalten</UButton
-            ><UButton color="neutral" variant="ghost" @click="resolve(issue.id, 'SKIP')">Überspringen</UButton>
-          </div></template
+  <p v-if="busy" role="status" class="muted mb-4">Importdaten werden geladen …</p>
+  <div class="import-workspace">
+    <SectionPanel title="Letzte Importe" icon="history" compact>
+      <p v-if="!runs.length && !busy && !error" class="empty-copy">
+        Noch keine Importe. Starte mit einer CSV-Datei oder deiner Bankverbindung.
+      </p>
+      <div v-for="run in runs" :key="run.id" class="import-entry">
+        <UButton
+          type="button"
+          color="neutral"
+          variant="ghost"
+          class="import-row"
+          :class="{ 'selected-row': selectedRun === run.id }"
+          :aria-pressed="selectedRun === run.id"
+          :disabled="busy"
+          @click="select(run.id)"
         >
-      </article>
-    </section>
-    <p v-if="issues.length >= 1000" class="muted">
-      Maximal 1.000 Hinweise gleichzeitig. Nach Entscheidungen erneut laden.
-    </p>
-  </section>
+          <div>
+            <strong>{{ run.source }} · {{ labels[run.status] }}</strong
+            ><small
+              >{{ observedTime(run.startedAt)
+              }}<span v-if="run.errorCode"> · Nicht abgeschlossen; bitte Hinweise prüfen</span></small
+            >
+          </div>
+          <span>{{ run.importedCount }} neu · {{ run.knownCount }} bekannt · {{ run.reviewRequiredCount }} prüfen</span>
+        </UButton>
+        <details class="import-metadata">
+          <summary>Importdetails</summary>
+          <p>Begonnen: {{ observedTime(run.startedAt) }}</p>
+          <p v-if="run.finishedAt">Beendet: {{ observedTime(run.finishedAt) }}</p>
+          <p>
+            {{ labels[run.status] }} · {{ run.importedCount }} neu · {{ run.knownCount }} bekannt ·
+            {{ run.reviewRequiredCount }} prüfen
+          </p>
+        </details>
+        <ImportRollback
+          v-if="run.source === 'CSV' && ['COMPLETED', 'PARTIAL_SUCCESS'].includes(run.status)"
+          :run-id="run.id"
+          @removed="removed(run.id)"
+        />
+      </div>
+    </SectionPanel>
+    <SectionPanel v-if="selectedRun" title="Import prüfen" icon="transactions" compact>
+      <div class="panel-heading">
+        <h2>Buchungen klären</h2>
+        <span class="subtle-tag">{{ issues.length }} Einträge angezeigt</span>
+      </div>
+      <p v-if="!issues.length && !busy && !error" class="empty-copy">Keine offenen Hinweise für diesen Import.</p>
+      <section v-for="group in issueSections" :key="group.title" class="mt-5">
+        <h3>{{ group.title }}</h3>
+        <HelpPopover :title="group.title" :text="group.explanation" class="mb-4" />
+        <article v-for="issue in group.items" :key="issue.id" class="review-card" data-import-issue>
+          <details :open="!!issue.incoming">
+            <summary>
+              {{ issue.rowNumber ? `Zeile ${issue.rowNumber}` : 'Hinweis' }} ·
+              {{ issue.incoming?.description || 'Zeile nicht übernommen' }}
+            </summary>
+            <UBadge
+              :color="issue.incoming ? 'warning' : 'error'"
+              :label="issue.incoming ? 'Mögliche Doppelbuchung' : 'Zeile nicht übernommen'"
+              class="mb-3"
+            />
+            <h4>{{ issue.message }}</h4>
+            <div v-if="issue.incoming" class="review-incoming">
+              <strong>{{ issue.incoming.description }}</strong
+              ><span
+                >{{ calendarDate(issue.incoming.bookingDate) }} · {{ money(issue.incoming.amountCents) }} ·
+                {{ issue.incoming.counterpartyName || 'Keine Gegenpartei' }}</span
+              >
+            </div>
+            <template v-if="issue.incoming"
+              ><p>
+                {{ issue.incomingSource === 'FINTS' ? 'Bank' : 'CSV' }} · {{ accountName(issue.incoming.accountId) }} ·
+                {{ issue.incoming.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt' }}
+              </p>
+              <p class="reference-copy">Referenz: {{ issue.incomingReference || 'Nicht geliefert' }}</p>
+              <label class="import-candidate"
+                >Bekannte Buchung auswählen<ChoiceSelect
+                  v-model="matches[issue.id]"
+                  aria-label="Bekannte Buchung auswählen"
+                  :searchable="true"
+                  :disabled="busy"
+                  :items="[
+                    { label: `Kandidat wählen`, value: '' },
+                    ...(issue.candidates ?? []).map(
+                      /** Build a persisted choice. */ (option) => ({
+                        label: `${calendarDate(option.bookingDate)} · ${option.description} · ${money(option.amountCents)}`,
+                        value: option.id,
+                      }),
+                    ),
+                  ]"
+              /></label>
+              <div v-if="candidate(issue)" class="import-candidate-values mt-4">
+                <strong>Bekannte Buchung</strong>
+                <p>
+                  {{ candidate(issue)!.description }} · {{ calendarDate(candidate(issue)!.bookingDate) }} ·
+                  {{ money(candidate(issue)!.amountCents) }}
+                </p>
+                <p>
+                  {{ accountName(candidate(issue)!.accountId) }} ·
+                  {{ candidate(issue)!.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt' }} ·
+                  {{ categoryName(candidate(issue)!.categoryId)
+                  }}<span v-if="candidate(issue)!.isTransfer"> · Umbuchung</span>
+                </p>
+                <p>Quelle: {{ sourceNames(issue.candidateSources?.[candidate(issue)!.id]) }}</p>
+                <p class="reference-copy">
+                  Referenzen: {{ issue.candidateReferences?.[candidate(issue)!.id]?.join(', ') || 'Nicht geliefert' }}
+                </p>
+              </div>
+              <div class="toolbar mt-4">
+                <UButton :disabled="busy || !matches[issue.id]" variant="soft" @click="resolve(issue.id, 'EXISTING')"
+                  >Vorhandene Daten behalten</UButton
+                ><UButton :disabled="busy || !matches[issue.id]" variant="soft" @click="resolve(issue.id, 'INCOMING')"
+                  >Importdaten übernehmen</UButton
+                ><UButton :disabled="busy" variant="soft" @click="resolve(issue.id, 'NEW')">Separat behalten</UButton
+                ><UButton :disabled="busy" color="neutral" variant="ghost" @click="resolve(issue.id, 'SKIP')"
+                  >Überspringen</UButton
+                >
+              </div></template
+            >
+          </details>
+        </article>
+      </section>
+      <p v-if="issues.length >= 1000" class="muted">
+        Maximal 1.000 Hinweise gleichzeitig. Nach Entscheidungen erneut laden.
+      </p>
+    </SectionPanel>
+    <SectionPanel v-else title="Buchungen klären" icon="transactions" compact>
+      <p class="empty-copy">Wähle einen Import, um dessen Hinweise und Quellwerte zu prüfen.</p>
+    </SectionPanel>
+  </div>
 </template>
 
 <style scoped>
 .reference-copy {
   overflow-wrap: anywhere;
+}
+.import-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 24px;
+  align-items: start;
+}
+.import-workspace > * {
+  min-width: 0;
+}
+.import-entry {
+  padding: 4px 0 12px;
+}
+.import-row {
+  padding: 12px;
+  gap: 12px;
+  border: 0;
+  min-height: 56px;
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+.import-metadata {
+  margin: 8px 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.review-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px 18px;
+  margin-top: 12px;
+}
+.review-incoming,
+.import-candidate-values {
+  background: var(--soft);
+  border-radius: 12px;
+  padding: 12px;
+}
+.import-candidate {
+  display: block;
+  margin-top: 12px;
+}
+@media (max-width: 1100px) {
+  .import-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
 }
 </style>

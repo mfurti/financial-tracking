@@ -58,6 +58,20 @@ describe('previewed CSV rollback', /** Real PostgreSQL source ownership, links a
     expect(second.row.id).not.toBe(first.row.id);
     expect(await resource.db.transaction.count({ where: { description: first.label } })).toBe(1);
   });
+  it('refreshing or abandoning an impact preview preserves the complete source and financial rows', /** Opening and cancelling the new dialog is a read-only operation until confirmed rollback. */ async () => {
+    const fixture = await upload();
+    const before = await resource.db.transaction.findUniqueOrThrow({
+      where: { id: fixture.row.id },
+      include: { identities: true },
+    });
+    const first = await rollback.preview(fixture.run);
+    expect(await rollback.preview(fixture.run)).toEqual(first);
+    expect(
+      await resource.db.transaction.findUniqueOrThrow({ where: { id: fixture.row.id }, include: { identities: true } }),
+    ).toEqual(before);
+    expect(await resource.db.importRun.findUnique({ where: { id: fixture.run } })).not.toBeNull();
+    expect(first.items[0]).toMatchObject({ amountCents: '-1220', description: fixture.label, protection: null });
+  });
   it('upgrades legacy ownership conservatively without changing original financial fields', /** Apply the actual migration over the populated immediately preceding schema. */ async () => {
     const old = await testDatabase({ empty: true });
     const client = new Client({ connectionString: old.url });
