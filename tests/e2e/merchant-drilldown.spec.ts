@@ -1,8 +1,15 @@
 import { test, expect, conceptFixtureLabels } from './fixtures.js';
 
+test.use({ locale: 'de-DE', timezoneId: 'Europe/Berlin', colorScheme: 'light', reducedMotion: 'reduce' });
+test.beforeEach(
+  /** Match the synthetic reference date without changing the real authenticated API clock. */ async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-11-18T12:00:00Z') });
+  },
+);
+
 test('merchant and category details retain exact scope, refunds and return navigation', /** Real report-to-booking journeys must never become substring search or lose accountless scope. */ async ({
   page,
-}) => {
+}, info) => {
   await page.goto('/login');
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
@@ -14,6 +21,17 @@ test('merchant and category details retain exact scope, refunds and return navig
   const detailUrl = page.url();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(conceptFixtureLabels.merchant);
   await expect(page.locator('[data-analysis-total]')).toHaveText('99,99 €');
+  await page.screenshot({
+    path: `.local/merchant-details-${info.project.name}.png`,
+    fullPage: true,
+    animations: 'disabled',
+  });
+  expect(
+    await page.evaluate(
+      /** Scoped detail rows must stay within the current viewport. */ () =>
+        document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
   await expect(page.getByRole('link', { name: /Einkauf Oktober/ })).toHaveCount(1);
   await page.getByRole('button', { name: 'Einnahmen anzeigen', exact: true }).click();
   await expect(page.locator('[data-analysis-total]')).toHaveText('2,99 €');

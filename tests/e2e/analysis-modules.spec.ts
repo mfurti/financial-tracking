@@ -1,5 +1,12 @@
 import { test, expect } from './fixtures.js';
 
+test.use({ locale: 'de-DE', timezoneId: 'Europe/Berlin', colorScheme: 'light', reducedMotion: 'reduce' });
+test.beforeEach(
+  /** Keep visual evidence comparable to the captured source reference. */ async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-11-18T12:00:00Z') });
+  },
+);
+
 test('analysis modules retain selected order, cancellation and chart preference after reload', /** Configure delivered modules only, preserving future IDs without fabricated financial values. */ async ({
   page,
 }, info) => {
