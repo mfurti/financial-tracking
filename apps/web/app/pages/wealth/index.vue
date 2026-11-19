@@ -7,6 +7,7 @@
     <RecordedWealth />
     <aside aria-label="Reserve-Einstellungen"><ReserveGoalTile /></aside>
   </div>
+  <DemoPortfolio />
 </template>
 
 <style scoped>
