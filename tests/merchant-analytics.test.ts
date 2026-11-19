@@ -79,6 +79,9 @@ describe('exact merchant analytics and contributing pages', /** Real PostgreSQL 
     )!;
     expect(market.expenseCents).toBe('9007199254741005');
     expect(market.count).toBe(3);
+    const merchantOverview = await analytics.overview({ ...query, merchantKey: market.key });
+    expect(merchantOverview.expenseCents).toBe(market.expenseCents);
+    expect(merchantOverview.incomeCents).toBe('299');
     for (const bucket of report.merchants) {
       let cursor: string | undefined,
         sum = 0n,

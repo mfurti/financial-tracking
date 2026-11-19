@@ -5,7 +5,7 @@ import type { Db } from './db.js';
 import type { Prisma, Transaction } from './generated/prisma/client.js';
 import { anchoredMonth, berlinToday, isoDay } from './contract-schedule.js';
 import { AppError } from './errors.js';
-import { merchantIdentity, merchantKey } from './merchant-identity.js';
+import { merchantIdentity, merchantKey, merchantWhere } from './merchant-identity.js';
 
 /** Actual relevant bookings with optional presentation labels and confirmed payment ownership. */
 export type AnalyticsRow = Pick<Transaction, 'amountCents' | 'bookingDate' | 'categoryId' | 'classification'> & {
@@ -229,6 +229,7 @@ export class AnalyticsService {
     const { from, to } = analyticsRange(input, today);
     const rows = await this.db.transaction.findMany({
       where: {
+        AND: await merchantWhere(this.db, input.merchantKey),
         status: 'BOOKED',
         isTransfer: false,
         amountCents: { lt: 0n },
@@ -260,6 +261,7 @@ export class AnalyticsService {
         categoryId: input.categoryId ?? null,
         unassigned: input.unassigned === 'true',
         uncategorized: input.uncategorized === 'true',
+        ...(input.merchantKey ? { merchantKey: input.merchantKey } : {}),
       },
       expenseCents: String(total),
       merchants: [...buckets.values()]
@@ -283,6 +285,7 @@ export class AnalyticsService {
     const { from, to } = analyticsRange(input, today);
     const rows = await this.db.transaction.findMany({
       where: {
+        AND: await merchantWhere(this.db, input.merchantKey),
         status: 'BOOKED',
         isTransfer: false,
         accountId: input.unassigned === 'true' ? null : input.accountId,

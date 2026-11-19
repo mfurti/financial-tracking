@@ -7,6 +7,7 @@ const router = useRouter();
 const { preferences, updatePreferences } = useWorkspacePreferences();
 const appliedFilters = ref<z.infer<typeof c.analyticsOverviewQuerySchema>>({});
 const report = ref<z.infer<typeof c.analyticsOverviewSchema> | null>(null);
+const merchants = ref<z.infer<typeof c.merchantAnalyticsSchema> | null>(null);
 const accounts = ref<c.Account[]>([]);
 const categories = ref<c.Category[]>([]);
 const from = ref(String(route.query.from ?? ''));
@@ -57,15 +58,18 @@ async function load() {
   busy.value = true;
   error.value = '';
   report.value = null;
+  merchants.value = null;
   try {
     const input = filters();
-    const [result, availableAccounts, availableCategories] = await Promise.all([
+    const [result, availableAccounts, availableCategories, merchantReport] = await Promise.all([
       api.request('/analytics/overview', c.analyticsOverviewSchema, { query: input }),
       api.request('/accounts', z.array(c.accountSchema)),
       api.request('/categories', z.array(c.categorySchema)),
+      api.request('/analytics/merchants', c.merchantAnalyticsSchema, { query: input }),
     ]);
     if (current !== generation) return;
     report.value = result;
+    merchants.value = merchantReport;
     appliedFilters.value = input;
     from.value = result.from;
     to.value = result.to;
@@ -114,7 +118,19 @@ function link(extra: Record<string, string> = {}) {
 }
 /** Category selection retains the current range/account and selects precisely one expense group. */
 function categoryLink(id: string | null) {
-  return link({ direction: 'EXPENSE', categoryId: id ?? '', uncategorized: id === null ? 'true' : 'false' });
+  const params = new URLSearchParams(link({ direction: 'EXPENSE' }).split('?')[1]);
+  if (id) {
+    params.set('categoryId', id);
+    params.delete('uncategorized');
+  } else {
+    params.delete('categoryId');
+    params.set('uncategorized', 'true');
+  }
+  return `/analytics/details?${params}`;
+}
+/** Preserve the displayed effective period and all account/category scope when opening an exact merchant. */
+function merchantLink(key: string) {
+  return link({ merchantKey: key, direction: 'EXPENSE' }).replace('/transactions?', '/analytics/details?');
 }
 /** A selected chart month/direction opens that month's contributing actual transactions. */
 async function monthSelect(month: string, direction: 'INCOME' | 'EXPENSE') {
@@ -331,6 +347,18 @@ onBeforeUnmount(
         >
       </SectionPanel>
     </div>
+    <SectionPanel title="Wo gibst du dein Geld aus?" icon="categories" class="mb-5">
+      <NuxtLink
+        v-for="merchant in merchants?.merchants"
+        :key="merchant.key"
+        :to="merchantLink(merchant.key)"
+        class="contract-list-row"
+        ><span
+          >{{ merchant.label }}<small>{{ merchant.count }} Buchungen</small></span
+        ><strong data-financial>{{ money(merchant.expenseCents) }}</strong></NuxtLink
+      >
+      <p v-if="!merchants?.merchants.length" class="empty-copy">Keine gebuchten Ausgaben im gewählten Zeitraum.</p>
+    </SectionPanel>
     <SectionPanel
       title="Exakte Monatswerte"
       icon="categories"

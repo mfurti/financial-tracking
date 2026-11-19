@@ -103,6 +103,7 @@ test('multi-month analysis explains observed averages and drills into exact acco
     .click();
   await expect(page).toHaveURL(/uncategorized=true/);
   await expect(page).toHaveURL(/unassigned=true/);
+  await expect(page).toHaveURL(/analytics\/details/);
   await expect(page.getByRole('link', { name: new RegExp(tag) })).toHaveCount(2);
   await page.goto('/analytics?from=2025-01-01&to=2025-05-31');
   await page.route(

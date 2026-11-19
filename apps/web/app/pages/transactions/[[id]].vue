@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod';
 import { userErrorMessage } from '../../utils/api-error';
+import { financeReturnTarget } from '../../utils/finance-return';
 import {
   accountSchema,
   categorySchema,
@@ -22,6 +23,10 @@ const detail = ref<Transaction | null>(null);
 const accounts = ref<Account[]>([]);
 const categories = ref<Category[]>([]);
 const selected = ref<string[]>([]);
+const returnTarget = computed(
+  /** Restore only an explicitly supported, validated local financial view. */ () =>
+    financeReturnTarget(route.query.returnTo),
+);
 const bulkCategory = ref('');
 /** Keep a Nuxt UI checkbox selection explicit and stable across refreshes. */
 function selectTransaction(id: string, checked: boolean | 'indeterminate') {
@@ -44,6 +49,7 @@ const filter = reactive({
   categoryId: String(route.query.categoryId ?? ''),
   direction: String(route.query.direction ?? ''),
   classification: String(route.query.classification ?? ''),
+  merchantKey: String(route.query.merchantKey ?? ''),
   uncategorized: route.query.uncategorized === 'true',
   excludeTransfers: route.query.excludeTransfers === 'true',
 });
@@ -61,6 +67,10 @@ function accountLabel(id: string | null) {
   return (
     accounts.value.find(/** Match only a real account UUID. */ (account) => account.id === id)?.name ?? 'Ohne Konto'
   );
+}
+/** Preserve the current filtered list when entering an individual booking without broadening the return scope. */
+function bookingLink(id: string) {
+  return `/transactions/${id}?${new URLSearchParams({ returnTo: route.fullPath })}`;
 }
 /** Serialize only nonempty filter values before schema validation. */
 function query(cursor?: string) {
@@ -209,8 +219,12 @@ onBeforeUnmount(
     <div>
       <h1>{{ route.params.id ? 'Umsatzdetails' : 'Deine Umsätze' }}</h1>
     </div>
-    <UButton :to="route.params.id ? '/transactions' : '/imports/csv'" variant="soft">{{
-      route.params.id ? 'Alle Umsätze' : 'CSV importieren'
+    <UButton :to="route.params.id ? (returnTarget ?? '/transactions') : '/imports/csv'" variant="soft">{{
+      route.params.id
+        ? returnTarget?.startsWith('/analytics/details?')
+          ? 'Zur Analyse zurück'
+          : 'Alle Umsätze'
+        : 'CSV importieren'
     }}</UButton>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
@@ -270,6 +284,9 @@ onBeforeUnmount(
   />
   <template v-if="!route.params.id"
     ><section class="panel mb-5">
+      <p v-if="filter.merchantKey" class="data-context">
+        Exakter Händlerfilter aktiv. Die Suche erweitert diesen Filter nicht.
+      </p>
       <form class="filter-grid" @submit.prevent="search">
         <label
           >Suche<UInput
@@ -366,7 +383,7 @@ onBeforeUnmount(
           @update:model-value="selectTransaction(row.id, $event)"
         />
         <div class="ledger-description">
-          <NuxtLink :to="`/transactions/${row.id}`"
+          <NuxtLink :to="bookingLink(row.id)"
             ><strong>{{ row.description }}</strong
             ><small
               >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || 'Keine Gegenpartei'

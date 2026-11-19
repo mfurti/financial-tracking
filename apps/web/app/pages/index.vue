@@ -227,8 +227,11 @@ onBeforeUnmount(
           <NuxtLink v-for="row in recent" :key="row.id" :to="`/transactions/${row.id}`" class="transaction-row"
             ><span class="transaction-icon"><FinanceIcon name="transactions" /></span>
             <div>
-              <strong>{{ row.counterpartyName || row.description }}</strong
-              ><small
+              <strong>{{ row.counterpartyName?.trim() || row.description }}</strong>
+              <small v-if="row.counterpartyName?.trim() && row.description.trim() !== row.counterpartyName.trim()">{{
+                row.description
+              }}</small>
+              <small
                 >{{ calendarDate(row.bookingDate) }} ·
                 {{
                   row.isTransfer

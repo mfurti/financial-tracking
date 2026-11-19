@@ -302,12 +302,20 @@ export const contractSummarySchema = z.object({
   kinds: z.array(contractCostGroupSchema),
 });
 export const classificationSchema = z.enum(['FIXED', 'VARIABLE', 'UNCLASSIFIED']);
+/** Opaque exact-trimmed merchant identity; canonical UTF-8 contents are validated before database access. */
+export const merchantKeySchema = z
+  .string()
+  .regex(/^(unknown|name:[A-Za-z0-9_-]+)$/)
+  .describe(
+    'unknown or name: plus canonical unpadded base64url UTF-8 of an exact trimmed nonempty source name; NUL is invalid',
+  );
 export const analyticsOverviewQuerySchema = z
   .object({
     from: dateSchema.optional(),
     to: dateSchema.optional(),
     accountId: idSchema.optional(),
     categoryId: idSchema.optional(),
+    merchantKey: merchantKeySchema.optional(),
     unassigned: z.enum(['true', 'false']).optional(),
     uncategorized: z.enum(['true', 'false']).optional(),
   })
@@ -377,13 +385,12 @@ export const analyticsOverviewSchema = z.object({
     }),
   ),
 });
-/** Opaque exact-trimmed merchant identity; canonical UTF-8 contents are validated before database access. */
-export const merchantKeySchema = z
-  .string()
-  .regex(/^(unknown|name:[A-Za-z0-9_-]+)$/)
-  .describe(
-    'unknown or name: plus canonical unpadded base64url UTF-8 of an exact trimmed nonempty source name; NUL is invalid',
-  );
+/** Detail bookmarks require an explicit effective window instead of silently applying report defaults. */
+export const analyticsDetailQuerySchema = analyticsOverviewQuerySchema.safeExtend({
+  from: dateSchema,
+  to: dateSchema,
+  direction: z.enum(['INCOME', 'EXPENSE']).default('EXPENSE'),
+});
 export const merchantAnalyticsQuerySchema = analyticsOverviewQuerySchema;
 export const merchantAnalyticsSchema = z.object({
   scope: z.object({
@@ -393,6 +400,7 @@ export const merchantAnalyticsSchema = z.object({
     categoryId: idSchema.nullable(),
     unassigned: z.boolean(),
     uncategorized: z.boolean(),
+    merchantKey: merchantKeySchema.optional(),
   }),
   expenseCents: aggregateCentsSchema,
   merchants: z.array(
