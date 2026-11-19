@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import type { Monthly } from '@financial-tracking/contracts';
-const props = withDefaults(defineProps<{ report: Monthly; title?: string; compact?: boolean }>(), {
-  title: 'Ausgaben nach Kategorien',
-  compact: false,
-});
+const props = withDefaults(
+  defineProps<{ report: Monthly; title?: string; compact?: boolean; chart?: 'bar' | 'ring' }>(),
+  {
+    title: 'Ausgaben nach Kategorien',
+    compact: false,
+    chart: 'ring',
+  },
+);
 const groups = computed(
   /** Income-only groups must not appear as zero-value expenditure slices. */ () =>
     props.report.categories
@@ -38,6 +42,7 @@ function categoryLink(id: string | null) {
     <div v-if="groups.length" class="spending-overview">
       <ExpenseChart
         v-if="!compact"
+        :chart="chart"
         :groups="groups"
         :total-cents="report.expenseCents"
         :label="`${money(report.expenseCents)} Ausgaben in ${groups.length} Kategorien`"

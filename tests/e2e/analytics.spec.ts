@@ -49,6 +49,21 @@ test('multi-month analysis explains observed averages and drills into exact acco
   await expect(page.getByRole('row').filter({ hasText: 'März 2025' })).toContainText('Berücksichtigt');
   await expect(page.getByRole('img', { name: 'Einnahmen und Ausgaben im Monatsverlauf', exact: true })).toBeVisible();
   await page.screenshot({ path: `.local/analytics-${info.project.name}.png`, fullPage: true });
+  await expect(page.getByRole('heading', { name: 'Monatsrückblick', exact: true })).toBeVisible();
+  await expect(
+    page.locator('.finance-tile').filter({ hasText: 'Trend zum Vormonat' }).getByRole('link'),
+  ).toHaveAttribute('href', /from=2025-04-01&to=2025-04-30/);
+  await page.getByRole('button', { name: 'Ringdiagramme', exact: true }).click();
+  await expect(page.getByRole('img', { name: 'Ausgabenanteile im Monatsverlauf', exact: true })).toBeVisible();
+  await expect(page.getByRole('table')).toContainText('März 2025');
+  await expect(page.getByRole('table')).toContainText('20,00');
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Ringdiagramme', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.getByRole('button', { name: 'Balkendiagramme', exact: true }).click();
+  await expect(page.getByRole('img', { name: 'Einnahmen und Ausgaben im Monatsverlauf', exact: true })).toBeVisible();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const mode of ['light', 'dark'] as const) {
     const toggle = page.getByRole('button', { name: 'Dunkelmodus', exact: true });
@@ -105,4 +120,37 @@ test('multi-month analysis explains observed averages and drills into exact acco
   await page.getByRole('button', { name: 'Auswertung anzeigen', exact: true }).click();
   await expect(page.getByRole('table')).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('completed-month presets retain exact inclusive calendar windows on reload', /** Three, six and twelve months must end before the current Berlin month, even across year boundaries. */ async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
+  await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
+  await page.waitForURL(
+    /** Complete real authentication before selecting report windows. */ (url) => url.pathname === '/',
+  );
+  await page.goto('/analytics');
+  await expect(page.getByRole('table')).toBeVisible();
+  const lastDay = await page.evaluate(
+    /** Derive expected Berlin month-end using calendar dates, never monetary values. */ () => {
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());
+      const end = new Date(`${today.slice(0, 7)}-01T12:00:00Z`);
+      end.setUTCDate(0);
+      return end.toISOString().slice(0, 10);
+    },
+  );
+  for (const count of [3, 6, 12]) {
+    await page.getByRole('button', { name: `${count} Monate`, exact: true }).click();
+    await expect(page.getByRole('row')).toHaveCount(count + 1);
+    expect(new URL(page.url()).searchParams.get('to')).toBe(lastDay);
+    const first = new Date(`${lastDay.slice(0, 7)}-01T12:00:00Z`);
+    first.setUTCMonth(first.getUTCMonth() - count + 1);
+    expect(new URL(page.url()).searchParams.get('from')).toBe(first.toISOString().slice(0, 10));
+  }
+  await page.reload();
+  await expect(page.getByRole('row')).toHaveCount(13);
+  expect(new URL(page.url()).searchParams.get('to')).toBe(lastDay);
 });

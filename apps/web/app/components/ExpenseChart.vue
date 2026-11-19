@@ -7,8 +7,13 @@ const props = withDefaults(
     label: string;
     centerLabel?: string;
     description?: string;
+    chart?: 'bar' | 'ring';
   }>(),
-  { centerLabel: 'Ausgegeben', description: 'Exakte Beträge und Links zu den Buchungen stehen neben dem Diagramm.' },
+  {
+    centerLabel: 'Ausgegeben',
+    description: 'Exakte Beträge und Links zu den Buchungen stehen neben dem Diagramm.',
+    chart: 'ring',
+  },
 );
 const emit = defineEmits<{ select: [id: string | null] }>();
 const data = computed(
@@ -49,7 +54,7 @@ function exact(label: string) {
 </script>
 <template>
   <UChart
-    type="donut"
+    :type="chart === 'ring' ? 'donut' : 'bar'"
     :data="data"
     index="name"
     :categories="['value']"
@@ -60,16 +65,16 @@ function exact(label: string) {
     :aria-description="description"
     @select="select"
   >
-    <template #center
+    <template v-if="chart === 'ring'" #center
       ><div class="chart-center">
         <small>{{ centerLabel }}</small
         ><strong>{{ money(totalCents) }}</strong>
       </div></template
     >
-    <template #tooltip="{ rows }"
+    <template #tooltip="{ title, rows }"
       ><div v-for="row in rows" :key="row.label">
-        <strong>{{ row.label }}</strong>
-        <p>{{ exact(row.label) }}</p>
+        <strong>{{ chart === 'bar' ? title : row.label }}</strong>
+        <p>{{ exact(chart === 'bar' && title ? title : row.label) }}</p>
       </div></template
     >
   </UChart>

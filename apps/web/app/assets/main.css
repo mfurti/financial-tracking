@@ -1214,6 +1214,49 @@ html[data-theme='high-contrast'] .month-balance {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 1rem;
 }
+.finance-analysis-hub {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.finance-analysis-insights {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.finance-analysis-top .section-heading {
+  margin-top: 0;
+}
+.finance-analysis-top .finance-tile__main {
+  min-height: 145px;
+}
+.finance-analysis-actuals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-block: 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.finance-analysis-actuals strong {
+  display: block;
+  color: var(--ink);
+  font-size: 18px;
+}
+.finance-chart-choice {
+  justify-content: flex-end;
+  margin-block: 16px;
+}
+@media (max-width: 1100px) {
+  .finance-analysis-hub {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .finance-analysis-insights {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .analytics-metrics .panel {
   min-width: 0;
 }

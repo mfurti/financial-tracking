@@ -7,6 +7,7 @@ const props = withDefaults(
     to?: string;
     actionable?: boolean;
     disabled?: boolean;
+    financial?: boolean;
     variant?: 'feature' | 'insight' | 'account' | 'stat';
     state?: 'ready' | 'loading' | 'empty' | 'error';
     emptyText?: string;
@@ -20,6 +21,7 @@ const props = withDefaults(
     state: 'ready',
     actionable: false,
     disabled: false,
+    financial: false,
     emptyText: 'Noch keine Daten',
     errorText: 'Daten konnten nicht geladen werden.',
   },
@@ -61,7 +63,7 @@ function activate() {
     >
       <span class="finance-tile__copy">
         <span :id="labelId" class="finance-tile__label">{{ label }}</span>
-        <strong v-if="state === 'ready'" class="finance-tile__value"
+        <strong v-if="state === 'ready'" class="finance-tile__value" :data-financial="financial || undefined"
           ><slot name="value">{{ value ?? '—' }}</slot></strong
         >
         <span v-else-if="state === 'loading'" role="status">Wird geladen …</span>

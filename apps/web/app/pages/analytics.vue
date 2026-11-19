@@ -4,6 +4,7 @@ import * as c from '@financial-tracking/contracts';
 const api = useApi();
 const route = useRoute();
 const router = useRouter();
+const { preferences, updatePreferences } = useWorkspacePreferences();
 const appliedFilters = ref<z.infer<typeof c.analyticsOverviewQuerySchema>>({});
 const report = ref<z.infer<typeof c.analyticsOverviewSchema> | null>(null);
 const accounts = ref<c.Account[]>([]);
@@ -14,6 +15,19 @@ const accountId = ref(route.query.unassigned === 'true' ? 'UNASSIGNED' : String(
 const categoryId = ref(route.query.uncategorized === 'true' ? 'UNCATEGORIZED' : String(route.query.categoryId ?? ''));
 const error = ref('');
 const busy = ref(true);
+const latestMonth = computed(
+  /** Review the actual final selected month, including explicitly disclosed empty or partial periods. */ () =>
+    report.value?.months.at(-1),
+);
+const trendLink = computed(
+  /** Link the shown trend to its actual latest eligible calendar month, excluding later incomplete observations. */ () => {
+    const month = report.value?.months.find(
+      /** Resolve the exact report-owned range rather than using input drafts. */ (row) =>
+        row.month === report.value?.trend?.month,
+    );
+    return month ? link({ from: month.from, to: month.to, direction: 'EXPENSE' }) : undefined;
+  },
+);
 let generation = 0;
 const reasons: Record<string, string> = {
   NO_DATA: 'Keine Buchungen',
@@ -179,38 +193,71 @@ onBeforeUnmount(
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <p v-if="busy" role="status">Auswertung wird geladen …</p>
   <template v-if="report && !busy">
-    <div class="analytics-metrics mb-5">
-      <section class="panel">
-        <p class="muted">Einnahmen</p>
-        <UButton
-          :to="link({ direction: 'INCOME' })"
-          variant="link"
-          color="neutral"
-          class="insight-amount amount-income"
-          >{{ money(report.incomeCents) }}</UButton
-        >
-      </section>
-      <section class="panel">
-        <p class="muted">Ausgaben</p>
-        <UButton
-          :to="link({ direction: 'EXPENSE' })"
-          variant="link"
-          color="neutral"
-          class="insight-amount amount-expense"
-          >{{ money(report.expenseCents) }}</UButton
-        >
-      </section>
-      <section class="panel">
-        <p class="muted">Saldo der Geldflüsse</p>
-        <strong class="insight-amount">{{ money(report.netCents) }}</strong>
-      </section>
-      <section class="panel">
-        <p class="muted">Durchschnittliche Ausgaben</p>
-        <strong class="insight-amount">{{
-          report.average.expenseCents === null ? 'Noch nicht berechenbar' : money(report.average.expenseCents)
-        }}</strong
-        ><small>Ø aus {{ report.average.monthCount }} Monaten</small>
-      </section>
+    <div class="finance-analysis-hub">
+      <SectionPanel title="Monatsrückblick" icon="calendar" class="finance-analysis-top" :bare="true">
+        <FinanceTile
+          v-if="latestMonth"
+          :label="monthName(latestMonth.month)"
+          :value="money(latestMonth.expenseCents)"
+          financial
+          :context="`Ausgegeben · ${latestMonth.count} Buchungen · ${latestMonth.averageEligible ? 'Abgeschlossener Monat' : reasons[latestMonth.excludedReason!]}`"
+          actionable
+          @activate="monthSelect(latestMonth!.month, 'EXPENSE')"
+        />
+      </SectionPanel>
+      <SectionPanel title="Einnahmen und Ausgaben" icon="categories" class="finance-analysis-top" :bare="true">
+        <div class="analytics-metrics finance-analysis-insights">
+          <FinanceTile
+            label="Durchschnittliche Ausgaben"
+            variant="insight"
+            :financial="report.average.expenseCents !== null"
+            :value="
+              report.average.expenseCents === null ? 'Noch nicht berechenbar' : money(report.average.expenseCents)
+            "
+            :context="`Ø aus ${report.average.monthCount} Monaten`"
+            :to="link({ direction: 'EXPENSE' })"
+            ><template #graphic><FinanceIcon name="categories" /></template
+          ></FinanceTile>
+          <FinanceTile
+            label="Trend zum Vormonat"
+            variant="insight"
+            :financial="Boolean(report.trend)"
+            :value="report.trend ? money(report.trend.changeCents) : 'Noch kein vergleichbarer Trend'"
+            :context="
+              report.trend
+                ? `${monthName(report.trend.month)} gegenüber ${monthName(report.trend.previousMonth)}`
+                : 'Zwei aufeinanderfolgende geeignete Monate erforderlich'
+            "
+            :to="trendLink"
+            ><template #graphic><FinanceIcon name="transactions" /></template
+          ></FinanceTile>
+        </div>
+      </SectionPanel>
+    </div>
+    <div class="finance-analysis-actuals">
+      <NuxtLink :to="link({ direction: 'INCOME' })"
+        >Einnahmen <strong class="positive" data-financial>{{ money(report.incomeCents) }}</strong></NuxtLink
+      >
+      <NuxtLink :to="link({ direction: 'EXPENSE' })"
+        >Ausgaben <strong data-financial>{{ money(report.expenseCents) }}</strong></NuxtLink
+      >
+      <span
+        >Saldo der Geldflüsse <strong data-financial>{{ money(report.netCents) }}</strong></span
+      >
+    </div>
+    <div class="toolbar finance-chart-choice" role="group" aria-label="Diagrammdarstellung">
+      <UButton
+        :aria-pressed="preferences.chart === 'bar'"
+        :variant="preferences.chart === 'bar' ? 'soft' : 'ghost'"
+        @click="updatePreferences({ chart: 'bar' })"
+        >Balkendiagramme</UButton
+      >
+      <UButton
+        :aria-pressed="preferences.chart === 'ring'"
+        :variant="preferences.chart === 'ring' ? 'soft' : 'ghost'"
+        @click="updatePreferences({ chart: 'ring' })"
+        >Ringdiagramme</UButton
+      >
     </div>
     <SectionPanel
       title="Dein Monatsverlauf"
@@ -218,7 +265,10 @@ onBeforeUnmount(
       class="mb-5"
       help="Der Trend vergleicht den letzten geeigneten Monat mit seinem direkten Kalendervormonat. Beide müssen vollständig ausgewählt sein und Buchungen enthalten."
     >
-      <MonthlyChart :report="report" @select="monthSelect" />
+      <p v-if="preferences.chart === 'ring'" class="muted mb-4">
+        Der Ring zeigt Ausgabenanteile der Monate. Einnahmen, Ausgaben und Lücken stehen centgenau in der Tabelle.
+      </p>
+      <MonthlyChart :report="report" :chart="preferences.chart" @select="monthSelect" />
       <div v-if="report.trend" class="data-context">
         <strong
           >Ausgabentrend: {{ money(report.trend.changeCents)
@@ -238,6 +288,7 @@ onBeforeUnmount(
           v-if="report.categories.length"
           :groups="report.categories"
           :total-cents="report.expenseCents"
+          :chart="preferences.chart"
           label="Ausgabenanteile nach Kategorien"
           @select="navigateTo(categoryLink($event))"
         />
