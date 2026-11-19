@@ -22,6 +22,7 @@ const from = ref('');
 const to = ref('');
 const revision = reactive({ effectiveDate: '', amountEuro: '', intervalMonths: 1 });
 const editorOpen = ref(false);
+const editorSaving = ref(false);
 const editing = ref(false);
 const deleteOpen = ref(false);
 const unlinkId = ref<string | null>(null);
@@ -45,13 +46,33 @@ const nextRule = computed(
       )
       .at(-1),
 );
+const contractGroups = computed(
+  /** Group the already next-due-ordered records by their effective payment rhythm, preserving order within each group. */ () =>
+    contractIntervalOptions
+      .map(
+        /** Label only rhythms supported by the existing recurrence contract. */ (option) => ({
+          label: option.label,
+          interval: option.value,
+          contracts: records.value.filter(
+            /** Future revisions apply only when effective at the displayed next due date. */ (contract) =>
+              contract.revisions
+                .filter(
+                  /** Keep later price/rhythm changes out of earlier dues. */ (rule) =>
+                    rule.effectiveDate <= (contract.nextDueDate ?? '9999-12-31'),
+                )
+                .at(-1)?.intervalMonths === option.value,
+          ),
+        }),
+      )
+      .filter(/** Empty rhythms do not become invented obligations. */ (group) => group.contracts.length),
+);
 const selected = computed(
   /** Show the chosen actual booking beside the expected forecast. */ () =>
     candidates.value.find(/** Match an offered identity only. */ (row) => row.id === selectedTransaction.value),
 );
 /** Load list or detail with a stale-response guard across route changes. */
 async function load() {
-  if (reviewing.value) return;
+  if (reviewing.value || editorOpen.value) return;
   const current = ++generation,
     id = String(route.params.id ?? '');
   loading.value = true;
@@ -90,6 +111,8 @@ async function load() {
       detail.value = null;
       records.value = [];
       history.value = null;
+      summary.value = null;
+      suggestions.value = [];
       error.value = userErrorMessage(cause);
     }
   } finally {
@@ -98,11 +121,13 @@ async function load() {
 }
 /** Open manual creation or metadata editing; suggestions are handled by ContractReview. */
 function openEditor(edit = false) {
+  editorSaving.value = false;
   editing.value = edit;
   editorOpen.value = true;
 }
 /** Refresh persisted state after confirmation and navigate to the saved contract. */
 async function saved(id: string) {
+  editorSaving.value = false;
   editorOpen.value = false;
   from.value = '';
   to.value = '';
@@ -239,28 +264,30 @@ onBeforeUnmount(
     <div>
       <h1>{{ detail?.name ?? 'Verträge' }}</h1>
     </div>
-    <UButton @click="openEditor()">Vertrag anlegen</UButton>
+    <UButton :disabled="loading || reviewing" @click="openEditor()">Vertrag anlegen</UButton>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
+  <UButton v-if="error && !loading" variant="soft" @click="load">Erneut laden</UButton>
   <p v-if="loading" role="status">Verträge werden geladen …</p>
   <UButton v-if="route.params.id" to="/contracts" variant="link" class="mb-4">Alle Verträge</UButton>
-  <template v-if="detail">
-    <section class="panel mb-5">
-      <div class="panel-heading">
-        <div>
-          <UBadge color="neutral" variant="soft">{{ contractKinds[detail.kind].label }}</UBadge>
-          <h2>{{ detail.provider }}</h2>
-        </div>
-        <UButton color="neutral" variant="outline" @click="openEditor(true)">Vertrag bearbeiten</UButton>
-      </div>
+  <template v-if="detail && !loading && !error">
+    <SectionPanel :title="detail.provider" icon="contracts" compact class="mb-5">
+      <template #actions
+        ><UButton color="neutral" variant="soft" @click="openEditor(true)">Vertrag bearbeiten</UButton></template
+      >
+      <UBadge color="neutral" variant="soft">{{ contractKinds[detail.kind].label }}</UBadge>
       <p v-if="nextRule" class="muted">
         Planwert: {{ money(plannedEquivalent(nextRule.amountCents, nextRule.intervalMonths, 1)) }} / Monat (gerundet) ·
         {{ money(plannedEquivalent(nextRule.amountCents, nextRule.intervalMonths, 12)) }} / Jahr. Keine tatsächlichen
         Ausgaben.
       </p>
-      <p class="balance-value">
-        {{ detail.nextAmountCents ? money(detail.nextAmountCents) : 'Keine weitere Fälligkeit' }}
-      </p>
+      <FinanceTile
+        variant="insight"
+        label="Nächster Planbetrag"
+        :value="detail.nextAmountCents ? money(detail.nextAmountCents) : 'Keine weitere Fälligkeit'"
+        financial
+        class="my-4"
+      />
       <p>
         {{
           detail.nextDueDate
@@ -273,7 +300,7 @@ onBeforeUnmount(
         }}<span v-if="detail.endDate"> · einschließlich Ende: {{ calendarDate(detail.endDate) }}</span
         ><span v-if="detail.cancellationDate"> · Kündigungsdatum: {{ calendarDate(detail.cancellationDate) }}</span>
       </p>
-    </section>
+    </SectionPanel>
     <SectionPanel
       help="Nicht zugeordnet bedeutet: keine eindeutige Buchung verknüpft. Es beweist keinen Zahlungsausfall. Frühere offene Termine blockieren die nächste Fälligkeit nicht."
       title="Zahlungen & Historie"
@@ -288,7 +315,7 @@ onBeforeUnmount(
       <div v-for="occurrence in history?.occurrences ?? []" :key="occurrence.dueDate" class="editable-row">
         <div>
           <strong>{{ calendarDate(occurrence.dueDate) }}</strong>
-          <p>{{ money(occurrence.amountCents) }}</p>
+          <p data-financial>{{ money(occurrence.amountCents) }} · Planwert</p>
         </div>
         <template v-if="occurrence.payment"
           ><UButton size="xs" variant="soft" :to="`/transactions/${occurrence.payment.transactionId}`">{{
@@ -374,23 +401,30 @@ onBeforeUnmount(
     >
     <UButton color="error" variant="ghost" @click="deleteOpen = true">Vertrag löschen</UButton>
   </template>
-  <template v-else-if="!route.params.id && !loading">
-    <UButton v-if="summary" to="/contracts/analysis" color="neutral" variant="outline" class="fixed-cost-card mb-6">
-      <span class="fixed-cost-label"
-        ><FinanceIcon name="contracts" /><strong>Durchschnittliche Fixkosten / Monat</strong
-        ><UBadge variant="soft">Planwert</UBadge></span
-      >
-      <strong class="fixed-cost-value amount-expense">{{ money(summary.monthlyCents) }}</strong>
-      <span class="muted"
-        >{{ summary.count }} {{ summary.count === 1 ? 'Vertrag' : 'Verträge' }} · Analyse öffnen ›</span
-      >
-    </UButton>
-    <SectionPanel title="Deine Verträge" icon="contracts" class="mb-5">
-      <p v-if="!records.length" class="empty-copy">
-        Noch keine Verträge. Bestätige einen Vorschlag oder lege einen Vertrag an.
-      </p>
+  <template v-else-if="!route.params.id && !loading && !error">
+    <FinanceTile
+      v-if="summary"
+      to="/contracts/analysis"
+      variant="insight"
+      label="Durchschnittliche Fixkosten / Monat"
+      :value="money(summary.monthlyCents)"
+      :context="`${summary.count} ${summary.count === 1 ? 'Vertrag' : 'Verträge'} · Planwert · Analyse öffnen`"
+      financial
+      class="mb-6"
+    />
+    <SectionPanel v-if="!records.length" title="Deine Verträge" icon="contracts" class="mb-5" compact>
+      <p class="empty-copy">Noch keine Verträge. Bestätige einen Vorschlag oder lege einen Vertrag an.</p>
+    </SectionPanel>
+    <SectionPanel
+      v-for="group in contractGroups"
+      :key="group.interval"
+      :title="`${group.label} · ${group.contracts.length}`"
+      icon="contracts"
+      class="contract-rhythm mb-5"
+      compact
+    >
       <UButton
-        v-for="contract in records"
+        v-for="contract in group.contracts"
         :key="contract.id"
         :to="`/contracts/${contract.id}`"
         color="neutral"
@@ -404,7 +438,7 @@ onBeforeUnmount(
             ><small>{{ contractKinds[contract.kind].label }} · {{ contract.provider }}</small></span
           ></span
         ><span
-          ><strong :class="contract.active ? 'amount-expense' : 'muted'">{{
+          ><strong data-financial :class="contract.active ? 'amount-expense' : 'muted'">{{
             contract.nextAmountCents ? money(contract.nextAmountCents) : '—'
           }}</strong
           ><small>{{
@@ -426,37 +460,56 @@ onBeforeUnmount(
         @changed="load"
     /></SectionPanel>
   </template>
-  <UModal
+  <FinanceDialog
     v-model:open="editorOpen"
     :title="editing ? 'Vertrag bearbeiten' : 'Vertrag anlegen'"
     description="Vertragsprognosen erzeugen keine zusätzlichen Buchungen. Bestehende eindeutige Zahlungen werden nach Bestätigung verknüpft."
-    ><template #body
-      ><ContractForm
-        :contract="editing ? detail : null"
-        :accounts="accounts"
-        :categories="categories"
-        @saved="saved" /></template
-  ></UModal>
-  <UModal
+    :dismissible="!editorSaving"
+    :close="!editorSaving"
+    ><ContractForm
+      :contract="editing ? detail : null"
+      :accounts="accounts"
+      :categories="categories"
+      @busy="editorSaving = $event"
+      @saved="saved"
+    />
+  </FinanceDialog>
+  <FinanceDialog
     v-model:open="deleteOpen"
     title="Vertrag löschen?"
     description="Vertrag und Zahlungszuordnungen werden entfernt. Alle Bankbuchungen, Beträge und manuellen Kategorien bleiben erhalten."
+    :dismissible="!busy"
     ><template #footer
       ><UButton color="error" :loading="busy" @click="remove()">Vertrag endgültig löschen</UButton
       ><UButton color="neutral" variant="outline" :disabled="busy" @click="deleteOpen = false"
         >Abbrechen</UButton
       ></template
-    ></UModal
+    ></FinanceDialog
   >
-  <UModal
+  <FinanceDialog
     v-model:open="unlinkOpen"
     title="Zahlungszuordnung entfernen?"
     description="Die Buchung bleibt erhalten und wird nicht sofort erneut automatisch zugeordnet. Eine spätere ausdrückliche manuelle Zuordnung ist möglich."
+    :dismissible="!busy"
     ><template #footer
       ><UButton color="error" :loading="busy" @click="remove(unlinkId!)">Zuordnung entfernen</UButton
       ><UButton color="neutral" variant="outline" :disabled="busy" @click="unlinkId = null"
         >Abbrechen</UButton
       ></template
-    ></UModal
+    ></FinanceDialog
   >
 </template>
+
+<style scoped>
+.contract-rhythm {
+  max-width: 1050px;
+}
+.contract-list-row {
+  min-height: 72px;
+  padding: 12px 0;
+  gap: 16px;
+}
+.contract-list-row strong {
+  overflow-wrap: anywhere;
+}
+</style>

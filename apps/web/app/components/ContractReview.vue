@@ -224,7 +224,13 @@ onBeforeUnmount(
     :dismissible="!busy"
     :close="!busy"
     :transition="!reducedMotion"
-    :ui="{ content: 'max-w-2xl', header: 'shrink-0', body: 'min-h-0 overflow-y-auto', footer: 'shrink-0' }"
+    :ui="{
+      content: 'finance-dialog finance-dialog-motion contract-review-dialog',
+      overlay: 'finance-overlay finance-dialog-motion',
+      header: 'shrink-0',
+      body: 'finance-dialog__body min-h-0 overflow-y-auto',
+      footer: 'shrink-0',
+    }"
   >
     <template #body>
       <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
@@ -339,9 +345,8 @@ onBeforeUnmount(
       ></template
     >
   </UModal>
-  <UModal
+  <FinanceDialog
     :open="discardOpen"
-    :transition="!reducedMotion"
     title="Ungespeicherte Änderungen"
     description="Deine Änderungen wurden noch nicht gespeichert."
     @update:open="
@@ -352,6 +357,13 @@ onBeforeUnmount(
     ><template #footer
       ><UButton variant="soft" @click="cancelDiscard">Weiter bearbeiten</UButton
       ><UButton color="warning" @click="discard">Änderungen verwerfen</UButton></template
-    ></UModal
+    ></FinanceDialog
   >
 </template>
+
+<style scoped>
+:global(.finance-dialog.contract-review-dialog) {
+  width: min(672px, calc(100vw - 28px));
+  max-width: 672px;
+}
+</style>

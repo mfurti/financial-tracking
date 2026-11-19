@@ -97,7 +97,7 @@ onBeforeUnmount(
       help="Planwert der heute gültigen bestätigten Verträge. Jahres- und Quartalszahlungen werden auf Monate verteilt und je Vertrag auf Cent gerundet. Zukünftige Verträge und Preisänderungen zählen noch nicht. Tatsächliche Ausgaben bleiben getrennt."
       class="mb-6"
     >
-      <strong class="fixed-cost-value amount-expense">{{ money(summary.monthlyCents) }}</strong
+      <strong data-financial class="fixed-cost-value amount-expense">{{ money(summary.monthlyCents) }}</strong
       ><span class="muted"
         >{{ summary.count }} {{ summary.count === 1 ? 'Vertrag' : 'Verträge' }} · Planwert ·
         {{ calendarDate(summary.asOf) }}</span
@@ -114,7 +114,7 @@ onBeforeUnmount(
         { label: 'Vertragsarten', value: 'kind' },
       ]"
     />
-    <div class="dashboard-grid">
+    <div class="contract-analysis-grid">
       <SectionPanel title="Aufteilung" icon="categories">
         <ExpenseChart
           v-if="BigInt(summary.monthlyCents) > 0n"
@@ -146,7 +146,7 @@ onBeforeUnmount(
               >{{ group.count }} {{ group.count === 1 ? 'Vertrag' : 'Verträge' }} ·
               {{ share(group.monthlyCents) }} %</small
             ></span
-          ><strong class="amount-expense">{{ money(group.monthlyCents) }}</strong>
+          ><strong data-financial class="amount-expense">{{ money(group.monthlyCents) }}</strong>
         </UButton>
       </SectionPanel>
       <SectionPanel
@@ -186,3 +186,21 @@ onBeforeUnmount(
     </div>
   </template>
 </template>
+
+<style scoped>
+.contract-analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 24px;
+}
+.contract-analysis-grid > * {
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .contract-analysis-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+</style>
