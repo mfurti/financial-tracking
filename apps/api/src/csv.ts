@@ -94,7 +94,8 @@ export function previewCsv(
       const field = (key: keyof typeof mapping) =>
         mapping[key] ? (row[headers.indexOf(mapping[key]!)]?.trim() ?? '') : '';
       const reference = stableReference(field('reference'));
-      if (!field('description'))
+      const description = field('description') || field('descriptionFallback');
+      if (!description)
         throw new AppError(
           'CSV_MISSING_DESCRIPTION',
           'Der Buchungstext fehlt. Wähle eine gefüllte Spalte, zum Beispiel Verwendungszweck oder Buchungstext.',
@@ -110,7 +111,7 @@ export function previewCsv(
         currency: field('currency') || 'EUR',
         bookingDate: csvDate(field('bookingDate'), 'Buchungsdatum'),
         valueDate: field('valueDate') ? csvDate(field('valueDate'), 'Wertstellung') : null,
-        description: field('description'),
+        description,
         counterpartyName: field('counterpartyName') || null,
         counterpartyIban: field('counterpartyIban') || null,
         status: 'BOOKED',

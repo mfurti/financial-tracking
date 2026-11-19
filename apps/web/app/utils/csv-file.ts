@@ -85,6 +85,7 @@ export function suggestCsvMapping(headers: string[]): CsvMapping {
     bookingDate: ['Buchungstag', 'Buchungsdatum', 'Datum'],
     amount: ['Betrag', 'Umsatz', 'Betrag (EUR)'],
     description: ['Verwendungszweck', 'Buchungstext', 'Text'],
+    descriptionFallback: [],
     valueDate: ['Wertstellung', 'Valutadatum', 'Valuta'],
     counterpartyName: [
       'Beguenstigter/Zahlungspflichtiger',
@@ -110,7 +111,14 @@ export function suggestCsvMapping(headers: string[]): CsvMapping {
         /** Prefer payment purpose over the bank's generic booking-type column. */ (heading) =>
           headingKey(heading) === 'verwendungszweck',
       );
-      if (purpose) result.description = purpose;
+      if (purpose) {
+        result.description = purpose;
+        const alternatives = matches.filter(
+          /** Suggest a fallback only when exactly one other recognized text column exists. */ (heading) =>
+            heading !== purpose,
+        );
+        if (alternatives.length === 1) result.descriptionFallback = alternatives[0]!;
+      }
     }
   }
   return result;

@@ -45,7 +45,15 @@ describe('bank CSV file recovery', /** Exercise real byte decoding and heading p
     expect(suggestCsvMapping(['Datum', 'Buchungstag', 'Betrag', 'Text']).bookingDate).toBe('');
     expect(
       suggestCsvMapping(['Buchungstag', 'Betrag', 'Buchungstext', 'Verwendungszweck', 'Kontonummer/IBAN']),
-    ).toMatchObject({ description: 'Verwendungszweck', counterpartyIban: 'Kontonummer/IBAN' });
+    ).toMatchObject({
+      description: 'Verwendungszweck',
+      descriptionFallback: 'Buchungstext',
+      counterpartyIban: 'Kontonummer/IBAN',
+    });
+    expect(
+      suggestCsvMapping(['Datum', 'Betrag', 'Verwendungszweck', 'Buchungstext', 'Text']).descriptionFallback,
+    ).toBeUndefined();
+    expect(suggestCsvMapping(['Datum', 'Betrag', 'Text']).descriptionFallback).toBeUndefined();
   });
   it('uses the same additive format enums at browser and API boundaries', /** Existing UTF-8/Windows-1252 requests keep their defaults; new formats remain constrained. */ () => {
     for (const encoding of csvEncodingSchema.options)

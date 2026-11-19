@@ -5,6 +5,30 @@ import { startBank } from '../apps/api/src/bank.js';
 const accountId = 'cb3f6dc6-4e89-42b8-9391-7d8d0c348d1a';
 const mapping = { bookingDate: 'Datum', amount: 'Betrag', description: 'Text', reference: 'Referenz' };
 describe('CSV and bank boundaries', /** Validate sources before financial persistence. */ () => {
+  it('uses only an explicitly mapped text fallback and preserves row identities on reimport', /** Empty purposes may use source booking text, while wholly empty rows remain actionable issues. */ () => {
+    const content =
+      'Datum;Betrag;Zweck;Banktext\n01.11.2026;-1,00;Miete;Dauerauftrag\n02.11.2026;-2,00; ;Kartenzahlung\n03.11.2026;-3,00; ; \n';
+    const explicit = { bookingDate: 'Datum', amount: 'Betrag', description: 'Zweck', descriptionFallback: 'Banktext' };
+    const result = previewCsv(null, content, ';', explicit);
+    expect(
+      result.rows.map(
+        /** Compare normalized source text without inventing a replacement. */ (row) => row.data.description,
+      ),
+    ).toEqual(['Miete', 'Kartenzahlung']);
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]?.rowNumber).toBe(4);
+    expect(result.totalRows).toBe(3);
+    expect(previewCsv(null, content, ';', explicit)).toEqual(result);
+    expect(previewCsv(null, content, ';', { ...explicit, descriptionFallback: undefined }).rows).toHaveLength(1);
+    expect(
+      previewCsv(null, content, ';', { ...explicit, description: 'Banktext', descriptionFallback: 'Zweck' }).rows[0]
+        ?.data.description,
+    ).toBe('Dauerauftrag');
+    expect(
+      /** Unknown fallback headings must fail before reading any rows. */ () =>
+        previewCsv(null, content, ';', { ...explicit, descriptionFallback: 'Missing' }),
+    ).toThrow('Zugeordnete Spalte fehlt');
+  });
   it('normalizes short Sparkasse years with strict calendar and explicit century boundaries', /** Modern short years do not depend on the machine date or an implicit pivot. */ () => {
     for (const [input, expected] of [
       ['07.11.26', '2026-11-07'],

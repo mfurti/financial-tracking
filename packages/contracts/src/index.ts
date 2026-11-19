@@ -580,6 +580,7 @@ export const csvMappingSchema = z.object({
   bookingDate: z.string().min(1),
   amount: z.string().min(1),
   description: z.string().min(1),
+  descriptionFallback: z.string().optional(),
   valueDate: z.string().optional(),
   counterpartyName: z.string().optional(),
   counterpartyIban: z.string().optional(),

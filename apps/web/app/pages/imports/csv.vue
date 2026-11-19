@@ -72,6 +72,11 @@ const requiredFields = [
 ] as const;
 const optionalFields = [
   {
+    key: 'descriptionFallback',
+    label: 'Buchungstext bei leerer Beschreibung',
+    help: 'Nur bei leerem Buchungstext wird diese Quellspalte verwendet. Sind beide leer, bleibt die Zeile zur Prüfung offen.',
+  },
+  {
     key: 'valueDate',
     label: 'Wertstellung',
     help: 'Optionales Datum, ab dem die Bank den Betrag verzinst. Im Zweifel nicht zuordnen.',
@@ -330,11 +335,14 @@ onBeforeUnmount(
           v-model="selectedFile"
           accept=".csv,text/csv"
           label="CSV-Datei auswählen"
-          :description="filename || 'CSV-Bankexport'"
+          :description="filename || 'CSV-Bankexport · Datei wählen oder hier ablegen · maximal 10 MiB'"
           :disabled="busy || readingFile"
           @update:model-value="selectFile"
       /></UFormField>
       <p class="muted text-sm">Gültige Buchungen werden nach der Dateiauswahl automatisch übernommen.</p>
+      <p v-if="mapping.descriptionFallback" class="muted text-sm" role="status">
+        Beschreibung: {{ mapping.description }}; bei leerem Inhalt: {{ mapping.descriptionFallback }}.
+      </p>
       <DisclosurePanel v-model:open="formatExpanded" class="import-format" title="Importoptionen (nur bei Bedarf)"
         ><p class="muted text-sm my-3">
           Normalerweise ist hier nichts nötig. Änderungen am Dateiformat lesen dieselbe Datei erneut.
