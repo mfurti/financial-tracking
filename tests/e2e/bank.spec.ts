@@ -4,12 +4,13 @@ import type { ImportRun } from '../../packages/contracts/src/index.js';
 
 test('manual bank setup, method/media/TAN/app approval, pending, failures and cancellation', /** Test browser authorization states with explicit synthetic bank responses; ordinary authentication stays real. */ async ({
   page,
-}) => {
+}, info) => {
   await page.goto('/login');
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  const financialBefore = await (await page.request.get('/api/v1/transactions?limit=100')).json();
   await page.goto('/connections');
   await expect(page.getByText('Bankanbindung vorbereiten', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Bank-PIN', { exact: true })).toBeDisabled();
@@ -113,8 +114,47 @@ test('manual bank setup, method/media/TAN/app approval, pending, failures and ca
   }
   current = { ...base, status: 'RUNNING' };
   await page.goto(`/connections?run=${runId}`);
-  await page.getByRole('button', { name: 'Abruf abbrechen', exact: true }).click();
-  await expect(page.getByText('Abgebrochen', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Abruf abbrechen', exact: true })).toBeVisible();
+  let release: () => void = () => {};
+  let started: () => void = () => {};
+  const held = new Promise<void>(
+    /** Deliver a real polling response only after explicit cancellation. */ (resolve) => {
+      release = resolve;
+    },
+  );
+  const requested = new Promise<void>(
+    /** Observe the owned scheduled poll without sleeping. */ (resolve) => {
+      started = resolve;
+    },
+  );
+  await page.route(
+    `**/api/v1/import-runs/${runId}`,
+    /** Hold only the stale read; cancellation still reaches its explicit synthetic response. */ async (route) => {
+      const stale = { ...base, status: 'RUNNING' };
+      started();
+      await held;
+      await route.fulfill({ json: stale });
+    },
+  );
+  try {
+    await requested;
+    await page.getByRole('button', { name: 'Abruf abbrechen', exact: true }).click();
+    await expect(page.getByText('Abgebrochen', { exact: true })).toBeVisible();
+    const delivered = page.waitForResponse(
+      /** Await the old poll's delivery before checking the terminal state. */ (response) =>
+        new URL(response.url()).pathname === `/api/v1/import-runs/${runId}`,
+    );
+    release();
+    await delivered;
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Abgebrochen', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Abruf abbrechen', exact: true })).toHaveCount(0);
+  } finally {
+    release();
+    await page.unroute(`**/api/v1/import-runs/${runId}`);
+  }
+  await page.screenshot({ path: `.local/concept-bank-cancel-${info.project.name}.png`, fullPage: true });
+  expect(await (await page.request.get('/api/v1/transactions?limit=100')).json()).toEqual(financialBefore);
   expect(starts).toBe(1);
   expect(
     await page.evaluate(

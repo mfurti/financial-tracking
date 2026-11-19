@@ -11,7 +11,7 @@ import {
 } from '@financial-tracking/contracts';
 
 const api = useApi();
-const { validation, formError } = useFormFeedback();
+const { validation, formError, formInvalid } = useFormFeedback();
 const route = useRoute();
 const router = useRouter();
 const connections = ref<Connection[]>([]);
@@ -62,31 +62,43 @@ const failureHints: Record<string, string> = {
 let timer: ReturnType<typeof setTimeout> | undefined;
 let started = Date.now();
 let stopped = false;
+let pollGeneration = 0;
+let loadGeneration = 0;
+/** Invalidate in-flight status reads before a newer authorization decision and clear the owned timer. */
+function stopPolling() {
+  pollGeneration++;
+  if (timer) clearTimeout(timer);
+}
 const finished = computed(
   /** Terminal states stop browser status polling. */ () =>
     !!activeRun.value && ['COMPLETED', 'PARTIAL_SUCCESS', 'FAILED', 'CANCELLED'].includes(activeRun.value.status),
 );
 /** Reload configured connections without credentials. */
 async function load() {
+  const generation = ++loadGeneration;
   loading.value = true;
   error.value = '';
   try {
-    [connections.value, setup.value] = await Promise.all([
+    const [choices, configuration] = await Promise.all([
       api.request('/bank-connections', z.array(connectionSchema)),
       api.request('/bank-setup', bankSetupSchema),
     ]);
+    if (stopped || generation !== loadGeneration) return;
+    connections.value = choices;
+    setup.value = configuration;
     selected.value ||=
       connections.value.find(
         /** Only FinTS connections can start a live run. */ (connection) => connection.connectorType === 'FINTS',
       )?.id ?? '';
   } catch (cause) {
-    error.value = formError(cause);
+    if (!stopped && generation === loadGeneration) error.value = formError(cause);
   } finally {
-    loading.value = false;
+    if (!stopped && generation === loadGeneration) loading.value = false;
   }
 }
 /** Save explicit connection settings; the bank URL remains server configuration. */
 async function save() {
+  if (busy.value) return;
   busy.value = true;
   error.value = '';
   try {
@@ -95,6 +107,7 @@ async function save() {
       method: editing.value ? 'PATCH' : 'POST',
       body,
     });
+    if (stopped) return;
     editing.value = '';
     await load();
   } catch (cause) {
@@ -128,17 +141,22 @@ async function toggle(connection: Connection) {
 /** Poll an existing run; reloading this page never starts another bank request. */
 async function poll() {
   if (!activeRun.value || stopped) return;
+  const generation = ++pollGeneration;
+  const id = activeRun.value.id;
   if (timer) clearTimeout(timer);
   try {
-    activeRun.value = await api.request(`/import-runs/${activeRun.value.id}`, runSchema);
+    const response = await api.request(`/import-runs/${id}`, runSchema);
+    if (stopped || generation !== pollGeneration || activeRun.value?.id !== id) return;
+    activeRun.value = response;
     if (!finished.value && !stopped) timer = setTimeout(poll, Date.now() - started > 30_000 ? 5000 : 2000);
   } catch (cause) {
-    error.value = formError(cause);
+    if (!stopped && generation === pollGeneration) error.value = formError(cause);
   }
 }
 /** Start a manual refresh and erase the PIN after the request completes. */
 async function start() {
-  if (busy.value || !setup.value?.configured) return;
+  if (stopped || busy.value || !setup.value?.configured || (activeRun.value && !finished.value)) return;
+  stopPolling();
   busy.value = true;
   error.value = '';
   try {
@@ -149,10 +167,12 @@ async function start() {
     });
     method.value = '';
     medium.value = '';
-    activeRun.value = await api.request(`/bank-connections/${selected.value}/sync`, runSchema, {
+    const response = await api.request(`/bank-connections/${selected.value}/sync`, runSchema, {
       method: 'POST',
       body,
     });
+    if (stopped) return;
+    activeRun.value = response;
     started = Date.now();
     await router.replace({ query: { run: activeRun.value.id } });
     await poll();
@@ -165,11 +185,12 @@ async function start() {
 }
 /** Submit only the current authorization response, never storing it outside the component. */
 async function approve() {
-  if (!activeRun.value) return;
+  if (stopped || busy.value || !activeRun.value?.challenge) return;
+  stopPolling();
   busy.value = true;
   error.value = '';
   try {
-    activeRun.value = await api.request(`/import-runs/${activeRun.value.id}/challenge`, runSchema, {
+    const response = await api.request(`/import-runs/${activeRun.value.id}/challenge`, runSchema, {
       method: 'POST',
       body: {
         tan: tan.value || undefined,
@@ -177,9 +198,14 @@ async function approve() {
         tanMediaName: medium.value || undefined,
       },
     });
+    if (stopped) return;
+    activeRun.value = response;
     await poll();
   } catch (cause) {
-    error.value = formError(cause);
+    if (!stopped) {
+      error.value = formError(cause);
+      if (!finished.value) void poll();
+    }
   } finally {
     tan.value = '';
     busy.value = false;
@@ -187,26 +213,34 @@ async function approve() {
 }
 /** Request worker termination before presenting cancellation as complete. */
 async function cancel() {
-  if (!activeRun.value) return;
+  if (stopped || busy.value || !activeRun.value) return;
+  stopPolling();
+  busy.value = true;
+  error.value = '';
   try {
-    activeRun.value = await api.request(`/import-runs/${activeRun.value.id}/cancel`, runSchema, {
+    const response = await api.request(`/import-runs/${activeRun.value.id}/cancel`, runSchema, {
       method: 'POST',
       body: {},
     });
-    if (timer) clearTimeout(timer);
+    if (!stopped) activeRun.value = response;
   } catch (cause) {
     error.value = formError(cause);
   } finally {
     pin.value = '';
     tan.value = '';
+    busy.value = false;
+    if (!stopped && !finished.value) void poll();
   }
 }
 onMounted(
   /** Restore only a run identifier from the URL, never a credential. */ async () => {
     try {
       await load();
+      if (stopped) return;
       if (typeof route.query.run === 'string') {
-        activeRun.value = await api.request(`/import-runs/${route.query.run}`, runSchema);
+        const restored = await api.request(`/import-runs/${route.query.run}`, runSchema);
+        if (stopped) return;
+        activeRun.value = restored;
         await poll();
       }
     } catch (cause) {
@@ -217,7 +251,8 @@ onMounted(
 onBeforeUnmount(
   /** Release browser secrets and polling; the backend run retains its own bounded lifetime. */ () => {
     stopped = true;
-    if (timer) clearTimeout(timer);
+    stopPolling();
+    loadGeneration++;
     pin.value = '';
     tan.value = '';
   },
@@ -246,43 +281,52 @@ onBeforeUnmount(
   <p v-if="setup?.configured" class="muted mb-5">
     Konfiguration vorhanden. Konten und Bankfreigabe müssen mit deinem Zugang geprüft werden.
   </p>
-  <section class="panel mb-6">
-    <h2 class="mb-4">{{ editing ? 'Verbindung bearbeiten' : 'Verbindung anlegen' }}</h2>
-    <UForm ref="validation" :schema="connectionInputSchema" :state="form" class="form-row" @submit="save"
-      ><UFormField label="Name" name="name"><UInput v-model="form.name" /></UFormField
-      ><UFormField label="Bankleitzahl" name="bankCode"><UInput v-model="form.bankCode" maxlength="8" /></UFormField
-      ><UFormField label="Verfahren" name="connectorType"
-        ><USelect
-          v-model="form.connectorType"
-          :items="[
-            { label: 'CSV-Import', value: 'CSV' },
-            { label: 'FinTS (manuell)', value: 'FINTS' },
-          ]" /></UFormField
-      ><UFormField v-if="form.connectorType === 'FINTS'" label="Online-Banking-Anmeldename" name="username"
-        ><UInput v-model="form.username" autocomplete="off" /></UFormField
-      ><UButton type="submit" :loading="busy">{{
-        editing ? 'Änderungen speichern' : 'Verbindung anlegen'
-      }}</UButton></UForm
-    >
-  </section>
-  <section class="panel mb-6">
-    <p v-if="!connections.length" class="empty-copy">Noch keine Bankverbindung angelegt.</p>
-    <div v-for="connection in connections" :key="connection.id" class="editable-row">
-      <div class="grow">
-        <strong>{{ connection.name }}</strong
-        ><small class="block muted"
-          >{{ connection.bankCode }} · {{ connection.connectorType }} ·
-          {{ connection.status === 'ACTIVE' ? 'Aktiv' : 'Inaktiv' }}</small
-        >
+  <div class="connection-maintenance">
+    <SectionPanel :title="editing ? 'Verbindung bearbeiten' : 'Verbindung anlegen'" icon="settings" compact>
+      <UForm
+        ref="validation"
+        :schema="connectionInputSchema"
+        :state="form"
+        :validate-on="[]"
+        class="connection-form"
+        @submit="save"
+        @error="formInvalid"
+        ><fieldset :disabled="busy" class="grid min-w-0 gap-4">
+          <UFormField label="Name" name="name"><UInput v-model="form.name" /></UFormField
+          ><UFormField label="Bankleitzahl" name="bankCode"><UInput v-model="form.bankCode" maxlength="8" /></UFormField
+          ><UFormField label="Verfahren" name="connectorType"
+            ><USelect
+              v-model="form.connectorType"
+              :items="[
+                { label: 'CSV-Import', value: 'CSV' },
+                { label: 'FinTS (manuell)', value: 'FINTS' },
+              ]" /></UFormField
+          ><UFormField v-if="form.connectorType === 'FINTS'" label="Online-Banking-Anmeldename" name="username"
+            ><UInput v-model="form.username" autocomplete="off" /></UFormField
+          ><UButton type="submit" :loading="busy">{{
+            editing ? 'Änderungen speichern' : 'Verbindung anlegen'
+          }}</UButton>
+        </fieldset></UForm
+      >
+    </SectionPanel>
+    <SectionPanel title="Deine Verbindungen" icon="accounts" compact>
+      <p v-if="!connections.length && !loading && !error" class="empty-copy">Noch keine Bankverbindung angelegt.</p>
+      <div v-for="connection in connections" :key="connection.id" class="editable-row">
+        <div class="grow">
+          <strong>{{ connection.name }}</strong
+          ><small class="block muted"
+            >{{ connection.bankCode }} · {{ connection.connectorType }} ·
+            {{ connection.status === 'ACTIVE' ? 'Aktiv' : 'Inaktiv' }}</small
+          >
+        </div>
+        <UButton :disabled="busy" variant="soft" @click="edit(connection)">Bearbeiten</UButton
+        ><UButton :disabled="busy" variant="ghost" color="neutral" @click="toggle(connection)">{{
+          connection.status === 'ACTIVE' ? 'Deaktivieren' : 'Aktivieren'
+        }}</UButton>
       </div>
-      <UButton variant="soft" @click="edit(connection)">Bearbeiten</UButton
-      ><UButton variant="ghost" color="neutral" @click="toggle(connection)">{{
-        connection.status === 'ACTIVE' ? 'Deaktivieren' : 'Aktivieren'
-      }}</UButton>
-    </div>
-  </section>
-  <section class="panel">
-    <h2 class="mb-4">Konten aktualisieren</h2>
+    </SectionPanel>
+  </div>
+  <SectionPanel title="Konten aktualisieren" icon="accounts" compact>
     <p class="muted mb-5">
       Deine PIN wird nur für diesen Abruf im Arbeitsspeicher verwendet. Eine Bankfreigabe kann erforderlich sein.
     </p>
@@ -291,6 +335,7 @@ onBeforeUnmount(
         >FinTS-Verbindung<ChoiceSelect
           v-model="selected"
           :searchable="true"
+          :disabled="busy || (!!activeRun && !finished)"
           :items="[
             { label: `Verbindung wählen`, value: '' },
             ...connections
@@ -334,43 +379,82 @@ onBeforeUnmount(
         class="my-4"
       />
       <form v-if="activeRun.challenge" class="space-y-4 mt-4" @submit.prevent="approve">
-        <p>{{ activeRun.challenge.message }}</p>
-        <ChoiceSelect
-          v-if="activeRun.challenge.type === 'SELECT_METHOD'"
-          v-model="method"
-          required
-          aria-label="TAN-Verfahren"
-          :searchable="true"
-          :items="[
-            { label: `Verfahren wählen`, value: '' },
-            ...(activeRun.challenge.methods ?? []).map(
-              /** Build a persisted choice. */ (choice) => ({ label: `${choice.name}`, value: choice.id }),
-            ),
-          ]"
-        />
-        <label v-if="activeRun.challenge.type === 'SELECT_MEDIA'"
-          >TAN-Medium<ChoiceSelect
-            v-model="medium"
+        <fieldset :disabled="busy" class="space-y-4 min-w-0">
+          <p>{{ activeRun.challenge.message }}</p>
+          <ChoiceSelect
+            v-if="activeRun.challenge.type === 'SELECT_METHOD'"
+            v-model="method"
             required
-            aria-label="TAN-Medium"
+            aria-label="TAN-Verfahren"
             :searchable="true"
             :items="[
-              { label: `Medium wählen`, value: '' },
-              ...(activeRun.challenge.media ?? []).map(
-                /** Build a persisted choice. */ (choice) => ({ label: `${choice}`, value: choice }),
+              { label: `Verfahren wählen`, value: '' },
+              ...(activeRun.challenge.methods ?? []).map(
+                /** Build a persisted choice. */ (choice) => ({ label: `${choice.name}`, value: choice.id }),
               ),
             ]"
-        /></label>
-        <UFormField v-if="activeRun.challenge.type === 'TAN'" label="TAN"
-          ><UInput v-model="tan" type="password" autocomplete="off" /></UFormField
-        ><UButton type="submit" :loading="busy">{{
-          activeRun.challenge.type === 'APP_APPROVAL' ? 'Freigabe in Banking-App erfolgt' : 'Fortsetzen'
-        }}</UButton>
+          />
+          <label v-if="activeRun.challenge.type === 'SELECT_MEDIA'"
+            >TAN-Medium<ChoiceSelect
+              v-model="medium"
+              required
+              aria-label="TAN-Medium"
+              :searchable="true"
+              :items="[
+                { label: `Medium wählen`, value: '' },
+                ...(activeRun.challenge.media ?? []).map(
+                  /** Build a persisted choice. */ (choice) => ({ label: `${choice}`, value: choice }),
+                ),
+              ]"
+          /></label>
+          <UFormField v-if="activeRun.challenge.type === 'TAN'" label="TAN"
+            ><UInput v-model="tan" type="password" autocomplete="off" /></UFormField
+          ><UButton type="submit" :loading="busy">{{
+            activeRun.challenge.type === 'APP_APPROVAL' ? 'Freigabe in Banking-App erfolgt' : 'Fortsetzen'
+          }}</UButton>
+        </fieldset>
       </form>
       <div class="toolbar mt-4">
-        <UButton v-if="!finished" variant="ghost" color="neutral" @click="cancel">Abruf abbrechen</UButton
+        <UButton
+          v-if="!finished"
+          :disabled="busy || activeRun.status === 'COMMITTING'"
+          variant="ghost"
+          color="neutral"
+          @click="cancel"
+          >Abruf abbrechen</UButton
         ><UButton v-if="finished" :to="`/imports?run=${activeRun.id}`" variant="soft">Ergebnis ansehen</UButton>
       </div>
     </article>
-  </section>
+  </SectionPanel>
 </template>
+
+<style scoped>
+.connection-maintenance {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+  align-items: start;
+}
+.connection-maintenance > * {
+  min-width: 0;
+}
+.editable-row {
+  min-height: 56px;
+  gap: 12px;
+}
+.sync-status {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--soft);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+  .connection-maintenance {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+}
+</style>
