@@ -13,7 +13,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
   await page.keyboard.press('Space');
   await expect(page.locator('html')).not.toHaveClass(/dark/);
   await expect(theme).toBeFocused();
-  await expect(page.locator('.theme-toggle svg')).toHaveCSS('transition-duration', '0.24s');
+  await expect(page.locator('.theme-toggle svg')).toHaveCSS('transition-duration', '0.18s');
   const circle = await theme.boundingBox();
   expect(circle).not.toBeNull();
   expect(circle!.width).toBe(circle!.height);
@@ -95,6 +95,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
   await page.getByRole('button', { name: 'Filtern', exact: true }).click();
   await expect(page).not.toHaveURL(/from=/);
   await page.goto('/accounts');
+  await page.getByRole('link', { name: 'Konto hinzufügen', exact: true }).click();
   await page.getByLabel('Name', { exact: true }).fill('Checksum validation');
   await page.getByLabel('IBAN (optional)', { exact: true }).fill('DE00370400440532013000');
   await page.getByRole('button', { name: 'Konto anlegen', exact: true }).click();

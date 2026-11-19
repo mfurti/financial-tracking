@@ -21,5 +21,9 @@ export function useFormFeedback() {
     pendingFocus.value = validation.value?.getErrors?.()[0]?.id ?? '';
     return userErrorMessage(cause);
   }
-  return { validation, formError };
+  /** Focus the actual first invalid field after Nuxt UI has completed its validation render. */
+  function formInvalid(event: { errors: readonly { id?: string }[] }) {
+    pendingFocus.value = event.errors[0]?.id ?? '';
+  }
+  return { validation, formError, formInvalid };
 }
