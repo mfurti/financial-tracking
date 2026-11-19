@@ -275,6 +275,59 @@ export const contractSuggestionSchema = z.object({
 });
 /** Aggregated totals can exceed a single PostgreSQL BIGINT while retaining integer-cent precision. */
 export const aggregateCentsSchema = z.string().regex(/^-?(0|[1-9]\d*)$/);
+export const contractCalendarQuerySchema = z
+  .object({
+    from: dateSchema,
+    to: dateSchema,
+    accountId: idSchema.optional(),
+  })
+  .refine(
+    /** Bound recurrence expansion to at most 36 inclusive calendar months. */ (value) =>
+      value.from <= value.to &&
+      (Number(value.to.slice(0, 4)) - Number(value.from.slice(0, 4))) * 12 +
+        Number(value.to.slice(5, 7)) -
+        Number(value.from.slice(5, 7)) <
+        36,
+    { path: ['to'], message: 'Gültigen Zeitraum mit höchstens 36 Kalendermonaten wählen.' },
+  );
+export const contractCalendarEventSchema = z.object({
+  contractId: idSchema,
+  name: z.string(),
+  provider: z.string(),
+  kind: contractKindSchema,
+  accountId: idSchema.nullable(),
+  categoryId: idSchema.nullable(),
+  revisionId: idSchema,
+  dueDate: dateSchema,
+  plannedCents: positiveCentsSchema,
+  payment: z
+    .object({
+      transactionId: idSchema,
+      bookingDate: dateSchema,
+      amountCents: centsSchema,
+      status: z.enum(['BOOKED', 'PENDING']),
+      source: z.enum(['AUTO', 'MANUAL']),
+    })
+    .nullable(),
+});
+export const contractCalendarSchema = z.object({
+  from: dateSchema,
+  to: dateSchema,
+  scope: z.object({ accountId: idSchema.nullable() }),
+  provenance: z.literal('CONTRACT_SCHEDULE'),
+  totalPlannedCents: aggregateCentsSchema,
+  months: z
+    .array(
+      z.object({
+        month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+        plannedCents: aggregateCentsSchema,
+        eventCount: z.number().int().nonnegative(),
+        paymentCount: z.number().int().nonnegative(),
+      }),
+    )
+    .max(36),
+  events: z.array(contractCalendarEventSchema).max(10000),
+});
 export const contractCostSchema = z.object({
   id: idSchema,
   name: z.string(),
@@ -732,6 +785,13 @@ export const apiContracts: Record<string, ApiContract> = {
   },
   contracts: { method: 'get', path: '/contracts', response: z.array(contractSchema), status: 200 },
   contractSummary: { method: 'get', path: '/contracts/summary', response: contractSummarySchema, status: 200 },
+  contractCalendar: {
+    method: 'get',
+    path: '/contracts/calendar',
+    query: contractCalendarQuerySchema,
+    response: contractCalendarSchema,
+    status: 200,
+  },
   createContract: {
     method: 'post',
     path: '/contracts',

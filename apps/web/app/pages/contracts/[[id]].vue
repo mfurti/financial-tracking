@@ -264,7 +264,10 @@ onBeforeUnmount(
     <div>
       <h1>{{ detail?.name ?? 'Verträge' }}</h1>
     </div>
-    <UButton :disabled="loading || reviewing" @click="openEditor()">Vertrag anlegen</UButton>
+    <div class="toolbar">
+      <UButton to="/contracts/calendar" variant="soft">Vertragskalender</UButton
+      ><UButton :disabled="loading || reviewing" @click="openEditor()">Vertrag anlegen</UButton>
+    </div>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <UButton v-if="error && !loading" variant="soft" @click="load">Erneut laden</UButton>

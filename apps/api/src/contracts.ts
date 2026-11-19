@@ -60,6 +60,107 @@ export class ContractsService {
       today,
     );
   }
+  /** Expand bounded due dates from the existing recurrence engine without generating or modifying ledger rows. */
+  async calendar(input: z.infer<typeof c.contractCalendarQuerySchema>) {
+    const query = c.contractCalendarQuerySchema.parse(input);
+    return this.db.$transaction(
+      /** Bind schedule revisions and actual payment provenance to one consistent read snapshot. */ async (tx) => {
+        const contracts = await tx.contract.findMany({
+          where: {
+            accountId: query.accountId,
+            startDate: { lte: new Date(query.to) },
+            OR: [{ endDate: null }, { endDate: { gte: new Date(query.from) } }],
+          },
+          include: {
+            revisions: true,
+            payments: {
+              where: { dueDate: { gte: new Date(query.from), lte: new Date(query.to) } },
+              include: { transaction: true },
+            },
+          },
+          orderBy: { id: 'asc' },
+          take: 10001,
+        });
+        if (contracts.length > 10000)
+          throw new AppError('CALENDAR_TOO_LARGE', 'Zu viele Verträge. Zeitraum oder Konto eingrenzen.', 413);
+        const events: z.infer<typeof c.contractCalendarEventSchema>[] = [];
+        const monthCount =
+          (Number(query.to.slice(0, 4)) - Number(query.from.slice(0, 4))) * 12 +
+          Number(query.to.slice(5, 7)) -
+          Number(query.from.slice(5, 7)) +
+          1;
+        const months = Array.from(
+          { length: monthCount },
+          /** Keep even an empty requested month visible as zero planned obligations. */ (_, index) => ({
+            month: anchoredMonth(query.from, index, 1).slice(0, 7),
+            plannedCents: '0',
+            eventCount: 0,
+            paymentCount: 0,
+          }),
+        );
+        const byMonth = new Map(months.map(/** Index only requested due months. */ (month) => [month.month, month]));
+        let total = 0n;
+        for (const contract of contracts) {
+          const payments = new Map(
+            contract.payments.map(
+              /** Actual links belong to their due date independently of booking date. */ (payment) => [
+                isoDay(payment.dueDate),
+                payment,
+              ],
+            ),
+          );
+          for (const occurrence of contractOccurrences(contract, query.from, query.to)) {
+            if (events.length >= 10000)
+              throw new AppError('CALENDAR_TOO_LARGE', 'Zu viele Fälligkeiten. Zeitraum oder Konto eingrenzen.', 413);
+            const payment = payments.get(occurrence.dueDate);
+            events.push(
+              c.contractCalendarEventSchema.parse({
+                contractId: contract.id,
+                name: contract.name,
+                provider: contract.provider,
+                kind: contract.kind,
+                accountId: contract.accountId,
+                categoryId: contract.categoryId,
+                revisionId: occurrence.revisionId,
+                dueDate: occurrence.dueDate,
+                plannedCents: String(occurrence.amountCents),
+                payment: payment
+                  ? {
+                      transactionId: payment.transactionId,
+                      bookingDate: isoDay(payment.transaction.bookingDate),
+                      amountCents: String(payment.transaction.amountCents),
+                      status: payment.transaction.status,
+                      source: payment.source,
+                    }
+                  : null,
+              }),
+            );
+            const month = byMonth.get(occurrence.dueDate.slice(0, 7))!;
+            month.plannedCents = String(BigInt(month.plannedCents) + occurrence.amountCents);
+            month.eventCount++;
+            if (payment) month.paymentCount++;
+            total += occurrence.amountCents;
+          }
+        }
+        events.sort(
+          /** Stable calendar order never depends on database query order. */ (a, b) =>
+            a.dueDate.localeCompare(b.dueDate) ||
+            a.name.localeCompare(b.name) ||
+            a.contractId.localeCompare(b.contractId),
+        );
+        return c.contractCalendarSchema.parse({
+          from: query.from,
+          to: query.to,
+          scope: { accountId: query.accountId ?? null },
+          provenance: 'CONTRACT_SCHEDULE',
+          totalPlannedCents: String(total),
+          months,
+          events,
+        });
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
+  }
   /** Read a contract with its immutable payment history or a public not-found error. */
   private async find(id: string, tx: Prisma.TransactionClient = this.db) {
     const row = await tx.contract.findUnique({ where: { id }, include: contractDetails });

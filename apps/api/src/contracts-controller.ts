@@ -28,6 +28,10 @@ export class ContractsController {
   @Get('contracts/summary') summary() {
     return this.service.summary();
   }
+  /** Read bounded recurrence-derived plans and separately observed payments before the dynamic ID route. */
+  @Get('contracts/calendar') calendar(@Query() query: unknown) {
+    return this.service.calendar(c.contractCalendarQuerySchema.parse(query));
+  }
   /** Confirm a contract explicitly. */
   @Post('contracts') create(@Body() body: unknown) {
     return this.service.create(c.contractInputSchema.parse(body));
