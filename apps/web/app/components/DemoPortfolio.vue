@@ -148,6 +148,8 @@ function completed() {
       ><UButton to="/wealth/demo/activity" variant="soft">Demo-Aktivität</UButton>
     </div>
     <DemoAccountActions />
+    <DemoHistory />
+    <DemoResetDialog />
     <FinanceDialog
       v-model:open="ordering"
       title="Demo-Auftrag"
