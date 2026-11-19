@@ -89,6 +89,10 @@ export const demoStateSchema = z
               'role',
             ]),
             at: demoTimeSchema,
+            transfer: z
+              .object({ fromId: demoIdSchema, toId: demoIdSchema, amountCents: demoCentsSchema })
+              .strict()
+              .optional(),
           })
           .strict(),
       )

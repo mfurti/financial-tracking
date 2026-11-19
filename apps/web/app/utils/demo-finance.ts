@@ -173,9 +173,16 @@ export function transitionDemo(source: DemoState, rawAction: unknown, rawId: str
       );
       if (!plan) throw new Error('Unbekannter Demo-Sparplan.');
       const [year, month] = input.period.split('-').map(Number);
-      const lastDay = new Date(Date.UTC(year!, month!, 0)).getUTCDate();
+      const leap = year! % 4 === 0 && (year! % 100 !== 0 || year! % 400 === 0);
+      const lastDay = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month! - 1]!;
       const due = `${input.period}-${String(Math.min(plan.day, lastDay)).padStart(2, '0')}`;
-      if (at.slice(0, 10) < due) throw new Error('Demo-Ausführungstag noch nicht erreicht.');
+      const localDay = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Berlin',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date(at));
+      if (localDay < due) throw new Error('Demo-Ausführungstag noch nicht erreicht.');
       const quantity = BigInt(plan.amountCents) / demoPrice(state, plan.securityId);
       if (quantity < 1n || quantity > 1000n) throw new Error('Demo-Sparbetrag muss 1 bis 1000 ganze Anteile erlauben.');
       trade(
@@ -198,7 +205,14 @@ export function transitionDemo(source: DemoState, rawAction: unknown, rawId: str
     }
   }
   state.revision++;
-  state.activity.push({ id, kind: input.kind, at });
+  state.activity.push({
+    id,
+    kind: input.kind,
+    at,
+    ...(input.kind === 'transfer'
+      ? { transfer: { fromId: input.fromId, toId: input.toId, amountCents: input.amountCents } }
+      : {}),
+  });
   const total = demoTotal(state);
   if (total !== before) state.history = [...state.history, { id, at, totalCents: total.toString() }].slice(-48);
   return demoStateSchema.parse(state);

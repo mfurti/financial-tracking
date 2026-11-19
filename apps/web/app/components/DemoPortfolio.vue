@@ -143,6 +143,11 @@ function completed() {
         </div></SectionPanel
       >
     </div>
+    <div class="demo-links">
+      <UButton to="/wealth/demo/plans" variant="soft">Demo-Sparpläne</UButton
+      ><UButton to="/wealth/demo/activity" variant="soft">Demo-Aktivität</UButton>
+    </div>
+    <DemoAccountActions />
     <FinanceDialog
       v-model:open="ordering"
       title="Demo-Auftrag"

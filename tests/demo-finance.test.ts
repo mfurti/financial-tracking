@@ -161,6 +161,25 @@ describe('isolated exact synthetic finance', /** Exercise state invariants witho
     },
   );
 
+  it('uses Berlin execution days and clamps leap February', /** Calendar execution follows Berlin rather than UTC midnight. */ () => {
+    const saved = transitionDemo(seedDemoState(), { kind: 'plan-save', plan }, 'demo-save', at);
+    const leap = transitionDemo(
+      saved,
+      { kind: 'plan-execute', planId: plan.id, period: '2028-02' },
+      'demo-leap',
+      '2028-02-28T23:30:00.000Z',
+    );
+    expect(leap.executedPeriods).toContain('demo-plan:2028-02');
+    expect(() =>
+      transitionDemo(
+        saved,
+        { kind: 'plan-execute', planId: plan.id, period: '2028-02' },
+        'demo-early-leap',
+        '2028-02-28T22:30:00.000Z',
+      ),
+    ).toThrow(/Ausführungstag/);
+  });
+
   it('rejects corrupt schema, altered catalog, duplicate/dangling holdings and unrelated real data', /** Persistence must validate the entire payload before financial use. */ () => {
     const state = seedDemoState();
     expect(demoStateSchema.safeParse({ ...state, session: 'forbidden' }).success).toBe(false);
