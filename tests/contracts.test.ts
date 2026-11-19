@@ -10,9 +10,46 @@ import {
   reserveGoalInputSchema,
   wealthRecordInputSchema,
   wealthRecordComponentSchema,
+  workspaceProfileInputSchema,
+  accountGroupInputSchema,
+  accountGroupPatchSchema,
+  notificationAcknowledgementInputSchema,
 } from '../packages/contracts/src/index.js';
 
 describe('transport contracts', /** Exercise public constraints without implementation-specific snapshots. */ () => {
+  it('bounds workspace metadata and preserves partial group edits without credential/owner fields', /** Shared schemas reject duplicate canonical memberships and unrelated real/auth payloads. */ () => {
+    expect(
+      workspaceProfileInputSchema.parse({ displayName: ' Owner ', contactEmail: ' contact@example.test ' }),
+    ).toEqual({ displayName: 'Owner', contactEmail: 'contact@example.test' });
+    for (const value of [
+      { displayName: '' },
+      { displayName: 'x'.repeat(81) },
+      { displayName: 'Owner', contactEmail: 'invalid' },
+      { displayName: 'Owner', username: 'replacement' },
+      { displayName: 'Owner', userId: 'another-owner' },
+    ])
+      expect(workspaceProfileInputSchema.safeParse(value).success).toBe(false);
+    const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    expect(accountGroupInputSchema.parse({ name: ' Group ', accountIds: [id] })).toEqual({
+      name: 'Group',
+      accountIds: [id],
+      sortOrder: 0,
+    });
+    expect(accountGroupPatchSchema.parse({ name: 'Renamed' })).toEqual({ name: 'Renamed' });
+    expect(accountGroupPatchSchema.safeParse({}).success).toBe(false);
+    expect(accountGroupInputSchema.safeParse({ name: 'Group', accountIds: [id, id.toUpperCase()] }).success).toBe(
+      false,
+    );
+    expect(accountGroupInputSchema.safeParse({ name: 'Group', accountIds: [], sortOrder: -1 }).success).toBe(false);
+    expect(accountGroupInputSchema.safeParse({ name: 'Group', accountIds: [], sortOrder: 2147483648 }).success).toBe(
+      false,
+    );
+    for (const sourceKey of ['', ' ', 'x'.repeat(257)])
+      expect(notificationAcknowledgementInputSchema.safeParse({ sourceKey }).success).toBe(false);
+    expect(notificationAcknowledgementInputSchema.safeParse({ sourceKey: 'event:revision', userId: id }).success).toBe(
+      false,
+    );
+  });
   it('bounds new metadata without accepting client-supplied recorded money or confusing unknown with zero', /** Shared future endpoints reject unrelated imported fields and preserve exact signed observation types. */ () => {
     expect(accountPresentationInputSchema.safeParse({ reserveEligible: true, amountCents: '1234' }).success).toBe(
       false,

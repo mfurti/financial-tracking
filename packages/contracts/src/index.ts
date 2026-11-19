@@ -3,6 +3,62 @@ import { z } from 'zod';
 export const idSchema = z.uuid().toLowerCase();
 export const dateSchema = z.iso.date();
 export const timeSchema = z.iso.datetime();
+/** Contact metadata never changes the owner's username, credentials or recovery identity. */
+export const workspaceProfileInputSchema = z
+  .object({
+    displayName: z.string().trim().min(1).max(80),
+    contactEmail: z.string().trim().max(254).pipe(z.email()).nullable().optional(),
+  })
+  .strict();
+/** Null update time explicitly identifies the unpersisted current-owner display fallback. */
+export const workspaceProfileSchema = workspaceProfileInputSchema.extend({
+  userId: idSchema,
+  contactEmail: z.email().max(254).nullable(),
+  updatedAt: timeSchema.nullable(),
+});
+/** Atomic group membership rejects duplicate UUIDs after canonicalization. */
+const groupAccountIdsSchema = z
+  .array(idSchema)
+  .max(1000)
+  .refine(
+    /** A selected account contributes once even when UUID case differs. */ (ids) => new Set(ids).size === ids.length,
+    'Konto nur einmal auswählen.',
+  );
+/** Create groups with bounded display names and an explicit stable default order. */
+export const accountGroupInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(60),
+    accountIds: groupAccountIdsSchema,
+    sortOrder: z.number().int().min(0).max(2147483647).default(0),
+  })
+  .strict();
+/** Partial edits must not default absent order or membership fields and erase existing choices. */
+export const accountGroupPatchSchema = z
+  .object({
+    name: z.string().trim().min(1).max(60).optional(),
+    accountIds: groupAccountIdsSchema.optional(),
+    sortOrder: z.number().int().min(0).max(2147483647).optional(),
+  })
+  .strict()
+  .refine(
+    /** Reject meaningless empty mutation requests. */ (value) => Object.keys(value).length > 0,
+    'Mindestens eine Änderung angeben.',
+  );
+/** Public groups contain references only, never duplicated financial amounts. */
+export const accountGroupSchema = accountGroupInputSchema.extend({
+  id: idSchema,
+  createdAt: timeSchema,
+  updatedAt: timeSchema,
+});
+/** Stable source revisions are bounded without truncating existing financial source fields. */
+export const notificationSourceKeySchema = z.string().trim().min(1).max(256);
+/** Clients can acknowledge only a source key, never another owner or arbitrary timestamp. */
+export const notificationAcknowledgementInputSchema = z.object({ sourceKey: notificationSourceKeySchema }).strict();
+/** Durable acknowledgement is metadata independent of its financial source. */
+export const notificationAcknowledgementSchema = notificationAcknowledgementInputSchema.extend({
+  userId: idSchema,
+  acknowledgedAt: timeSchema,
+});
 export const centsSchema = z
   .string()
   .regex(/^-?(0|[1-9]\d*)$/)

@@ -1,6 +1,6 @@
 # Data Model
 
-Status: source implementation in progress. T026 implements the reserve/wealth expansion and validates it in disposable databases only; workspace entities remain their later tasks. Existing financial entities and identifiers are preserved. Single-owner/shared-ledger access is unchanged. No production migration is implied.
+Status: source implementation in progress. T026 implements the reserve/wealth expansion and T036 adds workspace metadata, validated in disposable databases only. Workspace services and UI remain their owning tasks. Existing financial entities and identifiers are preserved. Single-owner/shared-ledger access is unchanged. No production migration is implied.
 
 ## Existing Records
 

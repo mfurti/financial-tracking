@@ -1,5 +1,15 @@
 # Finanzfluss feature migrations
 
+## Integrated concept — 202611180002_workspace_settings
+
+Source implementation only; execution remains limited to disposable PostgreSQL 18 fixtures. The Prisma 7.10.1 schema-to-schema migration adds OwnerProfile, AccountGroup, AccountGroupMember and NotificationAcknowledgement without updating old rows, creating profiles/groups automatically or changing the singleton owner constraint. Existing financial records, reserve metadata and frozen wealth remain authoritative.
+
+Profile names are trimmed and bounded to 80 characters; optional contact email is bounded to 254 and validated by the application, with basic SQL syntax/whitespace protection. Contact metadata never changes username, password or recovery identity. Group names are trimmed/bounded to 60 with nonnegative order and a lower-name unique index; the service additionally owns Unicode case-insensitive name validation and concurrency. Composite membership keys prevent duplication. Group/account removal cascades only membership rows, while existing account relations retain their original deletion rules. Acknowledgements use owner/source composite keys, a 256-character bounded nonblank source key and a timestamp; they never update source imports/contracts. Owner deletion cascades its profile/acknowledgements, without introducing a new owner-management API.
+
+The populated upgrade fixture contains rows in all 22 immediately preceding tables and compares exact server JSON text for every old field, including large signed BIGINT values, original timestamps, import identities, manual annotations, transfer/payment links and frozen components. Existing account reads/writes, clean installation, new keys/bounds/FKs, unchanged singleton/credentials and membership-only cascades are validated. Production volume/lock time and a historical deployed binary remain separate operational/final acceptance evidence.
+
+After separate deployment approval, use the pinned matching migration image through the repository's existing paused-writer backup/restore procedure and run `pnpm db:migrate` once. Verify migration status, original financial rows, unchanged owner identity and initially empty new metadata tables before enabling new writers. Do not replace this SQL with schema synchronization or execute it repeatedly as a backfill. Roll application binaries back only with writes paused and a reviewed compatibility decision; retain the additive tables and recorded metadata. Destructive down migration and shared/production execution are not part of this source task.
+
 ## Integrated concept — 202611180001_reserve_wealth
 
 Source implementation only; this migration has been applied exclusively to disposable test databases. It adds AccountPresentation, ReserveGoal, WealthRecord and WealthRecordComponent, with no alteration/backfill of existing financial columns. The only seeded value is the approved singleton 300000-cent target. No account is automatically designated Tagesgeld and no balance or historical wealth is fabricated.
