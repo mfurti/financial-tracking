@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { z } from 'zod';
 import * as c from '@financial-tracking/contracts';
+import type { AnalysisModuleId } from '../../utils/workspace-preferences';
 const api = useApi();
 const route = useRoute();
 const router = useRouter();
 const { preferences, updatePreferences } = useWorkspacePreferences();
+const availableModules: readonly AnalysisModuleId[] = ['months', 'categories', 'merchants'];
 const appliedFilters = ref<z.infer<typeof c.analyticsOverviewQuerySchema>>({});
 const report = ref<z.infer<typeof c.analyticsOverviewSchema> | null>(null);
 const merchants = ref<z.infer<typeof c.merchantAnalyticsSchema> | null>(null);
@@ -131,6 +133,13 @@ function categoryLink(id: string | null) {
 /** Preserve the displayed effective period and all account/category scope when opening an exact merchant. */
 function merchantLink(key: string) {
   return link({ merchantKey: key, direction: 'EXPENSE' }).replace('/transactions?', '/analytics/details?');
+}
+/** Navigate to delivered chart/list content without losing the displayed report's effective scope. */
+function analysisAnchor(id: string) {
+  if (!report.value) return '/analytics';
+  const params = new URLSearchParams({ from: report.value.from, to: report.value.to });
+  for (const [key, value] of Object.entries(appliedFilters.value)) if (value !== undefined) params.set(key, value);
+  return `/analytics?${params}#${id}`;
 }
 /** A selected chart month/direction opens that month's contributing actual transactions. */
 async function monthSelect(month: string, direction: 'INCOME' | 'EXPENSE') {
@@ -261,6 +270,17 @@ onBeforeUnmount(
         >Saldo der Geldflüsse <strong data-financial>{{ money(report.netCents) }}</strong></span
       >
     </div>
+    <SectionPanel title="Deine Analysen" icon="categories" bare>
+      <template #actions><AnalysisModulePicker :available="availableModules" /></template>
+      <AnalysisModuleGrid
+        :report="report"
+        :merchant-count="merchants?.merchants.length ?? 0"
+        :available="availableModules"
+        :months-href="analysisAnchor('monatsverlauf')"
+        :categories-href="analysisAnchor('kategorien')"
+        :merchants-href="analysisAnchor('haendler')"
+      />
+    </SectionPanel>
     <div class="toolbar finance-chart-choice" role="group" aria-label="Diagrammdarstellung">
       <UButton
         :aria-pressed="preferences.chart === 'bar'"
@@ -276,6 +296,7 @@ onBeforeUnmount(
       >
     </div>
     <SectionPanel
+      id="monatsverlauf"
       title="Dein Monatsverlauf"
       icon="categories"
       class="mb-5"
@@ -299,7 +320,7 @@ onBeforeUnmount(
       <p v-else class="muted">Noch kein vergleichbarer Trend.</p>
     </SectionPanel>
     <div class="dashboard-grid mb-5">
-      <SectionPanel title="Ausgaben nach Kategorien" icon="categories">
+      <SectionPanel id="kategorien" title="Ausgaben nach Kategorien" icon="categories">
         <ExpenseChart
           v-if="report.categories.length"
           :groups="report.categories"
@@ -347,7 +368,7 @@ onBeforeUnmount(
         >
       </SectionPanel>
     </div>
-    <SectionPanel title="Wo gibst du dein Geld aus?" icon="categories" class="mb-5">
+    <SectionPanel id="haendler" title="Wo gibst du dein Geld aus?" icon="categories" class="mb-5">
       <NuxtLink
         v-for="merchant in merchants?.merchants"
         :key="merchant.key"
