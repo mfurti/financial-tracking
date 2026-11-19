@@ -56,7 +56,45 @@ model Account {
   transactions Transaction[]
   staged StagedRow[]
   contracts Contract[]
+  presentation AccountPresentation?
+  wealthComponents WealthRecordComponent[]
   @@unique([bankConnectionId, bankAccountReference])
+}
+
+model AccountPresentation {
+  accountId String @id @db.Uuid
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  reserveEligible Boolean @default(false)
+}
+
+model ReserveGoal {
+  id Int @id @default(1)
+  targetCents BigInt @default(300000)
+  updatedAt DateTime @updatedAt
+}
+
+model WealthRecord {
+  id String @id @default(uuid()) @db.Uuid
+  recordedAt DateTime @default(now())
+  totalCents BigInt
+  coverage String
+  idempotencyKey String @unique @db.VarChar(128)
+  components WealthRecordComponent[]
+  @@index([recordedAt(sort: Desc), id(sort: Desc)])
+}
+
+model WealthRecordComponent {
+  id String @id @default(uuid()) @db.Uuid
+  recordId String @db.Uuid
+  record WealthRecord @relation(fields: [recordId], references: [id], onDelete: Restrict)
+  accountId String? @db.Uuid
+  account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  sourceLabel String @db.VarChar(120)
+  amountCents BigInt?
+  observedAt DateTime?
+  sourceType String @db.VarChar(64)
+  @@index([recordId])
+  @@index([accountId])
 }
 
 model BalanceSnapshot {

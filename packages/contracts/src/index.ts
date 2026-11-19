@@ -186,7 +186,9 @@ export const suggestionQuerySchema = z.object({ dismissed: z.enum(['true', 'fals
 export const suggestionDecisionSchema = z.object({ decision: z.literal('DISMISSED') });
 export const contractIntervalSchema = z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]);
 export const positiveCentsSchema = centsSchema.refine(
-  /** Contract forecasts are positive expense magnitudes. */ (value) => BigInt(value) > 0n,
+  /** Contract forecasts are positive expense magnitudes; invalid syntax must reject without throwing during refinement. */ (
+    value,
+  ) => /^[1-9]\d*$/.test(value),
   'Betrag muss größer als null sein.',
 );
 export const contractInputSchema = z
@@ -275,6 +277,41 @@ export const contractSuggestionSchema = z.object({
 });
 /** Aggregated totals can exceed a single PostgreSQL BIGINT while retaining integer-cent precision. */
 export const aggregateCentsSchema = z.string().regex(/^-?(0|[1-9]\d*)$/);
+export const accountPresentationInputSchema = z.object({ reserveEligible: z.boolean() }).strict();
+export const accountPresentationSchema = accountPresentationInputSchema.extend({ accountId: idSchema });
+export const reserveGoalInputSchema = z.object({ targetCents: positiveCentsSchema }).strict();
+export const reserveGoalSettingSchema = reserveGoalInputSchema.extend({ updatedAt: timeSchema });
+export const wealthCoverageSchema = z.enum(['COMPLETE', 'PARTIAL']);
+export const wealthRecordInputSchema = z
+  .object({
+    idempotencyKey: z
+      .string()
+      .min(1)
+      .max(128)
+      .refine(
+        /** Preserve exact retry identities while rejecting an entirely blank key. */ (value) =>
+          value.trim().length > 0,
+        'Schlüssel darf nicht leer sein.',
+      ),
+  })
+  .strict();
+export const wealthRecordComponentSchema = z.object({
+  id: idSchema,
+  recordId: idSchema,
+  accountId: idSchema.nullable(),
+  sourceLabel: z.string().min(1).max(120),
+  amountCents: centsSchema.nullable(),
+  observedAt: timeSchema.nullable(),
+  sourceType: z.string().min(1).max(64),
+});
+export const wealthRecordSchema = z.object({
+  id: idSchema,
+  recordedAt: timeSchema,
+  totalCents: centsSchema,
+  coverage: wealthCoverageSchema,
+  idempotencyKey: wealthRecordInputSchema.shape.idempotencyKey,
+  components: z.array(wealthRecordComponentSchema),
+});
 export const contractCalendarQuerySchema = z
   .object({
     from: dateSchema,

@@ -1,6 +1,6 @@
 # Data Model
 
-Status: proposed design, not an applied migration. Existing financial entities and identifiers are preserved. Single-owner/shared-ledger access is unchanged.
+Status: source implementation in progress. T026 implements the reserve/wealth expansion and validates it in disposable databases only; workspace entities remain their later tasks. Existing financial entities and identifiers are preserved. Single-owner/shared-ledger access is unchanged. No production migration is implied.
 
 ## Existing Records
 

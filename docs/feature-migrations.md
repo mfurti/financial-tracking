@@ -1,5 +1,19 @@
 # Finanzfluss feature migrations
 
+## Integrated concept — 202611180001_reserve_wealth
+
+Source implementation only; this migration has been applied exclusively to disposable test databases. It adds AccountPresentation, ReserveGoal, WealthRecord and WealthRecordComponent, with no alteration/backfill of existing financial columns. The only seeded value is the approved singleton 300000-cent target. No account is automatically designated Tagesgeld and no balance or historical wealth is fabricated.
+
+The generated Prisma 7.10.1 schema-to-schema SQL was reviewed and extended with singleton/positive-target, COMPLETE/PARTIAL and nonblank metadata checks. New retry keys/source labels/types are bounded to 128/120/64 characters without constraining old imported fields. Account presentation cascades only with its account; frozen components keep label/cents/date while an optional deleted account becomes null. Record deletion is restricted while components exist. Application capture is responsible for exact component/total consistency and immutable public behavior; this migration does not claim to protect against arbitrary privileged SQL updates.
+
+Validation uses PostgreSQL 18 through the existing owned test harness: every pre-feature table contains representative synthetic rows, and exact server JSON text compares every old field before/after upgrade without parsing BIGINT through Number. Existing account reads/writes still work. Clean installation, source-balance changes, account removal, unknown versus zero, new uniqueness/defaults/bounds/FKs and existing rollback behavior are checked. A historical deployed binary and production-scale locking/timing are separate final/operator evidence; this local proof does not establish them.
+
+Operator sequence after separate deployment approval: pin the reviewed application/migration artifacts, stop writers, create and verify the approved backup/restore point, run the matching `pnpm db:migrate` migration image once, then start matching API/web and verify original rows plus the singleton goal and empty historical capture. Generate the client with `pnpm db:generate` during artifact preparation, and validate with `pnpm --filter api exec prisma validate`; neither command applies a database migration. Schema-to-schema SQL generation follows the installed [Prisma 7 diff interface](https://www.prisma.io/docs/cli/v7/migrate/diff), without a configured datasource read.
+
+Application rollback must disable the new feature and coordinate writers; retain these additive tables and any newly recorded observations. Do not drop them or promise that a down migration reconstructs later records. A failed/interrupted deployment requires reviewing migration status and the actual schema, then a reviewed forward fix or approved backup recovery. Prisma migration history prevents ordinary reapplication; the SQL file is not a standalone repeatable backfill. Production execution remains unperformed by this task.
+
+## Previously delivered migrations
+
 > **Execution status, 2026-11-08:** All four feature migrations described below have now been applied during the separately approved PR #10/#11 rollouts; latest production is `d193639`. Earlier “no production execution” statements describe the individual source tasks, not the current server. Populated backup/row preservation evidence and remaining gates: [status.md](status.md). Migration and recovery rules below still apply.
 
 ## F3: 202611080001_category_rules
