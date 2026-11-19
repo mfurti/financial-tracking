@@ -27,7 +27,9 @@ test('compact account cards preserve exact observed, negative and missing balanc
   await page.screenshot({ path: `.local/concept-accounts-${info.project.name}.png`, fullPage: true });
   await missing.getByRole('link').click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(conceptFixtureLabels.missing);
-  await expect(page.getByText(/CSV-Umsätze ersetzen keinen Kontostand/)).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Beobachteter gebuchter Saldo', exact: true })).toContainText(
+    'CSV-Umsätze ersetzen keinen Kontostand',
+  );
   await expect(page.getByRole('link', { name: 'Alle Konten', exact: true })).toBeVisible();
   await page.screenshot({ path: `.local/concept-account-detail-${info.project.name}.png`, fullPage: true });
   expect(

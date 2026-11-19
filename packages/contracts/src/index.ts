@@ -282,6 +282,28 @@ export const accountPresentationSchema = accountPresentationInputSchema.extend({
 export const reserveGoalInputSchema = z.object({ targetCents: positiveCentsSchema }).strict();
 export const reserveGoalSettingSchema = reserveGoalInputSchema.extend({ updatedAt: timeSchema });
 export const wealthCoverageSchema = z.enum(['COMPLETE', 'PARTIAL']);
+export const reserveGoalSchema = reserveGoalSettingSchema.extend({
+  asOf: timeSchema,
+  currentCents: aggregateCentsSchema.nullable(),
+  coverage: wealthCoverageSchema,
+  eligibleCount: z.number().int().nonnegative(),
+  observedCount: z.number().int().nonnegative(),
+  presentations: z.array(accountPresentationSchema),
+  excludedAccounts: z.array(
+    z.object({ accountId: idSchema, name: z.string(), reason: z.enum(['INACTIVE', 'NON_EUR']) }),
+  ),
+  components: z.array(
+    z.object({
+      accountId: idSchema,
+      name: z.string(),
+      currency: z.literal('EUR'),
+      amountCents: centsSchema.nullable(),
+      observedAt: timeSchema.nullable(),
+      source: z.string().nullable(),
+      stale: z.boolean(),
+    }),
+  ),
+});
 export const wealthRecordInputSchema = z
   .object({
     idempotencyKey: z
@@ -990,6 +1012,21 @@ export const apiContracts: Record<string, ApiContract> = {
     path: '/accounts/{id}',
     request: accountPatchSchema,
     response: accountSchema,
+    status: 200,
+  },
+  accountPresentation: {
+    method: 'patch',
+    path: '/accounts/{id}/presentation',
+    request: accountPresentationInputSchema,
+    response: accountPresentationSchema,
+    status: 200,
+  },
+  reserveGoal: { method: 'get', path: '/reserve-goal', response: reserveGoalSchema, status: 200 },
+  setReserveGoal: {
+    method: 'put',
+    path: '/reserve-goal',
+    request: reserveGoalInputSchema,
+    response: reserveGoalSchema,
     status: 200,
   },
   balances: { method: 'get', path: '/accounts/{id}/balances', response: z.array(balanceSchema), status: 200 },

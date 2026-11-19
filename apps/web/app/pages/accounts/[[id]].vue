@@ -173,6 +173,7 @@ onBeforeUnmount(
         Beobachtete Kontostände sind von gebuchten Monatszahlen getrennt. Du kannst CSV-Dateien auch ohne Konto
         importieren.
       </p>
+      <ReserveGoalTile />
       <div class="finance-account-grid">
         <FinanceTile
           v-for="row in accounts"
@@ -209,6 +210,7 @@ onBeforeUnmount(
       <div class="toolbar my-5">
         <UButton :to="`/transactions?accountId=${account.id}`" variant="soft">Umsätze ansehen</UButton>
       </div>
+      <ReserveGoalTile :account="account" />
       <SectionPanel title="Kontoinformationen" icon="accounts" class="mb-5"
         ><dl class="detail-list">
           <dt>Kontotyp</dt>
