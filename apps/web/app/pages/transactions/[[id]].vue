@@ -228,10 +228,13 @@ onBeforeUnmount(
     }}</UButton>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
-  <section v-if="detail" class="panel">
-    <p class="eyebrow">{{ detail.status === 'PENDING' ? 'VORGEMERKT' : 'GEBUCHT' }}</p>
-    <h2 class="mt-3">{{ detail.description }}</h2>
-    <p class="detail-amount">{{ money(detail.amountCents) }}</p>
+  <SectionPanel v-if="detail" :title="detail.description" icon="transactions" compact>
+    <FinanceTile
+      variant="stat"
+      :label="detail.status === 'PENDING' ? 'Vorgemerkt' : 'Gebucht'"
+      :value="money(detail.amountCents)"
+      financial
+    />
     <dl class="detail-list">
       <dt>Buchungsdatum</dt>
       <dd>{{ calendarDate(detail.bookingDate) }}</dd>
@@ -265,7 +268,7 @@ onBeforeUnmount(
         detail.isTransfer ? 'Umbuchung aufheben' : 'Als Umbuchung markieren'
       }}</UButton>
     </div>
-  </section>
+  </SectionPanel>
   <ClassificationEditor v-if="detail" :ids="[detail.id]" :value="detail.classification" @changed="load()" />
   <AccountAssignment
     v-if="detail?.accountId === null"
@@ -283,7 +286,7 @@ onBeforeUnmount(
     @complete="assigned"
   />
   <template v-if="!route.params.id"
-    ><section class="panel mb-5">
+    ><SectionPanel title="Umsätze filtern" icon="transactions" class="mb-5" compact>
       <p v-if="filter.merchantKey" class="data-context">
         Exakter Händlerfilter aktiv. Die Suche erweitert diesen Filter nicht.
       </p>
@@ -354,8 +357,8 @@ onBeforeUnmount(
         </div>
         <UButton type="submit" :loading="busy">Filtern</UButton>
       </form>
-    </section>
-    <section class="panel">
+    </SectionPanel>
+    <SectionPanel title="Buchungen" icon="transactions" compact>
       <div v-if="selected.length" class="toolbar mb-5">
         <span>{{ selected.length }} ausgewählt</span
         ><ChoiceSelect
@@ -410,11 +413,13 @@ onBeforeUnmount(
             ),
           ]"
           @update:model-value="assign(row.id, $event)"
-        /><strong :class="BigInt(row.amountCents) > 0n ? 'positive' : ''">{{ money(row.amountCents) }}</strong>
+        /><strong data-financial :class="BigInt(row.amountCents) > 0n ? 'positive' : ''">{{
+          money(row.amountCents)
+        }}</strong>
       </div>
       <UButton v-if="nextCursor" :loading="busy" variant="soft" class="mt-5" @click="more"
         >Weitere Umsätze laden</UButton
       >
-    </section>
+    </SectionPanel>
   </template>
 </template>

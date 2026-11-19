@@ -9,7 +9,7 @@ import {
 } from '@financial-tracking/contracts';
 
 const api = useApi();
-const { validation, formError } = useFormFeedback();
+const { validation, formError, formInvalid } = useFormFeedback();
 const route = useRoute();
 const categories = ref<Category[]>([]);
 const month = ref(
@@ -152,21 +152,24 @@ onBeforeUnmount(
   <p v-if="loading" role="status" class="muted mb-5">Deine Auswertung wird geladen …</p>
   <template v-if="report && !loading && !error">
     <div class="category-insights mb-6">
-      <section class="panel">
-        <p class="muted">Ausgegeben · {{ monthName(report.month) }}</p>
-        <strong class="insight-amount">{{ money(report.expenseCents) }}</strong>
-      </section>
-      <section class="panel">
-        <p class="muted">Eingenommen</p>
-        <strong class="insight-amount positive">{{ money(report.incomeCents) }}</strong>
-      </section>
-      <section class="panel">
-        <p class="muted">Noch ohne Kategorie</p>
-        <strong class="insight-amount">{{ unclassified?.count ?? 0 }} Buchungen</strong><small>Bereits mitgezählt</small
-        ><NuxtLink v-if="unclassified?.count" :to="unclassifiedLink" class="text-link mt-3"
-          >Buchungen zuordnen</NuxtLink
+      <FinanceTile
+        variant="insight"
+        :label="`Ausgegeben · ${monthName(report.month)}`"
+        :value="money(report.expenseCents)"
+        financial
+      />
+      <FinanceTile variant="insight" label="Eingenommen" :value="money(report.incomeCents)" financial />
+      <FinanceTile
+        variant="insight"
+        label="Noch ohne Kategorie"
+        :value="`${unclassified?.count ?? 0} Buchungen`"
+        context="Bereits mitgezählt"
+        ><template #actions
+          ><NuxtLink v-if="unclassified?.count" :to="unclassifiedLink" class="text-link mt-3"
+            >Buchungen zuordnen</NuxtLink
+          ></template
         >
-      </section>
+      </FinanceTile>
     </div>
     <ExpenseBreakdown :report="report" />
   </template>
@@ -180,7 +183,14 @@ onBeforeUnmount(
   <DisclosurePanel class="panel category-management" title="Kategorien verwalten"
     ><div class="mt-6">
       <h2 class="mb-4">Kategorie anlegen</h2>
-      <UForm ref="validation" :schema="categoryInputSchema" :state="form" class="form-row" @submit="create"
+      <UForm
+        ref="validation"
+        :schema="categoryInputSchema"
+        :state="form"
+        :validate-on="[]"
+        class="form-row"
+        @submit="create"
+        @error="formInvalid"
         ><UFormField label="Name" name="name"
           ><UInput v-model="form.name" placeholder="Zum Beispiel Lebensmittel" /></UFormField
         ><UFormField label="Gilt für" name="kind"><USelect v-model="form.kind" :items="kinds" /></UFormField
@@ -213,7 +223,7 @@ onBeforeUnmount(
     </div></DisclosurePanel
   >
   <CategoryRules :categories="categories" @changed="load" />
-  <UModal
+  <FinanceDialog
     v-model:open="deleteOpen"
     title="Kategorie löschen?"
     :description="`„${pendingDelete?.name ?? ''}“ wird entfernt. Die Buchungen bleiben erhalten und verlieren nur diese Kategorie.`"
@@ -223,5 +233,5 @@ onBeforeUnmount(
       ><UButton color="neutral" variant="outline" :disabled="deleting" @click="pendingDelete = null">Abbrechen</UButton
       ><UButton color="error" :loading="deleting" @click="confirmDelete">Kategorie löschen</UButton></template
     >
-  </UModal>
+  </FinanceDialog>
 </template>

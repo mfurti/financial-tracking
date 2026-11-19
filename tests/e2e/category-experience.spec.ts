@@ -21,7 +21,7 @@ test('monthly categories explain real expenses and lead to persisted assignments
   } else {
     await expect(
       page
-        .getByRole('navigation', { name: 'Verwaltung', exact: true })
+        .getByRole('navigation', { name: 'Hauptnavigation', exact: true })
         .getByRole('link', { name: 'Konten', exact: true }),
     ).toBeVisible();
   }
@@ -48,7 +48,11 @@ test('monthly categories explain real expenses and lead to persisted assignments
     buffer: Buffer.from(`Datum;Betrag;Text;Bankreferenz\n12.03.2031;-42,25;${label};category-${info.project.name}\n`),
   });
   await expect(page).toHaveURL(/month=2031-03/);
-  await expect(page.getByRole('img', { name: /Ausgaben in/ })).toBeVisible();
+  await expect(
+    page
+      .getByRole('region', { name: 'Ausgaben nach Kategorien', exact: true })
+      .getByRole('link', { name: /Nicht kategorisiert/ }),
+  ).toContainText('42,25 €');
   await page.screenshot({ path: `.local/experience-dashboard-${info.project.name}.png`, fullPage: true });
   await page.goto('/categories?month=2031-03');
   await page.getByRole('button', { name: 'Hilfe: So entstehen deine Kategorien', exact: true }).click();
@@ -112,6 +116,7 @@ test('monthly categories explain real expenses and lead to persisted assignments
   await expect(page.locator('[data-slot="content"]').filter({ has: managed })).toHaveCSS('animation-name', 'none');
   await managed.getByRole('button', { name: 'Löschen', exact: true }).click();
   const confirmation = page.getByRole('dialog', { name: 'Kategorie löschen?', exact: true });
+  await expect(confirmation).toHaveClass(/finance-dialog/);
   await confirmation.getByRole('button', { name: 'Abbrechen', exact: true }).click();
   await expect(confirmation).not.toBeVisible();
   await managed.getByRole('button', { name: 'Löschen', exact: true }).click();
@@ -126,11 +131,27 @@ test('monthly categories explain real expenses and lead to persisted assignments
   await expect(page.getByRole('group', { name: 'Kategorie Mode', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Regel erstellen', exact: true }).click();
   const ruleDialog = page.getByRole('dialog', { name: 'Regel erstellen', exact: true });
+  await expect(ruleDialog).toHaveClass(/finance-dialog/);
   await ruleDialog.getByLabel('Regelname', { exact: true }).fill(`Mode ${info.project.name}`);
   await choose(page, ruleDialog.getByLabel('Zielkategorie', { exact: true }), 'Mode');
   await choose(page, ruleDialog.getByLabel('Vergleich', { exact: true }), 'Buchungstext enthält');
   const ruleText = `Automatik-${info.project.name}`;
   await ruleDialog.getByLabel('Gesuchter Text', { exact: true }).fill(ruleText);
+  await page.route(
+    '**/api/v1/category-rules',
+    /** Reject only the explicit draft save, preserving the rules read. */ async (route) =>
+      route.request().method() === 'POST'
+        ? route.fulfill({
+            status: 503,
+            json: { error: { code: 'INTERNAL_ERROR', message: 'synthetic', requestId: 'synthetic' } },
+          })
+        : route.continue(),
+  );
+  await ruleDialog.getByRole('button', { name: 'Regel speichern', exact: true }).click();
+  await expect(ruleDialog.getByRole('alert')).toBeVisible();
+  await expect(ruleDialog.getByLabel('Gesuchter Text', { exact: true })).toHaveValue(ruleText);
+  await expect(ruleDialog.getByLabel('Regelname', { exact: true })).toHaveValue(`Mode ${info.project.name}`);
+  await page.unroute('**/api/v1/category-rules');
   await ruleDialog.getByRole('button', { name: 'Regel speichern', exact: true }).click();
   await expect(ruleDialog).not.toBeVisible();
   await page.goto('/imports/csv');
