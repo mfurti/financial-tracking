@@ -187,6 +187,7 @@ export const de = {
   'Bestätige nur ein Konto, das du bewusst als Tagesgeld für deine Reserve verwenden möchtest.':
     'Bestätige nur ein Konto, das du bewusst als Tagesgeld für deine Reserve verwenden möchtest.',
   'Bestätigung wurde mit anderen Daten verwendet.': 'Bestätigung wurde mit anderen Daten verwendet.',
+  'Betrachter (Demo)': 'Betrachter (Demo)',
   Betrag: 'Betrag',
   'Betrag als Euro': 'Betrag als Euro',
   'Betrag als Euro eingeben, zum Beispiel 12,99.': 'Betrag als Euro eingeben, zum Beispiel 12,99.',
@@ -297,6 +298,12 @@ export const de = {
   'Demo-Aktion gespeichert. Keine echte Buchung erstellt.': 'Demo-Aktion gespeichert. Keine echte Buchung erstellt.',
   'Demo-Aktion speichern': 'Demo-Aktion speichern',
   'Demo-Aktivität': 'Demo-Aktivität',
+  'Demo-Anzeigeeinträge': 'Demo-Anzeigeeinträge',
+  'Demo-Anzeigename': 'Demo-Anzeigename',
+  'Demo-Anzeigename mit 1 bis 80 Zeichen und eine Demo-Rolle wählen.':
+    'Demo-Anzeigename mit 1 bis 80 Zeichen und eine Demo-Rolle wählen.',
+  'Demo-Anzeigerolle': 'Demo-Anzeigerolle',
+  'Demo-Anzeigerolle bearbeiten': 'Demo-Anzeigerolle bearbeiten',
   'Demo-Auftrag': 'Demo-Auftrag',
   'Demo-Auftrag gespeichert.': 'Demo-Auftrag gespeichert.',
   'Demo-Auftrag gespeichert. Echte Konten bleiben unverändert.':
@@ -316,6 +323,7 @@ export const de = {
   'Demo-Depotaufteilung': 'Demo-Depotaufteilung',
   'Demo-Eingaben prüfen: gültige Konten, ganze Anteile und positive Beträge wählen.':
     'Demo-Eingaben prüfen: gültige Konten, ganze Anteile und positive Beträge wählen.',
+  'Demo-Eintrag hinzufügen': 'Demo-Eintrag hinzufügen',
   'Demo-Geld verschieben': 'Demo-Geld verschieben',
   'Demo-Guthaben': 'Demo-Guthaben',
   'Demo-Kategorie angelegt': 'Demo-Kategorie angelegt',
@@ -334,6 +342,9 @@ export const de = {
   'Demo-Plan prüfen.': 'Demo-Plan prüfen.',
   'Demo-Planname': 'Demo-Planname',
   'Demo-Positionen und Katalog': 'Demo-Positionen und Katalog',
+  'Demo-Rolle gespeichert. Echter Zugang bleibt unverändert.':
+    'Demo-Rolle gespeichert. Echter Zugang bleibt unverändert.',
+  'Demo-Rolle speichern': 'Demo-Rolle speichern',
   'Demo-Sparbetrag in Euro': 'Demo-Sparbetrag in Euro',
   'Demo-Sparbetrag muss 1 bis 1000 ganze Anteile erlauben.': 'Demo-Sparbetrag muss 1 bis 1000 ganze Anteile erlauben.',
   'Demo-Sparplan anlegen': 'Demo-Sparplan anlegen',
@@ -432,6 +443,8 @@ export const de = {
   'Dienst vorübergehend nicht bereit.': 'Dienst vorübergehend nicht bereit.',
   'Diese Aktion ist nicht erlaubt. Lade die Ansicht neu und melde dich gegebenenfalls erneut an.':
     'Diese Aktion ist nicht erlaubt. Lade die Ansicht neu und melde dich gegebenenfalls erneut an.',
+  'Diese Anzeige gehört zur Investment-Demo auf diesem Gerät. Der bestehende Eigentümer bleibt alleiniger echter Zugang.':
+    'Diese Anzeige gehört zur Investment-Demo auf diesem Gerät. Der bestehende Eigentümer bleibt alleiniger echter Zugang.',
   'Diese Ausgabe ist eine Vertragszahlung. Zahlungszuordnung vor dem Markieren als Umbuchung prüfen und entfernen.':
     'Diese Ausgabe ist eine Vertragszahlung. Zahlungszuordnung vor dem Markieren als Umbuchung prüfen und entfernen.',
   'Diese Buchung ist einem Vertrag zugeordnet. Prüfe und entferne die Zahlungszuordnung vor dem Ändern der Buchungsdaten.':
@@ -475,6 +488,7 @@ export const de = {
   'Eigene Produktregistrierung und bestätigte Bankadresse müssen zuerst eingerichtet werden.':
     'Eigene Produktregistrierung und bestätigte Bankadresse müssen zuerst eingerichtet werden.',
   'Eigene Umbuchung': 'Eigene Umbuchung',
+  'Eigentümer (Demo)': 'Eigentümer (Demo)',
   Eigentümerprofil: 'Eigentümerprofil',
   'Eigentümerprofil · Anmeldung bleibt unverändert': 'Eigentümerprofil · Anmeldung bleibt unverändert',
   'Ein Konto ist optional. Importierte Buchungen bleiben auch ohne Zuordnung erhalten.':
@@ -522,6 +536,8 @@ export const de = {
     'Erste 100 Buchungen; die Gesamtzahlen berücksichtigen alle.',
   'Erste Fälligkeit': 'Erste Fälligkeit',
   'Erstes Konto hinzufügen': 'Erstes Konto hinzufügen',
+  'Es entstehen keine Anmeldungen, Einladungen oder echten Berechtigungen.':
+    'Es entstehen keine Anmeldungen, Einladungen oder echten Berechtigungen.',
   'Es gab zu viele Versuche in kurzer Zeit. Bitte warte einen Moment.':
     'Es gab zu viele Versuche in kurzer Zeit. Bitte warte einen Moment.',
   'Es wurden keine getrennten Spalten erkannt. Prüfe unter „Dateiformat anpassen“ das Trennzeichen (Semikolon, Komma oder Tabulator). Die erste Zeile muss die Spaltennamen enthalten.':
@@ -759,6 +775,7 @@ export const de = {
   'Keine ausgeblendeten Vorschläge.': 'Keine ausgeblendeten Vorschläge.',
   'Keine bekannten Beträge': 'Keine bekannten Beträge',
   'Keine beobachtete Reserve': 'Keine beobachtete Reserve',
+  'Keine echten Nutzer oder Berechtigungen · dieses Gerät': 'Keine echten Nutzer oder Berechtigungen · dieses Gerät',
   'Keine gebuchten Ausgaben im gewählten Zeitraum.': 'Keine gebuchten Ausgaben im gewählten Zeitraum.',
   'Keine mögliche Überschneidung gefunden.': 'Keine mögliche Überschneidung gefunden.',
   'Keine offene Freigabe.': 'Keine offene Freigabe.',
@@ -837,6 +854,7 @@ export const de = {
   'Letzte mögliche Fälligkeit': 'Letzte mögliche Fälligkeit',
   'Letzter erfolgreicher Bankabruf': 'Letzter erfolgreicher Bankabruf',
   'Lokale Demo-Rolle geändert': 'Lokale Demo-Rolle geändert',
+  'Lokale Demo-Rollen': 'Lokale Demo-Rollen',
   Läuft: 'Läuft',
   Löschen: 'Löschen',
   'Manuell zugeordnet': 'Manuell zugeordnet',
@@ -850,6 +868,8 @@ export const de = {
   'Manuelles Konto': 'Manuelles Konto',
   'Maximal 1.000 Hinweise gleichzeitig. Nach Entscheidungen erneut laden.':
     'Maximal 1.000 Hinweise gleichzeitig. Nach Entscheidungen erneut laden.',
+  'Maximal 20 lokale Demo-Einträge. Vorhandenen Eintrag bearbeiten oder die Demo bestätigt zurücksetzen.':
+    'Maximal 20 lokale Demo-Einträge. Vorhandenen Eintrag bearbeiten oder die Demo bestätigt zurücksetzen.',
   'Maximal 50.000 Datenzeilen.': 'Maximal 50.000 Datenzeilen.',
   'Medium wählen': 'Medium wählen',
   Mehr: 'Mehr',
@@ -1124,6 +1144,7 @@ export const de = {
   Status: 'Status',
   Suche: 'Suche',
   'Suchen …': 'Suchen …',
+  'Synthetische Anzeigeeinträge': 'Synthetische Anzeigeeinträge',
   TAN: 'TAN',
   'TAN eingeben.': 'TAN eingeben.',
   'TAN-Medium': 'TAN-Medium',
@@ -1429,6 +1450,7 @@ export const de = {
   '{0} abgeschlossene Monate mit Buchungen': '{0} abgeschlossene Monate mit Buchungen',
   '{0} ausgewählte Module': '{0} ausgewählte Module',
   '{0} auswählen': '{0} auswählen',
+  '{0} bearbeiten': '{0} bearbeiten',
   '{0} bestätigte Verträge · globaler Planwert / Monat · {1} · unabhängig vom Umsatzfilter':
     '{0} bestätigte Verträge · globaler Planwert / Monat · {1} · unabhängig vom Umsatzfilter',
   '{0} gegenüber {1}': '{0} gegenüber {1}',

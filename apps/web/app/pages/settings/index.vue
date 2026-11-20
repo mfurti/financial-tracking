@@ -62,6 +62,12 @@ function setNotification(kind: 'imports' | 'payments', checked: boolean | 'indet
       :context="tr('Hinweise ausschließlich innerhalb dieser App')"
       to="/notifications"
     />
+    <FinanceTile
+      :label="tr('Lokale Demo-Rollen')"
+      :value="tr('Synthetische Anzeigeeinträge')"
+      :context="tr('Keine echten Nutzer oder Berechtigungen · dieses Gerät')"
+      to="/settings/users"
+    />
   </div>
   <p v-if="storageState !== 'ready'" role="status">
     {{

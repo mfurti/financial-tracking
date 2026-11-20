@@ -1311,6 +1311,27 @@ export const en: Record<keyof typeof de, string> = {
     'Do not select an account and the unassigned filter together.',
   'Ungültiger Zeitraum.': 'Invalid period.',
   'Umsatz mehrfach ausgewählt.': 'Transaction selected more than once.',
+  'Lokale Demo-Rollen': 'Local demo roles',
+  'Synthetische Anzeigeeinträge': 'Synthetic display entries',
+  'Keine echten Nutzer oder Berechtigungen · dieses Gerät': 'No real users or permissions · this device',
+  'Es entstehen keine Anmeldungen, Einladungen oder echten Berechtigungen.':
+    'No sign-ins, invitations or real permissions are created.',
+  'Diese Anzeige gehört zur Investment-Demo auf diesem Gerät. Der bestehende Eigentümer bleibt alleiniger echter Zugang.':
+    'This display belongs to the investment demo on this device. The existing owner remains the only real sign-in.',
+  'Demo-Anzeigename mit 1 bis 80 Zeichen und eine Demo-Rolle wählen.':
+    'Choose a demo display name with 1 to 80 characters and a demo role.',
+  'Maximal 20 lokale Demo-Einträge. Vorhandenen Eintrag bearbeiten oder die Demo bestätigt zurücksetzen.':
+    'Maximum 20 local demo entries. Edit an existing entry or confirm a demo reset.',
+  'Demo-Rolle gespeichert. Echter Zugang bleibt unverändert.': 'Demo role saved. Real access remains unchanged.',
+  'Demo-Anzeigeeinträge': 'Demo display entries',
+  'Eigentümer (Demo)': 'Owner (demo)',
+  'Betrachter (Demo)': 'Viewer (demo)',
+  '{0} bearbeiten': 'Edit {0}',
+  'Demo-Eintrag hinzufügen': 'Add demo entry',
+  'Demo-Anzeigerolle bearbeiten': 'Edit demo display role',
+  'Demo-Anzeigename': 'Demo display name',
+  'Demo-Anzeigerolle': 'Demo display role',
+  'Demo-Rolle speichern': 'Save demo role',
   'Abruf abgebrochen.': 'Retrieval cancelled.',
   'Abruf besitzt keine gültige Sperre mehr.': 'Retrieval no longer holds a valid lock.',
   'Abruf kann nicht abgebrochen werden.': 'Retrieval cannot be cancelled.',
