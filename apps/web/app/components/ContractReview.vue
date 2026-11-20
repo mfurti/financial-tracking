@@ -214,13 +214,14 @@ onBeforeUnmount(
 
 <template>
   <div class="toolbar">
-    <UButton :disabled="!suggestions.length" @click="start()">Vorschläge prüfen · {{ suggestions.length }}</UButton
-    ><UButton color="neutral" variant="ghost" @click="start(true)">Ausgeblendete Vorschläge</UButton>
+    <UButton :disabled="!suggestions.length" @click="start()"
+      >{{ tr('Vorschläge prüfen ·') }} {{ suggestions.length }}</UButton
+    ><UButton color="neutral" variant="ghost" @click="start(true)">{{ tr('Ausgeblendete Vorschläge') }}</UButton>
   </div>
   <UModal
     v-model:open="dialogOpen"
-    title="Vertragsvorschläge prüfen"
-    description="Bearbeiten und bestätigen. Wischen blättert nur."
+    :title="tr('Vertragsvorschläge prüfen')"
+    :description="tr('Bearbeiten und bestätigen. Wischen blättert nur.')"
     :dismissible="!busy"
     :close="!busy"
     :transition="!reducedMotion"
@@ -236,11 +237,13 @@ onBeforeUnmount(
       <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
       <div v-if="finished || !queue.length" class="empty-state">
         <FinanceIcon name="contracts" />
-        <h3>{{ finished ? 'Prüfrunde abgeschlossen' : 'Keine offenen Vorschläge' }}</h3>
-        <UButton variant="soft" @click="close">Verträge anzeigen</UButton>
+        <h3>{{ finished ? tr('Prüfrunde abgeschlossen') : tr('Keine offenen Vorschläge') }}</h3>
+        <UButton variant="soft" @click="close">{{ tr('Verträge anzeigen') }}</UButton>
       </div>
       <template v-else>
-        <p class="muted mb-4" role="status">{{ current + 1 }} von {{ queue.length }} · {{ done.size }} bearbeitet</p>
+        <p class="muted mb-4" role="status">
+          {{ current + 1 }} {{ tr('von') }} {{ queue.length }} · {{ done.size }} {{ tr('bearbeitet') }}
+        </p>
         <UCarousel
           ref="carousel"
           :items="queue"
@@ -249,7 +252,7 @@ onBeforeUnmount(
           :duration="reducedMotion ? 0 : 25"
           :watch-drag="drag"
           :ui="{ item: 'basis-full', container: 'items-start' }"
-          aria-label="Vertragsvorschläge"
+          :aria-label="tr('Vertragsvorschläge')"
           @select="selected"
         >
           <template #default="{ item, index }">
@@ -262,13 +265,13 @@ onBeforeUnmount(
               <div class="review-swipe-zone">
                 <h3>{{ item.provider }}</h3>
                 <strong class="amount-expense">{{ money(item.amountCents) }}</strong
-                ><UBadge variant="soft">{{ item.count }} Zahlungen</UBadge>
+                ><UBadge variant="soft">{{ item.count }} {{ tr('Zahlungen') }}</UBadge>
               </div>
               <template v-if="index === current && !done.has(item.key)">
-                <DisclosurePanel title="Zugrunde liegende Zahlungen" class="mb-4"
-                  ><UButton v-for="id in item.transactionIds" :key="id" :to="`/transactions/${id}`" variant="link"
-                    >Buchung ansehen</UButton
-                  ></DisclosurePanel
+                <DisclosurePanel :title="tr('Zugrunde liegende Zahlungen')" class="mb-4"
+                  ><UButton v-for="id in item.transactionIds" :key="id" :to="`/transactions/${id}`" variant="link">{{
+                    tr('Buchung ansehen')
+                  }}</UButton></DisclosurePanel
                 >
                 <div @keydown.left.stop @keydown.right.stop>
                   <ContractForm
@@ -284,7 +287,9 @@ onBeforeUnmount(
                   />
                 </div>
                 <div class="toolbar mt-4">
-                  <UButton color="neutral" variant="soft" :disabled="busy" @click="request(advance)">Später</UButton
+                  <UButton color="neutral" variant="soft" :disabled="busy" @click="request(advance)">{{
+                    tr('Später')
+                  }}</UButton
                   ><UButton
                     color="neutral"
                     variant="ghost"
@@ -296,11 +301,11 @@ onBeforeUnmount(
                         },
                       )
                     "
-                    >Kein Vertrag</UButton
+                    >{{ tr('Kein Vertrag') }}</UButton
                   >
                 </div>
               </template>
-              <p v-else-if="done.has(item.key)" class="muted">Für diese Prüfrunde erledigt.</p>
+              <p v-else-if="done.has(item.key)" class="muted">{{ tr('Für diese Prüfrunde erledigt.') }}</p>
             </article>
           </template>
         </UCarousel>
@@ -310,18 +315,18 @@ onBeforeUnmount(
             variant="outline"
             :disabled="busy || current === 0"
             @click="request(/** Navigate only after resolving the current edits. */ () => move(current - 1))"
-            >Vorherige Karte</UButton
+            >{{ tr('Vorherige Karte') }}</UButton
           ><UButton
             color="neutral"
             variant="outline"
             :disabled="busy || current >= queue.length - 1"
             @click="request(/** Navigate only, without accepting the next proposal. */ () => move(current + 1))"
-            >Nächste Karte</UButton
+            >{{ tr('Nächste Karte') }}</UButton
           >
         </div>
       </template>
-      <DisclosurePanel v-model:open="restoring" title="Ausgeblendete Vorschläge" class="mt-5"
-        ><p v-if="!dismissed.length" class="muted">Keine ausgeblendeten Vorschläge.</p>
+      <DisclosurePanel v-model:open="restoring" :title="tr('Ausgeblendete Vorschläge')" class="mt-5"
+        ><p v-if="!dismissed.length" class="muted">{{ tr('Keine ausgeblendeten Vorschläge.') }}</p>
         <div v-for="item in dismissed" :key="item.key" class="editable-row">
           <span>{{ item.provider }} · {{ money(item.amountCents) }}</span
           ><UButton
@@ -334,29 +339,29 @@ onBeforeUnmount(
                 },
               )
             "
-            >Wiederherstellen</UButton
+            >{{ tr('Wiederherstellen') }}</UButton
           >
         </div></DisclosurePanel
       >
     </template>
     <template #footer
-      ><UButton color="neutral" variant="ghost" :disabled="busy" @click="request(close)"
-        >Prüfung schließen</UButton
-      ></template
+      ><UButton color="neutral" variant="ghost" :disabled="busy" @click="request(close)">{{
+        tr('Prüfung schließen')
+      }}</UButton></template
     >
   </UModal>
   <FinanceDialog
     :open="discardOpen"
-    title="Ungespeicherte Änderungen"
-    description="Deine Änderungen wurden noch nicht gespeichert."
+    :title="tr('Ungespeicherte Änderungen')"
+    :description="tr('Deine Änderungen wurden noch nicht gespeichert.')"
     @update:open="
       /** Closing the confirmation is cancellation, not consent. */ (value) => {
         if (!value) cancelDiscard();
       }
     "
     ><template #footer
-      ><UButton variant="soft" @click="cancelDiscard">Weiter bearbeiten</UButton
-      ><UButton color="warning" @click="discard">Änderungen verwerfen</UButton></template
+      ><UButton variant="soft" @click="cancelDiscard">{{ tr('Weiter bearbeiten') }}</UButton
+      ><UButton color="warning" @click="discard">{{ tr('Änderungen verwerfen') }}</UButton></template
     ></FinanceDialog
   >
 </template>

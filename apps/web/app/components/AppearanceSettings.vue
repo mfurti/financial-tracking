@@ -7,10 +7,11 @@ const choices = computed(
   /** Render previews in the active brightness unless an Ayu tile fixes it. */ () =>
     [
       ...appearanceChoices,
-      ...(preferences.value.custom ? [{ value: 'custom', label: 'Eigene Farben', family: 'custom' as const }] : []),
+      ...(preferences.value.custom ? [{ value: 'custom', label: tr('Eigene Farben'), family: 'custom' as const }] : []),
     ].map(
       /** Preview uses exactly the application's palette. */ (choice) => ({
         ...choice,
+        label: choice.family === 'ayu' ? choice.label.replace('Ohne Rahmen', tr('Ohne Rahmen')) : tr(choice.label),
         tone: choiceTone(choice, mode.value === 'dark' ? 'dark' : 'light', preferences.value.custom),
       }),
     ),
@@ -18,28 +19,32 @@ const choices = computed(
 </script>
 
 <template>
-  <SectionPanel title="Farben & Darstellung" icon="settings" class="mb-6">
+  <SectionPanel :title="tr('Farben & Darstellung')" icon="settings" class="mb-6">
     <HelpPopover
-      title="Theme-Auswahl"
-      text="Hell und Dunkel wechselst du über den Kreis. Ayu bietet sechs Varianten. Deine Auswahl wird auf diesem Gerät gespeichert."
+      :title="tr('Theme-Auswahl')"
+      :text="
+        tr(
+          'Hell und Dunkel wechselst du über den Kreis. Ayu bietet sechs Varianten. Deine Auswahl wird auf diesem Gerät gespeichert.',
+        )
+      "
       class="mb-4"
     />
-    <UFormField label="Helligkeit" class="mb-5 max-w-sm">
+    <UFormField :label="tr('Helligkeit')" class="mb-5 max-w-sm">
       <ChoiceSelect
         v-model="mode.preference"
-        aria-label="Helligkeit"
+        :aria-label="tr('Helligkeit')"
         :searchable="false"
         :items="[
-          { label: 'Wie mein Gerät', value: 'system' },
-          { label: 'Hell', value: 'light' },
-          { label: 'Dunkel', value: 'dark' },
+          { label: tr('Wie mein Gerät'), value: 'system' },
+          { label: tr('Hell'), value: 'light' },
+          { label: tr('Dunkel'), value: 'dark' },
         ]"
       />
     </UFormField>
     <URadioGroup
       :model-value="selectedChoice"
       :items="choices"
-      legend="Farbthema"
+      :legend="tr('Farbthema')"
       variant="card"
       :ui="{ fieldset: 'theme-tiles', item: 'theme-tile', wrapper: 'min-w-0 flex-1' }"
       @update:model-value="selectTheme"
@@ -60,12 +65,15 @@ const choices = computed(
           }"
           aria-hidden="true"
         >
-          <span class="theme-preview-card"><small>Monatsbilanz</small><strong>+ 420,00 €</strong></span>
+          <span class="theme-preview-card"
+            ><small>{{ tr('Monatsbilanz') }}</small
+            ><strong>{{ amountsMasked() ? tr('Betrag ausgeblendet') : `+ ${money('42000')}` }}</strong></span
+          >
           <span class="theme-preview-chart"><i /><i /><i /><i /></span>
-          <span class="theme-preview-caption">Ausgaben im Überblick</span>
+          <span class="theme-preview-caption">{{ tr('Ausgaben im Überblick') }}</span>
         </span>
       </template>
     </URadioGroup>
-    <UButton to="/settings/appearance/custom" variant="soft" class="mt-5">Eigene Farben bearbeiten</UButton>
+    <UButton to="/settings/appearance/custom" variant="soft" class="mt-5">{{ tr('Eigene Farben bearbeiten') }}</UButton>
   </SectionPanel>
 </template>

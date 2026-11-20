@@ -67,24 +67,28 @@ onBeforeUnmount(
 </script>
 
 <template>
-  <UButton size="xs" color="error" variant="ghost" @click="load">Import rückgängig machen</UButton>
+  <UButton size="xs" color="error" variant="ghost" @click="load">{{ tr('Import rückgängig machen') }}</UButton>
   <FinanceDialog
     v-model:open="open"
-    title="Import rückgängig machen?"
-    description="Entfernte Buchungen können durch erneuten Upload wieder eingelesen werden."
+    :title="tr('Import rückgängig machen?')"
+    :description="tr('Entfernte Buchungen können durch erneuten Upload wieder eingelesen werden.')"
     :dismissible="!busy"
   >
     <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
-    <p v-if="busy" role="status">Wird geprüft …</p>
+    <p v-if="busy" role="status">{{ tr('Wird geprüft …') }}</p>
     <template v-if="preview">
       <p class="mb-3">
-        <strong>{{ preview.owned - (policy === 'KEEP' ? preview.linked : 0) }} Buchungen werden gelöscht.</strong>
+        <strong
+          >{{ preview.owned - (policy === 'KEEP' ? preview.linked : 0) }} {{ tr('Buchungen werden gelöscht.') }}</strong
+        >
       </p>
       <p v-if="preview.shared || preview.uncertain" class="mb-3">
-        {{ preview.shared }} mit weiteren Quellen und {{ preview.uncertain }} mit unklarer Herkunft bleiben erhalten.
+        {{ preview.shared }} {{ tr('mit weiteren Quellen und') }} {{ preview.uncertain }}
+        {{ tr('mit unklarer Herkunft bleiben erhalten.') }}
       </p>
       <p v-if="preview.manual" class="mb-3">
-        {{ preview.manual }} import-eigene Buchungen enthalten manuelle Zuordnungen. Beim Löschen gehen diese verloren.
+        {{ preview.manual }}
+        {{ tr('import-eigene Buchungen enthalten manuelle Zuordnungen. Beim Löschen gehen diese verloren.') }}
       </p>
       <URadioGroup
         v-if="preview.linked"
@@ -92,21 +96,28 @@ onBeforeUnmount(
         legend="Verknüpfte Buchungen"
         :disabled="busy"
         :items="[
-          { label: `Verknüpfte Buchungen behalten (${preview.linked})`, value: 'KEEP' },
-          { label: 'Verknüpfungen und import-eigene Buchungen entfernen', value: 'REMOVE' },
+          { label: tr('Verknüpfte Buchungen behalten ({0})', [preview.linked]), value: 'KEEP' },
+          { label: tr('Verknüpfungen und import-eigene Buchungen entfernen'), value: 'REMOVE' },
         ]"
       />
       <UCheckbox
         v-if="preview.linked && policy === 'REMOVE'"
         v-model="confirmLinks"
         class="mt-4"
-        label="Vertrags- und Umbuchungszuordnungen ausdrücklich entfernen. Verträge und Gegenbuchungen bleiben erhalten."
+        :label="
+          tr(
+            'Vertrags- und Umbuchungszuordnungen ausdrücklich entfernen. Verträge und Gegenbuchungen bleiben erhalten.',
+          )
+        "
       />
       <p class="muted mt-4">
-        Importverlauf und offene Klärungen werden entfernt. Änderungen an erhaltenen Buchungen werden nicht
-        zurückgesetzt.
+        {{
+          tr(
+            'Importverlauf und offene Klärungen werden entfernt. Änderungen an erhaltenen Buchungen werden nicht zurückgesetzt.',
+          )
+        }}
       </p>
-      <DisclosurePanel title="Betroffene Buchungen" class="mt-4">
+      <DisclosurePanel :title="tr('Betroffene Buchungen')" class="mt-4">
         <ul class="grid gap-3">
           <li v-for="item in preview.items" :key="item.id">
             <strong>{{ item.description }}</strong> · {{ money(item.amountCents) }}
@@ -114,29 +125,31 @@ onBeforeUnmount(
               {{ calendarDate(item.bookingDate) }} ·
               {{
                 item.protection === 'SHARED'
-                  ? 'Weitere Quelle – bleibt erhalten'
+                  ? tr('Weitere Quelle – bleibt erhalten')
                   : item.protection === 'UNCERTAIN'
-                    ? 'Herkunft unklar – bleibt erhalten'
+                    ? tr('Herkunft unklar – bleibt erhalten')
                     : (item.contractName || item.transfer) && policy === 'KEEP'
-                      ? 'Verknüpft – bleibt erhalten'
-                      : 'Wird gelöscht'
+                      ? tr('Verknüpft – bleibt erhalten')
+                      : tr('Wird gelöscht')
               }}<span v-if="item.contractName"> · {{ item.contractName }}</span
-              ><span v-if="item.transfer"> · Umbuchung</span>
+              ><span v-if="item.transfer"> {{ tr('· Umbuchung') }}</span>
             </p>
           </li>
         </ul>
-        <p v-if="preview.truncated" class="muted">Erste 100 Buchungen; die Gesamtzahlen berücksichtigen alle.</p>
+        <p v-if="preview.truncated" class="muted">
+          {{ tr('Erste 100 Buchungen; die Gesamtzahlen berücksichtigen alle.') }}
+        </p>
       </DisclosurePanel>
     </template>
-    <UButton v-else-if="!busy" variant="soft" @click="load">Vorschau neu laden</UButton>
+    <UButton v-else-if="!busy" variant="soft" @click="load">{{ tr('Vorschau neu laden') }}</UButton>
     <template #footer>
-      <UButton color="neutral" variant="ghost" :disabled="busy" @click="open = false">Abbrechen</UButton>
+      <UButton color="neutral" variant="ghost" :disabled="busy" @click="open = false">{{ tr('Abbrechen') }}</UButton>
       <UButton
         color="error"
         :loading="busy"
         :disabled="!preview || (preview.linked > 0 && policy === 'REMOVE' && !confirmLinks)"
         @click="remove"
-        >Import zurücknehmen</UButton
+        >{{ tr('Import zurücknehmen') }}</UButton
       >
     </template>
   </FinanceDialog>

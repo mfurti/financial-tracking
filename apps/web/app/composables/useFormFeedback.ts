@@ -5,6 +5,7 @@ export function useFormFeedback() {
   const validation = ref<{
     setErrors: (errors: { name: string; message: string }[]) => void;
     getErrors?: () => { id?: string }[];
+    clear?: (name: string) => void;
     disabled?: boolean;
   } | null>(null);
   const pendingFocus = ref('');
@@ -25,5 +26,9 @@ export function useFormFeedback() {
   function formInvalid(event: { errors: readonly { id?: string }[] }) {
     pendingFocus.value = event.errors[0]?.id ?? '';
   }
-  return { validation, formError, formInvalid };
+  /** Discard feedback for an explicitly edited field without validating or submitting the new draft. */
+  function clearFieldError(name: string) {
+    validation.value?.clear?.(name);
+  }
+  return { validation, formError, formInvalid, clearFieldError };
 }

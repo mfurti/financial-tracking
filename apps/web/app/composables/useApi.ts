@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { type Session } from '@financial-tracking/contracts';
 import { ApiError, publicApiError } from '../utils/api-error';
+import { displayMoney, displayDate, displayTimestamp } from '../utils/financial-display';
+import { displayLocale, amountsMasked, tr } from './useWorkspaceLocale';
 
 /** Typed same-origin API transport with shared runtime response validation. */
 export function useApi() {
@@ -30,7 +32,7 @@ export function useApi() {
     } catch (error: unknown) {
       if (error instanceof z.ZodError)
         throw new ApiError(
-          'Die Serverantwort konnte nicht verarbeitet werden. Bitte lade die Ansicht neu und versuche es erneut.',
+          tr('Die Serverantwort konnte nicht verarbeitet werden. Bitte lade die Ansicht neu und versuche es erneut.'),
           'INVALID_RESPONSE',
           502,
         );
@@ -50,27 +52,25 @@ export function useApi() {
 
 /** Format BIGINT cent strings without rounding through JavaScript numbers. */
 export function money(cents: string | bigint) {
-  const amount = BigInt(cents),
-    absolute = amount < 0n ? -amount : amount;
-  return `${amount < 0n ? '−' : ''}${(absolute / 100n).toLocaleString('de-DE')},${String(absolute % 100n).padStart(2, '0')} €`;
+  return displayMoney(cents, displayLocale() === 'en-GB' ? 'en' : 'de', amountsMasked());
 }
 
 /** Format a source calendar date without shifting it to the previous day. */
 export function calendarDate(date: string) {
-  return date.split('-').reverse().join('.');
+  return displayDate(date, displayLocale() === 'en-GB' ? 'en' : 'de');
 }
 
 /** Display a real timestamp in the user's configured timezone. */
 export function observedTime(timestamp: string | null) {
   return timestamp
-    ? new Date(timestamp).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })
-    : 'Noch nicht aktualisiert';
+    ? displayTimestamp(timestamp, displayLocale() === 'en-GB' ? 'en' : 'de')
+    : tr('Noch nicht aktualisiert');
 }
 
 /** Label a calendar month in German without shifting its first day across timezones. */
 export function monthName(month: string) {
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return 'Monat auswählen';
-  return new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric', timeZone: 'Europe/Berlin' }).format(
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return tr('Monat auswählen');
+  return new Intl.DateTimeFormat(displayLocale(), { month: 'long', year: 'numeric', timeZone: 'Europe/Berlin' }).format(
     new Date(`${month}-01T12:00:00Z`),
   );
 }

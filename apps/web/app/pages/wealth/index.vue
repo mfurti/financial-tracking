@@ -1,11 +1,11 @@
 <template>
   <div class="page-heading">
-    <h1>Vermögen</h1>
-    <UButton to="/accounts" variant="soft">Quellkonten verwalten</UButton>
+    <h1>{{ tr('Vermögen') }}</h1>
+    <UButton to="/accounts" variant="soft">{{ tr('Quellkonten verwalten') }}</UButton>
   </div>
   <div class="wealth-layout">
     <RecordedWealth />
-    <aside aria-label="Reserve-Einstellungen"><ReserveGoalTile /></aside>
+    <aside :aria-label="tr('Reserve-Einstellungen')"><ReserveGoalTile /></aside>
   </div>
   <DemoPortfolio />
 </template>

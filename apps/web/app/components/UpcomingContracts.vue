@@ -52,22 +52,28 @@ onBeforeUnmount(
 </script>
 <template>
   <SectionPanel
-    title="Nächste Zahlungen"
+    :title="tr('Nächste Zahlungen')"
     icon="contracts"
     compact
-    help="Nächste heutige oder zukünftige offene Fälligkeit je Vertrag. Prognosen werden nicht zu den tatsächlichen Ausgaben addiert."
+    :help="
+      tr(
+        'Nächste heutige oder zukünftige offene Fälligkeit je Vertrag. Prognosen werden nicht zu den tatsächlichen Ausgaben addiert.',
+      )
+    "
   >
-    <template #actions><span class="subtle-tag">Planwerte</span></template>
-    <p v-if="busy" role="status" class="empty-copy">Zahlungen werden geladen …</p>
+    <template #actions
+      ><span class="subtle-tag">{{ tr('Planwerte') }}</span></template
+    >
+    <p v-if="busy" role="status" class="empty-copy">{{ tr('Zahlungen werden geladen …') }}</p>
     <UAlert v-if="error" role="alert" color="error" :description="error" class="my-3" /><UButton
       v-if="error"
       variant="soft"
       :disabled="busy"
       @click="load"
-      >Erneut laden</UButton
+      >{{ tr('Erneut laden') }}</UButton
     >
     <p v-if="!upcoming.length && !error && !busy" class="empty-copy">
-      Keine anstehenden bestätigten Vertragszahlungen. Prüfe wiederkehrende Zahlungen unter Verträge.
+      {{ tr('Keine anstehenden bestätigten Vertragszahlungen. Prüfe wiederkehrende Zahlungen unter Verträge.') }}
     </p>
     <UButton
       v-for="contract in busy ? [] : upcoming"
@@ -81,6 +87,8 @@ onBeforeUnmount(
         ><small>{{ calendarDate(contract.nextDueDate!) }}</small></span
       ><strong>{{ money(contract.nextAmountCents!) }}</strong></UButton
     >
-    <div class="section-action"><UButton to="/contracts" variant="soft">Alle Verträge</UButton></div>
+    <div class="section-action">
+      <UButton to="/contracts" variant="soft">{{ tr('Alle Verträge') }}</UButton>
+    </div>
   </SectionPanel>
 </template>

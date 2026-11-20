@@ -50,7 +50,7 @@ async function save() {
     });
     form.displayName = saved.displayName;
     form.contactEmail = saved.contactEmail ?? '';
-    notice.value = 'Profil gespeichert. Anmeldename und Zugang bleiben unverändert.';
+    notice.value = tr('Profil gespeichert. Anmeldename und Zugang bleiben unverändert.');
   } catch (caught) {
     error.value = formError(caught);
   } finally {
@@ -65,40 +65,45 @@ onBeforeUnmount(
 );
 </script>
 <template>
-  <UButton to="/settings" variant="link">Zurück zu Einstellungen</UButton>
-  <div class="page-heading"><h1>Mein Profil</h1></div>
+  <UButton to="/settings" variant="link">{{ tr('Zurück zu Einstellungen') }}</UButton>
+  <div class="page-heading">
+    <h1>{{ tr('Mein Profil') }}</h1>
+  </div>
   <p>
-    Persönliche Anzeige- und Kontaktdaten des bestehenden Eigentümers. Die Kontakt-E-Mail ändert weder Anmeldung noch
-    Passwortwiederherstellung.
+    {{
+      tr(
+        'Persönliche Anzeige- und Kontaktdaten des bestehenden Eigentümers. Die Kontakt-E-Mail ändert weder Anmeldung noch Passwortwiederherstellung.',
+      )
+    }}
   </p>
-  <p v-if="loading" role="status">Profil wird geladen …</p>
+  <p v-if="loading" role="status">{{ tr('Profil wird geladen …') }}</p>
   <div v-if="loadError" role="alert">
     <p>{{ loadError }}</p>
-    <UButton variant="soft" @click="load">Profil erneut laden</UButton>
+    <UButton variant="soft" @click="load">{{ tr('Profil erneut laden') }}</UButton>
   </div>
-  <SectionPanel v-if="ready" title="Eigentümerprofil"
-    ><p>Anmeldename: {{ api.session.value?.username }}</p>
+  <SectionPanel v-if="ready" :title="tr('Eigentümerprofil')"
+    ><p>{{ tr('Anmeldename:') }} {{ api.session.value?.username }}</p>
     <p v-if="notice" role="status">{{ notice }}</p>
     <UAlert v-if="error" role="alert" color="error" :description="error" />
     <UForm
       ref="validation"
-      :schema="formSchema"
+      :schema="translatedSchema(formSchema)"
       :state="form"
       :validate-on="[]"
       class="profile-form"
       @submit="save"
       @error="formInvalid"
       ><fieldset :disabled="busy || loading">
-        <UFormField label="Anzeigename" name="displayName"
+        <UFormField :label="tr('Anzeigename')" name="displayName"
           ><UInput v-model="form.displayName" autocomplete="name" maxlength="80" class="w-full" /></UFormField
-        ><UFormField label="Kontakt-E-Mail (optional)" name="contactEmail"
+        ><UFormField :label="tr('Kontakt-E-Mail (optional)')" name="contactEmail"
           ><UInput
             v-model="form.contactEmail"
             type="email"
             autocomplete="email"
             maxlength="254"
             class="w-full" /></UFormField
-        ><UButton type="submit" :loading="busy">Profil speichern</UButton>
+        ><UButton type="submit" :loading="busy">{{ tr('Profil speichern') }}</UButton>
       </fieldset></UForm
     >
   </SectionPanel>

@@ -54,6 +54,7 @@ function exact(label: string) {
 </script>
 <template>
   <UChart
+    v-if="!amountsMasked()"
     :type="chart === 'ring' ? 'donut' : 'bar'"
     :data="data"
     index="name"
@@ -62,12 +63,12 @@ function exact(label: string) {
     :height="260"
     :legend="false"
     :aria-label="label"
-    :aria-description="description"
+    :aria-description="tr(description)"
     @select="select"
   >
     <template v-if="chart === 'ring'" #center
       ><div class="chart-center">
-        <small>{{ centerLabel }}</small
+        <small>{{ tr(centerLabel) }}</small
         ><strong>{{ money(totalCents) }}</strong>
       </div></template
     >
@@ -78,4 +79,5 @@ function exact(label: string) {
       </div></template
     >
   </UChart>
+  <p v-else role="status">{{ tr('Diagramm bei ausgeblendeten Beträgen verborgen.') }}</p>
 </template>

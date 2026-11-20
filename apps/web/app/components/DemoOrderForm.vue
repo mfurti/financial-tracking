@@ -27,7 +27,7 @@ const blocked = computed(
 async function submit() {
   invalid.value = '';
   if (orderValue.value === null) {
-    invalid.value = '1 bis 1000 ganze Anteile eingeben.';
+    invalid.value = tr('1 bis 1000 ganze Anteile eingeben.');
     await nextTick();
     quantityInput.value?.focus();
     return;
@@ -46,29 +46,33 @@ async function submit() {
 
 <template>
   <form class="demo-order-form" @submit.prevent="submit">
-    <p :id="`${formId}-help`">Nur Simulation auf diesem Gerät. Kein echter Auftrag, keine Live-Kurse.</p>
+    <p :id="`${formId}-help`">{{ tr('Nur Simulation auf diesem Gerät. Kein echter Auftrag, keine Live-Kurse.') }}</p>
     <p v-if="invalid || error" role="alert">{{ invalid || error }}</p>
     <fieldset :disabled="blocked" :aria-describedby="`${formId}-help`">
       <label
-        >Demo-Aktion<select v-model="side">
-          <option value="buy">Kaufen</option>
-          <option value="sell">Verkaufen</option>
+        >{{ tr('Demo-Aktion')
+        }}<select v-model="side">
+          <option value="buy">{{ tr('Kaufen') }}</option>
+          <option value="sell">{{ tr('Verkaufen') }}</option>
         </select></label
       >
       <label
-        >Demo-Verrechnungskonto<select v-model="accountId">
+        >{{ tr('Demo-Verrechnungskonto')
+        }}<select v-model="accountId">
           <option v-for="account in state.accounts" :key="account.id" :value="account.id">{{ account.name }}</option>
         </select></label
       >
       <label
-        >Demo-Wertpapier<select v-model="securityId">
+        >{{ tr('Demo-Wertpapier')
+        }}<select v-model="securityId">
           <option v-for="security in state.securities" :key="security.id" :value="security.id">
             {{ security.name }}
           </option>
         </select></label
       >
       <label
-        >Ganze Anteile<input
+        >{{ tr('Ganze Anteile')
+        }}<input
           ref="quantityInput"
           v-model="quantity"
           inputmode="numeric"
@@ -77,17 +81,27 @@ async function submit() {
       /></label>
       <dl class="demo-order-values">
         <div>
-          <dt>Simulierter Stückpreis</dt>
-          <dd data-financial>{{ money(quote) }}</dd>
+          <dt>{{ tr('Simulierter Stückpreis') }}</dt>
+          <dd data-financial>
+            <template v-if="!amountsMasked()">{{ money(quote) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template>
+          </dd>
         </div>
         <div>
-          <dt>Simulierter Auftragswert</dt>
-          <dd data-financial>{{ orderValue === null ? 'Ganze Anteile eingeben' : money(orderValue) }}</dd>
+          <dt>{{ tr('Simulierter Auftragswert') }}</dt>
+          <dd data-financial>
+            <template v-if="!amountsMasked()">{{
+              orderValue === null ? tr('Ganze Anteile eingeben') : money(orderValue)
+            }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template>
+          </dd>
         </div>
       </dl>
-      <UButton type="submit" :loading="saving">{{ side === 'buy' ? 'Kauf simulieren' : 'Verkauf simulieren' }}</UButton>
+      <UButton type="submit" :loading="saving">{{
+        side === 'buy' ? tr('Kauf simulieren') : tr('Verkauf simulieren')
+      }}</UButton>
     </fieldset>
-    <UButton type="button" variant="ghost" :disabled="saving" @click="emit('cancel')">Abbrechen</UButton>
+    <UButton type="button" variant="ghost" :disabled="saving" @click="emit('cancel')">{{ tr('Abbrechen') }}</UButton>
   </form>
 </template>
 

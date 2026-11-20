@@ -43,7 +43,7 @@ const targets = computed(
 function category(id: string | null) {
   return (
     props.categories.find(/** Keep IDs out of normal labels. */ (entry) => entry.id === id)?.name ??
-    'Nicht kategorisiert'
+    tr('Nicht kategorisiert')
   );
 }
 /** Read the currently selected offered candidate without guessing one. */
@@ -74,9 +74,9 @@ function sources(value: z.infer<typeof assignmentPreviewSchema>['items'][number]
     [...new Set(value.references.map(/** Deduplicate repeated observations for readability. */ (ref) => ref.source))]
       .map(
         /** Legacy provenance is explicitly unknown. */ (source) =>
-          source === 'FINTS' ? 'Bank' : source === 'CSV' ? 'CSV' : 'Bestand',
+          source === 'FINTS' ? tr('Bank') : source === 'CSV' ? 'CSV' : tr('Bestand'),
       )
-      .join(', ') || 'Bestand'
+      .join(', ') || tr('Bestand')
   );
 }
 /** Revoke a preview when selection or target changes. */
@@ -168,32 +168,37 @@ onBeforeUnmount(
 </script>
 
 <template>
-  <section v-if="transactionIds.length" aria-label="Kontozuordnung">
-    <SectionPanel title="Ohne-Konto-Buchungen zuordnen" icon="accounts" class="mb-5" compact>
+  <section v-if="transactionIds.length" :aria-label="tr('Kontozuordnung')">
+    <SectionPanel :title="tr('Ohne-Konto-Buchungen zuordnen')" icon="accounts" class="mb-5" compact>
       <p class="muted">
-        {{ transactionIds.length }} ausgewählt. Erst vergleichen, dann zuordnen oder bewusst zusammenführen.
+        {{ transactionIds.length }} {{ tr('ausgewählt. Erst vergleichen, dann zuordnen oder bewusst zusammenführen.') }}
       </p>
       <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
       <p v-if="!targets.length">
-        Lege für die spätere Zuordnung zuerst ein Zielkonto an. Deine CSV ist bereits auswertbar.
+        {{ tr('Lege für die spätere Zuordnung zuerst ein Zielkonto an. Deine CSV ist bereits auswertbar.') }}
       </p>
       <div v-else class="toolbar mb-4">
         <label
-          >Zielkonto für Zuordnung<ChoiceSelect
+          >{{ tr('Zielkonto für Zuordnung')
+          }}<ChoiceSelect
             v-model="accountId"
             :disabled="busy"
-            aria-label="Zielkonto für Zuordnung"
+            :aria-label="tr('Zielkonto für Zuordnung')"
             :searchable="true"
             :items="[
-              { label: `Konto wählen`, value: '' },
+              { label: tr('Konto wählen'), value: '' },
               ...targets.map(
                 /** Build a persisted choice. */ (account) => ({ label: `${account.name}`, value: account.id }),
               ),
             ]"
             @update:model-value="reset"
         /></label>
-        <UButton :disabled="!accountId || transactionIds.length > 100" :loading="busy" variant="soft" @click="compare"
-          >Zuordnung vergleichen</UButton
+        <UButton
+          :disabled="!accountId || transactionIds.length > 100"
+          :loading="busy"
+          variant="soft"
+          @click="compare"
+          >{{ tr('Zuordnung vergleichen') }}</UButton
         >
       </div>
       <form v-if="preview" @submit.prevent="confirm">
@@ -206,30 +211,30 @@ onBeforeUnmount(
           <legend class="sr-only">{{ item.incoming.transaction.description }}</legend>
           <h3>{{ item.incoming.transaction.description }}</h3>
           <p>
-            CSV · Ohne Konto · {{ calendarDate(item.incoming.transaction.bookingDate) }} ·
+            {{ tr('CSV · Ohne Konto ·') }} {{ calendarDate(item.incoming.transaction.bookingDate) }} ·
             {{ money(item.incoming.transaction.amountCents) }}
           </p>
           <p>
-            Kategorie: {{ category(item.incoming.transaction.categoryId) }} ·
-            {{ item.incoming.transaction.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt'
-            }}<span v-if="item.incoming.transaction.isTransfer"> · Umbuchung</span>
+            {{ tr('Kategorie:') }} {{ category(item.incoming.transaction.categoryId) }} ·
+            {{ item.incoming.transaction.status === 'BOOKED' ? tr('Gebucht') : tr('Vorgemerkt')
+            }}<span v-if="item.incoming.transaction.isTransfer"> {{ tr('· Umbuchung') }}</span>
           </p>
           <p>
-            Gegenpartei: {{ item.incoming.transaction.counterpartyName ?? 'Nicht geliefert' }} ·
-            {{ item.incoming.transaction.counterpartyIban ?? 'Keine Gegenkonto-IBAN' }}
+            {{ tr('Gegenpartei:') }} {{ item.incoming.transaction.counterpartyName ?? tr('Nicht geliefert') }} ·
+            {{ item.incoming.transaction.counterpartyIban ?? tr('Keine Gegenkonto-IBAN') }}
           </p>
           <p v-if="item.hasMoreCandidates" class="muted">
-            Weitere mögliche Treffer vorhanden. Es wird niemals automatisch zusammengeführt.
+            {{ tr('Weitere mögliche Treffer vorhanden. Es wird niemals automatisch zusammengeführt.') }}
           </p>
           <template v-if="item.candidates.length">
             <label
-              >Zielbuchung für {{ item.incoming.transaction.description
+              >{{ tr('Zielbuchung für') }} {{ item.incoming.transaction.description
               }}<ChoiceSelect
                 v-model="choices[item.incoming.transaction.id]!.candidateId"
                 :required="['BANK', 'CSV'].includes(choices[item.incoming.transaction.id]!.action)"
                 :searchable="true"
                 :items="[
-                  { label: `Treffer wählen`, value: '' },
+                  { label: tr('Treffer wählen'), value: '' },
                   ...item.candidates.map(
                     /** Build a persisted choice. */ (entry) => ({
                       label: `${calendarDate(entry.transaction.bookingDate)} · ${entry.transaction.description} · ${money(entry.transaction.amountCents)}`,
@@ -244,23 +249,30 @@ onBeforeUnmount(
                 {{ calendarDate(candidate(item.incoming.transaction.id)!.transaction.bookingDate) }}
               </p>
               <p>
-                Ziel: {{ candidate(item.incoming.transaction.id)!.accountName }} ·
+                {{ tr('Ziel:') }} {{ candidate(item.incoming.transaction.id)!.accountName }} ·
                 {{ sources(candidate(item.incoming.transaction.id)!) }} ·
                 {{ money(candidate(item.incoming.transaction.id)!.transaction.amountCents) }}
               </p>
               <p>
-                Gegenpartei:
-                {{ candidate(item.incoming.transaction.id)!.transaction.counterpartyName ?? 'Nicht geliefert' }} ·
-                {{ candidate(item.incoming.transaction.id)!.transaction.counterpartyIban ?? 'Keine Gegenkonto-IBAN' }}
+                {{ tr('Gegenpartei:') }}
+                {{ candidate(item.incoming.transaction.id)!.transaction.counterpartyName ?? tr('Nicht geliefert') }} ·
+                {{
+                  candidate(item.incoming.transaction.id)!.transaction.counterpartyIban ?? tr('Keine Gegenkonto-IBAN')
+                }}
               </p>
               <p>
-                Kategorie: {{ category(candidate(item.incoming.transaction.id)!.transaction.categoryId) }} ·
-                {{ candidate(item.incoming.transaction.id)!.transaction.status === 'BOOKED' ? 'Gebucht' : 'Vorgemerkt'
-                }}<span v-if="candidate(item.incoming.transaction.id)!.transaction.isTransfer"> · Umbuchung</span>
+                {{ tr('Kategorie:') }} {{ category(candidate(item.incoming.transaction.id)!.transaction.categoryId) }} ·
+                {{
+                  candidate(item.incoming.transaction.id)!.transaction.status === 'BOOKED'
+                    ? tr('Gebucht')
+                    : tr('Vorgemerkt')
+                }}<span v-if="candidate(item.incoming.transaction.id)!.transaction.isTransfer">
+                  {{ tr('· Umbuchung') }}</span
+                >
               </p>
-              <DisclosurePanel title="Quellreferenzen vergleichen"
+              <DisclosurePanel :title="tr('Quellreferenzen vergleichen')"
                 ><p v-for="(reference, index) in item.incoming.references" :key="`csv-${index}`" class="reference-copy">
-                  CSV · {{ reference.type }}: {{ reference.value }}
+                  {{ tr('CSV ·') }} {{ reference.type }}: {{ reference.value }}
                 </p>
                 <p
                   v-for="(reference, index) in candidate(item.incoming.transaction.id)!.references"
@@ -272,21 +284,23 @@ onBeforeUnmount(
               >
             </div>
           </template>
-          <p v-else>Keine mögliche Überschneidung gefunden.</p>
+          <p v-else>{{ tr('Keine mögliche Überschneidung gefunden.') }}</p>
           <label
-            >Entscheidung für {{ item.incoming.transaction.description
+            >{{ tr('Entscheidung für') }} {{ item.incoming.transaction.description
             }}<ChoiceSelect
               v-model="choices[item.incoming.transaction.id]!.action"
               required
               :searchable="false"
               :items="[
-                { label: `Entscheidung wählen`, value: '' },
+                { label: tr('Entscheidung wählen'), value: '' },
                 ...(item.candidates.length
-                  ? [{ label: `Bank-/Zieldaten übernehmen und zusammenführen`, value: 'BANK' }]
+                  ? [{ label: tr('Bank-/Zieldaten übernehmen und zusammenführen'), value: 'BANK' }]
                   : []),
-                ...(item.candidates.length ? [{ label: `CSV-Daten übernehmen und zusammenführen`, value: 'CSV' }] : []),
-                { label: `Separat behalten und zuordnen`, value: 'SEPARATE' },
-                { label: `Zuordnung überspringen`, value: 'SKIP' },
+                ...(item.candidates.length
+                  ? [{ label: tr('CSV-Daten übernehmen und zusammenführen'), value: 'CSV' }]
+                  : []),
+                { label: tr('Separat behalten und zuordnen'), value: 'SEPARATE' },
+                { label: tr('Zuordnung überspringen'), value: 'SKIP' },
               ]"
           /></label>
           <label
@@ -294,15 +308,18 @@ onBeforeUnmount(
               ['BANK', 'CSV'].includes(choices[item.incoming.transaction.id]!.action) &&
               categoryConflict(item.incoming.transaction.id)
             "
-            >Abweichende manuelle Kategorie<ChoiceSelect
+            >{{ tr('Abweichende manuelle Kategorie')
+            }}<ChoiceSelect
               v-model="choices[item.incoming.transaction.id]!.categoryChoice"
               required
               :searchable="false"
               :items="[
-                { label: `Kategorie ausdrücklich wählen`, value: '' },
-                { label: `CSV-Kategorie: ${category(item.incoming.transaction.categoryId)}`, value: 'CSV' },
+                { label: tr('Kategorie ausdrücklich wählen'), value: '' },
+                { label: tr('CSV-Kategorie: {0}', [category(item.incoming.transaction.categoryId)]), value: 'CSV' },
                 {
-                  label: `Zielkategorie: ${category(candidate(item.incoming.transaction.id)!.transaction.categoryId)}`,
+                  label: tr('Zielkategorie: {0}', [
+                    category(candidate(item.incoming.transaction.id)!.transaction.categoryId),
+                  ]),
                   value: 'BANK',
                 },
               ]"
@@ -315,20 +332,28 @@ onBeforeUnmount(
               item.incoming.transaction.classification !==
                 candidate(item.incoming.transaction.id)?.transaction.classification
             "
-            label="Abweichende Fix/Variabel-Kennzeichnung"
-            help="Beide Buchungen wurden unterschiedlich eingeordnet. Wähle, welche Entscheidung erhalten bleibt."
+            :label="tr('Abweichende Fix/Variabel-Kennzeichnung')"
+            :help="
+              tr('Beide Buchungen wurden unterschiedlich eingeordnet. Wähle, welche Entscheidung erhalten bleibt.')
+            "
           >
             <ChoiceSelect
               v-model="choices[item.incoming.transaction.id]!.classificationChoice"
               :searchable="false"
               :items="[
-                { label: 'Kennzeichnung ausdrücklich wählen', value: '' },
+                { label: tr('Kennzeichnung ausdrücklich wählen'), value: '' },
                 {
-                  label: `CSV: ${item.incoming.transaction.classification === 'FIXED' ? 'Fix' : 'Variabel'}`,
+                  label: tr('CSV: {0}', [
+                    item.incoming.transaction.classification === 'FIXED' ? tr('Fix') : tr('Variabel'),
+                  ]),
                   value: 'CSV',
                 },
                 {
-                  label: `Ziel: ${candidate(item.incoming.transaction.id)?.transaction.classification === 'FIXED' ? 'Fix' : 'Variabel'}`,
+                  label: tr('Ziel: {0}', [
+                    candidate(item.incoming.transaction.id)?.transaction.classification === 'FIXED'
+                      ? tr('Fix')
+                      : tr('Variabel'),
+                  ]),
                   value: 'BANK',
                 },
               ]"
@@ -336,10 +361,13 @@ onBeforeUnmount(
           </UFormField>
         </fieldset>
         <p class="muted">
-          Zusammenführen zählt die verbleibende Buchung einmal. „Separat behalten“ erhält beide Buchungen;
-          „Überspringen“ lässt die CSV-Buchung ohne Konto.
+          {{
+            tr(
+              'Zusammenführen zählt die verbleibende Buchung einmal. „Separat behalten“ erhält beide Buchungen; „Überspringen“ lässt die CSV-Buchung ohne Konto.',
+            )
+          }}
         </p>
-        <UButton type="submit" :loading="busy">Zuordnung bestätigen</UButton>
+        <UButton type="submit" :loading="busy">{{ tr('Zuordnung bestätigen') }}</UButton>
       </form>
     </SectionPanel>
   </section>

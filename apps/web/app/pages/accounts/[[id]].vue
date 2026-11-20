@@ -60,7 +60,7 @@ const connectionName = computed(
   /** Resolve confirmed account ownership to a persisted connection label. */ () =>
     connections.value.find(
       /** Match only the confirmed connection UUID. */ (row) => row.id === account.value?.bankConnectionId,
-    )?.name ?? 'Nicht verfügbar',
+    )?.name ?? tr('Nicht verfügbar'),
 );
 const availableBalances = computed(
   /** Show available observations separately without replacing the booked balance. */ () =>
@@ -68,7 +68,7 @@ const availableBalances = computed(
       /** Retain only the explicit available source type. */ (row) => row.balanceType === 'AVAILABLE',
     ) ?? [],
 );
-const accountTypes = { CHECKING: 'Girokonto', SAVINGS: 'Sparkonto', OTHER: 'Sonstiges Konto' };
+const accountTypes = { CHECKING: tr('Girokonto'), SAVINGS: tr('Sparkonto'), OTHER: tr('Sonstiges Konto') };
 
 /** Resolve an actual booked balance; available credit is never substituted for missing booked observations. */
 function booked(row: Account) {
@@ -80,8 +80,8 @@ function booked(row: Account) {
 function observation(row: Account) {
   const value = booked(row);
   return value
-    ? `${observedTime(value.observedAt)}${Date.now() - Date.parse(value.observedAt) > 48 * 3600000 ? ' · älter als 48 Stunden' : ''}`
-    : 'Kein beobachteter Saldo · CSV-Umsätze ersetzen keinen Kontostand.';
+    ? `${observedTime(value.observedAt)}${Date.now() - Date.parse(value.observedAt) > 48 * 3600000 ? tr('· älter als 48 Stunden') : ''}`
+    : tr('Kein beobachteter Saldo · CSV-Umsätze ersetzen keinen Kontostand.');
 }
 /** Load accounts and connection choices together. */
 async function load() {
@@ -108,7 +108,7 @@ async function load() {
         isActive: selected.isActive,
         bankConnectionId: selected.bankConnectionId,
       });
-    else if (route.params.id) loadError.value = 'Konto nicht gefunden.';
+    else if (route.params.id) loadError.value = tr('Konto nicht gefunden.');
   } catch (cause) {
     if (!disposed && current === generation) loadError.value = userErrorMessage(cause);
   } finally {
@@ -149,29 +149,32 @@ onBeforeUnmount(
 
 <template>
   <div class="page-heading">
-    <h1>{{ account && route.params.id ? account.name : route.params.id ? 'Kontodetails' : 'Deine Konten' }}</h1>
+    <h1>{{ account && route.params.id ? account.name : route.params.id ? tr('Kontodetails') : tr('Deine Konten') }}</h1>
     <div class="toolbar">
-      <UButton v-if="route.params.id" to="/accounts" variant="soft">Alle Konten</UButton
-      ><UButton v-else to="/accounts/add">Konto hinzufügen</UButton
-      ><UButton to="/connections" variant="soft">Bankverbindungen</UButton
-      ><UButton :disabled="loading || busy" variant="ghost" @click="load">Aktualisieren</UButton>
+      <UButton v-if="route.params.id" to="/accounts" variant="soft">{{ tr('Alle Konten') }}</UButton
+      ><UButton v-else to="/accounts/add">{{ tr('Konto hinzufügen') }}</UButton
+      ><UButton to="/connections" variant="soft">{{ tr('Bankverbindungen') }}</UButton
+      ><UButton :disabled="loading || busy" variant="ghost" @click="load">{{ tr('Aktualisieren') }}</UButton>
     </div>
   </div>
   <UAlert v-if="loadError" role="alert" color="error" :description="loadError" class="mb-4" />
-  <UButton v-if="loadError" :disabled="loading" @click="load">Erneut versuchen</UButton>
-  <FinanceTile v-if="loading" label="Konten" variant="stat" state="loading" />
+  <UButton v-if="loadError" :disabled="loading" @click="load">{{ tr('Erneut versuchen') }}</UButton>
+  <FinanceTile v-if="loading" :label="tr('Konten')" variant="stat" state="loading" />
   <template v-else-if="!loadError">
     <template v-if="!route.params.id">
       <FinanceTile
-        label="Bekannte Kontostände"
-        :value="total === null ? 'Noch kein Saldo' : money(total)"
+        :label="tr('Bekannte Kontostände')"
+        :value="total === null ? tr('Noch kein Saldo') : money(total)"
         :financial="total !== null"
         variant="stat"
-        :context="`${known.length} von ${active.length} aktiven Konten · fehlende Salden bleiben unbekannt`"
+        :context="tr('{0} von {1} aktiven Konten · fehlende Salden bleiben unbekannt', [known.length, active.length])"
       />
       <p class="muted my-5">
-        Beobachtete Kontostände sind von gebuchten Monatszahlen getrennt. Du kannst CSV-Dateien auch ohne Konto
-        importieren.
+        {{
+          tr(
+            'Beobachtete Kontostände sind von gebuchten Monatszahlen getrennt. Du kannst CSV-Dateien auch ohne Konto importieren.',
+          )
+        }}
       </p>
       <ReserveGoalTile />
       <div class="finance-account-grid">
@@ -180,73 +183,78 @@ onBeforeUnmount(
           :key="row.id"
           :data-account-card="row.id"
           :label="row.name"
-          :value="booked(row) ? money(booked(row)!.amountCents) : 'Kein Saldo'"
+          :value="booked(row) ? money(booked(row)!.amountCents) : tr('Kein Saldo')"
           :financial="Boolean(booked(row))"
           variant="account"
           :to="`/accounts/${row.id}`"
           ><template #context
             ><span
-              >{{ accountTypes[row.accountType] }} · {{ row.isActive ? 'Aktiv' : 'Inaktiv' }} ·
-              {{ row.iban ? `•••• ${row.iban.slice(-4)}` : 'Keine IBAN' }}</span
+              >{{ accountTypes[row.accountType] }} · {{ row.isActive ? tr('Aktiv') : tr('Inaktiv') }} ·
+              {{ row.iban ? `•••• ${row.iban.slice(-4)}` : tr('Keine IBAN') }}</span
             ><span class="block mt-2">{{ observation(row) }}</span></template
           ><template #graphic><FinanceIcon name="accounts" /></template
         ></FinanceTile>
       </div>
       <div v-if="!accounts.length" class="empty-state">
-        <h2>Noch keine Konten vorhanden.</h2>
-        <p>Ein Konto ist optional. Importierte Buchungen bleiben auch ohne Zuordnung erhalten.</p>
-        <UButton to="/accounts/add" variant="soft">Erstes Konto hinzufügen</UButton
-        ><UButton to="/imports/csv" variant="ghost">CSV importieren</UButton>
+        <h2>{{ tr('Noch keine Konten vorhanden.') }}</h2>
+        <p>{{ tr('Ein Konto ist optional. Importierte Buchungen bleiben auch ohne Zuordnung erhalten.') }}</p>
+        <UButton to="/accounts/add" variant="soft">{{ tr('Erstes Konto hinzufügen') }}</UButton
+        ><UButton to="/imports/csv" variant="ghost">{{ tr('CSV importieren') }}</UButton>
       </div>
     </template>
     <template v-else-if="account">
       <FinanceTile
-        label="Beobachteter gebuchter Saldo"
-        :value="booked(account) ? money(booked(account)!.amountCents) : 'Kein Saldo'"
+        :label="tr('Beobachteter gebuchter Saldo')"
+        :value="booked(account) ? money(booked(account)!.amountCents) : tr('Kein Saldo')"
         :financial="Boolean(booked(account))"
         variant="account"
         :context="observation(account)"
       />
       <div class="toolbar my-5">
-        <UButton :to="`/transactions?accountId=${account.id}`" variant="soft">Umsätze ansehen</UButton>
+        <UButton :to="`/transactions?accountId=${account.id}`" variant="soft">{{ tr('Umsätze ansehen') }}</UButton>
       </div>
       <ReserveGoalTile :account="account" />
-      <SectionPanel title="Kontoinformationen" icon="accounts" class="mb-5"
+      <SectionPanel :title="tr('Kontoinformationen')" icon="accounts" class="mb-5"
         ><dl class="detail-list">
-          <dt>Kontotyp</dt>
+          <dt>{{ tr('Kontotyp') }}</dt>
           <dd>{{ accountTypes[account.accountType] }}</dd>
-          <dt>Währung</dt>
+          <dt>{{ tr('Währung') }}</dt>
           <dd>{{ account.currency }}</dd>
           <dt>IBAN</dt>
-          <dd>{{ account.iban || 'Keine IBAN hinterlegt' }}</dd>
-          <dt>Verbindung</dt>
+          <dd>{{ account.iban || tr('Keine IBAN hinterlegt') }}</dd>
+          <dt>{{ tr('Verbindung') }}</dt>
           <dd>{{ connectionName }}</dd>
-          <dt>Letzter erfolgreicher Bankabruf</dt>
+          <dt>{{ tr('Letzter erfolgreicher Bankabruf') }}</dt>
           <dd>
-            {{ account.lastSuccessfulSyncAt ? observedTime(account.lastSuccessfulSyncAt) : 'Noch kein Bankabruf' }}
+            {{ account.lastSuccessfulSyncAt ? observedTime(account.lastSuccessfulSyncAt) : tr('Noch kein Bankabruf') }}
           </dd>
         </dl>
         <div v-for="balance in availableBalances" :key="balance.id" class="data-context">
-          <span>Beobachteter verfügbarer Betrag</span><strong data-financial>{{ money(balance.amountCents) }}</strong
+          <span>{{ tr('Beobachteter verfügbarer Betrag') }}</span
+          ><strong data-financial
+            ><template v-if="!amountsMasked()">{{ money(balance.amountCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
           ><small>{{ observedTime(balance.observedAt) }}</small>
         </div></SectionPanel
       >
-      <SectionPanel title="Konto bearbeiten" icon="settings"
+      <SectionPanel :title="tr('Konto bearbeiten')" icon="settings"
         ><UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
-        <p v-if="saved" role="status">Änderungen gespeichert.</p>
+        <p v-if="saved" role="status">{{ tr('Änderungen gespeichert.') }}</p>
         <UForm
           ref="validation"
-          :schema="formSchema"
+          :schema="translatedSchema(formSchema)"
           :state="draft"
           :validate-on="[]"
           class="filter-grid"
           @submit="save"
           @error="formInvalid"
-          ><UFormField label="Kontoname" name="name"><UInput v-model="draft.name" :disabled="busy" /></UFormField
-          ><UFormField v-if="account.iban" label="Bankverbindung zuordnen" name="bankConnectionId"
+          ><UFormField :label="tr('Kontoname')" name="name"><UInput v-model="draft.name" :disabled="busy" /></UFormField
+          ><UFormField v-if="account.iban" :label="tr('Bankverbindung zuordnen')" name="bankConnectionId"
             ><USelect v-model="draft.bankConnectionId" :items="options" :disabled="busy" /></UFormField
-          ><UCheckbox v-model="draft.isActive" label="Aktiv" :disabled="busy" /><UButton type="submit" :loading="busy"
-            >Speichern</UButton
+          ><UCheckbox v-model="draft.isActive" :label="tr('Aktiv')" :disabled="busy" /><UButton
+            type="submit"
+            :loading="busy"
+            >{{ tr('Speichern') }}</UButton
           ></UForm
         ></SectionPanel
       >

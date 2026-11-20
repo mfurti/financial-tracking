@@ -13,63 +13,68 @@ const notice = ref('');
 /** Announce a successful isolated order while restoring the trigger's dialog focus. */
 function completed() {
   ordering.value = false;
-  notice.value = 'Demo-Auftrag gespeichert.';
+  notice.value = tr('Demo-Auftrag gespeichert.');
 }
 </script>
 
 <template>
-  <UButton to="/wealth" variant="link">Zurück zu Vermögen</UButton>
+  <UButton to="/wealth" variant="link">{{ tr('Zurück zu Vermögen') }}</UButton>
   <div class="page-heading">
-    <h1>{{ security?.name ?? 'Unbekanntes Demo-Wertpapier' }}</h1>
+    <h1>{{ security?.name ?? tr('Unbekanntes Demo-Wertpapier') }}</h1>
   </div>
-  <p>Investment-Demo · Fiktives Wertpapier. Keine Live-Kurse und keine echten Aufträge.</p>
+  <p>{{ tr('Investment-Demo · Fiktives Wertpapier. Keine Live-Kurse und keine echten Aufträge.') }}</p>
   <p v-if="notice" role="status">{{ notice }}</p>
   <p v-if="status !== 'ready'" role="status">
     {{
       status === 'memory'
-        ? 'Nur im Arbeitsspeicher; Änderungen gehen beim Neuladen verloren.'
-        : 'Demo-Speicher prüfen. Bitte zur Vermögensseite zurückkehren.'
+        ? tr('Nur im Arbeitsspeicher; Änderungen gehen beim Neuladen verloren.')
+        : tr('Demo-Speicher prüfen. Bitte zur Vermögensseite zurückkehren.')
     }}
   </p>
   <template v-if="security">
     <div class="finance-feature-grid demo-security-grid">
       <FinanceTile
-        label="Simulierter Stückpreis"
+        :label="tr('Simulierter Stückpreis')"
         :value="money(demoPrice(state, security.id))"
-        context="Fiktiver Basiskurs mit gespeichertem Demo-Szenario"
+        :context="tr('Fiktiver Basiskurs mit gespeichertem Demo-Szenario')"
         financial
       /><FinanceTile
-        label="Demo-Szenario"
-        :value="`${state.scenarioBps} Basispunkte`"
-        context="100 Basispunkte = 1 %"
+        :label="tr('Demo-Szenario')"
+        :value="tr('{0} Basispunkte', [state.scenarioBps])"
+        :context="tr('100 Basispunkte = 1 %')"
       />
     </div>
-    <SectionPanel title="Demo-Bestände"
+    <SectionPanel :title="tr('Demo-Bestände')"
       ><div
         v-for="position in state.positions.filter((p) => p.securityId === security!.id)"
         :key="position.accountId"
         class="demo-holding"
       >
         <span>{{ state.accounts.find((a) => a.id === position.accountId)?.name }}</span
-        ><strong>{{ position.quantity }} ganze Anteile</strong
-        ><span data-financial>{{ money(BigInt(position.quantity) * demoPrice(state, security.id)) }}</span>
+        ><strong>{{ position.quantity }} {{ tr('ganze Anteile') }}</strong
+        ><span data-financial
+          ><template v-if="!amountsMasked()">{{
+            money(BigInt(position.quantity) * demoPrice(state, security.id))
+          }}</template
+          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></span
+        >
       </div>
       <p v-if="!state.positions.some((p) => p.securityId === security!.id)" class="demo-holding">
-        Noch keine Demo-Anteile.
+        {{ tr('Noch keine Demo-Anteile.') }}
       </p></SectionPanel
     >
-    <UButton :disabled="saving || !['ready', 'memory'].includes(status)" @click="ordering = true"
-      >Kauf / Verkauf simulieren</UButton
-    >
+    <UButton :disabled="saving || !['ready', 'memory'].includes(status)" @click="ordering = true">{{
+      tr('Kauf / Verkauf simulieren')
+    }}</UButton>
     <FinanceDialog
       v-model:open="ordering"
-      title="Demo-Auftrag"
-      description="Kein echter Wertpapierauftrag."
+      :title="tr('Demo-Auftrag')"
+      :description="tr('Kein echter Wertpapierauftrag.')"
       :dismissible="!saving"
       ><DemoOrderForm :security-id="security.id" @completed="completed" @cancel="ordering = false"
     /></FinanceDialog>
   </template>
-  <UAlert v-else color="warning" title="Dieses Wertpapier gehört nicht zum Demo-Katalog." />
+  <UAlert v-else color="warning" :title="tr('Dieses Wertpapier gehört nicht zum Demo-Katalog.')" />
 </template>
 
 <style scoped>

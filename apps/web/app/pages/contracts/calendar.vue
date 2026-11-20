@@ -122,47 +122,48 @@ onBeforeUnmount(
 
 <template>
   <div class="page-heading">
-    <h1>Vertragskalender</h1>
-    <UButton to="/contracts" variant="soft">Alle Verträge</UButton>
+    <h1>{{ tr('Vertragskalender') }}</h1>
+    <UButton to="/contracts" variant="soft">{{ tr('Alle Verträge') }}</UButton>
   </div>
   <div class="toolbar calendar-toolbar mb-5">
-    <UButton variant="ghost" aria-label="Vorheriger Monat" @click="shiftMonth(-1)">‹</UButton>
+    <UButton variant="ghost" :aria-label="tr('Vorheriger Monat')" @click="shiftMonth(-1)">‹</UButton>
     <MonthPicker v-model="month" @change="load" />
-    <UButton variant="ghost" aria-label="Nächster Monat" @click="shiftMonth(1)">›</UButton>
+    <UButton variant="ghost" :aria-label="tr('Nächster Monat')" @click="shiftMonth(1)">›</UButton>
     <div class="calendar-scope">
       <!-- Bind filters to real identities, including inactive historical accounts. -->
       <AccountScopeSelect
         v-model:account-id="accountId"
         v-model:group-id="groupId"
         :accounts="accounts"
-        label="Kalenderkonto"
+        :label="tr('Kalenderkonto')"
         :allow-unassigned="false"
         @change="load"
       />
     </div>
-    <UButton variant="soft" :loading="loading" @click="load">Aktualisieren</UButton>
+    <UButton variant="soft" :loading="loading" @click="load">{{ tr('Aktualisieren') }}</UButton>
   </div>
   <p class="muted mb-5">
-    Fälligkeiten sind Planwerte aus bestätigten Verträgen. Fehlende Zuordnung beweist keinen Zahlungsausfall.
-    Tatsächliche Buchungen und ihr Buchungsdatum bleiben getrennt. Ein Kontofilter berücksichtigt nur ausdrücklich
-    diesem Konto zugeordnete Verträge. Eine Kontogruppe berücksichtigt die Verträge ihrer Mitgliedskonten; leere Gruppen
-    finden keine Fälligkeiten.
+    {{
+      tr(
+        'Fälligkeiten sind Planwerte aus bestätigten Verträgen. Fehlende Zuordnung beweist keinen Zahlungsausfall. Tatsächliche Buchungen und ihr Buchungsdatum bleiben getrennt. Ein Kontofilter berücksichtigt nur ausdrücklich diesem Konto zugeordnete Verträge. Eine Kontogruppe berücksichtigt die Verträge ihrer Mitgliedskonten; leere Gruppen finden keine Fälligkeiten.',
+      )
+    }}
   </p>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
-  <UButton v-if="error && !loading" variant="soft" @click="load">Erneut laden</UButton>
-  <p v-if="loading" role="status">Vertragskalender wird geladen …</p>
+  <UButton v-if="error && !loading" variant="soft" @click="load">{{ tr('Erneut laden') }}</UButton>
+  <p v-if="loading" role="status">{{ tr('Vertragskalender wird geladen …') }}</p>
   <template v-if="report && !loading">
     <FinanceTile
-      label="Geplante Fälligkeiten im Monat"
+      :label="tr('Geplante Fälligkeiten im Monat')"
       :value="money(report.totalPlannedCents)"
-      :context="`${report.events.length} Fälligkeiten · ${monthName(month)} · Planwert`"
+      :context="tr('{0} Fälligkeiten · {1} · Planwert', [report.events.length, monthName(month)])"
       variant="insight"
       financial
       class="mb-6"
     />
     <div class="contract-calendar-layout">
       <SectionPanel :title="monthName(month)" icon="calendar" compact>
-        <div class="contract-calendar-grid" role="group" aria-label="Kalendertage">
+        <div class="contract-calendar-grid" role="group" :aria-label="tr('Kalendertage')">
           <span v-for="day in ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']" :key="day" class="muted calendar-weekday">{{
             day
           }}</span>
@@ -172,7 +173,7 @@ onBeforeUnmount(
               type="button"
               class="calendar-day"
               :class="{ 'calendar-day--due': dueCount(date) > 0 }"
-              :aria-label="`${calendarDate(date)} · ${dueCount(date)} Fälligkeiten`"
+              :aria-label="tr('{0} · {1} Fälligkeiten', [calendarDate(date), dueCount(date)])"
               :aria-pressed="selectedDay === date"
               @click="selectedDay = selectedDay === date ? '' : date"
             >
@@ -181,16 +182,16 @@ onBeforeUnmount(
             ><span v-else aria-hidden="true" />
           </template>
         </div>
-        <UButton v-if="selectedDay" variant="ghost" class="mt-3" @click="selectedDay = ''"
-          >Alle Fälligkeiten zeigen</UButton
-        >
+        <UButton v-if="selectedDay" variant="ghost" class="mt-3" @click="selectedDay = ''">{{
+          tr('Alle Fälligkeiten zeigen')
+        }}</UButton>
       </SectionPanel>
       <SectionPanel
-        :title="selectedDay ? `Fälligkeiten am ${calendarDate(selectedDay)}` : 'Fälligkeiten im Monat'"
+        :title="selectedDay ? tr('Fälligkeiten am {0}', [calendarDate(selectedDay)]) : tr('Fälligkeiten im Monat')"
         icon="contracts"
         compact
       >
-        <p v-if="!events.length" class="empty-copy">Keine Fälligkeiten im gewählten Zeitraum.</p>
+        <p v-if="!events.length" class="empty-copy">{{ tr('Keine Fälligkeiten im gewählten Zeitraum.') }}</p>
         <article
           v-for="event in events"
           :key="`${event.contractId}:${event.dueDate}`"
@@ -202,13 +203,21 @@ onBeforeUnmount(
           >
           <p class="muted">{{ calendarDate(event.dueDate) }} · {{ event.provider }}</p>
           <p>
-            Planwert: <strong data-financial>{{ money(event.plannedCents) }}</strong>
+            {{ tr('Planwert:')
+            }}<strong data-financial
+              ><template v-if="!amountsMasked()">{{ money(event.plannedCents) }}</template
+              ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+            >
           </p>
           <NuxtLink v-if="event.payment" :to="`/transactions/${event.payment.transactionId}`" class="text-link"
-            >Zugeordnete Buchung: <span data-financial>{{ money(event.payment.amountCents) }}</span> ·
-            {{ calendarDate(event.payment.bookingDate) }}</NuxtLink
+            >{{ tr('Zugeordnete Buchung:') }}
+            <span data-financial
+              ><template v-if="!amountsMasked()">{{ money(event.payment.amountCents) }}</template
+              ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></span
+            >
+            · {{ calendarDate(event.payment.bookingDate) }}</NuxtLink
           >
-          <p v-else class="muted">Keine Buchung zugeordnet</p>
+          <p v-else class="muted">{{ tr('Keine Buchung zugeordnet') }}</p>
         </article>
       </SectionPanel>
     </div>

@@ -72,50 +72,55 @@ onBeforeUnmount(
 
 <template>
   <div class="page-heading">
-    <h1>Konto hinzufügen</h1>
-    <UButton to="/accounts" variant="soft">Alle Konten</UButton>
+    <h1>{{ tr('Konto hinzufügen') }}</h1>
+    <UButton to="/accounts" variant="soft">{{ tr('Alle Konten') }}</UButton>
   </div>
-  <SectionPanel title="Manuelles Konto" icon="accounts"
+  <SectionPanel :title="tr('Manuelles Konto')" icon="accounts"
     ><p class="muted mb-5">
-      Ein neues Konto startet ohne beobachteten Saldo. CSV-Umsätze ersetzen keinen Kontostand. CSV-Import funktioniert
-      auch ohne Konto; eine spätere Zuordnung bleibt möglich.
+      {{
+        tr(
+          'Ein neues Konto startet ohne beobachteten Saldo. CSV-Umsätze ersetzen keinen Kontostand. CSV-Import funktioniert auch ohne Konto; eine spätere Zuordnung bleibt möglich.',
+        )
+      }}
     </p>
     <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
-    <p v-if="loading" role="status">Verbindungen werden geladen …</p>
+    <p v-if="loading" role="status">{{ tr('Verbindungen werden geladen …') }}</p>
     <template v-if="connections.length"
       ><UForm
         ref="validation"
-        :schema="formSchema"
+        :schema="translatedSchema(formSchema)"
         :state="form"
         :validate-on="[]"
         class="filter-grid"
         @submit="create"
         @error="formInvalid"
-        ><UFormField label="Name" name="name"
-          ><UInput v-model="form.name" placeholder="Mein Girokonto" :disabled="busy" /></UFormField
-        ><UFormField label="Bankverbindung" name="bankConnectionId"
+        ><UFormField :label="tr('Name')" name="name"
+          ><UInput v-model="form.name" :placeholder="tr('Mein Girokonto')" :disabled="busy" /></UFormField
+        ><UFormField :label="tr('Bankverbindung')" name="bankConnectionId"
           ><USelect v-model="form.bankConnectionId" :items="options" :disabled="busy" /></UFormField
-        ><UFormField label="IBAN (optional)" name="iban"
-          ><UInput v-model="form.iban" placeholder="DE…" :disabled="busy" /></UFormField
-        ><UFormField label="Kontotyp" name="accountType"
+        ><UFormField :label="tr('IBAN (optional)')" name="iban"
+          ><UInput v-model="form.iban" :placeholder="tr('DE…')" :disabled="busy" /></UFormField
+        ><UFormField :label="tr('Kontotyp')" name="accountType"
           ><USelect
             v-model="form.accountType"
             :items="[
-              { label: 'Girokonto', value: 'CHECKING' },
-              { label: 'Sparkonto', value: 'SAVINGS' },
-              { label: 'Sonstiges Konto', value: 'OTHER' },
+              { label: tr('Girokonto'), value: 'CHECKING' },
+              { label: tr('Sparkonto'), value: 'SAVINGS' },
+              { label: tr('Sonstiges Konto'), value: 'OTHER' },
             ]"
             :disabled="busy" /></UFormField
-        ><UButton type="submit" :loading="busy" :disabled="loading">Konto anlegen</UButton></UForm
+        ><UButton type="submit" :loading="busy" :disabled="loading">{{ tr('Konto anlegen') }}</UButton></UForm
       ></template
     >
     <div v-else-if="!loading" class="empty-copy">
-      Lege zuerst eine Verbindung an, um das Konto einer echten Quelle zuzuordnen.
+      {{ tr('Lege zuerst eine Verbindung an, um das Konto einer echten Quelle zuzuordnen.') }}
       <div class="toolbar mt-4">
-        <UButton to="/connections" variant="soft">Bankverbindung anlegen</UButton
-        ><UButton to="/imports/csv" variant="ghost">CSV ohne Konto importieren</UButton>
+        <UButton to="/connections" variant="soft">{{ tr('Bankverbindung anlegen') }}</UButton
+        ><UButton to="/imports/csv" variant="ghost">{{ tr('CSV ohne Konto importieren') }}</UButton>
       </div>
     </div>
-    <UButton v-if="error" variant="soft" :disabled="loading" @click="load">Erneut versuchen</UButton></SectionPanel
+    <UButton v-if="error" variant="soft" :disabled="loading" @click="load">{{
+      tr('Erneut versuchen')
+    }}</UButton></SectionPanel
   >
 </template>

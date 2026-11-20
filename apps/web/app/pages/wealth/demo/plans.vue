@@ -48,10 +48,10 @@ async function save() {
   let amountCents: string;
   try {
     amountCents = euroCents(amount.value);
-    if (BigInt(amountCents) <= 0n) throw new Error('Positiven Demo-Sparbetrag eingeben.');
-    if (!/^(?:[1-9]|[12]\d|3[01])$/.test(day.value)) throw new Error('Ausführungstag von 1 bis 31 eingeben.');
+    if (BigInt(amountCents) <= 0n) throw new Error(tr('Positiven Demo-Sparbetrag eingeben.'));
+    if (!/^(?:[1-9]|[12]\d|3[01])$/.test(day.value)) throw new Error(tr('Ausführungstag von 1 bis 31 eingeben.'));
   } catch (caught) {
-    invalid.value = caught instanceof Error ? caught.message : 'Demo-Plan prüfen.';
+    invalid.value = caught instanceof Error ? caught.message : tr('Demo-Plan prüfen.');
     return;
   }
   if (
@@ -68,68 +68,74 @@ async function save() {
     })
   ) {
     editing.value = false;
-    notice.value = 'Demo-Sparplan gespeichert. Keine automatische Ausführung.';
+    notice.value = tr('Demo-Sparplan gespeichert. Keine automatische Ausführung.');
   }
 }
 /** Remove synthetic terms while retaining executed-period receipts. */
 async function remove() {
   if (deleting.value && (await execute({ kind: 'plan-delete', planId: deleting.value.id }))) {
     deleting.value = null;
-    notice.value = 'Demo-Sparplan gelöscht.';
+    notice.value = tr('Demo-Sparplan gelöscht.');
   }
 }
 /** Execute the explicitly selected month exactly once. */
 async function run() {
   if (executing.value && (await execute({ kind: 'plan-execute', planId: executing.value.id, period: period.value }))) {
     executing.value = null;
-    notice.value = 'Demo-Sparplan für diesen Monat simuliert.';
+    notice.value = tr('Demo-Sparplan für diesen Monat simuliert.');
   }
 }
 /** Resolve synthetic names without looking up real financial metadata. */
 function accountName(id: string) {
   return (
     state.value.accounts.find(/** Match a validated demo reference. */ (account) => account.id === id)?.name ??
-    'Demo-Konto'
+    tr('Demo-Konto')
   );
 }
 </script>
 <template>
-  <UButton to="/wealth" variant="link">Zurück zu Vermögen</UButton>
+  <UButton to="/wealth" variant="link">{{ tr('Zurück zu Vermögen') }}</UButton>
   <div class="page-heading">
-    <h1>Demo-Sparpläne</h1>
-    <UButton :disabled="blocked" @click="edit()">Demo-Sparplan anlegen</UButton>
+    <h1>{{ tr('Demo-Sparpläne') }}</h1>
+    <UButton :disabled="blocked" @click="edit()">{{ tr('Demo-Sparplan anlegen') }}</UButton>
   </div>
   <p>
-    Nur Simulation auf diesem Gerät. Kein automatischer Auftrag; Ausführung ausschließlich nach Bestätigung. Tage 29–31
-    werden bei Bedarf auf das Monatsende in Berlin begrenzt.
+    {{
+      tr(
+        'Nur Simulation auf diesem Gerät. Kein automatischer Auftrag; Ausführung ausschließlich nach Bestätigung. Tage 29–31 werden bei Bedarf auf das Monatsende in Berlin begrenzt.',
+      )
+    }}
   </p>
   <p v-if="status !== 'ready'" role="status">
     {{
       status === 'memory'
-        ? 'Nur im Arbeitsspeicher; Änderungen gehen beim Neuladen verloren.'
-        : 'Demo-Speicher prüfen und neu laden, bevor Änderungen gespeichert werden.'
-    }}<UButton v-if="status === 'conflict'" variant="soft" @click="reload">Demo neu laden</UButton>
+        ? tr('Nur im Arbeitsspeicher; Änderungen gehen beim Neuladen verloren.')
+        : tr('Demo-Speicher prüfen und neu laden, bevor Änderungen gespeichert werden.')
+    }}<UButton v-if="status === 'conflict'" variant="soft" @click="reload">{{ tr('Demo neu laden') }}</UButton>
   </p>
   <p v-if="notice" role="status">{{ notice }}</p>
   <FinanceTile
-    label="Monatliches Demo-Budget"
+    :label="tr('Monatliches Demo-Budget')"
     :value="money(planned)"
-    context="Geplante Simulation · keine echte Zahlung"
+    :context="tr('Geplante Simulation · keine echte Zahlung')"
     financial
   />
-  <SectionPanel title="Deine Demo-Sparpläne"
-    ><p v-if="!state.plans.length">Noch keine Demo-Sparpläne.</p>
+  <SectionPanel :title="tr('Deine Demo-Sparpläne')"
+    ><p v-if="!state.plans.length">{{ tr('Noch keine Demo-Sparpläne.') }}</p>
     <article v-for="plan in state.plans" :key="plan.id" class="demo-plan" :data-demo-plan="plan.id">
       <div>
         <h3>{{ plan.name }}</h3>
-        <p>{{ accountName(plan.accountId) }} · Tag {{ plan.day }}</p>
+        <p>{{ accountName(plan.accountId) }} {{ tr('· Tag') }} {{ plan.day }}</p>
         <p data-financial>
-          {{ money(plan.amountCents) }} Budget · {{ money(demoPrice(state, plan.securityId)) }} simulierter Stückpreis
+          <template v-if="!amountsMasked()"
+            >{{ money(plan.amountCents) }} {{ tr('Budget ·') }} {{ money(demoPrice(state, plan.securityId)) }}
+            {{ tr('simulierter Stückpreis') }}</template
+          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template>
         </p>
-        <p>Nur ganze Anteile; nicht verbrauchtes Budget bleibt im Demo-Guthaben.</p>
+        <p>{{ tr('Nur ganze Anteile; nicht verbrauchtes Budget bleibt im Demo-Guthaben.') }}</p>
       </div>
       <div class="demo-plan-actions">
-        <UButton :disabled="blocked" variant="soft" @click="edit(plan)">Bearbeiten</UButton
+        <UButton :disabled="blocked" variant="soft" @click="edit(plan)">{{ tr('Bearbeiten') }}</UButton
         ><UButton
           :disabled="blocked"
           variant="soft"
@@ -137,7 +143,7 @@ function accountName(id: string) {
             executing = plan;
             error = '';
           "
-          >Monat simulieren</UButton
+          >{{ tr('Monat simulieren') }}</UButton
         ><UButton
           :disabled="blocked"
           variant="ghost"
@@ -145,72 +151,78 @@ function accountName(id: string) {
             deleting = plan;
             error = '';
           "
-          >Löschen</UButton
+          >{{ tr('Löschen') }}</UButton
         >
       </div>
     </article></SectionPanel
   >
   <FinanceDialog
     v-model:open="editing"
-    title="Demo-Sparplan bearbeiten"
-    description="Fiktives Budget, keine echte Order."
+    :title="tr('Demo-Sparplan bearbeiten')"
+    :description="tr('Fiktives Budget, keine echte Order.')"
     :dismissible="!saving"
     ><form class="demo-plan-form" @submit.prevent="save">
       <p v-if="invalid || error" role="alert">{{ invalid || error }}</p>
       <fieldset :disabled="blocked">
-        <label :for="`${formId}-name`">Demo-Planname</label
-        ><input :id="`${formId}-name`" v-model="name" required maxlength="80" /><label :for="`${formId}-account`"
-          >Demo-Verrechnungskonto</label
+        <label :for="`${formId}-name`">{{ tr('Demo-Planname') }}</label
+        ><input :id="`${formId}-name`" v-model="name" required maxlength="80" /><label :for="`${formId}-account`">{{
+          tr('Demo-Verrechnungskonto')
+        }}</label
         ><select :id="`${formId}-account`" v-model="accountId">
           <option v-for="account in state.accounts" :key="account.id" :value="account.id">
             {{ account.name }}
           </option></select
-        ><label :for="`${formId}-security`">Demo-Wertpapier</label
+        ><label :for="`${formId}-security`">{{ tr('Demo-Wertpapier') }}</label
         ><select :id="`${formId}-security`" v-model="securityId">
           <option v-for="security in state.securities" :key="security.id" :value="security.id">
             {{ security.name }}
           </option></select
-        ><label :for="`${formId}-amount`">Demo-Sparbetrag in Euro</label
-        ><input :id="`${formId}-amount`" v-model="amount" inputmode="decimal" required /><label :for="`${formId}-day`"
-          >Demo-Ausführungstag</label
+        ><label :for="`${formId}-amount`">{{ tr('Demo-Sparbetrag in Euro') }}</label
+        ><input
+          :id="`${formId}-amount`"
+          v-model="amount"
+          :type="amountsMasked() ? 'password' : 'text'"
+          inputmode="decimal"
+          required
+        /><label :for="`${formId}-day`">{{ tr('Demo-Ausführungstag') }}</label
         ><input :id="`${formId}-day`" v-model="day" inputmode="numeric" required /><UButton
           type="submit"
           :loading="saving"
-          >Demo-Sparplan speichern</UButton
+          >{{ tr('Demo-Sparplan speichern') }}</UButton
         >
       </fieldset>
-      <UButton variant="ghost" :disabled="saving" @click="editing = false">Abbrechen</UButton>
+      <UButton variant="ghost" :disabled="saving" @click="editing = false">{{ tr('Abbrechen') }}</UButton>
     </form></FinanceDialog
   >
   <FinanceDialog
     :open="Boolean(deleting)"
-    title="Demo-Sparplan löschen"
-    description="Nur synthetische Planbedingungen entfernen."
+    :title="tr('Demo-Sparplan löschen')"
+    :description="tr('Nur synthetische Planbedingungen entfernen.')"
     :dismissible="!saving"
     @update:open="!$event && (deleting = null)"
-    ><p>{{ deleting?.name }} löschen? Bereits simulierte Aktivitäten bleiben erhalten.</p>
+    ><p>{{ deleting?.name }} {{ tr('löschen? Bereits simulierte Aktivitäten bleiben erhalten.') }}</p>
     <p v-if="error" role="alert">{{ error }}</p>
-    <UButton :disabled="blocked" :loading="saving" @click="remove">Demo-Sparplan löschen</UButton
-    ><UButton variant="ghost" :disabled="saving" @click="deleting = null">Abbrechen</UButton></FinanceDialog
+    <UButton :disabled="blocked" :loading="saving" @click="remove">{{ tr('Demo-Sparplan löschen') }}</UButton
+    ><UButton variant="ghost" :disabled="saving" @click="deleting = null">{{ tr('Abbrechen') }}</UButton></FinanceDialog
   >
   <FinanceDialog
     :open="Boolean(executing)"
-    title="Demo-Monat simulieren"
-    description="Ausdrückliche Simulation mit vorhandenen Demo-Mitteln."
+    :title="tr('Demo-Monat simulieren')"
+    :description="tr('Ausdrückliche Simulation mit vorhandenen Demo-Mitteln.')"
     :dismissible="!saving"
     @update:open="!$event && (executing = null)"
     ><form class="demo-plan-form" @submit.prevent="run">
-      <p>Jeder Plan kann pro Monat nur einmal ausgeführt werden. Keine Bankaktion.</p>
+      <p>{{ tr('Jeder Plan kann pro Monat nur einmal ausgeführt werden. Keine Bankaktion.') }}</p>
       <p v-if="error" role="alert">{{ error }}</p>
       <fieldset :disabled="blocked">
-        <label :for="`${formId}-period`">Demo-Ausführungsmonat</label
+        <label :for="`${formId}-period`">{{ tr('Demo-Ausführungsmonat') }}</label
         ><input :id="`${formId}-period`" v-model="period" type="month" required /><UButton
           type="submit"
           :loading="saving"
-          >Diesen Demo-Monat ausführen</UButton
+          >{{ tr('Diesen Demo-Monat ausführen') }}</UButton
         >
       </fieldset>
-      <UButton variant="ghost" :disabled="saving" @click="executing = null">Abbrechen</UButton>
+      <UButton variant="ghost" :disabled="saving" @click="executing = null">{{ tr('Abbrechen') }}</UButton>
     </form></FinanceDialog
   >
 </template>

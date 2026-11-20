@@ -6,6 +6,8 @@ import {
   applyCustomAppearance,
 } from '../utils/appearance';
 import { loadWorkspacePreferences, storeWorkspacePreferences } from '../utils/workspace-preferences';
+import { restoreWorkspaceDisplay } from '../composables/useWorkspaceLocale';
+import { z } from 'zod';
 
 export default defineNuxtPlugin(
   /** Bind the early-restored palette to reactive settings without server persistence. */ () => {
@@ -15,6 +17,15 @@ export default defineNuxtPlugin(
     });
     preferences.value = restored.value;
     storageState.value = restored.status;
+    watch(
+      preferences,
+      /** Restore locale and privacy before mounting; later edits update render-time text synchronously. */ (value) => {
+        restoreWorkspaceDisplay(value.language, value.maskAmounts);
+        // Only client-side validation wording changes; the shared schemas and API constraints stay identical.
+        z.config(value.language === 'en' ? z.locales.en() : z.locales.de());
+      },
+      { immediate: true, deep: true, flush: 'sync' },
+    );
     useHead({
       htmlAttrs: {
         lang: computed(

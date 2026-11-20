@@ -34,8 +34,8 @@ const selection = computed({
 });
 const choices = computed(
   /** Preserve an unresolved active group rather than silently broadening it to all accounts. */ () => [
-    { label: 'Alle Konten', value: '' },
-    ...(props.allowUnassigned ? [{ label: 'Ohne Konto', value: 'UNASSIGNED' }] : []),
+    { label: tr('Alle Konten'), value: '' },
+    ...(props.allowUnassigned ? [{ label: tr('Ohne Konto'), value: 'UNASSIGNED' }] : []),
     ...props.accounts.map(
       /** Existing account labels and UUIDs retain their previous behavior. */ (account) => ({
         label: account.name,
@@ -44,7 +44,7 @@ const choices = computed(
     ),
     ...groups.value.map(
       /** Prefix group labels so a same-named account cannot be mistaken for a group. */ (group) => ({
-        label: `Kontogruppe: ${group.name}`,
+        label: tr('Kontogruppe: {0}', [group.name]),
         value: `group:${group.id}`,
       }),
     ),
@@ -52,7 +52,7 @@ const choices = computed(
     !groups.value.some(
       /** A missing group remains explicitly selected until changed. */ (group) => group.id === groupId.value,
     )
-      ? [{ label: 'Gewählte Kontogruppe (Name nicht verfügbar)', value: `group:${groupId.value}` }]
+      ? [{ label: tr('Gewählte Kontogruppe (Name nicht verfügbar)'), value: `group:${groupId.value}` }]
       : []),
   ],
 );
@@ -63,7 +63,7 @@ async function load() {
     const result = await api.request('/account-groups', z.array(c.accountGroupSchema));
     if (!disposed) groups.value = result;
   } catch {
-    if (!disposed) error.value = 'Kontogruppen konnten nicht geladen werden.';
+    if (!disposed) error.value = tr('Kontogruppen konnten nicht geladen werden.');
   }
 }
 onMounted(load);
@@ -77,14 +77,14 @@ onBeforeUnmount(
   <div class="account-scope-select">
     <ChoiceSelect
       v-model="selection"
-      :aria-label="label"
+      :aria-label="tr(label)"
       :items="choices"
       :disabled="disabled"
       :searchable="searchable"
     />
     <div v-if="error" role="alert">
       <p>{{ error }}</p>
-      <UButton variant="soft" @click="load">Kontogruppen erneut laden</UButton>
+      <UButton variant="soft" @click="load">{{ tr('Kontogruppen erneut laden') }}</UButton>
     </div>
   </div>
 </template>

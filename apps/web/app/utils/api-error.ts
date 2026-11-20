@@ -1,3 +1,4 @@
+import { tr } from '../composables/useWorkspaceLocale.js';
 import { z } from 'zod';
 import { errorSchema } from '@financial-tracking/contracts';
 
@@ -11,8 +12,8 @@ function validationMessage(fields: { path: string }[]) {
         field.path.startsWith('mapping.'),
     )
   )
-    return 'Bitte ordne Buchungsdatum, Betrag und Buchungstext jeweils einer Spalte deiner Datei zu.';
-  return 'Bitte prüfe die markierten Eingaben und versuche es erneut.';
+    return tr('Bitte ordne Buchungsdatum, Betrag und Buchungstext jeweils einer Spalte deiner Datei zu.');
+  return tr('Bitte prüfe die markierten Eingaben und versuche es erneut.');
 }
 
 /** Public API failure preserving safe field paths and diagnostic identity without request values. */
@@ -35,31 +36,32 @@ export function publicApiError(data: unknown, status = 0) {
   const safe = errorSchema.safeParse(data);
   const fallback =
     status === 413
-      ? 'Die Datei ist zu groß. Exportiere einen kleineren Zeitraum und versuche es erneut.'
+      ? tr('Die Datei ist zu groß. Exportiere einen kleineren Zeitraum und versuche es erneut.')
       : status === 429
-        ? 'Es gab zu viele Versuche in kurzer Zeit. Bitte warte einen Moment.'
+        ? tr('Es gab zu viele Versuche in kurzer Zeit. Bitte warte einen Moment.')
         : status >= 500
-          ? 'Der Dienst ist gerade nicht verfügbar. Bitte versuche es später erneut.'
+          ? tr('Der Dienst ist gerade nicht verfügbar. Bitte versuche es später erneut.')
           : status === 0
-            ? 'Die Verbindung zum Server ist unterbrochen. Prüfe deine Netzwerkverbindung und lade die Ansicht neu.'
-            : 'Die Anfrage konnte nicht ausgeführt werden. Bitte lade die Ansicht neu und versuche es erneut.';
+            ? tr('Die Verbindung zum Server ist unterbrochen. Prüfe deine Netzwerkverbindung und lade die Ansicht neu.')
+            : tr('Die Anfrage konnte nicht ausgeführt werden. Bitte lade die Ansicht neu und versuche es erneut.');
   if (!safe.success) return new ApiError(fallback, 'REQUEST_FAILED', status);
   const fields = fieldsSchema.safeParse(safe.data.error.details.fields);
   const messages: Record<string, string> = {
     INVALID_INPUT: validationMessage(fields.success ? fields.data : []),
-    INTERNAL_ERROR: 'Beim Verarbeiten ist ein Fehler aufgetreten. Bitte versuche es später erneut.',
-    HTTP_401: 'Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.',
-    HTTP_403: 'Diese Aktion ist nicht erlaubt. Lade die Ansicht neu und melde dich gegebenenfalls erneut an.',
-    HTTP_429: 'Es gab zu viele Versuche in kurzer Zeit. Bitte warte einen Moment.',
-    CSV_TOO_LARGE: 'Die Datei ist zu groß. Exportiere einen kleineren Zeitraum mit höchstens 10 MiB.',
-    CSV_TOO_MANY_ROWS: 'Die Datei enthält mehr als 50.000 Buchungen. Exportiere einen kleineren Zeitraum.',
-    CSV_MAPPING:
+    INTERNAL_ERROR: tr('Beim Verarbeiten ist ein Fehler aufgetreten. Bitte versuche es später erneut.'),
+    HTTP_401: tr('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.'),
+    HTTP_403: tr('Diese Aktion ist nicht erlaubt. Lade die Ansicht neu und melde dich gegebenenfalls erneut an.'),
+    HTTP_429: tr('Es gab zu viele Versuche in kurzer Zeit. Bitte warte einen Moment.'),
+    CSV_TOO_LARGE: tr('Die Datei ist zu groß. Exportiere einen kleineren Zeitraum mit höchstens 10 MiB.'),
+    CSV_TOO_MANY_ROWS: tr('Die Datei enthält mehr als 50.000 Buchungen. Exportiere einen kleineren Zeitraum.'),
+    CSV_MAPPING: tr(
       'Eine gewählte Spalte fehlt in der Datei. Bitte prüfe die Spaltenzuordnung und erstelle die Vorschau erneut.',
+    ),
     CSV_STRUCTURE:
       'Die CSV-Datei konnte nicht in Spalten aufgeteilt werden. Prüfe Trennzeichen und Kopfzeile; bei beschädigten Anführungszeichen hilft ein neuer CSV-Export.',
   };
   return new ApiError(
-    messages[safe.data.error.code] ?? (status >= 500 ? fallback : safe.data.error.message),
+    messages[safe.data.error.code] ?? (status >= 500 ? fallback : tr(safe.data.error.message)),
     safe.data.error.code,
     status,
     fields.success ? fields.data : [],
@@ -74,7 +76,7 @@ export function userErrorMessage(cause: unknown) {
     return validationMessage(
       cause.issues.map(/** Keep only safe field identities. */ (issue) => ({ path: issue.path.join('.') })),
     );
-  return 'Die Aktion konnte nicht abgeschlossen werden. Bitte lade die Ansicht neu und versuche es erneut.';
+  return tr('Die Aktion konnte nicht abgeschlossen werden. Bitte lade die Ansicht neu und versuche es erneut.');
 }
 
 /** Convert known validation failures into Nuxt UI field errors, excluding submitted values. */
@@ -95,7 +97,7 @@ export function formFieldErrors(cause: unknown) {
     .map(
       /** Keep public feedback short and avoid echoing rejected input. */ (field) => ({
         name: field.path,
-        message: 'Bitte Eingabe prüfen.',
+        message: tr('Bitte Eingabe prüfen.'),
       }),
     );
 }

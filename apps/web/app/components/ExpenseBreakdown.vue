@@ -29,12 +29,12 @@ function categoryLink(id: string | null) {
 
 <template>
   <SectionPanel
-    :title="title"
+    :title="tr(title)"
     icon="categories"
     class="spending-panel"
     :class="{ 'spending-panel--compact': compact }"
     :compact="compact"
-    help="Noch nicht kategorisierte Buchungen sind bereits in den Ausgaben enthalten."
+    :help="tr('Noch nicht kategorisierte Buchungen sind bereits in den Ausgaben enthalten.')"
   >
     <template #actions
       ><span class="subtle-tag">{{ monthName(report.month) }}</span></template
@@ -45,7 +45,7 @@ function categoryLink(id: string | null) {
         :chart="chart"
         :groups="groups"
         :total-cents="report.expenseCents"
-        :label="`${money(report.expenseCents)} Ausgaben in ${groups.length} Kategorien`"
+        :label="tr('{0} Ausgaben in {1} Kategorien', [money(report.expenseCents), groups.length])"
         @select="navigateTo(categoryLink($event))"
       />
       <div class="spending-legend">
@@ -62,12 +62,15 @@ function categoryLink(id: string | null) {
           <div>
             <strong>{{ group.name }}</strong
             ><small v-if="!compact"
-              >{{ ((group.expenseShare ?? 0) * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 }) }} % der
-              Ausgaben</small
+              >{{ financialPercentage((group.expenseShare ?? 0) * 100, { maximumFractionDigits: 1 }) }}
+              {{ tr('% der Ausgaben') }}</small
             >
           </div>
-          <strong data-financial>{{ money(group.expenseCents) }}</strong>
-          <span v-if="compact" class="overview-category-track" aria-hidden="true"
+          <strong data-financial
+            ><template v-if="!amountsMasked()">{{ money(group.expenseCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+          >
+          <span v-if="compact && !amountsMasked()" class="overview-category-track" aria-hidden="true"
             ><i
               :style="{
                 width: `${Math.min(1, Math.max(0, group.expenseShare ?? 0)) * 100}%`,
@@ -78,9 +81,9 @@ function categoryLink(id: string | null) {
     </div>
     <div v-else class="empty-state">
       <FinanceIcon name="categories" />
-      <h3>Noch keine Ausgaben in diesem Monat</h3>
-      <p>Lade eine CSV-Datei hoch. Deine gebuchten Ausgaben erscheinen hier automatisch.</p>
-      <UButton to="/imports/csv" variant="soft">CSV hochladen</UButton>
+      <h3>{{ tr('Noch keine Ausgaben in diesem Monat') }}</h3>
+      <p>{{ tr('Lade eine CSV-Datei hoch. Deine gebuchten Ausgaben erscheinen hier automatisch.') }}</p>
+      <UButton to="/imports/csv" variant="soft">{{ tr('CSV hochladen') }}</UButton>
     </div>
   </SectionPanel>
 </template>

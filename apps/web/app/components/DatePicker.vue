@@ -33,13 +33,18 @@ function update(date: unknown) {
         color="neutral"
         variant="link"
         size="xs"
-        :aria-label="`${label} löschen`"
+        :aria-label="tr('{0} löschen', [label])"
         :disabled="disabled"
         @click="model = ''"
         >×</UButton
       >
       <UPopover v-model:open="open">
-        <UButton color="neutral" variant="link" size="xs" :aria-label="`${label} auswählen`" :disabled="disabled"
+        <UButton
+          color="neutral"
+          variant="link"
+          size="xs"
+          :aria-label="tr('{0} auswählen', [label])"
+          :disabled="disabled"
           ><FinanceIcon name="calendar"
         /></UButton>
         <template #content

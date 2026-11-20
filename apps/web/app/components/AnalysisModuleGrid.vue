@@ -32,27 +32,27 @@ const visible = computed(
       <slot :name="id">
         <FinanceTile
           v-if="id === 'months'"
-          label="Deine letzten Monate"
-          :value="`${report.months.length} Monate`"
-          :context="`${report.average.monthCount} abgeschlossene Monate mit Buchungen`"
+          :label="tr('Deine letzten Monate')"
+          :value="tr('{0} Monate', [report.months.length])"
+          :context="tr('{0} abgeschlossene Monate mit Buchungen', [report.average.monthCount])"
           :to="monthsHref"
           ><template #graphic><FinanceIcon name="calendar" /></template
         ></FinanceTile>
         <FinanceTile
           v-else-if="id === 'categories'"
-          label="Verteilung aller Ausgaben"
+          :label="tr('Verteilung aller Ausgaben')"
           :value="money(report.expenseCents)"
           financial
-          context="Gebuchte Ausgaben im gewählten Zeitraum"
+          :context="tr('Gebuchte Ausgaben im gewählten Zeitraum')"
           :to="categoriesHref"
           ><template #graphic><FinanceIcon name="categories" /></template
         ></FinanceTile>
         <FinanceTile
           v-else-if="id === 'merchants'"
-          label="Händlerausgaben"
+          :label="tr('Händlerausgaben')"
           :value="money(report.expenseCents)"
           financial
-          :context="`${merchantCount} Händler · inklusive unbekannter Gegenparteien`"
+          :context="tr('{0} Händler · inklusive unbekannter Gegenparteien', [merchantCount])"
           :to="merchantsHref"
           ><template #graphic><FinanceIcon name="transactions" /></template
         ></FinanceTile>
@@ -60,6 +60,6 @@ const visible = computed(
     </div>
   </div>
   <p v-if="!visible.length" class="empty-copy">
-    Keine Analysen ausgewählt. Über „Anpassen“ kannst du sie wieder einblenden.
+    {{ tr('Keine Analysen ausgewählt. Über „Anpassen“ kannst du sie wieder einblenden.') }}
   </p>
 </template>

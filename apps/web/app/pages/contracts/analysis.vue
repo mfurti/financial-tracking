@@ -79,7 +79,7 @@ async function applyScope() {
 function share(cents: string) {
   const total = BigInt(summary.value?.monthlyCents ?? '0');
   return total
-    ? (Number((BigInt(cents) * 10000n) / total) / 100).toLocaleString('de-DE', { maximumFractionDigits: 2 })
+    ? financialPercentage(Number((BigInt(cents) * 10000n) / total) / 100, { maximumFractionDigits: 2 })
     : '0';
 }
 watch(
@@ -115,8 +115,8 @@ onBeforeUnmount(
 
 <template>
   <div class="page-heading">
-    <h1>Vertragsanalyse</h1>
-    <UButton to="/contracts" variant="soft">Alle Verträge</UButton>
+    <h1>{{ tr('Vertragsanalyse') }}</h1>
+    <UButton to="/contracts" variant="soft">{{ tr('Alle Verträge') }}</UButton>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
   <div class="contract-account-scope">
@@ -125,22 +125,28 @@ onBeforeUnmount(
       v-model:group-id="groupId"
       :accounts="accounts"
       :allow-unassigned="false"
-      label="Vertragskonto"
+      :label="tr('Vertragskonto')"
       @change="applyScope"
     />
   </div>
-  <UButton v-if="error" @click="load">Erneut laden</UButton>
-  <p v-if="loading" role="status">Fixkosten werden geladen …</p>
+  <UButton v-if="error" @click="load">{{ tr('Erneut laden') }}</UButton>
+  <p v-if="loading" role="status">{{ tr('Fixkosten werden geladen …') }}</p>
   <template v-if="summary && !loading">
     <SectionPanel
-      title="Monatliche Fixkosten"
+      :title="tr('Monatliche Fixkosten')"
       icon="contracts"
-      help="Planwert der heute gültigen bestätigten Verträge. Jahres- und Quartalszahlungen werden auf Monate verteilt und je Vertrag auf Cent gerundet. Zukünftige Verträge und Preisänderungen zählen noch nicht. Tatsächliche Ausgaben bleiben getrennt."
+      :help="
+        tr(
+          'Planwert der heute gültigen bestätigten Verträge. Jahres- und Quartalszahlungen werden auf Monate verteilt und je Vertrag auf Cent gerundet. Zukünftige Verträge und Preisänderungen zählen noch nicht. Tatsächliche Ausgaben bleiben getrennt.',
+        )
+      "
       class="mb-6"
     >
-      <strong data-financial class="fixed-cost-value amount-expense">{{ money(summary.monthlyCents) }}</strong
+      <strong data-financial class="fixed-cost-value amount-expense"
+        ><template v-if="!amountsMasked()">{{ money(summary.monthlyCents) }}</template
+        ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
       ><span class="muted"
-        >{{ summary.count }} {{ summary.count === 1 ? 'Vertrag' : 'Verträge' }} · Planwert ·
+        >{{ summary.count }} {{ summary.count === 1 ? tr('Vertrag') : tr('Verträge') }} {{ tr('· Planwert ·') }}
         {{ calendarDate(summary.asOf) }}</span
       >
     </SectionPanel>
@@ -151,22 +157,22 @@ onBeforeUnmount(
       variant="card"
       class="mb-6"
       :items="[
-        { label: 'Kategorien', value: 'category' },
-        { label: 'Vertragsarten', value: 'kind' },
+        { label: tr('Kategorien'), value: 'category' },
+        { label: tr('Vertragsarten'), value: 'kind' },
       ]"
     />
     <div class="contract-analysis-grid">
-      <SectionPanel title="Aufteilung" icon="categories">
+      <SectionPanel :title="tr('Aufteilung')" icon="categories">
         <ExpenseChart
           v-if="BigInt(summary.monthlyCents) > 0n"
           :groups="chart"
           :total-cents="summary.monthlyCents"
-          label="Monatliche Fixkosten nach Gruppe"
-          center-label="Planwert / Monat"
-          description="Exakte monatliche Vertragskosten und Gruppen stehen in der Liste."
+          :label="tr('Monatliche Fixkosten nach Gruppe')"
+          :center-label="tr('Planwert / Monat')"
+          :description="tr('Exakte monatliche Vertragskosten und Gruppen stehen in der Liste.')"
           @select="selected = $event"
         />
-        <p v-if="!groups.length" class="empty-copy">Noch keine laufenden Verträge.</p>
+        <p v-if="!groups.length" class="empty-copy">{{ tr('Noch keine laufenden Verträge.') }}</p>
         <UButton
           v-for="(group, index) in groups"
           :key="group.key"
@@ -184,23 +190,26 @@ onBeforeUnmount(
                 aria-hidden="true"
               />{{ group.name }}</strong
             ><small
-              >{{ group.count }} {{ group.count === 1 ? 'Vertrag' : 'Verträge' }} ·
+              >{{ group.count }} {{ group.count === 1 ? tr('Vertrag') : tr('Verträge') }} ·
               {{ share(group.monthlyCents) }} %</small
             ></span
-          ><strong data-financial class="amount-expense">{{ money(group.monthlyCents) }}</strong>
+          ><strong data-financial class="amount-expense"
+            ><template v-if="!amountsMasked()">{{ money(group.monthlyCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+          >
         </UButton>
       </SectionPanel>
       <SectionPanel
         :title="
           selected
             ? (groups.find(/** Resolve the exact selected group label. */ (group) => group.key === selected)?.name ??
-              'Verträge')
-            : 'Laufende Verträge'
+              tr('Verträge'))
+            : tr('Laufende Verträge')
         "
         icon="contracts"
       >
         <template v-if="selected" #actions
-          ><UButton variant="ghost" @click="selected = null">Alle zeigen</UButton></template
+          ><UButton variant="ghost" @click="selected = null">{{ tr('Alle zeigen') }}</UButton></template
         >
         <UButton
           v-for="contract in contracts"
@@ -215,14 +224,17 @@ onBeforeUnmount(
               ><FinanceIcon :name="contractKinds[contract.kind].icon" /></span
             ><span
               ><strong>{{ contract.name }}</strong
-              ><small>{{ money(contract.amountCents) }} · alle {{ contract.intervalMonths }} Monate</small></span
+              ><small
+                >{{ money(contract.amountCents) }} {{ tr('· alle') }} {{ contract.intervalMonths }}
+                {{ tr('Monate') }}</small
+              ></span
             ></span
           ><span
             ><strong class="amount-expense">{{ money(contract.monthlyCents) }}</strong
-            ><small>/ Monat</small></span
+            ><small>{{ tr('/ Monat') }}</small></span
           >
         </UButton>
-        <UButton v-if="!summary.count" to="/contracts" variant="soft">Vertrag anlegen</UButton>
+        <UButton v-if="!summary.count" to="/contracts" variant="soft">{{ tr('Vertrag anlegen') }}</UButton>
       </SectionPanel>
     </div>
   </template>

@@ -47,10 +47,12 @@ watch(
 <template>
   <FinanceDialog
     v-model:open="open"
-    title="Deine Analysen anpassen"
-    description="Auswahl und Reihenfolge werden auf diesem Gerät gespeichert."
+    :title="tr('Deine Analysen anpassen')"
+    :description="tr('Auswahl und Reihenfolge werden auf diesem Gerät gespeichert.')"
   >
-    <template #trigger><UButton variant="ghost" aria-label="Analysen anpassen">Anpassen</UButton></template>
+    <template #trigger
+      ><UButton variant="ghost" :aria-label="tr('Analysen anpassen')">{{ tr('Anpassen') }}</UButton></template
+    >
     <div v-for="id in options" :key="id" class="finance-module-option">
       <div>
         <UCheckbox
@@ -58,20 +60,20 @@ watch(
           :label="analysisModuleLabels[id]"
           :disabled="!available.includes(id)"
           @update:model-value="toggle(id, $event)"
-        /><small v-if="!available.includes(id)" class="muted">Noch nicht verfügbar</small>
+        /><small v-if="!available.includes(id)" class="muted">{{ tr('Noch nicht verfügbar') }}</small>
       </div>
       <div class="toolbar">
         <UButton
           size="sm"
           variant="ghost"
-          :aria-label="`${analysisModuleLabels[id]} nach oben`"
+          :aria-label="tr('{0} nach oben', [analysisModuleLabels[id]])"
           :disabled="!available.includes(id) || draft.indexOf(id) <= 0"
           @click="move(id, -1)"
           >↑</UButton
         ><UButton
           size="sm"
           variant="ghost"
-          :aria-label="`${analysisModuleLabels[id]} nach unten`"
+          :aria-label="tr('{0} nach unten', [analysisModuleLabels[id]])"
           :disabled="!available.includes(id) || draft.indexOf(id) < 0 || draft.indexOf(id) === draft.length - 1"
           @click="move(id, 1)"
           >↓</UButton
@@ -79,11 +81,11 @@ watch(
       </div>
     </div>
     <p v-if="storageState === 'unavailable'" role="status" class="muted mt-4">
-      Gerätespeicher ist nicht verfügbar. Die Auswahl bleibt für diese Sitzung nutzbar.
+      {{ tr('Gerätespeicher ist nicht verfügbar. Die Auswahl bleibt für diese Sitzung nutzbar.') }}
     </p>
     <template #footer
-      ><UButton variant="ghost" @click="open = false">Abbrechen</UButton
-      ><UButton @click="save">Auswahl speichern</UButton></template
+      ><UButton variant="ghost" @click="open = false">{{ tr('Abbrechen') }}</UButton
+      ><UButton @click="save">{{ tr('Auswahl speichern') }}</UButton></template
     >
   </FinanceDialog>
 </template>

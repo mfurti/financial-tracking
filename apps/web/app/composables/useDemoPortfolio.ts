@@ -105,10 +105,10 @@ export function useDemoPortfolio() {
       if (caught instanceof DemoConflictError) snapshot.value = { ...snapshot.value, status: 'conflict' };
       error.value =
         caught instanceof Error && caught.name === 'ZodError'
-          ? 'Demo-Eingaben prüfen: gültige Konten, ganze Anteile und positive Beträge wählen.'
+          ? tr('Demo-Eingaben prüfen: gültige Konten, ganze Anteile und positive Beträge wählen.')
           : caught instanceof Error
-            ? caught.message
-            : 'Demo-Aktion fehlgeschlagen.';
+            ? tr(caught.message)
+            : tr('Demo-Aktion fehlgeschlagen.');
       return false;
     } finally {
       saving.value = false;

@@ -47,59 +47,69 @@ let fileGeneration = 0;
 let disposed = false;
 const encodingNames: Record<CsvEncoding, string> = {
   'utf-8': 'UTF-8',
-  'windows-1252': 'Windows-1252 / ANSI',
-  'iso-8859-15': 'ISO-8859-15 / Latin-9',
-  'utf-16le': 'UTF-16 LE',
-  'utf-16be': 'UTF-16 BE',
+  'windows-1252': tr('Windows-1252 / ANSI'),
+  'iso-8859-15': tr('ISO-8859-15 / Latin-9'),
+  'utf-16le': tr('UTF-16 LE'),
+  'utf-16be': tr('UTF-16 BE'),
 };
-const delimiterNames: Record<CsvDelimiter, string> = { ';': 'Semikolon (;)', ',': 'Komma (,)', '\t': 'Tabulator' };
+const delimiterNames: Record<CsvDelimiter, string> = {
+  ';': 'Semikolon (;)',
+  ',': tr('Komma (,)'),
+  '\t': tr('Tabulator'),
+};
 const requiredFields = [
   {
     key: 'bookingDate',
-    label: 'Buchungsdatum',
-    help: 'Tag der Buchung; bestimmt den Monat der Auswertung. TT.MM.JJ, TT.MM.JJJJ oder JJJJ-MM-TT. Zweistellige Jahre bedeuten 2000–2099.',
+    label: tr('Buchungsdatum'),
+    help: tr(
+      'Tag der Buchung; bestimmt den Monat der Auswertung. TT.MM.JJ, TT.MM.JJJJ oder JJJJ-MM-TT. Zweistellige Jahre bedeuten 2000–2099.',
+    ),
   },
   {
     key: 'amount',
-    label: 'Betrag',
-    help: 'Geldbetrag mit Dezimalkomma, z. B. -49,90. Minus bedeutet Ausgabe, Plus bedeutet Einnahme.',
+    label: tr('Betrag'),
+    help: tr('Geldbetrag mit Dezimalkomma, z. B. -49,90. Minus bedeutet Ausgabe, Plus bedeutet Einnahme.'),
   },
   {
     key: 'description',
-    label: 'Buchungstext',
-    help: 'Beschreibung der Zahlung, meist die Spalte Verwendungszweck oder Buchungstext.',
+    label: tr('Buchungstext'),
+    help: tr('Beschreibung der Zahlung, meist die Spalte Verwendungszweck oder Buchungstext.'),
   },
 ] as const;
 const optionalFields = [
   {
     key: 'descriptionFallback',
-    label: 'Buchungstext bei leerer Beschreibung',
-    help: 'Nur bei leerem Buchungstext wird diese Quellspalte verwendet. Sind beide leer, bleibt die Zeile zur Prüfung offen.',
+    label: tr('Buchungstext bei leerer Beschreibung'),
+    help: tr(
+      'Nur bei leerem Buchungstext wird diese Quellspalte verwendet. Sind beide leer, bleibt die Zeile zur Prüfung offen.',
+    ),
   },
   {
     key: 'valueDate',
-    label: 'Wertstellung',
-    help: 'Optionales Datum, ab dem die Bank den Betrag verzinst. Im Zweifel nicht zuordnen.',
+    label: tr('Wertstellung'),
+    help: tr('Optionales Datum, ab dem die Bank den Betrag verzinst. Im Zweifel nicht zuordnen.'),
   },
   {
     key: 'counterpartyName',
-    label: 'Gegenpartei',
-    help: 'Name der Person oder Firma, von der Geld kommt oder an die du zahlst.',
+    label: tr('Gegenpartei'),
+    help: tr('Name der Person oder Firma, von der Geld kommt oder an die du zahlst.'),
   },
   {
     key: 'counterpartyIban',
-    label: 'Gegenkonto-IBAN',
-    help: 'IBAN der anderen Person oder Firma; nicht die IBAN deines eigenen Kontos.',
+    label: tr('Gegenkonto-IBAN'),
+    help: tr('IBAN der anderen Person oder Firma; nicht die IBAN deines eigenen Kontos.'),
   },
   {
     key: 'reference',
-    label: 'Eindeutige Bankreferenz',
-    help: 'Nur eine Kennung, die genau eine Buchung identifiziert. Wiederholte Mandats- oder Kundenreferenzen hier nicht auswählen; im Zweifel leer lassen.',
+    label: tr('Eindeutige Bankreferenz'),
+    help: tr(
+      'Nur eine Kennung, die genau eine Buchung identifiziert. Wiederholte Mandats- oder Kundenreferenzen hier nicht auswählen; im Zweifel leer lassen.',
+    ),
   },
   {
     key: 'currency',
-    label: 'Währung',
-    help: 'Spalte mit EUR. Ohne Zuordnung wird EUR angenommen; andere Währungen werden nicht umgerechnet.',
+    label: tr('Währung'),
+    help: tr('Spalte mit EUR. Ohne Zuordnung wird EUR angenommen; andere Währungen werden nicht umgerechnet.'),
   },
 ] as const;
 const missingFields = computed(
@@ -131,7 +141,7 @@ async function selectFile(file?: File | null) {
   if (!file) return;
   selectedFile.value = file;
   if (file.size > 10 * 1024 * 1024) {
-    error.value = 'Die Datei ist größer als 10 MiB. Exportiere im Online-Banking einen kleineren Zeitraum.';
+    error.value = tr('Die Datei ist größer als 10 MiB. Exportiere im Online-Banking einen kleineren Zeitraum.');
     return;
   }
   filename.value = file.name;
@@ -143,7 +153,7 @@ async function selectFile(file?: File | null) {
     readFile();
   } catch {
     if (generation === fileGeneration)
-      error.value = 'Die Datei konnte nicht geöffnet werden. Speichere sie lokal und wähle sie erneut aus.';
+      error.value = tr('Die Datei konnte nicht geöffnet werden. Speichere sie lokal und wähle sie erneut aus.');
   } finally {
     if (generation === fileGeneration) readingFile.value = false;
   }
@@ -229,8 +239,12 @@ async function checkImportStatus() {
       commitUncertain.value = run.status !== 'CREATED';
       error.value =
         run.status === 'CREATED'
-          ? 'Die Übernahme ist noch nicht abgeschlossen. Du kannst dieselbe Übernahme erneut anfordern; dieselbe Buchung wird dadurch nicht doppelt gespeichert.'
-          : 'Der Import ist noch nicht abgeschlossen. Prüfe den Status erneut oder sieh in der Importhistorie nach.';
+          ? tr(
+              'Die Übernahme ist noch nicht abgeschlossen. Du kannst dieselbe Übernahme erneut anfordern; dieselbe Buchung wird dadurch nicht doppelt gespeichert.',
+            )
+          : tr(
+              'Der Import ist noch nicht abgeschlossen. Prüfe den Status erneut oder sieh in der Importhistorie nach.',
+            );
     }
   } catch (cause) {
     if (!disposed) error.value = userErrorMessage(cause);
@@ -261,8 +275,9 @@ async function commit() {
       !(cause instanceof ApiError) || cause.status === 0 || cause.status >= 500 || cause.code === 'IMPORT_STATE';
     if (uncertain) {
       commitUncertain.value = true;
-      error.value =
-        'Die Antwort auf die Übernahme fehlt. Wir prüfen den bestehenden Import, damit keine zweite Übernahme gestartet wird.';
+      error.value = tr(
+        'Die Antwort auf die Übernahme fehlt. Wir prüfen den bestehenden Import, damit keine zweite Übernahme gestartet wird.',
+      );
       await checkImportStatus();
     } else error.value = userErrorMessage(cause);
   } finally {
@@ -318,91 +333,106 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <div>
-      <h1>CSV importieren</h1>
+      <h1>{{ tr('CSV importieren') }}</h1>
     </div>
-    <UButton to="/imports" variant="ghost">Importhistorie</UButton>
+    <UButton to="/imports" variant="ghost">{{ tr('Importhistorie') }}</UButton>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <div v-if="readingFile || busy" role="status" class="panel upload-progress mb-5">
     <strong>{{
-      readingFile ? 'Datei wird gelesen …' : saving ? 'Buchungen werden übernommen …' : 'Datei wird ausgewertet …'
+      readingFile
+        ? tr('Datei wird gelesen …')
+        : saving
+          ? tr('Buchungen werden übernommen …')
+          : tr('Datei wird ausgewertet …')
     }}</strong>
   </div>
   <section v-if="!preview" class="panel import-upload">
     <form class="space-y-6" @submit.prevent="makePreview">
-      <UFormField label="CSV-Datei" name="file"
+      <UFormField :label="tr('CSV-Datei')" name="file"
         ><UFileUpload
           v-model="selectedFile"
           accept=".csv,text/csv"
-          label="CSV-Datei auswählen"
-          :description="filename || 'CSV-Bankexport · Datei wählen oder hier ablegen · maximal 10 MiB'"
+          :label="tr('CSV-Datei auswählen')"
+          :description="filename || tr('CSV-Bankexport · Datei wählen oder hier ablegen · maximal 10 MiB')"
           :disabled="busy || readingFile"
           @update:model-value="selectFile"
       /></UFormField>
-      <p class="muted text-sm">Gültige Buchungen werden nach der Dateiauswahl automatisch übernommen.</p>
+      <p class="muted text-sm">{{ tr('Gültige Buchungen werden nach der Dateiauswahl automatisch übernommen.') }}</p>
       <p v-if="mapping.descriptionFallback" class="muted text-sm" role="status">
-        Beschreibung: {{ mapping.description }}; bei leerem Inhalt: {{ mapping.descriptionFallback }}.
+        {{ tr('Beschreibung:') }} {{ mapping.description }} {{ tr('; bei leerem Inhalt:') }}
+        {{ mapping.descriptionFallback }}.
       </p>
-      <DisclosurePanel v-model:open="formatExpanded" class="import-format" title="Importoptionen (nur bei Bedarf)"
+      <DisclosurePanel
+        v-model:open="formatExpanded"
+        class="import-format"
+        :title="tr('Importoptionen (nur bei Bedarf)')"
         ><p class="muted text-sm my-3">
-          Normalerweise ist hier nichts nötig. Änderungen am Dateiformat lesen dieselbe Datei erneut.
+          {{ tr('Normalerweise ist hier nichts nötig. Änderungen am Dateiformat lesen dieselbe Datei erneut.') }}
         </p>
         <div class="form-row csv-columns">
           <label
-            >Zielkonto (optional)<ChoiceSelect
+            >{{ tr('Zielkonto (optional)')
+            }}<ChoiceSelect
               v-model="accountId"
-              aria-label="Zielkonto (optional)"
+              :aria-label="tr('Zielkonto (optional)')"
               :disabled="busy || readingFile"
               :searchable="true"
               :items="[
-                { label: `Ohne Konto — später zuordnen`, value: '' },
+                { label: tr('Ohne Konto — später zuordnen'), value: '' },
                 ...accounts.map(
                   /** Build a persisted choice. */ (account) => ({ label: `${account.name}`, value: account.id }),
                 ),
               ]"
-            /><span class="field-help"
-              >Ohne Konto zählen Buchungen sofort in deiner Auswertung. Eine spätere Zuordnung ist möglich.</span
-            ></label
+            /><span class="field-help">{{
+              tr('Ohne Konto zählen Buchungen sofort in deiner Auswertung. Eine spätere Zuordnung ist möglich.')
+            }}</span></label
           >
           <label
-            >Kodierung<ChoiceSelect
+            >{{ tr('Kodierung')
+            }}<ChoiceSelect
               v-model="encoding"
               :disabled="busy || readingFile"
               :searchable="false"
               :items="[
-                { label: `Automatisch (empfohlen)`, value: 'auto' },
+                { label: tr('Automatisch (empfohlen)'), value: 'auto' },
                 ...Object.entries(encodingNames).map(
                   /** Build a format choice. */ ([value, name]) => ({ label: `${name}`, value: value }),
                 ),
               ]"
-            /><span class="field-help"
-              >Bestimmt, wie Umlaute und Sonderzeichen gelesen werden. Bei älteren Bankexporten hilft Windows-1252; für
-              ein falsch dargestelltes Eurozeichen kann Latin-9 passen.</span
-            ></label
+            /><span class="field-help">{{
+              tr(
+                'Bestimmt, wie Umlaute und Sonderzeichen gelesen werden. Bei älteren Bankexporten hilft Windows-1252; für ein falsch dargestelltes Eurozeichen kann Latin-9 passen.',
+              )
+            }}</span></label
           >
           <label
-            >Trennzeichen<ChoiceSelect
+            >{{ tr('Trennzeichen')
+            }}<ChoiceSelect
               v-model="delimiter"
               :disabled="busy || readingFile"
               :searchable="false"
               :items="[
-                { label: `Automatisch (empfohlen)`, value: 'auto' },
+                { label: tr('Automatisch (empfohlen)'), value: 'auto' },
                 ...Object.entries(delimiterNames).map(
                   /** Build a format choice. */ ([value, name]) => ({ label: `${name}`, value: value }),
                 ),
               ]"
-            /><span class="field-help"
-              >Zeichen zwischen den Spalten. Automatisch erkennt Semikolon, Komma oder Tabulator.</span
-            ></label
+            /><span class="field-help">{{
+              tr('Zeichen zwischen den Spalten. Automatisch erkennt Semikolon, Komma oder Tabulator.')
+            }}</span></label
           >
         </div></DisclosurePanel
       >
       <template v-if="needsMapping && !busy">
         <div>
-          <h2>Eine kurze Zuordnung fehlt</h2>
+          <h2>{{ tr('Eine kurze Zuordnung fehlt') }}</h2>
           <p class="muted text-sm mt-2">
-            Wir kennen diese Spaltennamen noch nicht eindeutig. Wähle, welche Spalte Datum, Betrag und Beschreibung
-            enthält. Danach übernehmen wir die Auswertung.
+            {{
+              tr(
+                'Wir kennen diese Spaltennamen noch nicht eindeutig. Wähle, welche Spalte Datum, Betrag und Beschreibung enthält. Danach übernehmen wir die Auswertung.',
+              )
+            }}
           </p>
         </div>
         <div class="filter-grid csv-columns">
@@ -412,7 +442,7 @@ onBeforeUnmount(
               required
               :searchable="true"
               :items="[
-                { label: `Spalte wählen`, value: '' },
+                { label: tr('Spalte wählen'), value: '' },
                 ...headers.map(
                   /** Build a persisted choice. */ (header) => ({ label: `${header}`, value: `${header}` }),
                 ),
@@ -420,7 +450,7 @@ onBeforeUnmount(
             /><span class="field-help">{{ field.help }}</span></label
           >
         </div>
-        <DisclosurePanel class="import-format" title="Weitere Angaben zuordnen (optional)"
+        <DisclosurePanel class="import-format" :title="tr('Weitere Angaben zuordnen (optional)')"
           ><div class="filter-grid csv-columns mt-4">
             <label v-for="field in optionalFields" :key="field.key"
               >{{ field.label
@@ -428,7 +458,7 @@ onBeforeUnmount(
                 v-model="mapping[field.key]"
                 :searchable="true"
                 :items="[
-                  { label: `Nicht zugeordnet`, value: '' },
+                  { label: tr('Nicht zugeordnet'), value: '' },
                   ...headers.map(
                     /** Build a persisted choice. */ (header) => ({ label: `${header}`, value: `${header}` }),
                   ),
@@ -438,61 +468,74 @@ onBeforeUnmount(
           </div></DisclosurePanel
         >
         <p v-if="missingFields.length" role="status" class="muted text-sm">
-          Noch zuordnen: {{ missingFields.join(', ') }}.
+          {{ tr('Noch zuordnen:') }} {{ missingFields.join(', ') }}.
         </p>
-        <UButton type="submit" :disabled="!!missingFields.length || !content" :loading="busy">Jetzt auswerten</UButton>
+        <UButton type="submit" :disabled="!!missingFields.length || !content" :loading="busy">{{
+          tr('Jetzt auswerten')
+        }}</UButton>
       </template>
     </form>
   </section>
   <section v-else-if="!busy" class="panel">
     <div class="panel-heading">
-      <h2>Einmal kurz prüfen</h2>
-      <span class="subtle-tag">{{ preview.totalRows }} Zeilen · {{ preview.invalidRows }} fehlerhaft</span>
+      <h2>{{ tr('Einmal kurz prüfen') }}</h2>
+      <span class="subtle-tag"
+        >{{ preview.totalRows }} {{ tr('Zeilen ·') }} {{ preview.invalidRows }} {{ tr('fehlerhaft') }}</span
+      >
     </div>
     <p v-if="preview.invalidRows" class="muted mb-5">
-      Diese Datei enthält ungültige Zeilen. Entscheide, ob wir nur die gültigen Buchungen übernehmen sollen, oder
-      korrigiere den Export.
+      {{
+        tr(
+          'Diese Datei enthält ungültige Zeilen. Entscheide, ob wir nur die gültigen Buchungen übernehmen sollen, oder korrigiere den Export.',
+        )
+      }}
     </p>
     <p v-else class="muted mb-5">
-      Die Übernahme konnte noch nicht bestätigt werden. Prüfe den bestehenden Importstatus, bevor du fortfährst.
+      {{
+        tr('Die Übernahme konnte noch nicht bestätigt werden. Prüfe den bestehenden Importstatus, bevor du fortfährst.')
+      }}
     </p>
-    <UAlert v-if="preview.invalidRows" color="warning" title="Diese Zeilen brauchen Aufmerksamkeit" class="my-5"
+    <UAlert v-if="preview.invalidRows" color="warning" :title="tr('Diese Zeilen brauchen Aufmerksamkeit')" class="my-5"
       ><template #description
         ><p v-for="issue in preview.issues.slice(0, 20)" :key="issue.id">
-          Zeile {{ issue.rowNumber }}: {{ issue.message }}
+          {{ tr('Zeile') }} {{ issue.rowNumber }}: {{ issue.message }}
         </p>
-        <p v-if="preview.invalidRows > 20">Weitere Hinweise findest du in der Importhistorie.</p></template
+        <p v-if="preview.invalidRows > 20">{{ tr('Weitere Hinweise findest du in der Importhistorie.') }}</p></template
       ></UAlert
     >
-    <DisclosurePanel v-if="preview.rows.length" class="import-format my-5" title="Gültige Buchungen ansehen"
+    <DisclosurePanel v-if="preview.rows.length" class="import-format my-5" :title="tr('Gültige Buchungen ansehen')"
       ><div v-for="(row, index) in preview.rows" :key="index" class="transaction-row">
         <div>
           <strong>{{ row.description }}</strong
-          ><small>{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || 'Keine Gegenpartei' }}</small>
+          ><small>{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || tr('Keine Gegenpartei') }}</small>
         </div>
         <strong>{{ money(row.amountCents) }}</strong>
       </div></DisclosurePanel
     >
     <p v-else class="muted mb-5">
-      Es wurden keine gültigen Buchungen erkannt. Bitte prüfe die Zuordnung oder exportiere die Datei erneut.
+      {{
+        tr('Es wurden keine gültigen Buchungen erkannt. Bitte prüfe die Zuordnung oder exportiere die Datei erneut.')
+      }}
     </p>
     <UCheckbox
       v-if="preview.invalidRows && preview.rows.length"
       v-model="allowPartial"
       class="block my-5"
       :disabled="commitUncertain"
-      label="Nur gültige Zeilen übernehmen; fehlerhafte Zeilen auslassen."
+      :label="tr('Nur gültige Zeilen übernehmen; fehlerhafte Zeilen auslassen.')"
     />
     <div class="toolbar mt-6">
-      <UButton v-if="commitUncertain" :loading="busy" @click="checkImportStatus">Importstatus prüfen</UButton>
+      <UButton v-if="commitUncertain" :loading="busy" @click="checkImportStatus">{{
+        tr('Importstatus prüfen')
+      }}</UButton>
       <UButton
         v-else
         :disabled="!preview.rows.length || (preview.invalidRows > 0 && !allowPartial)"
         :loading="busy"
         @click="commit"
-        >{{ preview.invalidRows ? 'Gültige Buchungen übernehmen' : 'Übernahme erneut versuchen' }}</UButton
+        >{{ preview.invalidRows ? tr('Gültige Buchungen übernehmen') : tr('Übernahme erneut versuchen') }}</UButton
       >
-      <UButton :disabled="busy || commitUncertain" variant="ghost" @click="cancel">Datei wechseln</UButton>
+      <UButton :disabled="busy || commitUncertain" variant="ghost" @click="cancel">{{ tr('Datei wechseln') }}</UButton>
     </div>
   </section>
 </template>

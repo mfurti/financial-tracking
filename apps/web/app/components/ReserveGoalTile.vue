@@ -72,13 +72,13 @@ async function saveTarget() {
     if (disposed) return;
     goal.value = result;
     editing.value = false;
-    notice.value = 'Reserveziel gespeichert.';
+    notice.value = tr('Reserveziel gespeichert.');
   } catch (cause) {
     if (!disposed)
       error.value =
         cause instanceof z.ZodError
-          ? 'Bitte ein positives Reserveziel in Euro eingeben.'
-          : cause instanceof Error && cause.message.startsWith('Betrag als Euro')
+          ? tr('Bitte ein positives Reserveziel in Euro eingeben.')
+          : cause instanceof Error && cause.message.startsWith(tr('Betrag als Euro'))
             ? cause.message
             : userErrorMessage(cause);
   } finally {
@@ -98,7 +98,7 @@ async function saveDesignation() {
     });
     if (disposed) return;
     await load();
-    if (!disposed && !error.value) notice.value = 'Reserve-Zuordnung gespeichert.';
+    if (!disposed && !error.value) notice.value = tr('Reserve-Zuordnung gespeichert.');
   } catch (cause) {
     if (!disposed) error.value = userErrorMessage(cause);
   } finally {
@@ -115,60 +115,78 @@ onBeforeUnmount(
 </script>
 
 <template>
-  <SectionPanel title="Reserve" icon="accounts" class="my-5" bare compact>
-    <FinanceTile v-if="loading" label="Beobachtete Reserve" state="loading" />
-    <FinanceTile v-else-if="!goal" label="Beobachtete Reserve" state="error" :error-text="error" @retry="load" />
+  <SectionPanel :title="tr('Reserve')" icon="accounts" class="my-5" bare compact>
+    <FinanceTile v-if="loading" :label="tr('Beobachtete Reserve')" state="loading" />
+    <FinanceTile v-else-if="!goal" :label="tr('Beobachtete Reserve')" state="error" :error-text="error" @retry="load" />
     <FinanceTile
       v-else
-      label="Beobachtete Reserve"
-      :value="goal.currentCents === null ? 'Keine beobachtete Reserve' : money(goal.currentCents)"
+      :label="tr('Beobachtete Reserve')"
+      :value="goal.currentCents === null ? tr('Keine beobachtete Reserve') : money(goal.currentCents)"
       :financial="goal.currentCents !== null"
       variant="insight"
     >
       <template #context
         ><span
-          >Ziel: <span data-financial>{{ money(goal.targetCents) }}</span></span
+          >{{ tr('Ziel:')
+          }}<span data-financial
+            ><template v-if="!amountsMasked()">{{ money(goal.targetCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></span
+          ></span
         ><span class="block mt-2"
-          >{{ goal.observedCount }} von {{ goal.eligibleCount }} ausgewählten aktiven EUR-Konten mit gebuchtem Saldo ·
-          {{ goal.coverage === 'COMPLETE' ? 'Beobachtungen vollständig' : 'Unvollständige Beobachtungen' }}</span
+          >{{ goal.observedCount }} {{ tr('von') }} {{ goal.eligibleCount }}
+          {{ tr('ausgewählten aktiven EUR-Konten mit gebuchtem Saldo ·') }}
+          {{
+            goal.coverage === 'COMPLETE' ? tr('Beobachtungen vollständig') : tr('Unvollständige Beobachtungen')
+          }}</span
         ><span v-if="observationDates.length" class="block mt-2"
-          >Quellenbeobachtungen: {{ observedTime(observationDates[0]!)
-          }}<template v-if="observationDates.at(-1) !== observationDates[0]">
-            bis {{ observedTime(observationDates.at(-1)!) }}</template
+          >{{ tr('Quellenbeobachtungen:') }} {{ observedTime(observationDates[0]!)
+          }}<template v-if="observationDates.at(-1) !== observationDates[0]"
+            >{{ tr('bis') }} {{ observedTime(observationDates.at(-1)!) }}</template
           ></span
         >
         <span v-if="staleCount" class="block mt-2"
-          >{{ staleCount }} {{ staleCount === 1 ? 'Quelle' : 'Quellen' }} älter als 48 Stunden</span
+          >{{ staleCount }} {{ staleCount === 1 ? tr('Quelle') : 'Quellen' }} {{ tr('älter als 48 Stunden') }}</span
         >
       </template>
       <template #actions>
         <UProgress
-          v-if="goal.currentCents !== null"
+          v-if="goal.currentCents !== null && !amountsMasked()"
           :model-value="progress"
-          aria-label="Fortschritt der bekannten Reserve zum Ziel"
+          :aria-label="tr('Fortschritt der bekannten Reserve zum Ziel')"
           class="mb-4"
         />
-        <UButton variant="soft" :disabled="saving" @click="editTarget">Reserveziel bearbeiten</UButton>
-        <DisclosurePanel title="Reservequellen anzeigen" class="mt-4">
+        <UButton variant="soft" :disabled="saving" @click="editTarget">{{ tr('Reserveziel bearbeiten') }}</UButton>
+        <DisclosurePanel :title="tr('Reservequellen anzeigen')" class="mt-4">
           <p class="muted my-3">
-            Nur ausdrücklich als Tagesgeld markierte, aktive EUR-Konten tragen bei. Neuester beobachteter gebuchter
-            Saldo; CSV-Umsätze ersetzen keinen Kontostand. Stand der Prüfung: {{ observedTime(goal.asOf) }}.
+            {{
+              tr(
+                'Nur ausdrücklich als Tagesgeld markierte, aktive EUR-Konten tragen bei. Neuester beobachteter gebuchter Saldo; CSV-Umsätze ersetzen keinen Kontostand. Stand der Prüfung:',
+              )
+            }}
+            {{ observedTime(goal.asOf) }}.
           </p>
-          <p v-if="!goal.components.length" class="muted">Noch keine geeigneten Reservequellen ausgewählt.</p>
+          <p v-if="!goal.components.length" class="muted">
+            {{ tr('Noch keine geeigneten Reservequellen ausgewählt.') }}
+          </p>
           <div v-for="item in goal.components" :key="item.accountId" class="reserve-source">
             <NuxtLink :to="`/accounts/${item.accountId}`"
               ><strong>{{ item.name }}</strong></NuxtLink
             >
-            <p v-if="item.amountCents !== null" data-financial>{{ money(item.amountCents) }}</p>
-            <p v-else>Kein beobachteter gebuchter Saldo</p>
+            <p v-if="item.amountCents !== null" data-financial>
+              <template v-if="!amountsMasked()">{{ money(item.amountCents) }}</template
+              ><template v-else>{{ tr('Betrag ausgeblendet') }}</template>
+            </p>
+            <p v-else>{{ tr('Kein beobachteter gebuchter Saldo') }}</p>
             <p v-if="item.observedAt" class="muted">
               {{ observedTime(item.observedAt) }} · {{ item.source
-              }}<span v-if="item.stale"> · älter als 48 Stunden</span>
+              }}<span v-if="item.stale"> {{ tr('· älter als 48 Stunden') }}</span>
             </p>
           </div>
           <p v-for="item in goal.excludedAccounts" :key="item.accountId" class="muted">
             {{ item.name }}:
-            {{ item.reason === 'NON_EUR' ? 'Andere Währung, nicht mitgerechnet' : 'Inaktiv, nicht mitgerechnet' }}
+            {{
+              item.reason === 'NON_EUR' ? tr('Andere Währung, nicht mitgerechnet') : tr('Inaktiv, nicht mitgerechnet')
+            }}
           </p>
         </DisclosurePanel>
       </template>
@@ -176,41 +194,52 @@ onBeforeUnmount(
   </SectionPanel>
   <UAlert v-if="error && goal && !editing" role="alert" color="error" :description="error" class="mb-4" />
   <p v-if="notice" role="status" class="muted my-3">{{ notice }}</p>
-  <SectionPanel v-if="account && goal && !loading" title="Tagesgeld-Zuordnung" icon="settings" compact class="mb-5">
+  <SectionPanel
+    v-if="account && goal && !loading"
+    :title="tr('Tagesgeld-Zuordnung')"
+    icon="settings"
+    compact
+    class="mb-5"
+  >
     <p class="muted mb-4">
-      Die Auswahl ändert keine Bankdaten.
+      {{ tr('Die Auswahl ändert keine Bankdaten.') }}
       {{
         account.currency !== 'EUR'
-          ? 'Dieses Konto ist kein EUR-Konto und trägt nicht zur Reserve bei.'
+          ? tr('Dieses Konto ist kein EUR-Konto und trägt nicht zur Reserve bei.')
           : !account.isActive
-            ? 'Dieses Konto ist inaktiv und trägt derzeit nicht zur Reserve bei.'
-            : 'Bestätige nur ein Konto, das du bewusst als Tagesgeld für deine Reserve verwenden möchtest.'
+            ? tr('Dieses Konto ist inaktiv und trägt derzeit nicht zur Reserve bei.')
+            : tr('Bestätige nur ein Konto, das du bewusst als Tagesgeld für deine Reserve verwenden möchtest.')
       }}
     </p>
     <UCheckbox
       v-model="designation"
-      label="Dieses Konto ausdrücklich als Tagesgeld für die Reserve markieren."
+      :label="tr('Dieses Konto ausdrücklich als Tagesgeld für die Reserve markieren.')"
       :disabled="saving || (account.currency !== 'EUR' && !designation)"
     />
-    <UButton variant="soft" class="mt-4" :loading="saving" @click="saveDesignation"
-      >Reserve-Zuordnung speichern</UButton
-    >
+    <UButton variant="soft" class="mt-4" :loading="saving" @click="saveDesignation">{{
+      tr('Reserve-Zuordnung speichern')
+    }}</UButton>
   </SectionPanel>
   <FinanceDialog
     v-model:open="editing"
-    title="Reserveziel bearbeiten"
-    description="Positiver Zielbetrag; vorhandene Kontostände und aufgezeichnete Werte bleiben unverändert."
+    :title="tr('Reserveziel bearbeiten')"
+    :description="tr('Positiver Zielbetrag; vorhandene Kontostände und aufgezeichnete Werte bleiben unverändert.')"
     :dismissible="!saving"
     :close="!saving"
   >
     <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
     <form class="grid gap-4" @submit.prevent="saveTarget">
-      <UFormField label="Reserveziel in Euro"
-        ><UInput v-model="targetEuro" aria-label="Reserveziel in Euro" inputmode="decimal" :disabled="saving"
+      <UFormField :label="tr('Reserveziel in Euro')"
+        ><UInput
+          v-model="targetEuro"
+          :type="amountsMasked() ? 'password' : 'text'"
+          :aria-label="tr('Reserveziel in Euro')"
+          inputmode="decimal"
+          :disabled="saving"
       /></UFormField>
       <div class="toolbar">
-        <UButton type="submit" :loading="saving">Reserveziel speichern</UButton
-        ><UButton variant="ghost" :disabled="saving" @click="editing = false">Abbrechen</UButton>
+        <UButton type="submit" :loading="saving">{{ tr('Reserveziel speichern') }}</UButton
+        ><UButton variant="ghost" :disabled="saving" @click="editing = false">{{ tr('Abbrechen') }}</UButton>
       </div>
     </form>
   </FinanceDialog>

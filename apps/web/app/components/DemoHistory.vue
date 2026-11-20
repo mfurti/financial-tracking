@@ -28,7 +28,7 @@ const chart = computed(
 );
 /** Display recorded simulation times in the project's Berlin timezone. */
 function time(at: string) {
-  return new Intl.DateTimeFormat('de-DE', {
+  return new Intl.DateTimeFormat(displayLocale(), {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: 'Europe/Berlin',
@@ -37,21 +37,31 @@ function time(at: string) {
 </script>
 <template>
   <SectionPanel
-    title="Aufgezeichneter Demo-Verlauf"
-    help="Nur gespeicherte Simulationswerte bei geändertem Gesamtwert, maximal 48. Keine historische Bankbewertung."
+    :title="tr('Aufgezeichneter Demo-Verlauf')"
+    :help="
+      tr('Nur gespeicherte Simulationswerte bei geändertem Gesamtwert, maximal 48. Keine historische Bankbewertung.')
+    "
   >
-    <p>Aufgezeichnete Simulationswerte · maximal 48. Nur ein geänderter Gesamtwert erzeugt einen weiteren Punkt.</p>
-    <p v-if="!rows.length">Noch keine aufgezeichneten Simulationswerte.</p>
+    <p>
+      {{
+        tr('Aufgezeichnete Simulationswerte · maximal 48. Nur ein geänderter Gesamtwert erzeugt einen weiteren Punkt.')
+      }}
+    </p>
+    <p v-if="!rows.length">{{ tr('Noch keine aufgezeichneten Simulationswerte.') }}</p>
     <template v-else>
       <p>
-        Zuletzt aufgezeichnet: <strong data-financial>{{ money(rows[0]!.totalCents) }}</strong>
+        {{ tr('Zuletzt aufgezeichnet:') }}
+        <strong data-financial
+          ><template v-if="!amountsMasked()">{{ money(rows[0]!.totalCents) }}</template
+          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+        >
       </p>
       <svg
-        v-if="rows.length > 1"
+        v-if="rows.length > 1 && !amountsMasked()"
         class="demo-history-chart"
         viewBox="0 0 500 120"
         role="img"
-        aria-label="Verlauf aufgezeichneter Simulationswerte; genaue Werte in der folgenden Liste"
+        :aria-label="tr('Verlauf aufgezeichneter Simulationswerte; genaue Werte in der folgenden Liste')"
       >
         <polyline
           :points="chart.points"
@@ -61,13 +71,20 @@ function time(at: string) {
           vector-effect="non-scaling-stroke"
         />
       </svg>
-      <p v-if="rows.length > 1" data-financial>Spanne: {{ money(chart.min) }} bis {{ money(chart.max) }}</p>
+      <p v-if="rows.length > 1" data-financial>
+        <template v-if="!amountsMasked()"
+          >{{ tr('Spanne:') }} {{ money(chart.min) }} {{ tr('bis') }} {{ money(chart.max) }}</template
+        ><template v-else>{{ tr('Betrag ausgeblendet') }}</template>
+      </p>
       <details>
-        <summary>{{ rows.length }} aufgezeichnete Simulationswerte anzeigen</summary>
+        <summary>{{ rows.length }} {{ tr('aufgezeichnete Simulationswerte anzeigen') }}</summary>
         <ol>
           <li v-for="record in rows" :key="record.id" class="demo-history-row" :data-demo-history="record.id">
             <time :datetime="record.at">{{ time(record.at) }}</time
-            ><strong data-financial>{{ money(record.totalCents) }}</strong>
+            ><strong data-financial
+              ><template v-if="!amountsMasked()">{{ money(record.totalCents) }}</template
+              ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+            >
           </li>
         </ol>
       </details>

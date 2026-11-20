@@ -7,7 +7,7 @@ const router = useRouter();
 const applied = ref<z.infer<typeof c.analyticsDetailQuerySchema> | null>(null);
 const report = ref<z.infer<typeof c.analyticsOverviewSchema> | null>(null);
 const rows = ref<c.Transaction[]>([]);
-const title = ref('Analyse-Details');
+const title = ref(tr('Analyse-Details'));
 const scopeLabel = ref('');
 const nextCursor = ref<string | null>(null);
 const busy = ref(true);
@@ -62,7 +62,7 @@ async function load() {
   rows.value = [];
   applied.value = null;
   nextCursor.value = null;
-  title.value = 'Analyse-Details';
+  title.value = tr('Analyse-Details');
   scopeLabel.value = '';
   try {
     const input = c.analyticsDetailQuerySchema.parse(route.query);
@@ -85,17 +85,18 @@ async function load() {
       /** Resolve only the saved group identity from the validated bookmark. */ (row) => row.id === input.groupId,
     );
     if ((input.accountId && !account) || (input.categoryId && !category) || (input.groupId && !group))
-      throw new Error('Dieser Analysefilter ist nicht mehr verfügbar.');
+      throw new Error(tr('Dieser Analysefilter ist nicht mehr verfügbar.'));
     title.value =
       input.merchantKey === 'unknown'
-        ? 'Unbekannter Händler'
+        ? tr('Unbekannter Händler')
         : input.merchantKey
           ? (merchants.merchants.find(
               /** Resolve merchant presentation from the server's canonical bucket. */ (row) =>
                 row.key === input.merchantKey,
-            )?.label ?? 'Händler im gewählten Zeitraum')
-          : (category?.name ?? (input.uncategorized === 'true' ? 'Nicht kategorisiert' : 'Einnahmen und Ausgaben'));
-    scopeLabel.value = `${input.unassigned === 'true' ? 'Ohne Konto' : group ? `Kontogruppe: ${group.name}` : (account?.name ?? 'Alle Konten')}${category && input.merchantKey ? ` · ${category.name}` : ''}`;
+            )?.label ?? tr('Händler im gewählten Zeitraum'))
+          : (category?.name ??
+            (input.uncategorized === 'true' ? tr('Nicht kategorisiert') : tr('Einnahmen und Ausgaben')));
+    scopeLabel.value = `${input.unassigned === 'true' ? tr('Ohne Konto') : group ? tr('Kontogruppe: {0}', [group.name]) : (account?.name ?? tr('Alle Konten'))}${category && input.merchantKey ? ` · ${category.name}` : ''}`;
     report.value = overview;
     rows.value = page.items;
     nextCursor.value = page.nextCursor;
@@ -104,7 +105,7 @@ async function load() {
     if (current === generation)
       error.value =
         cause instanceof z.ZodError
-          ? 'Bitte einen gültigen Zeitraum und gültige Analysefilter wählen.'
+          ? tr('Bitte einen gültigen Zeitraum und gültige Analysefilter wählen.')
           : userErrorMessage(cause);
   } finally {
     if (current === generation) busy.value = false;
@@ -147,60 +148,67 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <h1>{{ title }}</h1>
-    <UButton :to="backLink" variant="soft">Zur Auswertung zurück</UButton>
+    <UButton :to="backLink" variant="soft">{{ tr('Zur Auswertung zurück') }}</UButton>
   </div>
-  <p v-if="busy" role="status">Analyse wird geladen …</p>
+  <p v-if="busy" role="status">{{ tr('Analyse wird geladen …') }}</p>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
-  <UButton v-if="error" :disabled="busy" @click="load">Erneut versuchen</UButton>
+  <UButton v-if="error" :disabled="busy" @click="load">{{ tr('Erneut versuchen') }}</UButton>
   <template v-if="report && applied && !busy">
     <p class="data-context">{{ calendarDate(applied.from) }} – {{ calendarDate(applied.to) }} · {{ scopeLabel }}</p>
-    <div class="toolbar mb-5" role="group" aria-label="Buchungsrichtung">
+    <div class="toolbar mb-5" role="group" :aria-label="tr('Buchungsrichtung')">
       <UButton
         :aria-pressed="applied.direction === 'EXPENSE'"
         :variant="applied.direction === 'EXPENSE' ? 'soft' : 'ghost'"
         @click="direction('EXPENSE')"
-        >Ausgaben anzeigen</UButton
+        >{{ tr('Ausgaben anzeigen') }}</UButton
       >
       <UButton
         :aria-pressed="applied.direction === 'INCOME'"
         :variant="applied.direction === 'INCOME' ? 'soft' : 'ghost'"
         @click="direction('INCOME')"
-        >Einnahmen anzeigen</UButton
+        >{{ tr('Einnahmen anzeigen') }}</UButton
       >
     </div>
     <FinanceTile
-      :label="applied.direction === 'INCOME' ? 'Gebuchte Einnahmen' : 'Gebuchte Ausgaben'"
+      :label="applied.direction === 'INCOME' ? tr('Gebuchte Einnahmen') : tr('Gebuchte Ausgaben')"
       variant="stat"
-      context="Ohne Umbuchungen und Vormerkungen. Erstattungen zählen als Einnahmen."
+      :context="tr('Ohne Umbuchungen und Vormerkungen. Erstattungen zählen als Einnahmen.')"
       ><template #value
-        ><span data-analysis-total data-financial>{{ money(total!) }}</span></template
+        ><span data-analysis-total data-financial
+          ><template v-if="!amountsMasked()">{{ money(total!) }}</template
+          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></span
+        ></template
       ></FinanceTile
     >
-    <SectionPanel title="Zugehörige Buchungen" icon="transactions" class="mt-6" compact>
+    <SectionPanel :title="tr('Zugehörige Buchungen')" icon="transactions" class="mt-6" compact>
       <NuxtLink v-for="row in rows" :key="row.id" :to="bookingLink(row.id)" class="transaction-row"
         ><FinanceIcon name="transactions" />
         <div>
           <strong>{{ row.description }}</strong
           ><small
-            >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName?.trim() || 'Keine Gegenpartei' }}</small
+            >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName?.trim() || tr('Keine Gegenpartei') }}</small
           >
         </div>
-        <strong :class="BigInt(row.amountCents) < 0n ? 'negative' : 'positive'" data-financial>{{
-          money(row.amountCents)
-        }}</strong></NuxtLink
+        <strong :class="BigInt(row.amountCents) < 0n ? 'negative' : 'positive'" data-financial
+          ><template v-if="!amountsMasked()">{{ money(row.amountCents) }}</template
+          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+        ></NuxtLink
       >
-      <p v-if="!rows.length" class="empty-copy">Keine zugehörigen Buchungen im gewählten Zeitraum.</p>
+      <p v-if="!rows.length" class="empty-copy">{{ tr('Keine zugehörigen Buchungen im gewählten Zeitraum.') }}</p>
       <p v-if="moreError" role="alert">{{ moreError }}</p>
       <div class="section-action">
         <UButton v-if="nextCursor" :disabled="moreBusy" variant="soft" @click="more">{{
-          moreBusy ? 'Wird geladen …' : 'Weitere Buchungen'
+          moreBusy ? tr('Wird geladen …') : tr('Weitere Buchungen')
         }}</UButton
-        ><UButton :to="transactionLink" variant="soft">Alle zugehörigen Umsätze</UButton>
+        ><UButton :to="transactionLink" variant="soft">{{ tr('Alle zugehörigen Umsätze') }}</UButton>
       </div>
     </SectionPanel>
     <p class="muted mt-4">
-      Vorhandene Buchungen belegen keine vollständige Bankhistorie. Die Summe umfasst den gesamten gewählten Zeitraum;
-      die Liste wird seitenweise geladen.
+      {{
+        tr(
+          'Vorhandene Buchungen belegen keine vollständige Bankhistorie. Die Summe umfasst den gesamten gewählten Zeitraum; die Liste wird seitenweise geladen.',
+        )
+      }}
     </p>
   </template>
 </template>

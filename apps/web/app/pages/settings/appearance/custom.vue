@@ -8,10 +8,17 @@ const error = ref(''),
   notice = ref('');
 const formId = useId();
 const modes = [
-  { id: 'light', label: 'Helle Darstellung' },
-  { id: 'dark', label: 'Dunkle Darstellung' },
+  { id: 'light', label: tr('Helle Darstellung') },
+  { id: 'dark', label: tr('Dunkle Darstellung') },
 ] as const;
-const labels = ['Hintergrund', 'Kartenfläche', 'Text', 'Sekundärer Text', 'Akzent', 'Text auf Akzent'];
+const labels = [
+  tr('Hintergrund'),
+  tr('Kartenfläche'),
+  tr('Text'),
+  tr('Sekundärer Text'),
+  tr('Akzent'),
+  tr('Text auf Akzent'),
+];
 /** Accept only opaque six-digit hex in swatches, never raw draft CSS. */
 function swatch(value: string | undefined) {
   return value && /^#[0-9a-f]{6}$/i.test(value) ? value : 'transparent';
@@ -23,7 +30,7 @@ async function save() {
   for (const mode of modes)
     for (let index = 0; index < 6; index++) {
       if (!/^#[0-9a-f]{6}$/i.test(form[mode.id][index]!)) {
-        error.value = 'Vollständige Hex-Farbe mit sechs Stellen eingeben, zum Beispiel #4935a5.';
+        error.value = tr('Vollständige Hex-Farbe mit sechs Stellen eingeben, zum Beispiel #4935a5.');
         await nextTick();
         document.getElementById(`${formId}-${mode.id}-${index}`)?.focus();
         return;
@@ -31,19 +38,20 @@ async function save() {
     }
   const pair = resolveCustomAppearance(form);
   if (!pair) {
-    error.value =
-      'Kontrast reicht nicht aus: normaler Text mindestens 4,5:1; große Schrift und Bedienelemente mindestens 3:1. Helle und dunkle Farben prüfen.';
+    error.value = tr(
+      'Kontrast reicht nicht aus: normaler Text mindestens 4,5:1; große Schrift und Bedienelemente mindestens 3:1. Helle und dunkle Farben prüfen.',
+    );
     const mode = resolveCustomAppearance({ ...defaultCustomAppearance(), light: form.light }) ? 'dark' : 'light';
     await nextTick();
     document.getElementById(`${formId}-${mode}-2`)?.focus();
     return;
   }
   if (!updatePreferences({ custom: pair })) {
-    error.value = 'Farben konnten nicht übernommen werden. Das bisherige Theme bleibt aktiv.';
+    error.value = tr('Farben konnten nicht übernommen werden. Das bisherige Theme bleibt aktiv.');
     return;
   }
   selectTheme('custom');
-  notice.value = 'Eigene Farben für Hell und Dunkel übernommen.';
+  notice.value = tr('Eigene Farben für Hell und Dunkel übernommen.');
 }
 /** Reset only the unsaved editor draft; the active saved palette changes only after explicit validation/save. */
 function resetDraft() {
@@ -55,17 +63,23 @@ function resetDraft() {
 }
 </script>
 <template>
-  <UButton to="/settings/appearance" variant="link">Zurück zu Darstellung</UButton>
-  <div class="page-heading"><h1>Eigene Farben</h1></div>
+  <UButton to="/settings/appearance" variant="link">{{ tr('Zurück zu Darstellung') }}</UButton>
+  <div class="page-heading">
+    <h1>{{ tr('Eigene Farben') }}</h1>
+  </div>
   <p class="custom-intro">
-    Beide Helligkeiten werden gemeinsam geprüft. Normaler Text benötigt mindestens 4,5:1, große Schrift und
-    Bedienelemente mindestens 3:1 Kontrast. Finanzfarben, Fokus und Diagramme bleiben lesbar; ungültige Eingaben
-    ersetzen kein funktionierendes Theme.
+    {{
+      tr(
+        'Beide Helligkeiten werden gemeinsam geprüft. Normaler Text benötigt mindestens 4,5:1, große Schrift und Bedienelemente mindestens 3:1 Kontrast. Finanzfarben, Fokus und Diagramme bleiben lesbar; ungültige Eingaben ersetzen kein funktionierendes Theme.',
+      )
+    }}
   </p>
   <p v-if="error" role="alert">{{ error }}</p>
   <p v-if="notice" role="status">{{ notice }}</p>
   <p v-if="storageState !== 'ready'" role="status">
-    Gerätespeicher nicht verfügbar oder ungültig. Farben bleiben gegebenenfalls nur für diese Sitzung erhalten.
+    {{
+      tr('Gerätespeicher nicht verfügbar oder ungültig. Farben bleiben gegebenenfalls nur für diese Sitzung erhalten.')
+    }}
   </p>
   <form @submit.prevent="save">
     <div class="custom-tone-grid">
@@ -84,7 +98,7 @@ function resetDraft() {
                 maxlength="7"
                 autocomplete="off"
                 spellcheck="false"
-                placeholder="#4935a5" /></span
+                :placeholder="tr('#4935a5')" /></span
           ></label>
         </div>
         <div
@@ -96,15 +110,17 @@ function resetDraft() {
           }"
           aria-hidden="true"
         >
-          <strong>Farbvorschau</strong>
-          <p :style="{ color: swatch(form[mode.id][3]) }">Beispieltext zur Lesbarkeit</p>
-          <span :style="{ background: swatch(form[mode.id][4]), color: swatch(form[mode.id][5]) }">Beispielaktion</span>
+          <strong>{{ tr('Farbvorschau') }}</strong>
+          <p :style="{ color: swatch(form[mode.id][3]) }">{{ tr('Beispieltext zur Lesbarkeit') }}</p>
+          <span :style="{ background: swatch(form[mode.id][4]), color: swatch(form[mode.id][5]) }">{{
+            tr('Beispielaktion')
+          }}</span>
         </div></SectionPanel
       >
     </div>
     <div class="custom-actions">
-      <UButton type="submit">Eigene Farben übernehmen</UButton
-      ><UButton type="button" variant="soft" @click="resetDraft">Entwurf zurücksetzen</UButton>
+      <UButton type="submit">{{ tr('Eigene Farben übernehmen') }}</UButton
+      ><UButton type="button" variant="soft" @click="resetDraft">{{ tr('Entwurf zurücksetzen') }}</UButton>
     </div>
   </form>
 </template>

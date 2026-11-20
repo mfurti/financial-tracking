@@ -17,21 +17,23 @@ const notice = ref('');
 let generation = 0;
 let disposed = false;
 const blockLabels: Record<string, string> = {
-  NO_ACCOUNTS: 'Noch keine aktiven Quellkonten vorhanden.',
-  TOTAL_OUT_OF_RANGE:
+  NO_ACCOUNTS: tr('Noch keine aktiven Quellkonten vorhanden.'),
+  TOTAL_OUT_OF_RANGE: tr(
     'Die bekannte Summe liegt außerhalb des speicherbaren Cent-Bereichs. Quellen prüfen; Beträge werden nicht gekürzt.',
-  SOURCE_LABEL_TOO_LONG:
+  ),
+  SOURCE_LABEL_TOO_LONG: tr(
     'Ein Kontoname ist länger als 120 Zeichen. Kürze ihn ausdrücklich in den Kontoeinstellungen, bevor du aufzeichnest.',
-  SOURCE_TYPE_TOO_LONG: 'Eine Quellbezeichnung ist zu lang. Prüfe die Quelle, bevor du aufzeichnest.',
-  SOURCE_METADATA_INVALID: 'Eine Quellbezeichnung fehlt. Prüfe die Kontoeinstellungen.',
+  ),
+  SOURCE_TYPE_TOO_LONG: tr('Eine Quellbezeichnung ist zu lang. Prüfe die Quelle, bevor du aufzeichnest.'),
+  SOURCE_METADATA_INVALID: tr('Eine Quellbezeichnung fehlt. Prüfe die Kontoeinstellungen.'),
 };
 /** Explain observation provenance without presenting internal state tokens as product labels. */
 function sourceDescription(value: string) {
   if (value === 'CSV') return 'CSV';
-  if (value === 'FINTS') return 'Bank';
-  if (value === 'MISSING') return 'Kein gebuchter Saldo geliefert';
-  if (value.startsWith('UNSUPPORTED_CURRENCY:')) return 'Andere Währung, nicht in EUR umgerechnet';
-  return 'Bestand, Quelle nicht bestätigt';
+  if (value === 'FINTS') return tr('Bank');
+  if (value === 'MISSING') return tr('Kein gebuchter Saldo geliefert');
+  if (value.startsWith('UNSUPPORTED_CURRENCY:')) return tr('Andere Währung, nicht in EUR umgerechnet');
+  return tr('Bestand, Quelle nicht bestätigt');
 }
 /** Count only actually observed components, preserving an all-unknown record as unknown rather than observed zero. */
 function observedCount(record: z.infer<typeof c.wealthRecordSchema>) {
@@ -93,12 +95,12 @@ async function capture() {
     retryKey.value = null;
     uncertain.value = false;
     await load();
-    if (!disposed) notice.value = 'Werte aufgezeichnet. Spätere Bankdaten ändern diese Aufzeichnung nicht.';
+    if (!disposed) notice.value = tr('Werte aufgezeichnet. Spätere Bankdaten ändern diese Aufzeichnung nicht.');
   } catch (cause) {
     if (!disposed) {
       uncertain.value = !(cause instanceof ApiError) || cause.status === 0 || cause.status >= 500;
       captureError.value = uncertain.value
-        ? 'Die Antwort fehlt. Bestätige erneut; dieselbe Aufzeichnung wird nicht doppelt angelegt.'
+        ? tr('Die Antwort fehlt. Bestätige erneut; dieselbe Aufzeichnung wird nicht doppelt angelegt.')
         : userErrorMessage(cause);
     }
   } finally {
@@ -119,87 +121,111 @@ onBeforeUnmount(
     <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
     <p v-if="notice" role="status" class="muted mb-4">{{ notice }}</p>
     <div class="toolbar mb-5">
-      <UButton variant="soft" :disabled="loading || saving || open" @click="load()"
-        >Quellen und Verlauf aktualisieren</UButton
-      ><UButton :disabled="!preview?.recordable || loading || saving" @click="review">Werte aufzeichnen</UButton>
+      <UButton variant="soft" :disabled="loading || saving || open" @click="load()">{{
+        tr('Quellen und Verlauf aktualisieren')
+      }}</UButton
+      ><UButton :disabled="!preview?.recordable || loading || saving" @click="review">{{
+        tr('Werte aufzeichnen')
+      }}</UButton>
     </div>
-    <FinanceTile v-if="loading && !preview" label="Aktuelle Quellen" state="loading" />
+    <FinanceTile v-if="loading && !preview" :label="tr('Aktuelle Quellen')" state="loading" />
     <FinanceTile
       v-else-if="preview"
-      label="Aktuelle Quellen"
-      :value="preview.totalCents === null ? 'Keine bekannten Beträge' : money(preview.totalCents)"
+      :label="tr('Aktuelle Quellen')"
+      :value="preview.totalCents === null ? tr('Keine bekannten Beträge') : money(preview.totalCents)"
       :financial="preview.totalCents !== null"
-      :context="`${preview.observedCount} von ${preview.componentCount} Quellen beobachtet · ${preview.coverage === 'COMPLETE' ? 'Beobachtungen vollständig' : 'Unvollständige Beobachtungen'} · ${observedTime(preview.asOf)}`"
+      :context="
+        tr('{0} von {1} Quellen beobachtet · {2} · {3}', [
+          preview.observedCount,
+          preview.componentCount,
+          preview.coverage === 'COMPLETE' ? tr('Beobachtungen vollständig') : tr('Unvollständige Beobachtungen'),
+          observedTime(preview.asOf),
+        ])
+      "
       variant="insight"
     />
     <p v-if="preview?.blockingReason" role="status" class="muted my-4">{{ blockLabels[preview.blockingReason] }}</p>
     <p class="muted my-5">
-      Aktive Konten, neuester beobachteter gebuchter EUR-Saldo. Verfügbare Beträge und Fremdwährungen werden nicht als
-      EUR mitgerechnet. Aufzeichnungen zeigen nur ausdrücklich gespeicherte Beobachtungen; sie rekonstruieren keine
-      frühere Bankhistorie.
+      {{
+        tr(
+          'Aktive Konten, neuester beobachteter gebuchter EUR-Saldo. Verfügbare Beträge und Fremdwährungen werden nicht als EUR mitgerechnet. Aufzeichnungen zeigen nur ausdrücklich gespeicherte Beobachtungen; sie rekonstruieren keine frühere Bankhistorie.',
+        )
+      }}
     </p>
-    <SectionPanel title="Aufgezeichnete Werte" icon="history" compact>
-      <p v-if="loading" role="status">Aufzeichnungen werden geladen …</p>
-      <p v-if="!records.length && !loading && !error" class="empty-copy">Noch keine Vermögenswerte aufgezeichnet.</p>
-      <UButton v-if="error && !loading" variant="soft" @click="load()">Erneut laden</UButton>
+    <SectionPanel :title="tr('Aufgezeichnete Werte')" icon="history" compact>
+      <p v-if="loading" role="status">{{ tr('Aufzeichnungen werden geladen …') }}</p>
+      <p v-if="!records.length && !loading && !error" class="empty-copy">
+        {{ tr('Noch keine Vermögenswerte aufgezeichnet.') }}
+      </p>
+      <UButton v-if="error && !loading" variant="soft" @click="load()">{{ tr('Erneut laden') }}</UButton>
       <article v-for="record in records" :key="record.id" :data-wealth-record="record.id" class="wealth-record">
         <details>
           <summary>
             <strong>{{ observedTime(record.recordedAt) }}</strong
             ><strong :data-financial="observedCount(record) > 0 || undefined">{{
-              observedCount(record) ? money(record.totalCents) : 'Keine bekannten Beträge'
+              observedCount(record) ? money(record.totalCents) : tr('Keine bekannten Beträge')
             }}</strong>
           </summary>
           <p class="muted mb-4">
-            {{ observedCount(record) }} von {{ record.components.length }} Quellen beobachtet ·
-            {{ record.coverage === 'COMPLETE' ? 'Beobachtungen vollständig' : 'Unvollständige Beobachtungen' }}.
-            Eingefrorener Stand der Aufzeichnung.
+            {{ observedCount(record) }} {{ tr('von') }} {{ record.components.length }} {{ tr('Quellen beobachtet ·') }}
+            {{ record.coverage === 'COMPLETE' ? tr('Beobachtungen vollständig') : tr('Unvollständige Beobachtungen') }}
+            {{ tr('. Eingefrorener Stand der Aufzeichnung.') }}
           </p>
           <div v-for="item in record.components" :key="item.id" class="wealth-source">
             <NuxtLink v-if="item.accountId" :to="`/accounts/${item.accountId}`"
               ><strong>{{ item.sourceLabel }}</strong></NuxtLink
             ><strong v-else>{{ item.sourceLabel }}</strong>
-            <p v-if="item.amountCents !== null" data-financial>{{ money(item.amountCents) }}</p>
-            <p v-else>Unbekannter Betrag</p>
+            <p v-if="item.amountCents !== null" data-financial>
+              <template v-if="!amountsMasked()">{{ money(item.amountCents) }}</template
+              ><template v-else>{{ tr('Betrag ausgeblendet') }}</template>
+            </p>
+            <p v-else>{{ tr('Unbekannter Betrag') }}</p>
             <p class="muted">
-              {{ item.observedAt ? observedTime(item.observedAt) : 'Keine Beobachtungszeit geliefert' }} ·
+              {{ item.observedAt ? observedTime(item.observedAt) : tr('Keine Beobachtungszeit geliefert') }} ·
               {{ sourceDescription(item.sourceType)
-              }}<span v-if="!item.accountId"> · Quellkonto nicht mehr verknüpft</span>
+              }}<span v-if="!item.accountId"> {{ tr('· Quellkonto nicht mehr verknüpft') }}</span>
             </p>
           </div>
         </details>
       </article>
-      <UButton v-if="cursor" variant="soft" :loading="loading" class="mt-4" @click="load(true)"
-        >Weitere Aufzeichnungen laden</UButton
-      >
+      <UButton v-if="cursor" variant="soft" :loading="loading" class="mt-4" @click="load(true)">{{
+        tr('Weitere Aufzeichnungen laden')
+      }}</UButton>
     </SectionPanel>
     <FinanceDialog
       v-model:open="open"
-      title="Werte aufzeichnen"
-      description="Prüfe Quellen, Beträge und fehlende Beobachtungen. Beim Bestätigen werden die Quellen erneut konsistent gelesen und der Stand unveränderlich gespeichert."
+      :title="tr('Werte aufzeichnen')"
+      :description="
+        tr(
+          'Prüfe Quellen, Beträge und fehlende Beobachtungen. Beim Bestätigen werden die Quellen erneut konsistent gelesen und der Stand unveränderlich gespeichert.',
+        )
+      "
       :dismissible="!saving"
       :close="!saving"
     >
       <UAlert v-if="captureError" role="alert" color="error" :description="captureError" class="mb-4" />
       <template v-if="preview">
         <p class="muted mb-3">
-          Vorschau vom {{ observedTime(preview.asOf) }} · {{ preview.observedCount }} von
-          {{ preview.componentCount }} Quellen beobachtet. Unbekannte Beträge bleiben unbekannt.
+          {{ tr('Vorschau vom') }} {{ observedTime(preview.asOf) }} · {{ preview.observedCount }} {{ tr('von') }}
+          {{ preview.componentCount }} {{ tr('Quellen beobachtet. Unbekannte Beträge bleiben unbekannt.') }}
         </p>
         <div v-for="item in preview.components" :key="item.accountId" class="wealth-source">
           <strong>{{ item.sourceLabel }}</strong>
-          <p v-if="item.amountCents !== null" data-financial>{{ money(item.amountCents) }}</p>
-          <p v-else>Unbekannter Betrag</p>
+          <p v-if="item.amountCents !== null" data-financial>
+            <template v-if="!amountsMasked()">{{ money(item.amountCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template>
+          </p>
+          <p v-else>{{ tr('Unbekannter Betrag') }}</p>
           <p class="muted">
             {{ item.currency }} ·
-            {{ item.observedAt ? observedTime(item.observedAt) : 'Keine Beobachtungszeit geliefert' }} ·
-            {{ sourceDescription(item.sourceType) }}<span v-if="item.stale"> · älter als 48 Stunden</span>
+            {{ item.observedAt ? observedTime(item.observedAt) : tr('Keine Beobachtungszeit geliefert') }} ·
+            {{ sourceDescription(item.sourceType) }}<span v-if="item.stale"> {{ tr('· älter als 48 Stunden') }}</span>
           </p>
         </div>
       </template>
       <template #footer
-        ><UButton :loading="saving" @click="capture">Jetzt aufzeichnen</UButton
-        ><UButton variant="ghost" :disabled="saving" @click="open = false">Abbrechen</UButton></template
+        ><UButton :loading="saving" @click="capture">{{ tr('Jetzt aufzeichnen') }}</UButton
+        ><UButton variant="ghost" :disabled="saving" @click="open = false">{{ tr('Abbrechen') }}</UButton></template
       >
     </FinanceDialog>
   </div>

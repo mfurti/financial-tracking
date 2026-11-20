@@ -38,25 +38,27 @@ onBeforeUnmount(
 );
 </script>
 <template>
-  <SectionPanel title="Kennzeichnung" icon="transactions" compact>
+  <SectionPanel :title="tr('Kennzeichnung')" icon="transactions" compact>
     <UFormField
-      label="Fix oder variabel"
-      help="Manuelle Auswahl hat Vorrang. Automatisch: bestätigte Vertragszahlung = fix, sonst nicht eingeordnet."
+      :label="tr('Fix oder variabel')"
+      :help="
+        tr('Manuelle Auswahl hat Vorrang. Automatisch: bestätigte Vertragszahlung = fix, sonst nicht eingeordnet.')
+      "
     >
       <div class="toolbar">
         <ChoiceSelect
           v-model="choice"
-          aria-label="Fix oder variabel"
+          :aria-label="tr('Fix oder variabel')"
           :searchable="false"
           :disabled="busy"
           :items="[
-            { label: 'Automatisch / nicht eingeordnet', value: '' },
-            { label: 'Fix', value: 'FIXED' },
-            { label: 'Variabel', value: 'VARIABLE' },
+            { label: tr('Automatisch / nicht eingeordnet'), value: '' },
+            { label: tr('Fix'), value: 'FIXED' },
+            { label: tr('Variabel'), value: 'VARIABLE' },
           ]"
-        /><UButton variant="soft" :loading="busy" :disabled="!ids.length" @click="save"
-          >Kennzeichnung speichern</UButton
-        >
+        /><UButton variant="soft" :loading="busy" :disabled="!ids.length" @click="save">{{
+          tr('Kennzeichnung speichern')
+        }}</UButton>
       </div>
     </UFormField>
     <UAlert v-if="error" role="alert" color="error" :description="error" class="mt-3" />

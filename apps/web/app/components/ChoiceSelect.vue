@@ -38,7 +38,7 @@ const selection = computed({
     label-key="label"
     :disabled="disabled"
     class="choice-select min-w-0 w-full"
-    :search-input="{ placeholder: 'Suchen …' }"
+    :search-input="{ placeholder: tr('Suchen …') }"
   />
   <USelect
     v-else

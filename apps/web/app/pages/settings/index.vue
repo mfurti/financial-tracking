@@ -5,104 +5,139 @@ const { preferences, storageState, updatePreferences } = useWorkspacePreferences
 function setMask(checked: boolean | 'indeterminate') {
   updatePreferences({ maskAmounts: checked === true });
 }
+/** Apply a supported device language; the app remounts the current settings view with translated setup labels. */
+function setLanguage(value: unknown) {
+  if (value === 'de' || value === 'en') updatePreferences({ language: value });
+}
 /** Configure the visible in-app source kinds without enabling email, push or financial actions. */
 function setNotification(kind: 'imports' | 'payments', checked: boolean | 'indeterminate') {
   updatePreferences({ notifications: { ...preferences.value.notifications, [kind]: checked === true } });
 }
 </script>
 <template>
-  <div class="page-heading"><h1>Einstellungen</h1></div>
+  <div class="page-heading">
+    <h1>{{ tr('Einstellungen') }}</h1>
+  </div>
   <p class="settings-intro">
-    Profil und Kontogruppen bleiben auf dem Server. Darstellung, Analyseauswahl und Privatsphäre gelten auf diesem
-    Gerät.
+    {{
+      tr(
+        'Profil und Kontogruppen bleiben auf dem Server. Darstellung, Analyseauswahl und Privatsphäre gelten auf diesem Gerät.',
+      )
+    }}
   </p>
   <div class="settings-links">
     <FinanceTile
-      label="Mein Profil"
-      value="Anzeige & Kontakt"
-      context="Eigentümerprofil · Anmeldung bleibt unverändert"
+      :label="tr('Mein Profil')"
+      :value="tr('Anzeige & Kontakt')"
+      :context="tr('Eigentümerprofil · Anmeldung bleibt unverändert')"
       to="/settings/profile"
     />
     <FinanceTile
-      label="Kontogruppen"
-      value="Konten ordnen"
-      context="Dauerhafte Gruppen für gemeinsame Auswertungen"
+      :label="tr('Kontogruppen')"
+      :value="tr('Konten ordnen')"
+      :context="tr('Dauerhafte Gruppen für gemeinsame Auswertungen')"
       to="/settings/account-groups"
     />
     <FinanceTile
-      label="Darstellung"
-      value="Farben & Helligkeit"
-      context="Vorhandene Themen und Hell/Dunkel auf diesem Gerät"
+      :label="tr('Darstellung')"
+      :value="tr('Farben & Helligkeit')"
+      :context="tr('Vorhandene Themen und Hell/Dunkel auf diesem Gerät')"
       to="/settings/appearance"
     />
     <FinanceTile
-      label="Passwort"
-      value="Zugang ändern"
-      context="Aktuelles Passwort nötig · meldet alle Sitzungen ab"
+      :label="tr('Passwort')"
+      :value="tr('Zugang ändern')"
+      :context="tr('Aktuelles Passwort nötig · meldet alle Sitzungen ab')"
       to="/settings/password"
     />
     <FinanceTile
-      label="Analysen"
-      :value="`${preferences.analysisModules.length} ausgewählte Module`"
-      context="Über Anpassen in der Analyse ändern · dieses Gerät"
+      :label="tr('Analysen')"
+      :value="tr('{0} ausgewählte Module', [preferences.analysisModules.length])"
+      :context="tr('Über Anpassen in der Analyse ändern · dieses Gerät')"
       to="/analytics"
     />
     <FinanceTile
-      label="Benachrichtigungen"
-      value="Importe & Fälligkeiten"
-      context="Hinweise ausschließlich innerhalb dieser App"
+      :label="tr('Benachrichtigungen')"
+      :value="tr('Importe & Fälligkeiten')"
+      :context="tr('Hinweise ausschließlich innerhalb dieser App')"
       to="/notifications"
     />
   </div>
   <p v-if="storageState !== 'ready'" role="status">
-    Geräteeinstellungen sind hier nicht dauerhaft verfügbar. Änderungen gelten gegebenenfalls nur bis zum Neuladen.
+    {{
+      tr(
+        'Geräteeinstellungen sind hier nicht dauerhaft verfügbar. Änderungen gelten gegebenenfalls nur bis zum Neuladen.',
+      )
+    }}
   </p>
   <div class="settings-sections">
-    <SectionPanel title="Privatsphäre auf diesem Gerät"
+    <SectionPanel :title="tr('Sprache auf diesem Gerät')">
+      <ChoiceSelect
+        :model-value="preferences.language"
+        :aria-label="tr('Sprache')"
+        :items="[
+          { label: 'Deutsch', value: 'de' },
+          { label: 'English', value: 'en' },
+        ]"
+        @update:model-value="setLanguage"
+      />
+    </SectionPanel>
+    <SectionPanel :title="tr('Privatsphäre auf diesem Gerät')"
       ><UCheckbox
         :model-value="preferences.maskAmounts"
-        label="Finanzbeträge visuell ausblenden"
+        :label="tr('Finanzbeträge visuell ausblenden')"
         @update:model-value="setMask"
       />
       <p class="settings-help">
-        Darstellungsoption für finanzielle Werte, keine zusätzliche Zugriffsbeschränkung.
+        {{ tr('Darstellungsoption für finanzielle Werte, keine zusätzliche Zugriffsbeschränkung.') }}
       </p></SectionPanel
     >
-    <SectionPanel title="Hinweise in dieser App"
+    <SectionPanel :title="tr('Hinweise in dieser App')"
       ><UCheckbox
         :model-value="preferences.notifications.imports"
-        label="Importprüfungen anzeigen"
+        :label="tr('Importprüfungen anzeigen')"
         @update:model-value="setNotification('imports', $event)"
       /><UCheckbox
         :model-value="preferences.notifications.payments"
-        label="Geplante Vertragszahlungen anzeigen"
+        :label="tr('Geplante Vertragszahlungen anzeigen')"
         @update:model-value="setNotification('payments', $event)"
       />
       <p class="settings-help">
-        Filter auf diesem Gerät. Lesebestätigungen bleiben auf dem Server; E-Mail und Push werden nicht versendet.
+        {{
+          tr(
+            'Filter auf diesem Gerät. Lesebestätigungen bleiben auf dem Server; E-Mail und Push werden nicht versendet.',
+          )
+        }}
       </p></SectionPanel
     >
   </div>
-  <FinanceTile label="Benutzer" :value="api.session.value?.username" context="Privater Finanzbereich" variant="account">
+  <FinanceTile
+    :label="tr('Benutzer')"
+    :value="api.session.value?.username"
+    :context="tr('Privater Finanzbereich')"
+    variant="account"
+  >
     <template #actions>
       <FinanceDialog
-        title="Benutzer- und App-Informationen"
-        description="Zugang, Währung und Datensicherung deines Finanzbereichs."
+        :title="tr('Benutzer- und App-Informationen')"
+        :description="tr('Zugang, Währung und Datensicherung deines Finanzbereichs.')"
       >
-        <template #trigger><UButton type="button" variant="soft">Zugang & Datensicherung</UButton></template>
+        <template #trigger
+          ><UButton type="button" variant="soft">{{ tr('Zugang & Datensicherung') }}</UButton></template
+        >
         <dl class="detail-list">
-          <dt>Benutzer</dt>
+          <dt>{{ tr('Benutzer') }}</dt>
           <dd>{{ api.session.value?.username }}</dd>
-          <dt>Währung</dt>
+          <dt>{{ tr('Währung') }}</dt>
           <dd>EUR</dd>
-          <dt>Zeitzone</dt>
-          <dd>Europe/Berlin</dd>
-          <dt>Bankabruf</dt>
-          <dd>Manuell · keine dauerhaft gespeicherte Bank-PIN</dd>
-          <dt>Datensicherung</dt>
-          <dd>Verschlüsselt auf dem Server; Status hier nicht verfügbar.</dd>
-          <dt>Zugang</dt>
-          <dd>Ausschließlich Heimnetz/VPN mit HTTPS.</dd>
+          <dt>{{ tr('Zeitzone') }}</dt>
+          <dd>{{ tr('Europe/Berlin') }}</dd>
+          <dt>{{ tr('Bankabruf') }}</dt>
+          <dd>{{ tr('Manuell · keine dauerhaft gespeicherte Bank-PIN') }}</dd>
+          <dt>{{ tr('Datensicherung') }}</dt>
+          <dd>{{ tr('Verschlüsselt auf dem Server; Status hier nicht verfügbar.') }}</dd>
+          <dt>{{ tr('Zugang') }}</dt>
+          <dd>{{ tr('Ausschließlich Heimnetz/VPN mit HTTPS.') }}</dd>
         </dl>
       </FinanceDialog>
     </template>

@@ -64,25 +64,29 @@ function activate() {
       <span class="finance-tile__copy">
         <span :id="labelId" class="finance-tile__label">{{ label }}</span>
         <strong v-if="state === 'ready'" class="finance-tile__value" :data-financial="financial || undefined"
-          ><slot name="value">{{ value ?? '—' }}</slot></strong
+          ><template v-if="financial && amountsMasked()">{{ tr('Betrag ausgeblendet') }}</template
+          ><slot v-else name="value">{{ value ?? '—' }}</slot></strong
         >
-        <span v-else-if="state === 'loading'" role="status">Wird geladen …</span>
-        <span v-else-if="state === 'empty'" class="finance-tile__message">{{ emptyText }}</span>
-        <span v-else role="alert" class="finance-tile__message">{{ errorText }}</span>
+        <span v-else-if="state === 'loading'" role="status">{{ tr('Wird geladen …') }}</span>
+        <span v-else-if="state === 'empty'" class="finance-tile__message">{{ tr(emptyText) }}</span>
+        <span v-else role="alert" class="finance-tile__message">{{ tr(errorText) }}</span>
         <span v-if="(context || $slots.context) && state === 'ready'" class="finance-tile__context"
           ><slot name="context">{{ context }}</slot></span
         >
       </span>
-      <span v-if="$slots.graphic && state === 'ready'" class="finance-tile__graphic" aria-hidden="true"
+      <span
+        v-if="$slots.graphic && state === 'ready' && !amountsMasked()"
+        class="finance-tile__graphic"
+        aria-hidden="true"
         ><slot name="graphic"
       /></span>
       <span v-if="(to || actionable) && !unavailable" class="finance-tile__chevron" aria-hidden="true">›</span>
     </component>
     <div v-if="$slots.actions || state === 'error'" class="finance-tile__actions">
       <slot name="actions" />
-      <UButton v-if="state === 'error'" type="button" variant="soft" :disabled="disabled" @click="emit('retry')"
-        >Erneut versuchen</UButton
-      >
+      <UButton v-if="state === 'error'" type="button" variant="soft" :disabled="disabled" @click="emit('retry')">{{
+        tr('Erneut versuchen')
+      }}</UButton>
     </div>
   </section>
 </template>

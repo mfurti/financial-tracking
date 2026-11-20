@@ -5,25 +5,25 @@ const api = useApi();
 const route = useRoute();
 const error = ref('');
 const primaryLinks = [
-  { to: '/', label: 'Übersicht', icon: 'home' },
-  { to: '/transactions', label: 'Umsätze', icon: 'transactions' },
-  { to: '/accounts', label: 'Konten', icon: 'accounts' },
-  { to: '/analytics', label: 'Analysen', icon: 'categories' },
-  { to: '/contracts', label: 'Verträge', icon: 'contracts' },
+  { to: '/', label: tr('Übersicht'), icon: 'home' },
+  { to: '/transactions', label: tr('Umsätze'), icon: 'transactions' },
+  { to: '/accounts', label: tr('Konten'), icon: 'accounts' },
+  { to: '/analytics', label: tr('Analysen'), icon: 'categories' },
+  { to: '/contracts', label: tr('Verträge'), icon: 'contracts' },
 ] as const;
 const secondaryLinks = [
-  { to: '/notifications', label: 'Benachrichtigungen', icon: 'calendar' },
-  { to: '/wealth', label: 'Vermögen', icon: 'history' },
-  { to: '/imports', label: 'Importhistorie', icon: 'history' },
-  { to: '/connections', label: 'Bankverbindungen', icon: 'bank' },
-  { to: '/settings', label: 'Einstellungen', icon: 'settings' },
+  { to: '/notifications', label: tr('Benachrichtigungen'), icon: 'calendar' },
+  { to: '/wealth', label: tr('Vermögen'), icon: 'history' },
+  { to: '/imports', label: tr('Importhistorie'), icon: 'history' },
+  { to: '/connections', label: tr('Bankverbindungen'), icon: 'bank' },
+  { to: '/settings', label: tr('Einstellungen'), icon: 'settings' },
 ] as const;
 const currentPage = computed(
   /** Keep the toolbar anchored to the actual page. */ () =>
     [...primaryLinks, ...secondaryLinks].find(
       /** Exact import history must not shadow the upload route. */ (link) =>
         link.to === '/' ? route.path === '/' : route.path === link.to,
-    )?.label ?? (route.path === '/more' ? 'Mehr' : 'Mein Haushaltsbuch'),
+    )?.label ?? (route.path === '/more' ? tr('Mehr') : tr('Mein Haushaltsbuch')),
 );
 const moreActive = computed(
   /** Preserve the management section marker on its nested forms and import upload. */ () =>
@@ -52,20 +52,25 @@ async function logout() {
 
 <template>
   <div class="app-frame finance-shell">
-    <a href="#main-content" class="skip-link">Zum Inhalt springen</a>
+    <a href="#main-content" class="skip-link">{{ tr('Zum Inhalt springen') }}</a>
     <div class="main-frame">
       <header class="topbar">
         <span class="sr-only">{{ currentPage }}</span>
-        <UButton variant="link" color="neutral" to="/" class="finance-brand" aria-label="Haushaltsbuch Startseite"
-          ><span class="brand-mark">H</span><strong>Haushaltsbuch</strong></UButton
+        <UButton
+          variant="link"
+          color="neutral"
+          to="/"
+          class="finance-brand"
+          :aria-label="tr('Haushaltsbuch Startseite')"
+          ><span class="brand-mark">H</span><strong>{{ tr('Haushaltsbuch') }}</strong></UButton
         >
         <div class="finance-tools">
           <UButton
             to="/notifications"
             variant="ghost"
             color="neutral"
-            aria-label="Benachrichtigungen"
-            title="Benachrichtigungen"
+            :aria-label="tr('Benachrichtigungen')"
+            :title="tr('Benachrichtigungen')"
             ><FinanceIcon name="calendar"
           /></UButton>
           <UButton
@@ -73,18 +78,18 @@ async function logout() {
             color="neutral"
             to="/settings"
             class="finance-profile"
-            aria-label="Einstellungen"
-            :title="`Angemeldet: ${api.session.value?.username}`"
+            :aria-label="tr('Einstellungen')"
+            :title="tr('Angemeldet: {0}', [api.session.value?.username])"
             ><span aria-hidden="true">{{ api.session.value?.username?.slice(0, 1).toUpperCase() }}</span></UButton
           ><ThemeToggle /><UButton
             size="sm"
             variant="ghost"
             color="neutral"
             class="logout-button"
-            aria-label="Abmelden"
-            title="Abmelden"
+            :aria-label="tr('Abmelden')"
+            :title="tr('Abmelden')"
             @click="logout"
-            ><FinanceIcon name="logout" /><span class="logout-label">Abmelden</span></UButton
+            ><FinanceIcon name="logout" /><span class="logout-label">{{ tr('Abmelden') }}</span></UButton
           >
         </div>
       </header>
@@ -92,7 +97,7 @@ async function logout() {
         <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><slot />
       </main>
     </div>
-    <nav class="finance-nav" aria-label="Hauptnavigation">
+    <nav class="finance-nav" :aria-label="tr('Hauptnavigation')">
       <UButton
         v-for="link in primaryLinks"
         :key="link.to"
@@ -109,7 +114,7 @@ async function logout() {
         color="neutral"
         :class="{ active: moreActive }"
         :aria-current="moreActive ? 'page' : undefined"
-        ><FinanceIcon name="more" /><span>Mehr</span></UButton
+        ><FinanceIcon name="more" /><span>{{ tr('Mehr') }}</span></UButton
       >
     </nav>
   </div>

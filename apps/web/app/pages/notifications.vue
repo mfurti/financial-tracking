@@ -20,12 +20,12 @@ let generation = 0;
 const deviceScope = computed(
   /** Device choices filter visibility only; server read metadata remains durable. */ () =>
     preferences.value.notifications.imports && preferences.value.notifications.payments
-      ? 'Importprüfungen und Vertragszahlungen'
+      ? tr('Importprüfungen und Vertragszahlungen')
       : preferences.value.notifications.imports
-        ? 'Nur Importprüfungen'
+        ? tr('Nur Importprüfungen')
         : preferences.value.notifications.payments
-          ? 'Nur Vertragszahlungen'
-          : 'Alle Hinweistypen auf diesem Gerät ausgeblendet',
+          ? tr('Nur Vertragszahlungen')
+          : tr('Alle Hinweistypen auf diesem Gerät ausgeblendet'),
 );
 /** Resolve the effective kind without pretending hidden sources do not exist. */
 function effectiveKind() {
@@ -130,7 +130,7 @@ async function acknowledge(item: z.infer<typeof c.notificationSchema>) {
 }
 /** Render real event times separately from planned dates in the Berlin timezone. */
 function time(at: string) {
-  return new Intl.DateTimeFormat('de-DE', {
+  return new Intl.DateTimeFormat(displayLocale(), {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: 'Europe/Berlin',
@@ -158,41 +158,44 @@ onBeforeUnmount(
 </script>
 <template>
   <div class="page-heading">
-    <h1>Benachrichtigungen</h1>
-    <UButton variant="soft" :disabled="Boolean(savingKey)" :loading="loading" @click="load()"
-      >Hinweise aktualisieren</UButton
-    >
+    <h1>{{ tr('Benachrichtigungen') }}</h1>
+    <UButton variant="soft" :disabled="Boolean(savingKey)" :loading="loading" @click="load()">{{
+      tr('Hinweise aktualisieren')
+    }}</UButton>
   </div>
   <p class="notification-intro">
-    Nur Hinweise in dieser App: offene Importprobleme und geplante Vertragszahlungen von heute bis in 30 Tagen. Keine
-    E-Mail und keine Push-Nachrichten. Als gelesen markieren ändert keine Buchung oder Zahlung.
+    {{
+      tr(
+        'Nur Hinweise in dieser App: offene Importprobleme und geplante Vertragszahlungen von heute bis in 30 Tagen. Keine E-Mail und keine Push-Nachrichten. Als gelesen markieren ändert keine Buchung oder Zahlung.',
+      )
+    }}
   </p>
   <div class="notification-filter">
     <p class="notification-count">
-      Gerätefilter: {{ deviceScope }} · <NuxtLink to="/settings">Einstellungen</NuxtLink>
+      {{ tr('Gerätefilter:') }} {{ deviceScope }} · <NuxtLink to="/settings">{{ tr('Einstellungen') }}</NuxtLink>
     </p>
     <ChoiceSelect
       v-model="kind"
-      aria-label="Hinweistyp"
+      :aria-label="tr('Hinweistyp')"
       :searchable="false"
       :disabled="Boolean(savingKey)"
       :items="[
-        { label: 'Alle Hinweise', value: '' },
-        { label: 'Importprüfungen', value: 'IMPORT_REVIEW' },
-        { label: 'Vertragszahlungen', value: 'CONTRACT_DUE' },
+        { label: tr('Alle Hinweise'), value: '' },
+        { label: tr('Importprüfungen'), value: 'IMPORT_REVIEW' },
+        { label: tr('Vertragszahlungen'), value: 'CONTRACT_DUE' },
       ]"
       @update:model-value="applyKind"
     />
   </div>
-  <p v-if="loading" role="status">Hinweise werden geladen …</p>
+  <p v-if="loading" role="status">{{ tr('Hinweise werden geladen …') }}</p>
   <div v-if="error" role="alert">
     <p>{{ error }}</p>
-    <UButton variant="soft" @click="load()">Hinweise erneut laden</UButton>
+    <UButton variant="soft" @click="load()">{{ tr('Hinweise erneut laden') }}</UButton>
   </div>
-  <SectionPanel v-if="ready" title="Aktuelle Hinweise"
-    ><p class="notification-count">{{ unread }} ungelesene Hinweise im gewählten Typ</p>
-    <p v-if="effectiveKind() === null">Hinweise dieses Typs sind auf diesem Gerät ausgeblendet.</p>
-    <p v-else-if="!items.length">Keine aktuellen Hinweise im gewählten Typ.</p>
+  <SectionPanel v-if="ready" :title="tr('Aktuelle Hinweise')"
+    ><p class="notification-count">{{ unread }} {{ tr('ungelesene Hinweise im gewählten Typ') }}</p>
+    <p v-if="effectiveKind() === null">{{ tr('Hinweise dieses Typs sind auf diesem Gerät ausgeblendet.') }}</p>
+    <p v-else-if="!items.length">{{ tr('Keine aktuellen Hinweise im gewählten Typ.') }}</p>
     <article
       v-for="item in items"
       :key="item.sourceKey"
@@ -200,22 +203,26 @@ onBeforeUnmount(
       :data-notification-key="item.sourceKey"
     >
       <div>
-        <h3>{{ item.kind === 'IMPORT_REVIEW' ? 'Import prüfen' : 'Vertragszahlung geplant' }}</h3>
+        <h3>{{ item.kind === 'IMPORT_REVIEW' ? tr('Import prüfen') : tr('Vertragszahlung geplant') }}</h3>
         <p>
-          {{ item.sourceLabel }}<span v-if="item.rowNumber !== null"> · Zeile {{ item.rowNumber }}</span>
+          {{ item.sourceLabel }}<span v-if="item.rowNumber !== null"> {{ tr('· Zeile') }} {{ item.rowNumber }}</span>
         </p>
         <p v-if="item.dueDate">
-          Fällig am {{ calendarDate(item.dueDate) }} · <strong data-financial>{{ money(item.plannedCents!) }}</strong> ·
-          Planwert, keine bestätigte Zahlung
+          {{ tr('Fällig am') }} {{ calendarDate(item.dueDate) }} ·
+          <strong data-financial
+            ><template v-if="!amountsMasked()">{{ money(item.plannedCents!) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+          >
+          {{ tr('· Planwert, keine bestätigte Zahlung') }}
         </p>
         <time v-else :datetime="item.occurredAt">{{ time(item.occurredAt) }}</time>
-        <p v-if="item.acknowledgedAt">Gelesen am {{ time(item.acknowledgedAt) }}</p>
-        <p v-else>Ungelesen</p>
+        <p v-if="item.acknowledgedAt">{{ tr('Gelesen am') }} {{ time(item.acknowledgedAt) }}</p>
+        <p v-else>{{ tr('Ungelesen') }}</p>
         <p v-if="actionErrors[item.sourceKey]" role="alert">{{ actionErrors[item.sourceKey] }}</p>
       </div>
       <div class="notification-actions">
         <UButton :to="item.href" variant="soft">{{
-          item.kind === 'IMPORT_REVIEW' ? 'Import öffnen' : 'Vertrag öffnen'
+          item.kind === 'IMPORT_REVIEW' ? tr('Import öffnen') : tr('Vertrag öffnen')
         }}</UButton
         ><UButton
           v-if="!item.acknowledgedAt"
@@ -223,13 +230,18 @@ onBeforeUnmount(
           :disabled="Boolean(savingKey)"
           :loading="savingKey === item.sourceKey"
           @click="acknowledge(item)"
-          >Als gelesen markieren</UButton
+          >{{ tr('Als gelesen markieren') }}</UButton
         >
       </div>
     </article>
     <p v-if="moreError" role="alert">{{ moreError }}</p>
-    <UButton v-if="nextCursor" variant="soft" :disabled="Boolean(savingKey)" :loading="moreLoading" @click="load(true)"
-      >Weitere Hinweise</UButton
+    <UButton
+      v-if="nextCursor"
+      variant="soft"
+      :disabled="Boolean(savingKey)"
+      :loading="moreLoading"
+      @click="load(true)"
+      >{{ tr('Weitere Hinweise') }}</UButton
     >
   </SectionPanel>
 </template>

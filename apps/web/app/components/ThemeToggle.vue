@@ -36,9 +36,9 @@ onBeforeUnmount(
     color="neutral"
     class="theme-toggle"
     :class="{ 'is-dark': isDark }"
-    aria-label="Dunkelmodus"
+    :aria-label="tr('Dunkelmodus')"
     :aria-pressed="isDark"
-    :title="isDark ? 'Zum hellen Modus wechseln' : 'Zum dunklen Modus wechseln'"
+    :title="isDark ? tr('Zum hellen Modus wechseln') : tr('Zum dunklen Modus wechseln')"
     @click="toggleTheme"
   >
     <svg

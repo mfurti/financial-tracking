@@ -95,7 +95,7 @@ async function save() {
   } catch (cause) {
     if (disposed) return;
     error.value =
-      cause instanceof Error && cause.message.startsWith('Betrag als Euro') ? cause.message : formError(cause);
+      cause instanceof Error && cause.message.startsWith(tr('Betrag als Euro')) ? cause.message : formError(cause);
   } finally {
     if (!disposed) busy.value = false;
   }
@@ -110,59 +110,71 @@ onBeforeUnmount(
   <UForm ref="validation" :state="form" class="grid gap-4 contract-form" @submit="save">
     <fieldset :disabled="busy" class="grid min-w-0 gap-4">
       <UAlert v-if="error" role="alert" color="error" :description="error" />
-      <UFormField name="name" label="Vertragsname" required>
+      <UFormField name="name" :label="tr('Vertragsname')" required>
         <template #hint
           ><HelpPopover
-            title="Vertragsangaben"
-            text="Automatische Zahlungszuordnung verlangt die genaue Gegenpartei. Die Vertragskategorie überschreibt keine manuellen Buchungskategorien. Ein Enddatum gilt einschließlich dieses Tages; ein Kündigungsdatum löst keine Kündigung aus." /></template
-        ><UInput v-model="form.name" class="w-full" placeholder="Zum Beispiel Streaming oder Miete"
+            :title="tr('Vertragsangaben')"
+            :text="
+              tr(
+                'Automatische Zahlungszuordnung verlangt die genaue Gegenpartei. Die Vertragskategorie überschreibt keine manuellen Buchungskategorien. Ein Enddatum gilt einschließlich dieses Tages; ein Kündigungsdatum löst keine Kündigung aus.',
+              )
+            " /></template
+        ><UInput v-model="form.name" class="w-full" :placeholder="tr('Zum Beispiel Streaming oder Miete')"
       /></UFormField>
-      <UFormField name="provider" label="Anbieter / Gegenpartei" required
+      <UFormField name="provider" :label="tr('Anbieter / Gegenpartei')" required
         ><UInput v-model="form.provider" class="w-full"
       /></UFormField>
-      <UFormField name="kind" label="Vertragsart"
+      <UFormField name="kind" :label="tr('Vertragsart')"
         ><USelect v-model="form.kind" class="w-full" :items="contractKindOptions"
       /></UFormField>
-      <UFormField name="accountId" label="Konto"
+      <UFormField name="accountId" :label="tr('Konto')"
         ><ChoiceSelect
           v-model="form.accountId"
           :items="[
-            { label: 'Alle Konten, auch ohne Konto', value: '' },
+            { label: tr('Alle Konten, auch ohne Konto'), value: '' },
             ...accounts.map(/** Bind by stable identity. */ (account) => ({ label: account.name, value: account.id })),
           ]"
       /></UFormField>
-      <UFormField name="categoryId" label="Vertragskategorie"
+      <UFormField name="categoryId" :label="tr('Vertragskategorie')"
         ><ChoiceSelect
           v-model="form.categoryId"
           :items="[
-            { label: 'Keine Vertragskategorie', value: '' },
+            { label: tr('Keine Vertragskategorie'), value: '' },
             ...categories.map(
               /** Reuse existing category identities. */ (category) => ({ label: category.name, value: category.id }),
             ),
           ]"
       /></UFormField>
       <template v-if="!contract">
-        <UFormField name="startDate" label="Erste Fälligkeit"
-          ><DatePicker v-model="form.startDate" label="Erste Fälligkeit"
+        <UFormField name="startDate" :label="tr('Erste Fälligkeit')"
+          ><DatePicker v-model="form.startDate" :label="tr('Erste Fälligkeit')"
         /></UFormField>
-        <UFormField name="amountCents" label="Betrag in Euro" required
-          ><UInput v-model="form.amountEuro" class="w-full" inputmode="decimal"
+        <UFormField name="amountCents" :label="tr('Betrag in Euro')" required
+          ><UInput
+            v-model="form.amountEuro"
+            :type="amountsMasked() ? 'password' : 'text'"
+            class="w-full"
+            inputmode="decimal"
         /></UFormField>
-        <UFormField name="intervalMonths" label="Zahlungsrhythmus"
+        <UFormField name="intervalMonths" :label="tr('Zahlungsrhythmus')"
           ><ChoiceSelect v-model="form.intervalMonths" :searchable="false" :items="contractIntervalOptions"
         /></UFormField>
       </template>
       <p v-else class="muted">
-        Betrag und Rhythmus ändern sich unten über eine zukünftige Zahlungsregel. Bisherige Regeln bleiben erhalten.
+        {{
+          tr(
+            'Betrag und Rhythmus ändern sich unten über eine zukünftige Zahlungsregel. Bisherige Regeln bleiben erhalten.',
+          )
+        }}
       </p>
-      <UFormField name="endDate" label="Letzte mögliche Fälligkeit"
-        ><DatePicker v-model="form.endDate" label="Vertragsende"
+      <UFormField name="endDate" :label="tr('Letzte mögliche Fälligkeit')"
+        ><DatePicker v-model="form.endDate" :label="tr('Vertragsende')"
       /></UFormField>
-      <UFormField name="cancellationDate" label="Kündigungsdatum"
-        ><DatePicker v-model="form.cancellationDate" label="Kündigungsdatum"
+      <UFormField name="cancellationDate" :label="tr('Kündigungsdatum')"
+        ><DatePicker v-model="form.cancellationDate" :label="tr('Kündigungsdatum')"
       /></UFormField>
       <UButton type="submit" :loading="busy">{{
-        submitLabel ?? (contract ? 'Vertrag speichern' : 'Vertrag bestätigen')
+        submitLabel ?? (contract ? tr('Vertrag speichern') : tr('Vertrag bestätigen'))
       }}</UButton>
     </fieldset>
   </UForm>
