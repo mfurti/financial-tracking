@@ -1,47 +1,88 @@
 <script setup lang="ts">
-import { z } from 'zod';
-import { passwordChangeSchema } from '@financial-tracking/contracts';
 const api = useApi();
-const { validation, formError } = useFormFeedback();
-const form = reactive({ currentPassword: '', newPassword: '' });
-const busy = ref(false);
-const error = ref('');
-/** Require the current password, revoke all sessions, and erase both form values. */
-async function changePassword() {
-  busy.value = true;
-  error.value = '';
-  try {
-    await api.request('/auth/password', z.object({ ok: z.boolean() }), {
-      method: 'POST',
-      body: passwordChangeSchema.parse(form),
-    });
-    api.session.value = null;
-    await navigateTo('/login');
-  } catch (cause) {
-    error.value = formError(cause);
-  } finally {
-    form.currentPassword = '';
-    form.newPassword = '';
-    busy.value = false;
-  }
+const { preferences, storageState, updatePreferences } = useWorkspacePreferences();
+/** Change only the validated local visual privacy preference. */
+function setMask(checked: boolean | 'indeterminate') {
+  updatePreferences({ maskAmounts: checked === true });
 }
-onBeforeUnmount(
-  /** Never retain passwords after leaving settings. */ () => {
-    form.currentPassword = '';
-    form.newPassword = '';
-  },
-);
+/** Configure the visible in-app source kinds without enabling email, push or financial actions. */
+function setNotification(kind: 'imports' | 'payments', checked: boolean | 'indeterminate') {
+  updatePreferences({ notifications: { ...preferences.value.notifications, [kind]: checked === true } });
+}
 </script>
-
 <template>
-  <div class="page-heading">
-    <div>
-      <h1>Einstellungen</h1>
-    </div>
+  <div class="page-heading"><h1>Einstellungen</h1></div>
+  <p class="settings-intro">
+    Profil und Kontogruppen bleiben auf dem Server. Darstellung, Analyseauswahl und Privatsphäre gelten auf diesem
+    Gerät.
+  </p>
+  <div class="settings-links">
+    <FinanceTile
+      label="Mein Profil"
+      value="Anzeige & Kontakt"
+      context="Eigentümerprofil · Anmeldung bleibt unverändert"
+      to="/settings/profile"
+    />
+    <FinanceTile
+      label="Kontogruppen"
+      value="Konten ordnen"
+      context="Dauerhafte Gruppen für gemeinsame Auswertungen"
+      to="/settings/account-groups"
+    />
+    <FinanceTile
+      label="Darstellung"
+      value="Farben & Helligkeit"
+      context="Vorhandene Themen und Hell/Dunkel auf diesem Gerät"
+      to="/settings/appearance"
+    />
+    <FinanceTile
+      label="Passwort"
+      value="Zugang ändern"
+      context="Aktuelles Passwort nötig · meldet alle Sitzungen ab"
+      to="/settings/password"
+    />
+    <FinanceTile
+      label="Analysen"
+      :value="`${preferences.analysisModules.length} ausgewählte Module`"
+      context="Über Anpassen in der Analyse ändern · dieses Gerät"
+      to="/analytics"
+    />
+    <FinanceTile
+      label="Benachrichtigungen"
+      value="Importe & Fälligkeiten"
+      context="Hinweise ausschließlich innerhalb dieser App"
+      to="/notifications"
+    />
   </div>
-  <AppearanceSettings />
-  <UButton to="/settings/profile" variant="soft" class="mb-4">Mein Profil bearbeiten</UButton>
-  <UButton to="/settings/account-groups" variant="soft" class="mb-4">Kontogruppen verwalten</UButton>
+  <p v-if="storageState !== 'ready'" role="status">
+    Geräteeinstellungen sind hier nicht dauerhaft verfügbar. Änderungen gelten gegebenenfalls nur bis zum Neuladen.
+  </p>
+  <div class="settings-sections">
+    <SectionPanel title="Privatsphäre auf diesem Gerät"
+      ><UCheckbox
+        :model-value="preferences.maskAmounts"
+        label="Finanzbeträge visuell ausblenden"
+        @update:model-value="setMask"
+      />
+      <p class="settings-help">
+        Darstellungsoption für finanzielle Werte, keine zusätzliche Zugriffsbeschränkung.
+      </p></SectionPanel
+    >
+    <SectionPanel title="Hinweise in dieser App"
+      ><UCheckbox
+        :model-value="preferences.notifications.imports"
+        label="Importprüfungen anzeigen"
+        @update:model-value="setNotification('imports', $event)"
+      /><UCheckbox
+        :model-value="preferences.notifications.payments"
+        label="Geplante Vertragszahlungen anzeigen"
+        @update:model-value="setNotification('payments', $event)"
+      />
+      <p class="settings-help">
+        Filter auf diesem Gerät. Lesebestätigungen bleiben auf dem Server; E-Mail und Push werden nicht versendet.
+      </p></SectionPanel
+    >
+  </div>
   <FinanceTile label="Benutzer" :value="api.session.value?.username" context="Privater Finanzbereich" variant="account">
     <template #actions>
       <FinanceDialog
@@ -66,18 +107,43 @@ onBeforeUnmount(
       </FinanceDialog>
     </template>
   </FinanceTile>
-  <SectionPanel title="Passwort ändern" icon="settings" class="mt-6">
-    <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><UForm
-      ref="validation"
-      :schema="passwordChangeSchema"
-      :state="form"
-      class="form-row"
-      @submit="changePassword"
-      ><UFormField label="Aktuelles Passwort" name="currentPassword"
-        ><UInput v-model="form.currentPassword" type="password" autocomplete="current-password" /></UFormField
-      ><UFormField label="Neues Passwort (mindestens 12 Zeichen)" name="newPassword"
-        ><UInput v-model="form.newPassword" type="password" autocomplete="new-password" /></UFormField
-      ><UButton type="submit" :loading="busy">Passwort ändern & abmelden</UButton></UForm
-    >
-  </SectionPanel>
 </template>
+<style scoped>
+.settings-intro {
+  max-width: 90ch;
+  margin-bottom: 24px;
+  color: var(--muted);
+}
+.settings-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.settings-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 28px;
+}
+.settings-links > *,
+.settings-sections > * {
+  min-width: 0;
+}
+.settings-help {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+@media (max-width: 1100px) {
+  .settings-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .settings-links,
+  .settings-sections {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>

@@ -12,7 +12,7 @@ test('owner profile has its own route and preserves failed-save drafts and login
   );
   const before = await (await page.request.get('/api/v1/transactions?limit=100')).json();
   await page.goto('/settings');
-  await page.getByRole('link', { name: 'Mein Profil bearbeiten', exact: true }).click();
+  await page.getByRole('link', { name: /^Mein Profil/ }).click();
   await expect(page).toHaveURL(/\/settings\/profile$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Mein Profil', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Passwort ändern', exact: true })).toHaveCount(0);

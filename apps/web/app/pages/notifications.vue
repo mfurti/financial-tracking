@@ -4,6 +4,7 @@ import * as c from '@financial-tracking/contracts';
 const api = useApi();
 const route = useRoute();
 const router = useRouter();
+const { preferences } = useWorkspacePreferences();
 const items = ref<z.infer<typeof c.notificationSchema>[]>([]);
 const nextCursor = ref<string | null>(null),
   unread = ref(0);
@@ -16,6 +17,35 @@ const error = ref(''),
   savingKey = ref('');
 const actionErrors = reactive<Record<string, string>>({});
 let generation = 0;
+const deviceScope = computed(
+  /** Device choices filter visibility only; server read metadata remains durable. */ () =>
+    preferences.value.notifications.imports && preferences.value.notifications.payments
+      ? 'Importprüfungen und Vertragszahlungen'
+      : preferences.value.notifications.imports
+        ? 'Nur Importprüfungen'
+        : preferences.value.notifications.payments
+          ? 'Nur Vertragszahlungen'
+          : 'Alle Hinweistypen auf diesem Gerät ausgeblendet',
+);
+/** Resolve the effective kind without pretending hidden sources do not exist. */
+function effectiveKind() {
+  if (kind.value && !['IMPORT_REVIEW', 'CONTRACT_DUE'].includes(kind.value)) return kind.value;
+  if (kind.value)
+    return kind.value === 'IMPORT_REVIEW'
+      ? preferences.value.notifications.imports
+        ? kind.value
+        : null
+      : preferences.value.notifications.payments
+        ? kind.value
+        : null;
+  return preferences.value.notifications.imports && preferences.value.notifications.payments
+    ? undefined
+    : preferences.value.notifications.imports
+      ? 'IMPORT_REVIEW'
+      : preferences.value.notifications.payments
+        ? 'CONTRACT_DUE'
+        : null;
+}
 /** Read current derived events without persisting source amounts in the browser. */
 async function load(append = false) {
   const request = append ? generation : ++generation;
@@ -34,10 +64,18 @@ async function load(append = false) {
     error.value = '';
   }
   try {
+    const effective = effectiveKind();
+    if (effective === null) {
+      items.value = [];
+      nextCursor.value = null;
+      unread.value = 0;
+      ready.value = true;
+      return;
+    }
     const query = c.notificationsQuerySchema.parse({
       limit: 20,
       cursor: append ? nextCursor.value : undefined,
-      kind: kind.value || undefined,
+      kind: effective,
     });
     const result = await api.request('/notifications', c.notificationsSchema, { query });
     if (request !== generation) return;
@@ -103,6 +141,15 @@ onMounted(
     void load();
   },
 );
+watch(
+  /** React only to confirmed device source-kind choices. */ () => [
+    preferences.value.notifications.imports,
+    preferences.value.notifications.payments,
+  ],
+  /** Discard pages whose visible kind scope changed. */ () => {
+    void load();
+  },
+);
 onBeforeUnmount(
   /** Ignore pending reads after leaving this list. */ () => {
     generation++;
@@ -121,6 +168,9 @@ onBeforeUnmount(
     E-Mail und keine Push-Nachrichten. Als gelesen markieren ändert keine Buchung oder Zahlung.
   </p>
   <div class="notification-filter">
+    <p class="notification-count">
+      Gerätefilter: {{ deviceScope }} · <NuxtLink to="/settings">Einstellungen</NuxtLink>
+    </p>
     <ChoiceSelect
       v-model="kind"
       aria-label="Hinweistyp"
@@ -141,7 +191,8 @@ onBeforeUnmount(
   </div>
   <SectionPanel v-if="ready" title="Aktuelle Hinweise"
     ><p class="notification-count">{{ unread }} ungelesene Hinweise im gewählten Typ</p>
-    <p v-if="!items.length">Keine aktuellen Hinweise im gewählten Typ.</p>
+    <p v-if="effectiveKind() === null">Hinweise dieses Typs sind auf diesem Gerät ausgeblendet.</p>
+    <p v-else-if="!items.length">Keine aktuellen Hinweise im gewählten Typ.</p>
     <article
       v-for="item in items"
       :key="item.sourceKey"

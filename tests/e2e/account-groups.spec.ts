@@ -21,7 +21,7 @@ test('groups retain exact report, detail and calendar scope through failure, rel
       account.name === conceptFixtureLabels.savings,
   );
   await page.goto('/settings');
-  await page.getByRole('link', { name: 'Kontogruppen verwalten', exact: true }).click();
+  await page.getByRole('link', { name: /^Kontogruppen/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Kontogruppen', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Kontogruppe anlegen', exact: true }).click();
   const editor = page.getByRole('dialog', { name: 'Kontogruppe bearbeiten', exact: true });

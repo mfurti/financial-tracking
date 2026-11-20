@@ -1,5 +1,7 @@
 # Application appearance
 
+The integrated settings hub links to `/settings/appearance` for the existing palette/brightness controls. Profile, account groups and password use separate sibling routes; the password page reuses current-password verification and revokes all sessions after a successful change. Device privacy and notification-kind choices remain local. Notification visibility filters affect the list without changing server-side read receipts or financial sources.
+
 > **Catalog update, 2026-11-08:** Appearance controls are implemented, not an open theme task. Remaining product/UI acceptance: [status.md](status.md), R1–R3/E6 in [todo.md](todo.md).
 
 Settings offers 23 device-local preview tiles based on 18 adapted color families. Ordinary families retain an independent system/light/dark preference. The six Ayu tiles explicitly select Light, Dark or Mirage, each bordered/unbordered; selecting a tile activates its brightness. The circular header/login button preserves Ayu border choice and switches Light with the last selected Dark/Mirage variant. Existing stored preferences remain valid.

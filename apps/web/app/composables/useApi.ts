@@ -35,11 +35,14 @@ export function useApi() {
           502,
         );
       const details = error as { statusCode?: number; data?: unknown };
-      if (details.statusCode === 401) {
+      const failure = publicApiError(details.data, details.statusCode);
+      // A rejected current password follows successful session authentication and does not revoke that session.
+      const reauthenticationFailed = path === '/auth/password' && failure.code === 'INVALID_LOGIN';
+      if (details.statusCode === 401 && !reauthenticationFailed) {
         session.value = null;
         if (route.path !== '/login') await router.push('/login');
       }
-      throw publicApiError(details.data, details.statusCode);
+      throw failure;
     }
   }
   return { request, session };
