@@ -117,7 +117,7 @@ export class LedgerController {
   /** Produce an exact monthly report. */
   @Get('analytics/monthly') @ApiOkResponse({ type: Monthly }) monthly(@Query() query: unknown) {
     const input = c.monthlyQuerySchema.parse(query);
-    return this.ledger.monthly(input.month, input.accountId);
+    return this.ledger.monthly(input.month, input.accountId, input.groupId);
   }
   /** Link transfer sides. */
   @Post('transfers') transfer(@Body() body: unknown) {

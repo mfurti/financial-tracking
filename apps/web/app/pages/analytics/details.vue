@@ -66,12 +66,13 @@ async function load() {
   scopeLabel.value = '';
   try {
     const input = c.analyticsDetailQuerySchema.parse(route.query);
-    const [overview, page, merchants, categories, accounts] = await Promise.all([
+    const [overview, page, merchants, categories, accounts, groups] = await Promise.all([
       api.request('/analytics/overview', c.analyticsOverviewSchema, { query: input }),
       api.request('/transactions', c.transactionPageSchema, { query: transactionQuery(input) }),
       api.request('/analytics/merchants', c.merchantAnalyticsSchema, { query: input }),
       api.request('/categories', z.array(c.categorySchema)),
       api.request('/accounts', z.array(c.accountSchema)),
+      input.groupId ? api.request('/account-groups', z.array(c.accountGroupSchema)) : Promise.resolve([]),
     ]);
     if (current !== generation) return;
     const account = accounts.find(
@@ -80,7 +81,10 @@ async function load() {
     const category = categories.find(
       /** Match the selected persisted category, never a display name. */ (row) => row.id === input.categoryId,
     );
-    if ((input.accountId && !account) || (input.categoryId && !category))
+    const group = groups.find(
+      /** Resolve only the saved group identity from the validated bookmark. */ (row) => row.id === input.groupId,
+    );
+    if ((input.accountId && !account) || (input.categoryId && !category) || (input.groupId && !group))
       throw new Error('Dieser Analysefilter ist nicht mehr verfügbar.');
     title.value =
       input.merchantKey === 'unknown'
@@ -91,7 +95,7 @@ async function load() {
                 row.key === input.merchantKey,
             )?.label ?? 'Händler im gewählten Zeitraum')
           : (category?.name ?? (input.uncategorized === 'true' ? 'Nicht kategorisiert' : 'Einnahmen und Ausgaben'));
-    scopeLabel.value = `${input.unassigned === 'true' ? 'Ohne Konto' : (account?.name ?? 'Alle Konten')}${category && input.merchantKey ? ` · ${category.name}` : ''}`;
+    scopeLabel.value = `${input.unassigned === 'true' ? 'Ohne Konto' : group ? `Kontogruppe: ${group.name}` : (account?.name ?? 'Alle Konten')}${category && input.merchantKey ? ` · ${category.name}` : ''}`;
     report.value = overview;
     rows.value = page.items;
     nextCursor.value = page.nextCursor;

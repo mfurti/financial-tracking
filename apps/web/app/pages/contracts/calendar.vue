@@ -10,6 +10,7 @@ const month = ref(
     : new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7),
 );
 const accountId = ref(typeof route.query.accountId === 'string' ? route.query.accountId : '');
+const groupId = ref(typeof route.query.groupId === 'string' ? route.query.groupId : '');
 const accounts = ref<c.Account[]>([]);
 const report = ref<z.infer<typeof c.contractCalendarSchema> | null>(null);
 const loading = ref(true);
@@ -54,6 +55,7 @@ async function load() {
     const query = c.contractCalendarQuerySchema.parse({
       ...monthRangeQuery(month.value),
       accountId: accountId.value || undefined,
+      groupId: groupId.value || undefined,
     });
     const [calendar, choices] = await Promise.all([
       api.request('/contracts/calendar', c.contractCalendarSchema, { query }),
@@ -62,7 +64,13 @@ async function load() {
     if (disposed || request !== generation) return;
     report.value = calendar;
     accounts.value = choices;
-    await router.replace({ query: { month: month.value, ...(accountId.value ? { accountId: accountId.value } : {}) } });
+    await router.replace({
+      query: {
+        month: month.value,
+        ...(accountId.value ? { accountId: accountId.value } : {}),
+        ...(groupId.value ? { groupId: groupId.value } : {}),
+      },
+    });
   } catch (cause) {
     if (!disposed && request === generation) error.value = userErrorMessage(cause);
   } finally {
@@ -81,17 +89,29 @@ watch(
   /** Restore the precise month/account bookmark when browser history changes it. */ () => [
     route.query.month,
     route.query.accountId,
+    route.query.groupId,
   ],
-  /** Ignore our own completed query update, but reload a different history scope. */ ([nextMonth, nextAccount]) => {
+  /** Ignore our own completed query update, but reload a different history scope. */ ([
+    nextMonth,
+    nextAccount,
+    nextGroup,
+  ]) => {
     const next = typeof nextMonth === 'string' ? nextMonth : month.value;
     const account = typeof nextAccount === 'string' ? nextAccount : '';
-    if (month.value === next && accountId.value === account) return;
+    const group = typeof nextGroup === 'string' ? nextGroup : '';
+    if (month.value === next && accountId.value === account && groupId.value === group) return;
     month.value = next;
     accountId.value = account;
+    groupId.value = group;
     void load();
   },
 );
 onMounted(load);
+onBeforeRouteLeave(
+  /** Revoke late scope URL updates before the next route finishes loading. */ () => {
+    generation++;
+  },
+);
 onBeforeUnmount(
   /** Revoke late calendar/account reads after leaving this page. */ () => {
     disposed = true;
@@ -110,19 +130,14 @@ onBeforeUnmount(
     <MonthPicker v-model="month" @change="load" />
     <UButton variant="ghost" aria-label="Nächster Monat" @click="shiftMonth(1)">›</UButton>
     <div class="calendar-scope">
-      <ChoiceSelect
-        v-model="accountId"
-        aria-label="Kalenderkonto"
-        :items="[
-          { label: 'Alle Konten', value: '' },
-          ...accounts.map(
-            /** Bind filters to real identities, including inactive historical accounts. */ (account) => ({
-              label: account.name,
-              value: account.id,
-            }),
-          ),
-        ]"
-        @update:model-value="load"
+      <!-- Bind filters to real identities, including inactive historical accounts. -->
+      <AccountScopeSelect
+        v-model:account-id="accountId"
+        v-model:group-id="groupId"
+        :accounts="accounts"
+        label="Kalenderkonto"
+        :allow-unassigned="false"
+        @change="load"
       />
     </div>
     <UButton variant="soft" :loading="loading" @click="load">Aktualisieren</UButton>
@@ -130,7 +145,8 @@ onBeforeUnmount(
   <p class="muted mb-5">
     Fälligkeiten sind Planwerte aus bestätigten Verträgen. Fehlende Zuordnung beweist keinen Zahlungsausfall.
     Tatsächliche Buchungen und ihr Buchungsdatum bleiben getrennt. Ein Kontofilter berücksichtigt nur ausdrücklich
-    diesem Konto zugeordnete Verträge.
+    diesem Konto zugeordnete Verträge. Eine Kontogruppe berücksichtigt die Verträge ihrer Mitgliedskonten; leere Gruppen
+    finden keine Fälligkeiten.
   </p>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
   <UButton v-if="error && !loading" variant="soft" @click="load">Erneut laden</UButton>

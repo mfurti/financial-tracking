@@ -3,12 +3,18 @@ import { z } from 'zod';
 import * as c from '@financial-tracking/contracts';
 import { contractKinds } from '../../utils/contract-presentation';
 const api = useApi();
+const route = useRoute();
+const router = useRouter();
+const accountId = ref(String(route.query.accountId ?? '')),
+  groupId = ref(String(route.query.groupId ?? ''));
+const accounts = ref<c.Account[]>([]);
 const summary = ref<z.infer<typeof c.contractSummarySchema> | null>(null);
 const grouping = ref<'category' | 'kind'>('category');
 const selected = ref<string | null>(null);
 const loading = ref(true);
 const error = ref('');
 let disposed = false;
+let generation = 0;
 let timer: ReturnType<typeof setInterval> | undefined;
 const groups = computed(
   /** Both groupings sum exactly the same rounded contract costs. */ () =>
@@ -36,18 +42,37 @@ const contracts = computed(
 );
 /** Read a fresh server-day snapshot without retaining stale success after an error. */
 async function load() {
+  const request = ++generation;
   loading.value = true;
+  summary.value = null;
   error.value = '';
   try {
-    const result = await api.request('/contracts/summary', c.contractSummarySchema);
-    if (!disposed) summary.value = result;
+    const query = c.accountScopeQuerySchema.parse({
+      accountId: accountId.value || undefined,
+      groupId: groupId.value || undefined,
+    });
+    const result = await api.request('/contracts/summary', c.contractSummarySchema, { query });
+    if (!disposed && request === generation) summary.value = result;
   } catch (cause) {
-    if (!disposed) {
+    if (!disposed && request === generation) {
       summary.value = null;
       error.value = userErrorMessage(cause);
     }
   } finally {
-    if (!disposed) loading.value = false;
+    if (!disposed && request === generation) loading.value = false;
+  }
+}
+/** Publish an explicitly selected account/group scope before reloading its planned costs. */
+async function applyScope() {
+  try {
+    const query = c.accountScopeQuerySchema.parse({
+      accountId: accountId.value || undefined,
+      groupId: groupId.value || undefined,
+    });
+    await router.replace({ query });
+    await load();
+  } catch (caught) {
+    error.value = userErrorMessage(caught);
   }
 }
 /** Calculate a display percentage from exact cents; never feed it back into money. */
@@ -65,6 +90,11 @@ watch(
 );
 onMounted(
   /** Keep the active-day cost snapshot fresh without another contract write. */ async () => {
+    try {
+      accounts.value = await api.request('/accounts', z.array(c.accountSchema));
+    } catch (caught) {
+      error.value = userErrorMessage(caught);
+    }
     await load();
     timer = setInterval(
       /** Hidden pages do not need automatic reads. */ () => {
@@ -77,6 +107,7 @@ onMounted(
 onBeforeUnmount(
   /** Release owned timer and ignore late reads. */ () => {
     disposed = true;
+    generation++;
     if (timer) clearInterval(timer);
   },
 );
@@ -88,6 +119,16 @@ onBeforeUnmount(
     <UButton to="/contracts" variant="soft">Alle Verträge</UButton>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
+  <div class="contract-account-scope">
+    <AccountScopeSelect
+      v-model:account-id="accountId"
+      v-model:group-id="groupId"
+      :accounts="accounts"
+      :allow-unassigned="false"
+      label="Vertragskonto"
+      @change="applyScope"
+    />
+  </div>
   <UButton v-if="error" @click="load">Erneut laden</UButton>
   <p v-if="loading" role="status">Fixkosten werden geladen …</p>
   <template v-if="summary && !loading">
@@ -188,6 +229,10 @@ onBeforeUnmount(
 </template>
 
 <style scoped>
+.contract-account-scope {
+  max-width: 320px;
+  margin-bottom: 20px;
+}
 .contract-analysis-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);

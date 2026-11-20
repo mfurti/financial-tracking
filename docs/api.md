@@ -25,6 +25,16 @@ Run `DATABASE_URL=<local-url> node apps/api/dist/export-openapi.js` after buildi
 - A transaction annotation patch validates the requested category and changes transfer groups/counterparts in one serializable database transaction. Rejected input or a failed final write leaves all annotations unchanged.
 - Added account PATCH bankConnectionId for explicit reassignment of an IBAN-bearing CSV account to a FinTS connection. Bank import refuses silent cross-connection IBAN duplication.
 
+## Account groups and financial scope
+
+Authenticated GET/POST `/account-groups` and PATCH/DELETE `/account-groups/:id` manage metadata only. Names are trimmed to 1–60 characters, sortOrder is a nonnegative signed-32-bit integer and accountIds contains at most 1000 unique canonical real UUIDs. References are validated before an atomic membership replacement; partial edits leave omitted fields intact. Unicode case-insensitive names are serialized through a transaction lock, with database lower-name uniqueness as an additional constraint. Deletion requires `{ "confirm": true }` and never deletes accounts or bookings.
+
+Overview, monthly/review/merchant analytics, transactions and contract calendar/summary accept optional `groupId`. Account, group and accountless-only scope are mutually exclusive. Group membership expands to an ID set, including inactive historical members; an empty group matches nothing and a missing group returns 404. Default global queries still include accountless bookings. Contract scope includes only explicitly account-bound member contracts; unbound plans remain global. Exact report totals, cursor detail predicates and return links retain the same selected scope. Reserve/recorded-wealth modules remain explicitly global and independent of transaction filters.
+
+## Current-owner profile
+
+GET/PATCH `/workspace/profile` reads/saves the guarded owner's display/contact metadata. GET has no profile backfill; unsaved updatedAt/contactEmail are null. PATCH requires a trimmed 1–80-character displayName and accepts a validated nullable contactEmail of at most 254 characters. Omitted email is preserved, null clears it. Contact data does not change username, password or recovery identity; client owner/credential/financial fields reject.
+
 ## Stage 1 accountless CSV and assignment
 
 - UUID inputs are canonicalized to lowercase before comparisons and identity-scope construction. Monetary strings remain exact; references are opaque source values and are not UUID-normalized.

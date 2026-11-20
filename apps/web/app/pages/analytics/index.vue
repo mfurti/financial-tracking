@@ -75,6 +75,7 @@ const categories = ref<c.Category[]>([]);
 const from = ref(String(route.query.from ?? ''));
 const to = ref(String(route.query.to ?? ''));
 const accountId = ref(route.query.unassigned === 'true' ? 'UNASSIGNED' : String(route.query.accountId ?? ''));
+const groupId = ref(String(route.query.groupId ?? ''));
 const categoryId = ref(route.query.uncategorized === 'true' ? 'UNCATEGORIZED' : String(route.query.categoryId ?? ''));
 const error = ref('');
 const busy = ref(true);
@@ -109,6 +110,7 @@ function filters() {
     from: from.value || undefined,
     to: to.value || undefined,
     accountId: accountId.value && accountId.value !== 'UNASSIGNED' ? accountId.value : undefined,
+    groupId: groupId.value || undefined,
     unassigned: accountId.value === 'UNASSIGNED' ? 'true' : undefined,
     categoryId: categoryId.value && categoryId.value !== 'UNCATEGORIZED' ? categoryId.value : undefined,
     uncategorized: categoryId.value === 'UNCATEGORIZED' ? 'true' : undefined,
@@ -174,6 +176,7 @@ function link(extra: Record<string, string> = {}) {
   };
   if (appliedFilters.value.unassigned === 'true') source.unassigned = 'true';
   else if (appliedFilters.value.accountId) source.accountId = appliedFilters.value.accountId;
+  else if (appliedFilters.value.groupId) source.groupId = appliedFilters.value.groupId;
   if (appliedFilters.value.uncategorized === 'true') source.uncategorized = 'true';
   else if (appliedFilters.value.categoryId) source.categoryId = appliedFilters.value.categoryId;
   return `/transactions?${new URLSearchParams({ ...source, ...extra })}`;
@@ -257,15 +260,10 @@ onBeforeUnmount(
       <UFormField label="Zeitraum von"><DatePicker v-model="from" label="Zeitraum von" /></UFormField
       ><UFormField label="Zeitraum bis"><DatePicker v-model="to" label="Zeitraum bis" /></UFormField
       ><UFormField label="Konto"
-        ><ChoiceSelect
-          v-model="accountId"
-          :items="[
-            { label: 'Alle Konten', value: '' },
-            { label: 'Ohne Konto', value: 'UNASSIGNED' },
-            ...accounts.map(
-              /** Filter real account identities only. */ (account) => ({ label: account.name, value: account.id }),
-            ),
-          ]" /></UFormField
+        ><!-- Filter real account identities only. --><AccountScopeSelect
+          v-model:account-id="accountId"
+          v-model:group-id="groupId"
+          :accounts="accounts" /></UFormField
       ><UFormField label="Kategorie"
         ><ChoiceSelect
           v-model="categoryId"

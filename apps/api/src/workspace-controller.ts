@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Put, Query, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import * as c from '@financial-tracking/contracts';
 import { ReservesService } from './reserves.js';
 import { WealthService } from './wealth.js';
 import { WorkspaceService } from './workspace.js';
+import { AccountGroupsService } from './account-groups.js';
 
 /** Private singleton workspace metadata using the existing session/CSRF and shared runtime contracts. */
 @Controller()
@@ -13,7 +14,25 @@ export class WorkspaceController {
     @Inject(ReservesService) private readonly reserves: ReservesService,
     @Inject(WealthService) private readonly wealth: WealthService,
     @Inject(WorkspaceService) private readonly workspace: WorkspaceService,
+    @Inject(AccountGroupsService) private readonly groups: AccountGroupsService,
   ) {}
+  /** List durable account membership groups without financial aggregation. */
+  @Get('account-groups') accountGroups() {
+    return this.groups.list();
+  }
+  /** Create one atomic metadata/membership set. */
+  @Post('account-groups') createGroup(@Body() body: unknown) {
+    return this.groups.create(c.accountGroupInputSchema.parse(body));
+  }
+  /** Update only explicitly supplied group fields. */
+  @Patch('account-groups/:id') patchGroup(@Param('id') id: string, @Body() body: unknown) {
+    return this.groups.patch(c.idSchema.parse(id), c.accountGroupPatchSchema.parse(body));
+  }
+  /** Require explicit confirmation before removing only the group metadata. */
+  @Delete('account-groups/:id') deleteGroup(@Param('id') id: string, @Body() body: unknown) {
+    c.accountGroupDeleteSchema.parse(body);
+    return this.groups.remove(c.idSchema.parse(id));
+  }
   /** Read only the authenticated current owner's display/contact metadata. */
   @Get('workspace/profile') profile(@Req() request: FastifyRequest) {
     return this.workspace.profile(request.authSession?.username);

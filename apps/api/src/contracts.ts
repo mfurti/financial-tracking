@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { resolveAccountScope } from './account-scope.js';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { summarizeContracts } from './contract-summary.js';
@@ -54,9 +55,12 @@ export class ContractsService {
   /** Receive the application-owned database; no bank connection is opened by this service. */
   constructor(@Inject('DB') readonly db: Db) {}
   /** Report today's confirmed fixed costs separately from observed bank expenses. */
-  async summary(today = berlinToday()) {
+  async summary(today = berlinToday(), scope: z.infer<typeof c.accountScopeQuerySchema> = {}) {
     return summarizeContracts(
-      await this.db.contract.findMany({ include: { revisions: true, category: { select: { name: true } } } }),
+      await this.db.contract.findMany({
+        where: { accountId: await resolveAccountScope(this.db, c.accountScopeQuerySchema.parse(scope)) },
+        include: { revisions: true, category: { select: { name: true } } },
+      }),
       today,
     );
   }
@@ -67,7 +71,7 @@ export class ContractsService {
       /** Bind schedule revisions and actual payment provenance to one consistent read snapshot. */ async (tx) => {
         const contracts = await tx.contract.findMany({
           where: {
-            accountId: query.accountId,
+            accountId: await resolveAccountScope(tx, query),
             startDate: { lte: new Date(query.to) },
             OR: [{ endDate: null }, { endDate: { gte: new Date(query.from) } }],
           },
@@ -151,7 +155,7 @@ export class ContractsService {
         return c.contractCalendarSchema.parse({
           from: query.from,
           to: query.to,
-          scope: { accountId: query.accountId ?? null },
+          scope: { accountId: query.accountId ?? null, ...(query.groupId ? { groupId: query.groupId } : {}) },
           provenance: 'CONTRACT_SCHEDULE',
           totalPlannedCents: String(total),
           months,

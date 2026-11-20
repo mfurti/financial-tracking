@@ -3,6 +3,14 @@ import { z } from 'zod';
 export const idSchema = z.uuid().toLowerCase();
 export const dateSchema = z.iso.date();
 export const timeSchema = z.iso.datetime();
+/** Account, group and accountless-only identities are mutually exclusive financial scopes. */
+function validAccountScope(value: { accountId?: string; groupId?: string; unassigned?: 'true' | 'false' }) {
+  return Number(Boolean(value.accountId)) + Number(Boolean(value.groupId)) + Number(value.unassigned === 'true') <= 1;
+}
+/** Shared optional account/group scope preserves the existing global default. */
+export const accountScopeQuerySchema = z
+  .object({ accountId: idSchema.optional(), groupId: idSchema.optional() })
+  .refine(validAccountScope, 'Konto oder Kontogruppe auswählen.');
 /** Contact metadata never changes the owner's username, credentials or recovery identity. */
 export const workspaceProfileInputSchema = z
   .object({
@@ -50,6 +58,8 @@ export const accountGroupSchema = accountGroupInputSchema.extend({
   createdAt: timeSchema,
   updatedAt: timeSchema,
 });
+/** Deleting a group requires explicit consent and never implies account deletion. */
+export const accountGroupDeleteSchema = z.object({ confirm: z.literal(true) }).strict();
 /** Stable source revisions are bounded without truncating existing financial source fields. */
 export const notificationSourceKeySchema = z.string().trim().min(1).max(256);
 /** Clients can acknowledge only a source key, never another owner or arbitrary timestamp. */
@@ -433,7 +443,9 @@ export const contractCalendarQuerySchema = z
     from: dateSchema,
     to: dateSchema,
     accountId: idSchema.optional(),
+    groupId: idSchema.optional(),
   })
+  .refine(validAccountScope, 'Konto oder Kontogruppe auswählen.')
   .refine(
     /** Bound recurrence expansion to at most 36 inclusive calendar months. */ (value) =>
       value.from <= value.to &&
@@ -466,7 +478,7 @@ export const contractCalendarEventSchema = z.object({
 export const contractCalendarSchema = z.object({
   from: dateSchema,
   to: dateSchema,
-  scope: z.object({ accountId: idSchema.nullable() }),
+  scope: z.object({ accountId: idSchema.nullable(), groupId: idSchema.optional() }),
   provenance: z.literal('CONTRACT_SCHEDULE'),
   totalPlannedCents: aggregateCentsSchema,
   months: z
@@ -520,6 +532,7 @@ export const analyticsOverviewQuerySchema = z
     from: dateSchema.optional(),
     to: dateSchema.optional(),
     accountId: idSchema.optional(),
+    groupId: idSchema.optional(),
     categoryId: idSchema.optional(),
     merchantKey: merchantKeySchema.optional(),
     unassigned: z.enum(['true', 'false']).optional(),
@@ -527,7 +540,7 @@ export const analyticsOverviewQuerySchema = z
   })
   .refine(
     /** Mutually exclusive identity and null filters must not silently shadow one another. */ (value) =>
-      !(value.accountId && value.unassigned === 'true') && !(value.categoryId && value.uncategorized === 'true'),
+      validAccountScope(value) && !(value.categoryId && value.uncategorized === 'true'),
     'Filter widersprechen sich.',
   )
   .refine(
@@ -603,6 +616,7 @@ export const merchantAnalyticsSchema = z.object({
     from: dateSchema,
     to: dateSchema,
     accountId: idSchema.nullable(),
+    groupId: idSchema.optional(),
     categoryId: idSchema.nullable(),
     unassigned: z.boolean(),
     uncategorized: z.boolean(),
@@ -624,6 +638,7 @@ export const transactionQuerySchema = z
     classification: classificationSchema.optional(),
     merchantKey: merchantKeySchema.optional(),
     accountId: idSchema.optional(),
+    groupId: idSchema.optional(),
     unassigned: z.enum(['true', 'false']).optional(),
     from: dateSchema.optional(),
     to: dateSchema.optional(),
@@ -638,7 +653,7 @@ export const transactionQuerySchema = z
   })
   .refine(
     /** A specific account and the unassigned-only view are mutually exclusive. */
-    (query) => !(query.accountId && query.unassigned === 'true'),
+    (query) => validAccountScope(query),
     'Konto und Ohne-Konto-Filter nicht gleichzeitig auswählen.',
   )
   .refine(
@@ -647,14 +662,17 @@ export const transactionQuerySchema = z
     'Ungültiger Zeitraum.',
   );
 export const transactionPageSchema = z.object({ items: z.array(transactionSchema), nextCursor: idSchema.nullable() });
-export const monthlyQuerySchema = z.object({
-  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
-  accountId: idSchema.optional(),
-});
+export const monthlyQuerySchema = z
+  .object({
+    month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+    accountId: idSchema.optional(),
+    groupId: idSchema.optional(),
+  })
+  .refine(validAccountScope, 'Konto oder Kontogruppe auswählen.');
 export const monthlyReviewQuerySchema = monthlyQuerySchema;
 export const monthlyReviewSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
-  scope: z.object({ from: dateSchema, to: dateSchema, accountId: idSchema.nullable() }),
+  scope: z.object({ from: dateSchema, to: dateSchema, accountId: idSchema.nullable(), groupId: idSchema.optional() }),
   incomeCents: aggregateCentsSchema,
   expenseCents: aggregateCentsSchema,
   netCents: aggregateCentsSchema,
@@ -937,7 +955,13 @@ export const apiContracts: Record<string, ApiContract> = {
     status: 200,
   },
   contracts: { method: 'get', path: '/contracts', response: z.array(contractSchema), status: 200 },
-  contractSummary: { method: 'get', path: '/contracts/summary', response: contractSummarySchema, status: 200 },
+  contractSummary: {
+    method: 'get',
+    path: '/contracts/summary',
+    query: accountScopeQuerySchema,
+    response: contractSummarySchema,
+    status: 200,
+  },
   contractCalendar: {
     method: 'get',
     path: '/contracts/calendar',
@@ -1117,6 +1141,28 @@ export const apiContracts: Record<string, ApiContract> = {
   },
   reserveGoal: { method: 'get', path: '/reserve-goal', response: reserveGoalSchema, status: 200 },
   workspaceProfile: { method: 'get', path: '/workspace/profile', response: workspaceProfileSchema, status: 200 },
+  accountGroups: { method: 'get', path: '/account-groups', response: z.array(accountGroupSchema), status: 200 },
+  createAccountGroup: {
+    method: 'post',
+    path: '/account-groups',
+    request: accountGroupInputSchema,
+    response: accountGroupSchema,
+    status: 201,
+  },
+  patchAccountGroup: {
+    method: 'patch',
+    path: '/account-groups/{id}',
+    request: accountGroupPatchSchema,
+    response: accountGroupSchema,
+    status: 200,
+  },
+  deleteAccountGroup: {
+    method: 'delete',
+    path: '/account-groups/{id}',
+    request: accountGroupDeleteSchema,
+    response: okSchema,
+    status: 200,
+  },
   saveWorkspaceProfile: {
     method: 'patch',
     path: '/workspace/profile',

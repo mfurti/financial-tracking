@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { resolveAccountScope } from './account-scope.js';
 import { z } from 'zod';
 import {
   accountInputSchema,
@@ -153,7 +154,7 @@ export class LedgerService {
   async transactions(query: z.infer<typeof transactionQuerySchema>) {
     const where: Prisma.TransactionWhereInput = {
       AND: [classificationWhere(query.classification), await merchantWhere(this.db, query.merchantKey)],
-      accountId: query.unassigned === 'true' ? null : query.accountId,
+      accountId: await resolveAccountScope(this.db, query),
       categoryId: query.uncategorized === 'true' ? null : query.categoryId,
       status: query.status,
       isTransfer: query.excludeTransfers === 'true' ? false : undefined,
@@ -315,14 +316,19 @@ export class LedgerService {
     return { ok: true };
   }
   /** Aggregate exact cents using booking dates, excluding pending and own transfers. */
-  async monthly(month: string, accountId?: string) {
+  async monthly(month: string, accountId?: string, groupId?: string) {
     const start = new Date(`${month}-01T00:00:00Z`);
     const end = new Date(start);
     end.setUTCMonth(end.getUTCMonth() + 1);
     const previous = new Date(start);
     previous.setUTCMonth(previous.getUTCMonth() - 1);
     const rows = await this.db.transaction.findMany({
-      where: { accountId, bookingDate: { gte: previous, lt: end }, status: 'BOOKED', isTransfer: false },
+      where: {
+        accountId: await resolveAccountScope(this.db, { accountId, groupId }),
+        bookingDate: { gte: previous, lt: end },
+        status: 'BOOKED',
+        isTransfer: false,
+      },
       include: { category: true },
     });
     let income = 0n,

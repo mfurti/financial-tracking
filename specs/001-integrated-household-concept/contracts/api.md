@@ -9,7 +9,7 @@ All paths below are relative to the existing authenticated API. The browser cont
 - Calendar dates: `YYYY-MM-DD`, inclusive, Europe/Berlin semantics. Observation timestamps: ISO UTC timestamps.
 - Mutations reject unknown fields, invalid IDs, invalid ranges and nonexistent references before changing state. Errors use the existing application error envelope, with no private record payloads.
 - New wealth-record idempotency keys are limited to 128 characters; new component source labels/types to 120/64 characters and notification source keys to 256. Reject overlong values without truncation; these limits do not change existing imported source fields.
-- Reuse existing 36-month maximum analytics range and pagination limits. Query `accountId` and `groupId` are mutually exclusive. Group expansion deduplicates active member IDs; an explicitly empty group means no matches, never all accounts.
+- Reuse existing 36-month maximum analytics range and pagination limits. Query `accountId`, `groupId` and accountless-only scope are mutually exclusive. Group expansion deduplicates persisted member IDs, including inactive accounts for truthful historical reports; an explicitly empty group means no matches, never all accounts. Reserve eligibility remains independently restricted to active EUR accounts.
 
 ## Existing Interfaces to Reuse
 
@@ -35,6 +35,8 @@ T024 implements required inclusive from/to with a 36-calendar-month limit and op
 T016 adds optional `merchantKey` to the existing overview query, using the same canonical predicate before aggregation so income refunds and expense details reconcile independently. Merchant reporting accepts the same optional restriction and echoes it in scope only when supplied; default responses remain unchanged. Direct `/analytics/details` bookmarks use a shared required-from/to schema with direction `INCOME|EXPENSE`, defaulting to expense. The browser never derives a full-period sum from a paginated page. Validated internal return bookmarks preserve date/account/category/merchant/direction through booking details; external or malformed return destinations are discarded.
 
 ## Workspace Additions
+
+T038 implements group CRUD and group scope across overview/monthly/review/merchant/transaction reads plus contract calendar/summary. Names are trimmed/bounded to 60 characters and compared case-insensitively inside a shared transaction lock, including Unicode case variants. Membership sets contain at most 1000 unique canonical account IDs; unknown references reject atomically. Partial edits preserve omitted fields, and deletion requires confirm:true while retaining accounts and bookings. The earlier planning shorthand “active member IDs” is clarified to preserve inactive members' historical reports consistently with explicit account scope; deleted accounts remove only membership links. Empty/missing groups never fall back to a global query. Existing global/account response shapes remain unchanged; group provenance fields appear only when supplied.
 
 T037 implements the current-owner profile routes. GET never creates metadata: an unsaved profile returns the existing owner's display fallback, null contact email and null updatedAt. PATCH requires displayName; omitted contactEmail preserves its saved value, while explicit null clears it. The authenticated session resolves ownership internally. Client owner/username/password/financial fields reject; contact email is never a login or recovery change.
 

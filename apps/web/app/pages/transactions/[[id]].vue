@@ -42,6 +42,7 @@ let loadGeneration = 0;
 let disposed = false;
 const filter = reactive({
   accountId: route.query.unassigned === 'true' ? 'UNASSIGNED' : String(route.query.accountId ?? ''),
+  groupId: String(route.query.groupId ?? ''),
   from: String(route.query.from ?? ''),
   to: String(route.query.to ?? ''),
   search: String(route.query.search ?? ''),
@@ -297,16 +298,11 @@ onBeforeUnmount(
             placeholder="Text oder Gegenpartei"
             aria-label="Umsätze durchsuchen" /></label
         ><label
-          >Konto<ChoiceSelect
-            v-model="filter.accountId"
-            :searchable="true"
-            :items="[
-              { label: `Alle Konten`, value: '' },
-              { label: `Ohne Konto`, value: 'UNASSIGNED' },
-              ...accounts.map(
-                /** Build a persisted choice. */ (account) => ({ label: `${account.name}`, value: account.id }),
-              ),
-            ]" /></label
+          >Konto<!-- Build a persisted choice. --><AccountScopeSelect
+            v-model:account-id="filter.accountId"
+            v-model:group-id="filter.groupId"
+            searchable
+            :accounts="accounts" /></label
         ><label>Von<DatePicker v-model="filter.from" label="Von" /></label
         ><label>Bis<DatePicker v-model="filter.to" label="Bis" /></label
         ><label

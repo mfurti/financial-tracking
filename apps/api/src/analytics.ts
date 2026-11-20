@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { resolveAccountScope } from './account-scope.js';
 import { z } from 'zod';
 import * as c from '@financial-tracking/contracts';
 import type { Db } from './db.js';
@@ -199,18 +200,19 @@ export class AnalyticsService {
   async review(input: z.infer<typeof c.monthlyReviewQuerySchema>, today = berlinToday()) {
     const from = `${input.month}-01`,
       to = anchoredMonth(from, 0, 31);
-    const report = await this.overview({ from, to, accountId: input.accountId }, today);
+    const report = await this.overview({ from, to, accountId: input.accountId, groupId: input.groupId }, today);
     const bookedCount = report.months[0]!.count;
     const query = {
       from,
       to,
       ...(input.accountId ? { accountId: input.accountId } : {}),
+      ...(input.groupId ? { groupId: input.groupId } : {}),
       status: 'BOOKED' as const,
       excludeTransfers: 'true' as const,
     };
     return c.monthlyReviewSchema.parse({
       month: input.month,
-      scope: { from, to, accountId: input.accountId ?? null },
+      scope: { from, to, accountId: input.accountId ?? null, ...(input.groupId ? { groupId: input.groupId } : {}) },
       incomeCents: report.incomeCents,
       expenseCents: report.expenseCents,
       netCents: report.netCents,
@@ -220,7 +222,11 @@ export class AnalyticsService {
         hasBookings: bookedCount > 0,
         historyComplete: false,
       },
-      provenance: { basis: 'BOOKED_NON_TRANSFER', includesUnassigned: !input.accountId, refunds: 'INCOME' },
+      provenance: {
+        basis: 'BOOKED_NON_TRANSFER',
+        includesUnassigned: !input.accountId && !input.groupId,
+        refunds: 'INCOME',
+      },
       queries: { income: { ...query, direction: 'INCOME' }, expense: { ...query, direction: 'EXPENSE' } },
     });
   }
@@ -233,7 +239,7 @@ export class AnalyticsService {
         status: 'BOOKED',
         isTransfer: false,
         amountCents: { lt: 0n },
-        accountId: input.unassigned === 'true' ? null : input.accountId,
+        accountId: await resolveAccountScope(this.db, input),
         categoryId: input.uncategorized === 'true' ? null : input.categoryId,
         bookingDate: { gte: new Date(from), lte: new Date(to) },
       },
@@ -258,6 +264,7 @@ export class AnalyticsService {
         from,
         to,
         accountId: input.accountId ?? null,
+        ...(input.groupId ? { groupId: input.groupId } : {}),
         categoryId: input.categoryId ?? null,
         unassigned: input.unassigned === 'true',
         uncategorized: input.uncategorized === 'true',
@@ -288,7 +295,7 @@ export class AnalyticsService {
         AND: await merchantWhere(this.db, input.merchantKey),
         status: 'BOOKED',
         isTransfer: false,
-        accountId: input.unassigned === 'true' ? null : input.accountId,
+        accountId: await resolveAccountScope(this.db, input),
         categoryId: input.uncategorized === 'true' ? null : input.categoryId,
         bookingDate: { gte: new Date(from), lte: new Date(to) },
       },

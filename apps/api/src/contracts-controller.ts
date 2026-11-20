@@ -25,8 +25,8 @@ export class ContractsController {
     return this.service.decide(c.suggestionKeySchema.parse(key), false);
   }
   /** Read rounded monthly planning totals before the dynamic contract-ID route. */
-  @Get('contracts/summary') summary() {
-    return this.service.summary();
+  @Get('contracts/summary') summary(@Query() query: unknown) {
+    return this.service.summary(undefined, c.accountScopeQuerySchema.parse(query));
   }
   /** Read bounded recurrence-derived plans and separately observed payments before the dynamic ID route. */
   @Get('contracts/calendar') calendar(@Query() query: unknown) {
