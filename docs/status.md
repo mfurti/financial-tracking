@@ -12,11 +12,13 @@ All local gates passed: Prisma generation/validation, repository formatting/lint
 
 Both additive migrations preserve all old fields in populated disposable fixtures. The actual pre-feature application, its contracts and historical generated Prisma client were rebuilt and exercised on the expanded schema. Exact financial values, credentials and new metadata remained intact. See [migration evidence](feature-migrations.md); this is not proof of production lock timing or deployed-image compatibility.
 
-## Current external gate
+## Repository visibility and current review gate
 
-Published implementation candidate 58211fafc0d4946721a5d39fad7b1b6787e12c48 has [CI run 44748728462](https://github.com/mfurti/financial-tracking/actions/runs/44748728462). GitHub did not start verify or operations because recent account payments failed or the spending limit needs attention. Both jobs executed zero steps; publishing is correctly skipped on a feature branch. Linux container/restore acceptance for this feature remains unverified. An older successful run does not satisfy that gate. No billing setting, merge, deployment, production migration, reboot or live bank test was authorized/performed by this source delivery.
+The user explicitly requested public visibility on 2026-11-20. The repository is now public; the previous account-payment/spending-limit startup blocker is resolved without changing billing settings or weakening CI. Earlier zero-step failures, including [run 44748728462](https://github.com/mfurti/financial-tracking/actions/runs/44748728462), remain historical evidence.
 
-Review remains open in [draft PR #14](https://github.com/mfurti/financial-tracking/pull/14) until the exact review head has successful required CI/restore proof and the user separately approves merging. Deployment needs its own writer/backup/migration approval. Final task/metadata commits are linked from issue #13; later documentation commits do not claim new production evidence.
+The exact implementation candidate c9718ae97997521993a6b62d51544d522dd72259 passed both [PR run 44750684649](https://github.com/mfurti/financial-tracking/actions/runs/44750684649) and [push run 44750674278](https://github.com/mfurti/financial-tracking/actions/runs/44750674278), attempt 2. Both full verification and Linux container/restore acceptance succeeded. Linux verification passed 225 tests and all 24 browser batches: 428 passes and 12 intentional skips. Current PR checks remain authoritative after documentation-only follow-ups; a pending run is not a passing result. No merge, deployment, production migration, reboot or live bank test was performed by this acceptance step.
+
+Review remains open in [PR #14](https://github.com/mfurti/financial-tracking/pull/14). The exact review head must retain successful required checks, and merging needs the user's separate approval. Deployment needs its own writer/backup/migration approval. Final task/metadata commits are linked from issue #13; later documentation commits do not claim new production evidence.
 
 ## Last verified production delivery
 

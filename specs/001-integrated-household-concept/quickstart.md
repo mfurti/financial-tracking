@@ -1,6 +1,6 @@
 # Quickstart Validation Guide
 
-This guide validates the implemented integrated source. The approved project-rules governance baseline remains in effect. Local Prisma/format/lint/type/test/build gates passed, including 225 tests and a complete browser selection of 428 passes plus 12 intentional recording/theme skips. Exact commands, baseline compatibility, visual evidence and the unavailable Linux CI/restore gate are recorded in [validation.md](validation.md). Merge, deployment and production migration remain separate decisions.
+This guide validates the implemented integrated source. The approved project-rules governance baseline remains in effect. Local Prisma/format/lint/type/test/build gates passed, including 225 tests and a complete browser selection of 428 passes plus 12 intentional recording/theme skips. Exact commands, baseline compatibility, visual evidence and subsequent Linux CI/restore results are recorded in [validation.md](validation.md). Merge, deployment and production migration remain separate decisions.
 
 ## Prerequisites
 
@@ -82,4 +82,4 @@ Use the verified Node 24.22.1 executable on the process PATH. The concept fixtur
 
 The previous-application compatibility test needs Git and tar. It rebuilds immutable feature base `1f8d113bfa9294707bcd3b6ea6a3a03e8e12ec62` with the unchanged pinned lockfile. Shallow CI checkouts fetch only that exact commit with their existing read-only origin credentials. No live household database, bank, broker or production image is involved.
 
-Required Linux operations/restore CI currently cannot start because of GitHub account payments/spending limit. Resolve that external prerequisite and verify the exact review head before treating CI as passed. A prior deployment's green checks, local static operation checks or a pending run are not substitute evidence.
+The former account-payment/spending-limit startup blocker was resolved by the user's explicit request to make the repository public. Required Linux jobs now execute normally. Verify the exact current review head before treating CI as passed; a prior deployment's green checks, local static operation checks or a pending run are not substitute evidence. Repository visibility and runtime verification are separate from merge/deployment approval.
