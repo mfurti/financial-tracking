@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { test, expect, conceptFixtureLabels } from './fixtures.js';
+import { choose } from './controls.js';
 
 /** Authenticate the actual disposable owner with the currently rendered language. */
 async function login(page: Page, english = false) {
@@ -168,5 +169,76 @@ test('early masking removes financial text and chart accessibility across real a
   );
   expect(stored).toMatchObject({ version: 1, language: 'en', maskAmounts: true });
   expect(Object.keys(stored).sort()).toEqual(['language', 'maskAmounts', 'version']);
+  expect(await (await page.request.get('/api/v1/transactions?limit=100')).json()).toEqual(before);
+});
+
+test('blocked device writes retain usable language, privacy and roles only for the current session', /** Separate namespaces fail honestly without silently claiming durable saves or changing real finance. */ async ({
+  page,
+}) => {
+  await page.addInitScript(
+    /** Keep an existing durable choice, then deny only the two device-owned namespaces. */ () => {
+      if (!localStorage.getItem('haushaltsbuch-workspace-v1'))
+        localStorage.setItem(
+          'haushaltsbuch-workspace-v1',
+          JSON.stringify({ version: 1, language: 'de', maskAmounts: false }),
+        );
+      if (!localStorage.getItem('haushaltsbuch-palette')) localStorage.setItem('haushaltsbuch-palette', 'nord');
+      const write = Storage.prototype.setItem;
+      Storage.prototype.setItem =
+        /** A real atomic storage denial must not prevent in-memory use or leak data to another key. */ function (
+          key,
+          value,
+        ) {
+          if (key === 'haushaltsbuch-workspace-v1' || key === 'haushaltsbuch-demo-v1')
+            throw new DOMException('quota', 'QuotaExceededError');
+          return write.call(this, key, value);
+        };
+    },
+  );
+  await login(page);
+  const before = await (await page.request.get('/api/v1/transactions?limit=100')).json();
+  await page.goto('/settings');
+  await choose(page, page.getByRole('button', { name: 'Sprache', exact: true }), 'English');
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(
+    page.getByText('Device settings cannot be saved here. Changes may last only until the page is reloaded.', {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Visually hide financial amounts', exact: true }).check();
+  await page.getByRole('link', { name: /^Appearance/ }).click();
+  await page.getByRole('link', { name: 'Edit custom colours', exact: true }).click();
+  await page.getByRole('button', { name: 'Apply custom colours', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'custom');
+  // Client navigation keeps the in-memory choices; a full navigation would correctly restore the old durable state.
+  await page.getByRole('link', { name: 'Back to appearance', exact: true }).click();
+  await page.getByRole('link', { name: 'Back to settings', exact: true }).click();
+  await page.getByRole('link', { name: /^Local demo roles/ }).click();
+  await page.getByRole('button', { name: 'Edit Demo Eigentümer', exact: true }).click();
+  await page.getByLabel('Demo display name', { exact: true }).fill('Memory-only role');
+  await page.getByRole('button', { name: 'Save demo role', exact: true }).click();
+  await expect(page.getByText('Memory-only role', { exact: true })).toBeVisible();
+  await expect(page.getByText('Memory only; changes are lost on reload.', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Back to settings', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation', exact: true })
+    .getByRole('link', { name: 'Accounts', exact: true })
+    .click();
+  await expect(page.getByText('Amount hidden', { exact: true }).first()).toBeAttached();
+  await assertMasked(page);
+  expect(
+    await page.evaluate(
+      /** Durable choices and the previous palette remain untouched after failed writes. */ () => ({
+        workspace: JSON.parse(localStorage.getItem('haushaltsbuch-workspace-v1')!),
+        palette: localStorage.getItem('haushaltsbuch-palette'),
+        demo: localStorage.getItem('haushaltsbuch-demo-v1'),
+      }),
+    ),
+  ).toEqual({ workspace: { version: 1, language: 'de', maskAmounts: false }, palette: 'nord', demo: null });
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+  await expect(page.locator('html')).toHaveAttribute('data-amounts-masked', 'false');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'nord');
+  await expect(page.getByText('9.007.199.254.740.993,01 €', { exact: true }).first()).toBeVisible();
   expect(await (await page.request.get('/api/v1/transactions?limit=100')).json()).toEqual(before);
 });

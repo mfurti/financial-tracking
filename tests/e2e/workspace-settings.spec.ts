@@ -1,5 +1,12 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures.js';
+import { choose } from './controls.js';
+import {
+  accountSchema,
+  workspaceProfileSchema,
+  accountGroupSchema,
+  contractSchema,
+} from '../../packages/contracts/src/index.js';
 
 /** Use only the disposable project's standard owner identity, keeping credentials out of logs. */
 async function login(page: Page, password = 'e2e-test-password-only') {
@@ -150,4 +157,134 @@ test('revoked sessions still leave private views after password-error handling',
     .click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Anmelden', exact: true })).toBeVisible();
+});
+
+test('workspace settings compose across durable metadata, device choices and stale sources', /** One real journey preserves historical inactive-account scope while local appearance/language/privacy and synthetic roles remain independently scoped. */ async ({
+  page,
+}, info) => {
+  await login(page);
+  const session = await (await page.request.get('/api/v1/auth/session')).json();
+  const headers = { origin: new URL(page.url()).origin, 'x-csrf-token': session.csrfToken };
+  const financial = await (await page.request.get('/api/v1/transactions?limit=100')).json();
+  const profile = workspaceProfileSchema.parse(await (await page.request.get('/api/v1/workspace/profile')).json());
+  const accounts = accountSchema.array().parse(await (await page.request.get('/api/v1/accounts')).json());
+  const checking = accounts.find(
+    /** Resolve a real historical fixture rather than inventing a bank/account reference. */ (account) =>
+      account.name.startsWith('Gemeinsames Alltagskonto'),
+  )!;
+  const created = await page.request.post('/api/v1/account-groups', {
+    headers,
+    data: { name: `Integrated workspace ${info.project.name}`, accountIds: [checking.id] },
+  });
+  expect(created.status()).toBe(201);
+  const group = accountGroupSchema.parse(await created.json());
+  let groupDeleted = false;
+  let contractId: string | null = null;
+  try {
+    await page.goto('/settings/profile');
+    await page.getByLabel('Anzeigename', { exact: true }).fill('Integrated metadata owner');
+    await page.getByRole('button', { name: 'Profil speichern', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Profil gespeichert.');
+    expect(
+      (await page.request.patch(`/api/v1/accounts/${checking.id}`, { headers, data: { isActive: false } })).status(),
+    ).toBe(200);
+    await page.goto('/settings/account-groups');
+    await expect(page.locator(`[data-account-group="${group.id}"]`)).toContainText('(inaktiv)');
+    await page.goto(`/analytics/details?from=2026-10-01&to=2026-10-31&groupId=${group.id}`);
+    await expect(page.locator('[data-analysis-total]')).toHaveText('99,99 €');
+    await page.goto('/settings/appearance/custom');
+    await page.getByRole('button', { name: 'Eigene Farben übernehmen', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'custom');
+    await page.goto('/settings');
+    await page.getByRole('checkbox', { name: 'Finanzbeträge visuell ausblenden', exact: true }).check();
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-amounts-masked', 'true');
+    await expect(page.locator('#haushaltsbuch-custom-palette')).toHaveCount(1);
+    await page.goto('/analytics');
+    await page.getByRole('button', { name: 'Analysen anpassen', exact: true }).click();
+    await page.getByRole('dialog').getByRole('checkbox', { name: 'Händler', exact: true }).uncheck();
+    await page.getByRole('dialog').getByRole('button', { name: 'Auswahl speichern', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.goto('/settings');
+    await choose(page, page.getByRole('button', { name: 'Sprache', exact: true }), 'English');
+    await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+    await page.goto('/settings/profile');
+    await expect(page.getByLabel('Display name', { exact: true })).toHaveValue('Integrated metadata owner');
+    await page.goto('/settings/users');
+    await expect(page.getByRole('heading', { name: 'Local demo roles', exact: true })).toBeVisible();
+    expect(await (await page.request.get('/api/v1/auth/session')).json()).toEqual(session);
+    const due = await page.evaluate(
+      /** Create an upcoming date using Berlin calendar identity, not the browser's timezone. */ () => {
+        const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());
+        const date = new Date(`${day}T12:00:00Z`);
+        date.setUTCDate(date.getUTCDate() + 1);
+        return date.toISOString().slice(0, 10);
+      },
+    );
+    const response = await page.request.post('/api/v1/contracts', {
+      headers,
+      data: {
+        name: 'Integrated stale source',
+        provider: 'Synthetic settings source',
+        kind: 'OTHER',
+        startDate: due,
+        amountCents: '12345',
+        intervalMonths: 1,
+      },
+    });
+    expect(response.status()).toBe(201);
+    contractId = contractSchema.parse(await response.json()).id;
+    await page.goto('/notifications');
+    const row = page.locator('[data-notification-key]').filter({ hasText: 'Integrated stale source' });
+    await expect(row).toBeVisible();
+    expect(
+      (await page.request.delete(`/api/v1/contracts/${contractId}`, { headers, data: { confirm: true } })).status(),
+    ).toBe(200);
+    contractId = null;
+    await row.getByRole('button', { name: 'Mark as read', exact: true }).click();
+    await expect(row.getByRole('alert')).toContainText('no longer current');
+    await row.getByRole('link', { name: 'Open contract', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('Contract not found.');
+    await page.goto('/notifications');
+    await expect(page.locator('[data-notification-key]').filter({ hasText: 'Integrated stale source' })).toHaveCount(0);
+    expect(
+      (await page.request.delete(`/api/v1/account-groups/${group.id}`, { headers, data: { confirm: true } })).status(),
+    ).toBe(200);
+    groupDeleted = true;
+    await page.goto(`/analytics/details?from=2026-10-01&to=2026-10-31&groupId=${group.id}`);
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.locator('[data-analysis-total]')).toHaveCount(0);
+    const choices = await page.evaluate(
+      /** Inspect only allowlisted device display choices. */ () =>
+        JSON.parse(localStorage.getItem('haushaltsbuch-workspace-v1')!),
+    );
+    expect(choices).toMatchObject({ language: 'en', maskAmounts: true });
+    expect(choices.analysisModules).not.toContain('merchants');
+    expect(choices.custom).not.toBeNull();
+    expect(await (await page.request.get('/api/v1/transactions?limit=100')).json()).toEqual(financial);
+  } finally {
+    if (contractId)
+      expect(
+        (await page.request.delete(`/api/v1/contracts/${contractId}`, { headers, data: { confirm: true } })).status(),
+      ).toBe(200);
+    if (!groupDeleted)
+      expect(
+        (
+          await page.request.delete(`/api/v1/account-groups/${group.id}`, { headers, data: { confirm: true } })
+        ).status(),
+      ).toBe(200);
+    expect(
+      (
+        await page.request.patch(`/api/v1/accounts/${checking.id}`, { headers, data: { isActive: checking.isActive } })
+      ).status(),
+    ).toBe(200);
+    expect(
+      (
+        await page.request.patch('/api/v1/workspace/profile', {
+          headers,
+          data: { displayName: profile.displayName, contactEmail: profile.contactEmail },
+        })
+      ).status(),
+    ).toBe(200);
+  }
 });
