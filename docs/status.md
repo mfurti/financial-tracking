@@ -16,7 +16,7 @@ Both additive migrations preserve all old fields in populated disposable fixture
 
 Published implementation candidate 58211fafc0d4946721a5d39fad7b1b6787e12c48 has [CI run 44748728462](https://github.com/mfurti/financial-tracking/actions/runs/44748728462). GitHub did not start verify or operations because recent account payments failed or the spending limit needs attention. Both jobs executed zero steps; publishing is correctly skipped on a feature branch. Linux container/restore acceptance for this feature remains unverified. An older successful run does not satisfy that gate. No billing setting, merge, deployment, production migration, reboot or live bank test was authorized/performed by this source delivery.
 
-Review remains open until the exact review head has successful required CI/restore proof and the user separately approves merging. Deployment needs its own writer/backup/migration approval. The delivery PR and final task commits are linked from issue #13; later documentation commits do not claim new production evidence.
+Review remains open in [draft PR #14](https://github.com/mfurti/financial-tracking/pull/14) until the exact review head has successful required CI/restore proof and the user separately approves merging. Deployment needs its own writer/backup/migration approval. Final task/metadata commits are linked from issue #13; later documentation commits do not claim new production evidence.
 
 ## Last verified production delivery
 
