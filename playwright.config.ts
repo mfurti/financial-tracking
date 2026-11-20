@@ -1,17 +1,19 @@
 import { defineConfig, devices } from '@playwright/test';
 import { conceptViewports } from './scripts/concept-viewports.js';
 
-const requestedProjects = process.argv.flatMap(
-  /** Start only owned servers for explicitly selected projects; the default full suite retains every project. */ (
-    value,
-    index,
-  ) =>
-    value === '--project'
-      ? [process.argv[index + 1] ?? '']
-      : value.startsWith('--project=')
-        ? [value.slice('--project='.length)]
-        : [],
-);
+const requestedProjects: string[] = process.env.E2E_BATCH_PROJECTS
+  ? JSON.parse(process.env.E2E_BATCH_PROJECTS)
+  : process.argv.flatMap(
+      /** Start only owned servers for explicitly selected projects; the default full suite retains every project. */ (
+        value,
+        index,
+      ) =>
+        value === '--project'
+          ? [process.argv[index + 1] ?? '']
+          : value.startsWith('--project=')
+            ? [value.slice('--project='.length)]
+            : [],
+    );
 /** Preserve Playwright project wildcard selection when deciding which test servers are required. */
 function selectedProject(name: string) {
   return (

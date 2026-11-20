@@ -29,6 +29,10 @@ pnpm test:e2e
 
 Build precedes Playwright: `scripts/e2e-server.ts` imports compiled API and starts the built web server. The configured browser harness owns isolated test servers/databases. Existing populated/empty desktop and mobile suites remain unchanged. Concept projects now cover 360, 390, 700, 701, 768, 1024, 1100, 1101 and 1440 px, each with its own server/API ports and disposable database. Explicit --project selections start only their required servers; omitted selection retains the full suite. `pnpm db:migrate` is not a required manual step for this guide because the disposable harness applies migrations.
 
+`pnpm test:e2e` uses `scripts/e2e-runner.ts` to collect the actual Playwright selection and run every selected file/project pair in bounded batches. Each batch owns at most three servers and budgets at most eight real login attempts per project, accounting for the extra sessions in password and motion journeys. Servers/databases restart between batches; production authentication and its ten-attempt limit are unchanged. File, project and grep selections still go through Playwright. `--list` retains the native read-only listing. Direct `pnpm exec playwright test` remains available for focused runs within one server's login budget.
+
+Batch traces/screenshots and JSON results remain under `test-results/batch-N`; `test-results/batches.json` records the original selection and completed batches. A failed or incomplete batch fails the command. An explicit `--output` selects a different parent directory. Linux CI already collects `test-results`, so diagnostics remain available without changing workflow permissions.
+
 ## Acceptance Scenarios
 
 | Scenario                | Procedure                                                                                                                           | Expected result                                                                                                                           |
