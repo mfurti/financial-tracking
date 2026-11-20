@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, Put, Query, Req } from '@nestjs/common';
+import type { FastifyRequest } from 'fastify';
 import * as c from '@financial-tracking/contracts';
 import { ReservesService } from './reserves.js';
 import { WealthService } from './wealth.js';
+import { WorkspaceService } from './workspace.js';
 
 /** Private singleton workspace metadata using the existing session/CSRF and shared runtime contracts. */
 @Controller()
@@ -10,7 +12,16 @@ export class WorkspaceController {
   constructor(
     @Inject(ReservesService) private readonly reserves: ReservesService,
     @Inject(WealthService) private readonly wealth: WealthService,
+    @Inject(WorkspaceService) private readonly workspace: WorkspaceService,
   ) {}
+  /** Read only the authenticated current owner's display/contact metadata. */
+  @Get('workspace/profile') profile(@Req() request: FastifyRequest) {
+    return this.workspace.profile(request.authSession?.username);
+  }
+  /** Save independent metadata through the existing authenticated CSRF boundary. */
+  @Patch('workspace/profile') saveProfile(@Req() request: FastifyRequest, @Body() body: unknown) {
+    return this.workspace.saveProfile(request.authSession?.username, c.workspaceProfileInputSchema.parse(body));
+  }
   /** Read immutable recorded history separately from a live source preview. */
   @Get('wealth-records') wealthRecords(@Query() query: unknown) {
     return this.wealth.list(c.wealthRecordsQuerySchema.parse(query));

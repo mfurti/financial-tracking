@@ -36,6 +36,8 @@ T016 adds optional `merchantKey` to the existing overview query, using the same 
 
 ## Workspace Additions
 
+T037 implements the current-owner profile routes. GET never creates metadata: an unsaved profile returns the existing owner's display fallback, null contact email and null updatedAt. PATCH requires displayName; omitted contactEmail preserves its saved value, while explicit null clears it. The authenticated session resolves ownership internally. Client owner/username/password/financial fields reject; contact email is never a login or recovery change.
+
 | Method / route                     | Request                              | Response / rules                                                                                                                  |
 | ---------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | GET /workspace/profile             | None                                 | Current owner's display profile; no credential/hash fields.                                                                       |

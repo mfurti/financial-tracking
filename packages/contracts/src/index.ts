@@ -1116,6 +1116,14 @@ export const apiContracts: Record<string, ApiContract> = {
     status: 200,
   },
   reserveGoal: { method: 'get', path: '/reserve-goal', response: reserveGoalSchema, status: 200 },
+  workspaceProfile: { method: 'get', path: '/workspace/profile', response: workspaceProfileSchema, status: 200 },
+  saveWorkspaceProfile: {
+    method: 'patch',
+    path: '/workspace/profile',
+    request: workspaceProfileInputSchema,
+    response: workspaceProfileSchema,
+    status: 200,
+  },
   setReserveGoal: {
     method: 'put',
     path: '/reserve-goal',

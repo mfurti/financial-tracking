@@ -40,6 +40,7 @@ onBeforeUnmount(
     </div>
   </div>
   <AppearanceSettings />
+  <UButton to="/settings/profile" variant="soft" class="mb-4">Mein Profil bearbeiten</UButton>
   <FinanceTile label="Benutzer" :value="api.session.value?.username" context="Privater Finanzbereich" variant="account">
     <template #actions>
       <FinanceDialog
