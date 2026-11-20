@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runInNewContext } from 'node:vm';
+import { defaultCustomAppearance } from '../apps/web/app/utils/appearance.js';
 import {
   defaultWorkspacePreferences,
   loadWorkspacePreferences,
@@ -113,5 +114,48 @@ describe('versioned device preferences', /** Device state must remain validated,
     });
     expect(document.documentElement.lang).toBe('de');
     expect(document.documentElement.dataset.amountsMasked).toBe('false');
+  });
+});
+
+describe('custom-color preference boundaries', /** New colors migrate without accepting arbitrary persisted styles or overwriting working data on failure. */ () => {
+  it('persists and reloads a validated pair without real/unknown payload fields', /** The version-one allowlist retains exactly paired colors and existing device choices. */ () => {
+    let saved = '';
+    const value = { ...defaultWorkspacePreferences(), custom: defaultCustomAppearance(), accountId: 'never-store' };
+    expect(
+      storeWorkspacePreferences(
+        {
+          setItem: /** Inspect the actual persisted device shape. */ (_key, raw) => {
+            saved = raw;
+          },
+        },
+        value,
+      ),
+    ).toBe(true);
+    expect(saved).not.toContain('never-store');
+    expect(
+      loadWorkspacePreferences({ getItem: /** Reload the exact saved custom preference. */ () => saved }).value.custom,
+    ).toEqual(value.custom);
+    expect(normalizeWorkspacePreferences({ version: 0, language: 'en' }).custom).toBeNull();
+  });
+  it('rejects invalid custom replacement without overwriting previously working stored colors', /** Corrupt color payloads are reported invalid on load and never persisted by an edit. */ () => {
+    let saved = JSON.stringify({ ...defaultWorkspacePreferences(), custom: defaultCustomAppearance() });
+    const before = saved;
+    const invalid = { ...defaultWorkspacePreferences(), custom: { light: ['javascript:invalid'], dark: [] } };
+    expect(
+      storeWorkspacePreferences(
+        {
+          setItem: /** Any unintended replacement would destroy the valid sentinel. */ (_key, raw) => {
+            saved = raw;
+          },
+        },
+        invalid,
+      ),
+    ).toBe(false);
+    expect(saved).toBe(before);
+    expect(
+      loadWorkspacePreferences({
+        getItem: /** Simulate a tampered stored style payload. */ () => JSON.stringify(invalid),
+      }).status,
+    ).toBe('invalid');
   });
 });

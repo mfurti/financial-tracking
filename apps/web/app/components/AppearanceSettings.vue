@@ -2,12 +2,16 @@
 import { appearanceChoices, choiceTone } from '../utils/appearance';
 const { selectedChoice, selectTheme } = useAppearance();
 const mode = useColorMode();
+const { preferences } = useWorkspacePreferences();
 const choices = computed(
   /** Render previews in the active brightness unless an Ayu tile fixes it. */ () =>
-    appearanceChoices.map(
+    [
+      ...appearanceChoices,
+      ...(preferences.value.custom ? [{ value: 'custom', label: 'Eigene Farben', family: 'custom' as const }] : []),
+    ].map(
       /** Preview uses exactly the application's palette. */ (choice) => ({
         ...choice,
-        tone: choiceTone(choice, mode.value === 'dark' ? 'dark' : 'light'),
+        tone: choiceTone(choice, mode.value === 'dark' ? 'dark' : 'light', preferences.value.custom),
       }),
     ),
 );
@@ -62,5 +66,6 @@ const choices = computed(
         </span>
       </template>
     </URadioGroup>
+    <UButton to="/settings/appearance/custom" variant="soft" class="mt-5">Eigene Farben bearbeiten</UButton>
   </SectionPanel>
 </template>

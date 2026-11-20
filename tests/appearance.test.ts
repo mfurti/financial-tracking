@@ -10,6 +10,9 @@ import {
   ayuMirage,
   resolveAyuPreference,
   ayuStorageKey,
+  defaultCustomAppearance,
+  resolveCustomAppearance,
+  customAppearanceStyleSheet,
 } from '../apps/web/app/utils/appearance.js';
 
 /** Calculate the WCAG relative luminance of a bundled opaque sRGB color. */
@@ -152,5 +155,73 @@ describe('device-local theme families', /** Color choices must remain readable a
       expect(dataset.theme).toBe(value === 'dracula' ? 'dracula' : 'default');
     }
     expect(resolveAppearanceTheme({ id: 'dracula' }).id).toBe('default');
+  });
+});
+
+describe('validated paired custom appearance', /** User colors must preserve all actual semantic contrast and safe early restoration. */ () => {
+  it('accepts fresh paired hex tones while preserving readable text, controls and exact token ownership', /** Both modes are validated together; fixed financial colors remain independent of the custom accent. */ () => {
+    const pair = defaultCustomAppearance();
+    expect(resolveCustomAppearance(pair)).toEqual(pair);
+    const css = customAppearanceStyleSheet(pair);
+    expect(css).toContain('html[data-theme="custom"]');
+    expect(css).toContain('html.dark[data-theme="custom"]');
+    expect(css).toContain('--canvas:#f6f6fc');
+    expect(css).toContain('--positive:#137453');
+    expect(resolveAppearanceTheme('custom', pair).id).toBe('custom');
+    expect(resolveAppearanceTheme('custom', {}).id).toBe('default');
+    const upper = {
+      light: pair.light.map(
+        /** Canonicalize display-only hex case after validating its shape. */ (color) => color.toUpperCase(),
+      ),
+      dark: [...pair.dark],
+    };
+    expect(resolveCustomAppearance(upper)).toEqual(pair);
+  });
+  it('rejects bad shape, CSS/alpha injection and low-contrast text/actions without changing the supplied pair', /** Invalid replacement cannot become an interpolated stylesheet. */ () => {
+    const pair = defaultCustomAppearance(),
+      before = JSON.stringify(pair);
+    const bad = [
+      null,
+      {},
+      { ...pair, amountCents: '12345' },
+      { light: pair.light, dark: [] },
+      { ...pair, light: ['#ffffff;display:none', ...pair.light.slice(1)] },
+      { ...pair, light: ['#ffffff00', ...pair.light.slice(1)] },
+      { ...pair, light: [pair.light[0], pair.light[1], pair.light[0], ...pair.light.slice(3)] },
+      { ...pair, dark: [...pair.dark.slice(0, 4), pair.dark[0], pair.dark[5]] },
+    ];
+    for (const value of bad) {
+      expect(resolveCustomAppearance(value)).toBeNull();
+      expect(customAppearanceStyleSheet(value)).toBe('');
+    }
+    expect(JSON.stringify(pair)).toBe(before);
+  });
+  it('executes the real early custom bootstrap without application code and fails closed for invalid/future storage', /** Restored paired CSS must already exist before the Vue plugin can conceal a broken bootstrap. */ () => {
+    for (const version of [1, 9]) {
+      const dataset: Record<string, string> = {},
+        styles: { id: string; textContent: string }[] = [];
+      const saved = JSON.stringify({ version, custom: defaultCustomAppearance() });
+      runInNewContext(appearanceBootstrap(), {
+        document: {
+          documentElement: { dataset },
+          createElement: /** Provide only the real early style boundary. */ () => ({ id: '', textContent: '' }),
+          head: {
+            appendChild: /** Capture exact CSS before any application mount. */ (style: {
+              id: string;
+              textContent: string;
+            }) => {
+              styles.push(style);
+            },
+          },
+        },
+        localStorage: {
+          getItem: /** Keep palette and workspace keys independent. */ (key: string) =>
+            key === 'haushaltsbuch-palette' ? 'custom' : key === 'haushaltsbuch-workspace-v1' ? saved : null,
+        },
+      });
+      expect(dataset.theme).toBe(version === 1 ? 'custom' : 'default');
+      expect(styles).toHaveLength(version === 1 ? 1 : 0);
+      if (version === 1) expect(styles[0]!.textContent).toBe(customAppearanceStyleSheet(defaultCustomAppearance()));
+    }
   });
 });

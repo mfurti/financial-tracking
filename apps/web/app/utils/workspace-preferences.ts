@@ -1,3 +1,4 @@
+import { resolveCustomAppearance, type CustomAppearance } from './appearance.js';
 /** Dedicated device-only namespace; no account, financial or session payload belongs here. */
 export const workspacePreferencesKey = 'haushaltsbuch-workspace-v1';
 /** Allowlisted analysis destinations, in the integrated concept's default order. */
@@ -5,13 +6,14 @@ export const analysisModuleIds = ['months', 'categories', 'merchants', 'history'
 /** Stable analysis identity, independent of translated display labels. */
 export type AnalysisModuleId = (typeof analysisModuleIds)[number];
 /** Version-one device choices; custom tones stay null until the owned contrast-validation slice is delivered. */
+/** T041 accepts only fully validated paired custom tones; missing/legacy values remain null. */
 export type WorkspacePreferences = {
   version: 1;
   language: 'de' | 'en';
   maskAmounts: boolean;
   analysisModules: AnalysisModuleId[];
   chart: 'bar' | 'ring';
-  custom: null;
+  custom: CustomAppearance | null;
   notifications: { payments: boolean; imports: boolean };
 };
 /** Restore/save outcome exposed separately from usable in-memory preferences. */
@@ -63,7 +65,7 @@ export function normalizeWorkspacePreferences(value: unknown): WorkspacePreferen
     maskAmounts: typeof record.maskAmounts === 'boolean' ? record.maskAmounts : record.hideAmounts === true,
     analysisModules: [...new Set(selected)],
     chart: record.chart === 'ring' ? 'ring' : 'bar',
-    custom: null,
+    custom: resolveCustomAppearance(record.custom),
     notifications: { payments: notifications?.payments !== false, imports: notifications?.imports !== false },
   };
 }
@@ -85,7 +87,13 @@ export function loadWorkspacePreferences(storage: PreferenceReader): {
     if (!record) return { value: defaultWorkspacePreferences(), status: 'invalid' };
     if (record.version !== undefined && record.version !== 0 && record.version !== 1)
       return { value: defaultWorkspacePreferences(), status: 'unsupported' };
-    return { value: normalizeWorkspacePreferences(record), status: 'ready' };
+    return {
+      value: normalizeWorkspacePreferences(record),
+      status:
+        record.custom !== undefined && record.custom !== null && !resolveCustomAppearance(record.custom)
+          ? 'invalid'
+          : 'ready',
+    };
   } catch {
     return { value: defaultWorkspacePreferences(), status: 'invalid' };
   }
@@ -94,7 +102,12 @@ export function loadWorkspacePreferences(storage: PreferenceReader): {
 /** Persist an allowlisted copy only; unvalidated custom styles and storage failure never report success. */
 export function storeWorkspacePreferences(storage: PreferenceWriter, value: unknown): boolean {
   const record = preferenceRecord(value);
-  if (!record || record.version !== 1 || (record.custom !== undefined && record.custom !== null)) return false;
+  if (
+    !record ||
+    record.version !== 1 ||
+    (record.custom !== undefined && record.custom !== null && !resolveCustomAppearance(record.custom))
+  )
+    return false;
   if (record.language !== 'de' && record.language !== 'en') return false;
   try {
     storage.setItem(workspacePreferencesKey, JSON.stringify(normalizeWorkspacePreferences(record)));

@@ -1,4 +1,10 @@
-import { appearanceStorageKey, ayuStorageKey, resolveAppearanceTheme, resolveAyuPreference } from '../utils/appearance';
+import {
+  appearanceStorageKey,
+  ayuStorageKey,
+  resolveAppearanceTheme,
+  resolveAyuPreference,
+  applyCustomAppearance,
+} from '../utils/appearance';
 import { loadWorkspacePreferences, storeWorkspacePreferences } from '../utils/workspace-preferences';
 
 export default defineNuxtPlugin(
@@ -36,7 +42,16 @@ export default defineNuxtPlugin(
       { deep: true },
     );
     const { themeId, ayu } = useAppearance();
-    themeId.value = resolveAppearanceTheme(document.documentElement.dataset.theme).id;
+    themeId.value = resolveAppearanceTheme(document.documentElement.dataset.theme, preferences.value.custom).id;
+    watch(
+      /** Revalidate restored or explicitly saved pairs before updating the one owned style element. */ () =>
+        preferences.value.custom,
+      /** Invalid edits never reach preferences; explicit removal restores the bundled default. */ (value) => {
+        applyCustomAppearance(document, value);
+        if (themeId.value === 'custom' && !value) themeId.value = 'default';
+      },
+      { immediate: true, deep: true },
+    );
     ayu.value = resolveAyuPreference({
       tone: document.documentElement.dataset.ayuTone,
       bordered: document.documentElement.dataset.ayuBorder !== 'none',
@@ -58,8 +73,9 @@ export default defineNuxtPlugin(
     watch(
       themeId,
       /** Apply and persist a valid family without breaking the app when storage is blocked. */ (value) => {
-        const id = resolveAppearanceTheme(value).id;
+        const id = resolveAppearanceTheme(value, preferences.value.custom).id;
         document.documentElement.dataset.theme = id;
+        if (id === 'custom' && storageState.value === 'unavailable') return;
         try {
           localStorage.setItem(appearanceStorageKey, id);
         } catch {
