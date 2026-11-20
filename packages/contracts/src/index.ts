@@ -69,6 +69,39 @@ export const notificationAcknowledgementSchema = notificationAcknowledgementInpu
   userId: idSchema,
   acknowledgedAt: timeSchema,
 });
+/** Only actionable import reviews and confirmed upcoming plans generate in-app events. */
+export const notificationKindSchema = z.enum(['IMPORT_REVIEW', 'CONTRACT_DUE']);
+/** Bounded current-source pages use opaque source identities, never offsets or financial mutation tokens. */
+export const notificationsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  cursor: notificationSourceKeySchema.optional(),
+  kind: notificationKindSchema.optional(),
+});
+/** Derived event data separates planned money from import metadata and durable acknowledgement. */
+export const notificationSchema = z
+  .object({
+    sourceKey: notificationSourceKeySchema,
+    kind: notificationKindSchema,
+    sourceLabel: z.string(),
+    occurredAt: timeSchema,
+    dueDate: dateSchema.nullable(),
+    plannedCents: z
+      .lazy(
+        /** Resolve the shared bounded positive-money schema after module initialization. */ () => positiveCentsSchema,
+      )
+      .nullable(),
+    rowNumber: z.number().int().nullable(),
+    href: z.string().regex(/^\/(imports\?run=|contracts\/)[0-9a-f-]{36}$/),
+    acknowledgedAt: timeSchema.nullable(),
+  })
+  .strict();
+/** Counts refer to the complete bounded selected source kind, not merely the visible cursor page. */
+export const notificationsSchema = z.object({
+  items: z.array(notificationSchema),
+  nextCursor: notificationSourceKeySchema.nullable(),
+  unreadCount: z.number().int().nonnegative(),
+  asOf: timeSchema,
+});
 export const centsSchema = z
   .string()
   .regex(/^-?(0|[1-9]\d*)$/)
@@ -1142,6 +1175,20 @@ export const apiContracts: Record<string, ApiContract> = {
   reserveGoal: { method: 'get', path: '/reserve-goal', response: reserveGoalSchema, status: 200 },
   workspaceProfile: { method: 'get', path: '/workspace/profile', response: workspaceProfileSchema, status: 200 },
   accountGroups: { method: 'get', path: '/account-groups', response: z.array(accountGroupSchema), status: 200 },
+  notifications: {
+    method: 'get',
+    path: '/notifications',
+    query: notificationsQuerySchema,
+    response: notificationsSchema,
+    status: 200,
+  },
+  acknowledgeNotification: {
+    method: 'put',
+    path: '/notifications/acknowledgement',
+    request: notificationAcknowledgementInputSchema,
+    response: notificationAcknowledgementSchema,
+    status: 200,
+  },
   createAccountGroup: {
     method: 'post',
     path: '/account-groups',

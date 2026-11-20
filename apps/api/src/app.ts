@@ -30,6 +30,7 @@ import { WorkspaceController } from './workspace-controller.js';
 import { WealthService } from './wealth.js';
 import { WorkspaceService } from './workspace.js';
 import { AccountGroupsService } from './account-groups.js';
+import { NotificationsService } from './notifications.js';
 
 /** Create an application with injectable persistence for integration tests. */
 export async function createApp(
@@ -60,6 +61,7 @@ export async function createApp(
       WealthService,
       WorkspaceService,
       AccountGroupsService,
+      NotificationsService,
       AnalyticsService,
       { provide: 'BANK_FACTORY', useValue: startBank },
       { provide: APP_GUARD, useClass: AuthGuard },

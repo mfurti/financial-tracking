@@ -12,6 +12,7 @@ const primaryLinks = [
   { to: '/contracts', label: 'Verträge', icon: 'contracts' },
 ] as const;
 const secondaryLinks = [
+  { to: '/notifications', label: 'Benachrichtigungen', icon: 'calendar' },
   { to: '/wealth', label: 'Vermögen', icon: 'history' },
   { to: '/imports', label: 'Importhistorie', icon: 'history' },
   { to: '/connections', label: 'Bankverbindungen', icon: 'bank' },
@@ -59,6 +60,14 @@ async function logout() {
           ><span class="brand-mark">H</span><strong>Haushaltsbuch</strong></UButton
         >
         <div class="finance-tools">
+          <UButton
+            to="/notifications"
+            variant="ghost"
+            color="neutral"
+            aria-label="Benachrichtigungen"
+            title="Benachrichtigungen"
+            ><FinanceIcon name="calendar"
+          /></UButton>
           <UButton
             variant="ghost"
             color="neutral"

@@ -5,6 +5,7 @@ import { ReservesService } from './reserves.js';
 import { WealthService } from './wealth.js';
 import { WorkspaceService } from './workspace.js';
 import { AccountGroupsService } from './account-groups.js';
+import { NotificationsService } from './notifications.js';
 
 /** Private singleton workspace metadata using the existing session/CSRF and shared runtime contracts. */
 @Controller()
@@ -15,7 +16,19 @@ export class WorkspaceController {
     @Inject(WealthService) private readonly wealth: WealthService,
     @Inject(WorkspaceService) private readonly workspace: WorkspaceService,
     @Inject(AccountGroupsService) private readonly groups: AccountGroupsService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
+  /** Read derived private in-app events and their independent acknowledgement state. */
+  @Get('notifications') notificationList(@Req() request: FastifyRequest, @Query() query: unknown) {
+    return this.notifications.list(request.authSession?.username, c.notificationsQuerySchema.parse(query));
+  }
+  /** Acknowledge only an actual source identity, never a financial record or another owner. */
+  @Put('notifications/acknowledgement') acknowledgeNotification(@Req() request: FastifyRequest, @Body() body: unknown) {
+    return this.notifications.acknowledge(
+      request.authSession?.username,
+      c.notificationAcknowledgementInputSchema.parse(body),
+    );
+  }
   /** List durable account membership groups without financial aggregation. */
   @Get('account-groups') accountGroups() {
     return this.groups.list();

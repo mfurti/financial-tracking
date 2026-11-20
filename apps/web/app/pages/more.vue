@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const links = [
+  { to: '/notifications', label: 'Benachrichtigungen', icon: 'calendar' },
   { to: '/accounts', label: 'Konten', icon: 'accounts' },
   { to: '/wealth', label: 'Vermögen', icon: 'history' },
   { to: '/imports', label: 'Importhistorie', icon: 'history' },

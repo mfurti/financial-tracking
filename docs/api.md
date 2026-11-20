@@ -31,6 +31,14 @@ Authenticated GET/POST `/account-groups` and PATCH/DELETE `/account-groups/:id` 
 
 Overview, monthly/review/merchant analytics, transactions and contract calendar/summary accept optional `groupId`. Account, group and accountless-only scope are mutually exclusive. Group membership expands to an ID set, including inactive historical members; an empty group matches nothing and a missing group returns 404. Default global queries still include accountless bookings. Contract scope includes only explicitly account-bound member contracts; unbound plans remain global. Exact report totals, cursor detail predicates and return links retain the same selected scope. Reserve/recorded-wealth modules remain explicitly global and independent of transaction filters.
 
+## In-app notifications
+
+GET `/notifications` accepts limit 1–100 (default 20), an optional current source-key cursor and optional kind IMPORT_REVIEW/CONTRACT_DUE. It derives unresolved issues from noncanceled/nonrolled-back imports and unbooked confirmed schedule occurrences from today's Berlin date through 30 days later, inclusively. Booked linked payments suppress their due event; pending links do not establish payment. Imports sort newest-first before earliest-due plans, with stable identity ties. Each source kind is capped at 10000; excess returns 413 rather than truncating. Counts cover all current events of the selected kind, not just the page. A disappeared cursor returns 400 and requires a fresh read.
+
+Import keys combine issue identity and a bounded diagnostic revision hash; plan keys combine contract, effective revision and due date. Links use the existing `/imports?run=...` review or `/contracts/:id` routes. The response exposes no raw diagnostic payload, credentials or fabricated actual payment. Planned cents remain exact bounded integer strings.
+
+PUT `/notifications/acknowledgement` accepts only sourceKey and uses the guarded owner. The first write validates a current derived key; stale/unknown keys return 409 without inserting metadata. Concurrent/repeated keys replay the original timestamp, including replay after the source disappears. New source revisions need a new acknowledgement. Listing or acknowledging never resolves imports, links payments or changes financial sources. No email/push/bank action exists.
+
 ## Current-owner profile
 
 GET/PATCH `/workspace/profile` reads/saves the guarded owner's display/contact metadata. GET has no profile backfill; unsaved updatedAt/contactEmail are null. PATCH requires a trimmed 1–80-character displayName and accepts a validated nullable contactEmail of at most 254 characters. Omitted email is preserved, null clears it. Contact data does not change username, password or recovery identity; client owner/credential/financial fields reject.
