@@ -60,7 +60,7 @@ function categoryLink(id: string | null) {
             :style="{ background: `var(--chart-${(index % 6) + 1})` }"
             aria-hidden="true" />
           <div>
-            <strong>{{ group.name }}</strong
+            <strong>{{ categoryDisplayLabel(group.categoryId, group.name) }}</strong
             ><small v-if="!compact"
               >{{ financialPercentage((group.expenseShare ?? 0) * 100, { maximumFractionDigits: 1 }) }}
               {{ tr('% der Ausgaben') }}</small

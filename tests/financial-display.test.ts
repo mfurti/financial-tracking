@@ -10,6 +10,7 @@ import { analysisModuleLabels } from '../apps/web/app/utils/analysis-modules.js'
 import { publicApiError } from '../apps/web/app/utils/api-error.js';
 import { globSync, readFileSync } from 'node:fs';
 import ts from 'typescript';
+import { categoryDisplayLabel, expenseChartGroups } from '../apps/web/app/utils/financial-labels.js';
 
 describe('localized exact financial display', /** Keep display choices separate from financial calculations and persisted payloads. */ () => {
   it('formats arbitrary signed integer cents without floating conversion', /** BIGINT values beyond Number safety preserve every digit and minor unit. */ () => {
@@ -94,6 +95,32 @@ describe('localized exact financial display', /** Keep display choices separate 
       expect(valid).toEqual({ value: workspaceProfileInputSchema.parse(input) });
       const blank = await translatedSchema(workspaceProfileInputSchema)['~standard'].validate({ displayName: ' ' });
       expect(blank.issues?.[0]?.path).toEqual(['displayName']);
+    } finally {
+      restoreWorkspaceDisplay('de', false);
+    }
+  });
+  it('localizes only generated labels and disambiguates chart tooltips without changing cents or names', /** Real category names take priority when an English fallback would otherwise collide with a chart index. */ () => {
+    restoreWorkspaceDisplay('en', false);
+    try {
+      const source = [
+        { categoryId: 'real-category', name: 'Uncategorised', expenseCents: '99999999999999999999' },
+        { categoryId: 'another-category', name: 'Uncategorised · 2', expenseCents: '123' },
+        { categoryId: null, name: 'Nicht kategorisiert', expenseCents: '456' },
+      ];
+      const result = expenseChartGroups(source);
+      expect(
+        result.map(/** Chart indices must be unique while retaining every user-supplied name. */ (row) => row.name),
+      ).toEqual(['Uncategorised', 'Uncategorised · 2', 'Uncategorised · 3']);
+      expect(
+        result.find(
+          /** Tooltip lookup resolves to the exact original fallback amount, never a real category's colliding value. */ (
+            row,
+          ) => row.name === 'Uncategorised · 3',
+        )?.expenseCents,
+      ).toBe('456');
+      expect(source[2]?.name).toBe('Nicht kategorisiert');
+      expect(categoryDisplayLabel('real-category', 'Nicht kategorisiert')).toBe('Nicht kategorisiert');
+      expect(categoryDisplayLabel(null, 'Nicht kategorisiert')).toBe('Uncategorised');
     } finally {
       restoreWorkspaceDisplay('de', false);
     }

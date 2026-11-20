@@ -482,7 +482,7 @@ onBeforeUnmount(
               ? calendarDate(contract.nextDueDate)
               : contract.active
                 ? tr('Keine offene Fälligkeit')
-                : 'Beendet'
+                : tr('Beendet')
           }}</small></span
         ></UButton
       >

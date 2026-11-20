@@ -205,7 +205,8 @@ onBeforeUnmount(
       <div>
         <h3>{{ item.kind === 'IMPORT_REVIEW' ? tr('Import prüfen') : tr('Vertragszahlung geplant') }}</h3>
         <p>
-          {{ item.sourceLabel }}<span v-if="item.rowNumber !== null"> {{ tr('· Zeile') }} {{ item.rowNumber }}</span>
+          {{ item.kind === 'IMPORT_REVIEW' ? tr(item.sourceLabel) : item.sourceLabel
+          }}<span v-if="item.rowNumber !== null"> {{ tr('· Zeile') }} {{ item.rowNumber }}</span>
         </p>
         <p v-if="item.dueDate">
           {{ tr('Fällig am') }} {{ calendarDate(item.dueDate) }} ·

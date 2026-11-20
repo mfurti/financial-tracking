@@ -144,6 +144,7 @@ export const de = {
   Bankverbindungen: 'Bankverbindungen',
   Bearbeiten: 'Bearbeiten',
   'Bearbeiten und bestätigen. Wischen blättert nur.': 'Bearbeiten und bestätigen. Wischen blättert nur.',
+  Beendet: 'Beendet',
   'Beendet:': 'Beendet:',
   'Beginn:': 'Beginn:',
   'Begonnen:': 'Begonnen:',
@@ -272,6 +273,7 @@ export const de = {
   Datensicherung: 'Datensicherung',
   'Dauerhafte Gruppen für gemeinsame Auswertungen': 'Dauerhafte Gruppen für gemeinsame Auswertungen',
   Deaktivieren: 'Deaktivieren',
+  Deaktiviert: 'Deaktiviert',
   'Dein Monat wird geladen …': 'Dein Monat wird geladen …',
   'Dein Monatsverlauf': 'Dein Monatsverlauf',
   'Dein privater Finanzbereich.': 'Dein privater Finanzbereich.',
@@ -553,6 +555,7 @@ export const de = {
     'Exakte monatliche Vertragskosten und Gruppen stehen in der Liste.',
   'Exakter Händlerfilter aktiv. Die Suche erweitert diesen Filter nicht.':
     'Exakter Händlerfilter aktiv. Die Suche erweitert diesen Filter nicht.',
+  'FINTS-Import': 'FINTS-Import',
   'Farben & Darstellung': 'Farben & Darstellung',
   'Farben & Helligkeit': 'Farben & Helligkeit',
   'Farben konnten nicht übernommen werden. Das bisherige Theme bleibt aktiv.':
@@ -587,6 +590,7 @@ export const de = {
     'Fix/Variabel unterscheidet sich. Quelle ausdrücklich wählen.',
   'Fixkosten werden geladen …': 'Fixkosten werden geladen …',
   'Fortschritt der bekannten Reserve zum Ziel': 'Fortschritt der bekannten Reserve zum Ziel',
+  Fortsetzen: 'Fortsetzen',
   'Freigabe ausstehend': 'Freigabe ausstehend',
   'Freigabe in Banking-App erfolgt': 'Freigabe in Banking-App erfolgt',
   Freizeit: 'Freizeit',
@@ -645,6 +649,7 @@ export const de = {
   Gruppenkalender: 'Gruppenkalender',
   Gruppenname: 'Gruppenname',
   Gruppenvertragskosten: 'Gruppenvertragskosten',
+  'Gruppieren nach': 'Gruppieren nach',
   'Gültige Buchungen ansehen': 'Gültige Buchungen ansehen',
   'Gültige Buchungen werden nach der Dateiauswahl automatisch übernommen.':
     'Gültige Buchungen werden nach der Dateiauswahl automatisch übernommen.',
@@ -663,6 +668,7 @@ export const de = {
   'Herkunft unklar – bleibt erhalten': 'Herkunft unklar – bleibt erhalten',
   'Hilfe: {0}': 'Hilfe: {0}',
   Hintergrund: 'Hintergrund',
+  Hinweis: 'Hinweis',
   'Hinweise aktualisieren': 'Hinweise aktualisieren',
   'Hinweise ausschließlich innerhalb dieser App': 'Hinweise ausschließlich innerhalb dieser App',
   'Hinweise dieses Typs sind auf diesem Gerät ausgeblendet.':
@@ -1067,6 +1073,7 @@ export const de = {
   'Prüfung schließen': 'Prüfung schließen',
   Quelle: 'Quelle',
   'Quelle:': 'Quelle:',
+  Quellen: 'Quellen',
   'Quellen beobachtet': 'Quellen beobachtet',
   'Quellen beobachtet ·': 'Quellen beobachtet ·',
   'Quellen beobachtet. Unbekannte Beträge bleiben unbekannt.':

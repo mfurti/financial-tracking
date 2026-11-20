@@ -388,4 +388,9 @@ onBeforeUnmount(
   display: block;
   margin-top: 16px;
 }
+.toolbar > label {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 240px;
+}
 </style>

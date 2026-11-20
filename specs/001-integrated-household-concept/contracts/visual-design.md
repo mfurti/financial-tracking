@@ -1,7 +1,7 @@
 # Visual Design Contract
 
 **Refinement requested**: Depth, spacing, contrast, tiles, and animation.
-**Status**: Planning requirements; no application styling has been changed or visually verified.
+**Status**: Implemented acceptance contract. Source captures, computed geometry, palette checks and interaction recordings are recorded in [validation.md](../validation.md), including the T045 review.
 
 ## Reference and Interpretation
 
@@ -91,4 +91,4 @@ Apply hover-only effects under `(hover: hover)` so touch does not retain a false
 5. Record pointer/keyboard interactions and theme/dialog transitions under normal and reduced motion. Stable screenshots verify geometry, not animation timing.
 6. Wait for animations to settle for screenshot comparisons; separately inspect transition start/intermediate/end states. Add focused browser assertions for essential geometry stability, focus and reduced-motion behavior rather than brittle tests that merely repeat CSS declarations.
 
-These checks are required implementation evidence. No screenshot, contrast, or motion result is claimed by this planning refinement.
+These checks are required implementation evidence. The T045 review records actual results separately from the reference-derived requirements above; differing financial observations are not a pixel-comparison failure.

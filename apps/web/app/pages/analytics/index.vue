@@ -508,7 +508,7 @@ onBeforeUnmount(
           variant="link"
           class="contract-list-row"
           ><span
-            >{{ group.name
+            >{{ categoryDisplayLabel(group.categoryId, group.name)
             }}<small
               >{{ financialPercentage(group.share * 100, { maximumFractionDigits: 1 }) }} % · {{ group.count }}
               {{ tr('Buchungen') }}</small
@@ -549,7 +549,8 @@ onBeforeUnmount(
         :to="merchantLink(merchant.key)"
         class="contract-list-row"
         ><span
-          >{{ merchant.label }}<small>{{ merchant.count }} {{ tr('Buchungen') }}</small></span
+          >{{ merchant.key === 'unknown' ? tr('Unbekannter Händler') : merchant.label
+          }}<small>{{ merchant.count }} {{ tr('Buchungen') }}</small></span
         ><strong data-financial
           ><template v-if="!amountsMasked()">{{ money(merchant.expenseCents) }}</template
           ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong

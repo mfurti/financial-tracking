@@ -239,7 +239,7 @@ onBeforeUnmount(
         <article v-for="issue in group.items" :key="issue.id" class="review-card" data-import-issue>
           <details :open="!!issue.incoming">
             <summary>
-              {{ issue.rowNumber ? tr('Zeile {0}', [issue.rowNumber]) : 'Hinweis' }} ·
+              {{ issue.rowNumber ? tr('Zeile {0}', [issue.rowNumber]) : tr('Hinweis') }} ·
               {{ issue.incoming?.description || tr('Zeile nicht übernommen') }}
             </summary>
             <UBadge

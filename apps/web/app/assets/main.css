@@ -1880,6 +1880,14 @@ html[data-amounts-masked='true']
     gap: 8px;
     font-size: 17px;
   }
+  .finance-brand .brand-mark {
+    flex-shrink: 0;
+  }
+  .finance-brand strong {
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.15;
+  }
   .finance-shell .topbar {
     min-height: 72px;
     gap: 8px;
@@ -1919,5 +1927,10 @@ html[data-amounts-masked='true']
   .finance-tile--account .finance-tile__main,
   .finance-tile--stat .finance-tile__main {
     min-height: 0;
+  }
+}
+@media (max-width: 380px) {
+  .finance-brand strong {
+    font-size: 15px;
   }
 }

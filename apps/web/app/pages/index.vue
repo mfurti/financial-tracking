@@ -267,8 +267,10 @@ onBeforeUnmount(
                 {{
                   row.isTransfer
                     ? tr('Eigene Umbuchung')
-                    : (report.categories.find((c) => c.categoryId === row.categoryId)?.name ??
-                      tr('Nicht kategorisiert'))
+                    : row.categoryId === null
+                      ? tr('Nicht kategorisiert')
+                      : (report.categories.find((c) => c.categoryId === row.categoryId)?.name ??
+                        tr('Nicht kategorisiert'))
                 }}</small
               >
             </div>

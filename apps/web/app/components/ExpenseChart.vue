@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod';
+import { expenseChartGroups } from '../utils/financial-labels';
 const props = withDefaults(
   defineProps<{
     groups: { categoryId: string | null; name: string; expenseCents: string }[];
@@ -18,7 +19,7 @@ const props = withDefaults(
 const emit = defineEmits<{ select: [id: string | null] }>();
 const data = computed(
   /** Floating geometry is display-only; every shown amount uses its original integer-cent string. */ () =>
-    props.groups.map(
+    expenseChartGroups(props.groups).map(
       /** Preserve each exact value and identity next to its plot coordinate. */ (row) => ({
         ...row,
         value: Number(row.expenseCents) / 100,
@@ -47,7 +48,7 @@ function select(point: unknown) {
 /** Resolve the accessible tooltip label to its exact source amount. */
 function exact(label: string) {
   return money(
-    props.groups.find(/** Category names are unique persisted labels. */ (row) => row.name === label)?.expenseCents ??
+    data.value.find(/** Category names are unique persisted labels. */ (row) => row.name === label)?.expenseCents ??
       '0',
   );
 }

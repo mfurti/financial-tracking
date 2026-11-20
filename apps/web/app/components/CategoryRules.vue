@@ -191,7 +191,7 @@ onBeforeUnmount(
         <p class="muted">
           {{ rule.matchType === 'COUNTERPARTY' ? tr('Gegenpartei genau') : tr('Buchungstext enthält') }}:
           {{ rule.text }} {{ tr('· Priorität') }} {{ rule.priority }} ·
-          {{ rule.isActive ? tr('Aktiv') : 'Deaktiviert' }}
+          {{ rule.isActive ? tr('Aktiv') : tr('Deaktiviert') }}
         </p>
       </div>
       <UButton color="neutral" variant="outline" @click="edit(rule)">{{ tr('Bearbeiten') }}</UButton

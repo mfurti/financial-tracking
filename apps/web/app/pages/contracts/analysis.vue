@@ -18,7 +18,19 @@ let generation = 0;
 let timer: ReturnType<typeof setInterval> | undefined;
 const groups = computed(
   /** Both groupings sum exactly the same rounded contract costs. */ () =>
-    summary.value ? (grouping.value === 'category' ? summary.value.categories : summary.value.kinds) : [],
+    summary.value
+      ? (grouping.value === 'category' ? summary.value.categories : summary.value.kinds).map(
+          /** Translate only generated kind/sentinel names, preserving real category names. */ (group) => ({
+            ...group,
+            name:
+              grouping.value === 'kind'
+                ? (contractKinds[group.key as keyof typeof contractKinds]?.label ?? group.name)
+                : group.key === 'uncategorized'
+                  ? tr('Ohne Kategorie')
+                  : group.name,
+          }),
+        )
+      : [],
 );
 const chart = computed(
   /** Reuse accessible Nuxt chart geometry without treating forecasts as actual expenditure. */ () =>
@@ -152,7 +164,7 @@ onBeforeUnmount(
     </SectionPanel>
     <URadioGroup
       v-model="grouping"
-      legend="Gruppieren nach"
+      :legend="tr('Gruppieren nach')"
       orientation="horizontal"
       variant="card"
       class="mb-6"

@@ -2,7 +2,7 @@
 
 ## Reference Authority
 
-Source: `.local/design-concepts/output/html/integrated/manifest.json` and the three HTML files. Each declares 39 named views. Final rendered overrides take precedence over earlier placeholder markup. The files are ignored local input, so these fingerprints and the route inventory preserve review context. Capture reference screenshots before implementation; screenshots have not been captured during planning.
+Source: `.local/design-concepts/output/html/integrated/manifest.json` and the three HTML files. Each declares 39 named views. Final rendered overrides take precedence over earlier placeholder markup. The files are ignored local input, so these fingerprints and the route inventory preserve review context. T002 captured the source before product implementation; see [reference-index.md](../reference-index.md). Actual implementation review is recorded under T045 in [validation.md](../validation.md).
 
 | File                      | SHA-256                                                          |
 | ------------------------- | ---------------------------------------------------------------- |
@@ -44,7 +44,7 @@ Paths describe intended destinations. Existing routes are retained; additions ar
 | seite-23           | Vertrag anlegen                | Existing ContractForm in `/contracts`                                   |
 | seite-24           | Vertragsvorschläge prüfen      | Existing ContractReview in `/contracts`                                 |
 | seite-25           | Bankfreigabe                   | Existing authorization flow in `/connections`; no credential storage    |
-| seite-26           | Eigene Umbuchung verknüpfen    | Existing transfer linking from `/transactions/:id`                      |
+| seite-26           | Eigene Umbuchung verknüpfen    | Existing inline two-row transfer selection in `/transactions`           |
 | seite-06           | Analysen                       | `/analytics`; six configurable modules                                  |
 | einstellungen      | Einstellungen                  | `/settings`                                                             |
 | theme-konfigurator | Theme-Konfigurator             | `/settings/appearance/custom`; paired tones and contrast feedback       |

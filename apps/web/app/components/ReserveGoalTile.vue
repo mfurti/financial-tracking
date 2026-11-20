@@ -145,7 +145,7 @@ onBeforeUnmount(
           ></span
         >
         <span v-if="staleCount" class="block mt-2"
-          >{{ staleCount }} {{ staleCount === 1 ? tr('Quelle') : 'Quellen' }} {{ tr('älter als 48 Stunden') }}</span
+          >{{ staleCount }} {{ staleCount === 1 ? tr('Quelle') : tr('Quellen') }} {{ tr('älter als 48 Stunden') }}</span
         >
       </template>
       <template #actions>

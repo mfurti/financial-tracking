@@ -430,7 +430,7 @@ onBeforeUnmount(
           <UFormField v-if="activeRun.challenge.type === 'TAN'" :label="tr('TAN')"
             ><UInput v-model="tan" type="password" autocomplete="off" /></UFormField
           ><UButton type="submit" :loading="busy">{{
-            activeRun.challenge.type === 'APP_APPROVAL' ? tr('Freigabe in Banking-App erfolgt') : 'Fortsetzen'
+            activeRun.challenge.type === 'APP_APPROVAL' ? tr('Freigabe in Banking-App erfolgt') : tr('Fortsetzen')
           }}</UButton>
         </fieldset>
       </form>
