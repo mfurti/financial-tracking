@@ -1,12 +1,12 @@
 # Quickstart Validation Guide
 
-This is a validation guide for the future implementation, not a claim that new routes or checks already pass. The user approved the generated `tasks.md`, project-rules governance baseline and implementation; follow the per-task checks and delivery rules in `plan.md` and `tasks.md`.
+This guide validates the implemented integrated source. The approved project-rules governance baseline remains in effect. Local Prisma/format/lint/type/test/build gates passed, including 225 tests and a complete browser selection of 428 passes plus 12 intentional recording/theme skips. Exact commands, baseline compatibility, visual evidence and the unavailable Linux CI/restore gate are recorded in [validation.md](validation.md). Merge, deployment and production migration remain separate decisions.
 
 ## Prerequisites
 
 - Node >=24.22.1 <25 and pnpm 11.25.0.
 - Repository dependencies and generated Prisma client.
-- Original concept files available at `.local/design-concepts/output/html/integrated/`; verify hashes against `contracts/ui.md`.
+- Original concept files at `.local/design-concepts/output/html/integrated/` are needed only for reference recapture/fingerprint review against `contracts/ui.md`; application/runtime browser tests do not embed or require those ignored HTML files.
 - Disposable PostgreSQL for database/browser tests. The existing harness starts embedded PostgreSQL when `TEST_DATABASE_URL` is unset. Any configured `TEST_DATABASE_URL` must name an expendable `*_test` database; the harness drops its public schema. Never point it at a real household database.
 - Use synthetic fixtures, including empty/accountless, refunds, transfers, unknown merchants, missing balances, recurring contracts and month boundaries.
 
@@ -57,7 +57,7 @@ Use the route/view checklist in `contracts/ui.md`, matching screenshots for thre
 
 ## Focused Visual Refinement Checks
 
-Use [contracts/visual-design.md](contracts/visual-design.md) as the detailed acceptance contract. These checks apply after implementation; none are claimed as completed during planning.
+Use [contracts/visual-design.md](contracts/visual-design.md) as the detailed acceptance contract. T045/T047 results are recorded separately in validation; these are actual implementation checks, not claims inherited from planning.
 
 | Dimension | Validation                                                                                                                                       | Expected evidence                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -72,10 +72,14 @@ Use settled screenshots for layout comparisons and separate recordings/interacti
 ## Scoped Concept Checks
 
 ```powershell
-node node_modules/@playwright/test/cli.js test tests/e2e/concept-fixture.spec.ts
-node node_modules/@playwright/test/cli.js test --project=concept-390
-node node_modules/@playwright/test/cli.js test --project=concept-768
-node node_modules/@playwright/test/cli.js test --project=concept-1440
+pnpm test:e2e tests/e2e/concept-fixture.spec.ts
+pnpm test:e2e --project=concept-390
+pnpm test:e2e --project=concept-768
+pnpm test:e2e --project=concept-1440
 ```
 
 Use the verified Node 24.22.1 executable on the process PATH. The concept fixture smoke checks actual login/accounts on each isolated project; subsequent feature tests add acceptance rather than treating fixture reachability as a visual pass.
+
+The previous-application compatibility test needs Git and tar. It rebuilds immutable feature base `1f8d113bfa9294707bcd3b6ea6a3a03e8e12ec62` with the unchanged pinned lockfile. Shallow CI checkouts fetch only that exact commit with their existing read-only origin credentials. No live household database, bank, broker or production image is involved.
+
+Required Linux operations/restore CI currently cannot start because of GitHub account payments/spending limit. Resolve that external prerequisite and verify the exact review head before treating CI as passed. A prior deployment's green checks, local static operation checks or a pending run are not substitute evidence.

@@ -1,76 +1,67 @@
-# Aktuelle Aufgaben
+# Current tasks
 
-Stand: 8. November 2026. [Projektstand und Nachweise](status.md). Aufgabe: [Issue #3](https://github.com/mfurti/financial-tracking/issues/3). Letzter belegter Produktivstand: `d193639` aus PR #11. Merge/Rollout abgeschlossen; Benutzerabnahme offen.
+Updated 2026-11-20. [Status/evidence](status.md), [integrated issue #13](https://github.com/mfurti/financial-tracking/issues/13), related [issue #3](https://github.com/mfurti/financial-tracking/issues/3). Production remains the last verified d193639 delivery from PR #11. An open item is not automatic implementation or deployment approval.
 
-Diese Liste ersetzt widersprüchliche parallele Checklisten. Historische Erledigungen und damalige offene Punkte bleiben im [Archiv](archive/todo-2026-11-08-before-audit.md). Ein offener Punkt ist keine automatische Implementierungs- oder Rollout-Freigabe.
+## Integrated delivery and external gates
 
-## Aktuelle Priorität — Nutzerfeedback vom 8. November 2026
+The approved 39-view concept and its ordered source tasks are recorded in [the feature tasks](../specs/001-integrated-household-concept/tasks.md). All local gates passed: 225 tests, 428 browser passes plus 12 intentional skips, full types/lint/format/Prisma and production builds. [Validation](../specs/001-integrated-household-concept/validation.md) distinguishes local proof from Linux CI and production.
 
-**Prio 1: Finanzguru-orientierte App-Oberfläche, weniger Text und intuitiver Import.** R1 umfasst die acht kommentierten UI-Stellen; I2/I3 ergänzen Dateiauswahl und Importfehler. Die Anforderungen stehen im [bestehenden Usability-Plan](vertragsanalyse-usability-plan.md#nutzerfeedback-app-charakter-und-import--8-november-2026). Beauftragt sind Aufnahme, Dublettenprüfung und Ist-Abgleich, noch keine Umsetzung dieser Ergänzung. Budgets und andere größere Erweiterungen werden dadurch nicht vorgezogen.
+- [ ] **E7 — Exact-head Linux CI and restore acceptance.** GitHub currently refuses to start verify/operations because of account payments/spending limit. Resolve that account prerequisite and obtain actual successful checks for the review head. Existing static operation tests and historical green CI do not replace runtime container/restore proof. No billing changes were performed.
+- [ ] **E8 — Feature review, merge and deployment decisions.** Review the one feature PR, retain required checks/reviews and obtain separate merge approval. Deployment additionally needs its own writer pause, verified backup, matching image/migration sequence and post-deployment checks. No production migration or rollout has occurred for this feature.
 
-## R — Restarbeiten aus dem beauftragten UI-Ausbau
+## R — UI delivery and retained detail backlog
 
-Vorbereitung: [Codecheck und anschließende K1-Bereinigung](code-audit.md) sind lokal abgeschlossen. R1 bleibt die nächste eigenständige Designaufgabe; kein zusätzlicher großer Refactoring-Vorlauf.
+The approved integrated concept supersedes the earlier R1 layout proposal, using its documented 700/1100 px composition boundaries and nine-width acceptance instead of silently claiming old prototype pixel rules. Original browser comments remain in the [usability plan](vertragsanalyse-usability-plan.md#nutzerfeedback-app-charakter-und-import--8-november-2026). Human acceptance stays E6.
 
-- [x] **K1 — Kleine Codebereinigung vor dem UI-Umbau.** 16 nicht referenzierte CSS-Klassen entfernt: 35 alte Regeln, fünf gemischte Regeln nur auf ihre aktiven Teile reduziert; 265 aktive Selektoren einschließlich Deklarationen/Media-Kontext erhalten. Unbenutzten Vorschlagszweig der Vertragsseite entfernt, ContractReview/ContractForm erhalten. UI-Vertragsarten und Rhythmusoptionen in vorhandener Präsentationsdatei gebündelt, Beschriftung/Werte/Reihenfolge unverändert. Vorher und nachher je zehn Desktop-/Mobilfälle bestanden; Vertrag-Bearbeiten/Speichern/Reload zusätzlich abgesichert. Dashboard-Aufnahmen in beiden Breiten identisch. Format/Lint, gesamter Typecheck und Produktionsbuild bestanden. Lokal im separaten Bereinigungs-Commit geliefert; PR/aktuelle CI/Merge und Rollout sind eigenständige Liefergates. R1 und I2/I3 noch nicht umgesetzt.
+- [x] **K1 — Preparatory code cleanup.** The prior cleanup removed unused CSS/proposal code and consolidated existing metadata with before/after proof. See [code audit](code-audit.md); it is distinct from the later integrated source delivery.
+- [x] **R1 — Compact integrated application UI.** Delivered responsive composition, shared sections/tiles/dialogs, compact search/filters and month navigation, contextual help, focused settings and stable light/dark/reduced-motion behavior through issue #13. Actual five-dimension visual evidence and accepted adaptations are in the feature validation. This is technical source delivery, not user acceptance or deployment.
+- [ ] **R2 — Field-level feedback for all legacy forms.** Future contract revisions and manual payment assignment still need consistently named fields/shared validation/field feedback for invalid amounts/dates and server conflicts, preserving drafts, focusing the relevant field and retaining financial values. Other delivered forms do not close this entire older requirement.
+- [ ] **R3 — Rich proposal payment evidence.** Replace indistinguishable booking links with compact date/amount/counterparty-or-text evidence while retaining linked detail, active-card state, dirty decisions and navigation-only swipes. Existing proposal decisions/carousel are delivered; per-payment previews remain open.
 
-- [ ] **R1 — Kompakte Finanzguru-orientierte App-Oberfläche.** Gestaltung/Textreduktion um das Browserfeedback erweitern: weniger verschachtelte Kästen und Leerraum, kompakte Buchungszeilen/Diagramme, eine sinnvolle Seitenüberschrift statt Wiederholungen, zurückhaltende kontextbezogene Hilfe statt verstreuter Fragezeichen. Monatskopf nach Habit-Tracker-Vorbild mit vorherigem/nächstem Monat und „Dieser Monat“; direkter Monatssprung und URL-Zustand bleiben erhalten. Umsatzsuche kompakt, weitere Filter erst bei Bedarf erreichbar und aktive Filter sichtbar; Funktionen erhalten. Einstellungen mit Abschnittstitel für Benutzer-/App-Informationen und passender kompakter Hell/Dunkel/System-Auswahl; Kreisbutton und Theme-Kacheln bleiben. Abschnittsüberschriften oberhalb der Karten vereinheitlichen. Kennzahlen, Planwert, Fehler, Entscheidungen und Löschfolgen sichtbar lassen. Kommentare, Ist-Belege und Abnahme im bestehenden Usability-Plan. Prüfen bei 360/768/1024/1440 sowie 734/879/1166 Pixeln, hell/dunkel, Tastatur und reduzierter Bewegung. Ursprung: UX2; weiterhin offen, keine parallele Redesign-Aufgabe.
-- [ ] **R2 — Formularfehler durchgängig am Feld anzeigen.** Insbesondere zukünftige Vertragsänderungen und manuelle Zahlungszuordnung mit benannten Feldern, gemeinsamer Validierung und Feldfehler-Anbindung versehen. Ursache/nächsten Schritt knapp erklären, Eingaben erhalten. Abnahme: ungültige Beträge/Termine und Serverkonflikte zeigen passende Felder und Fokus, ohne gespeicherte Daten zu verändern. Ursprung: F1/N1 und P1.3; bisher zu pauschal als fertig geführt.
-- [ ] **R3 — Belegzahlungen in Vertrags-Prüfkarten verständlich zeigen.** Identische „Buchung ansehen“-Links durch kompakte Belege mit Datum, Betrag und Gegenpartei/Buchungstext ergänzen. Details bleiben verlinkt/aufklappbar. Bearbeitete Karte, Entscheidungen und reine Navigations-Wischgesten erhalten. Abnahme: Vorschläge anhand ihrer Zahlungen vergleichen können, ohne mehrere ununterscheidbare Links öffnen zu müssen. Ursprung: UX4; Kartenfolge und Entscheidungen bereits geliefert.
+Use existing Nuxt UI/shared Zod/exact cents and preserve history. Future increments retain scoped checks and their own approval/commit boundaries.
 
-Für R1–R3 gelten Nuxt UI, gemeinsame Zod-Verträge, Cent-Genauigkeit und Datenerhalt. Je Umsetzungspaket passende Prüfungen und eigener Commit; konkrete Merge-/Rollout-Freigaben bleiben erforderlich.
+## I — Import boundaries
 
-## I — Erkannte Produktgrenze
+- [ ] **I1 — Historical import paging.** History still lists the latest 100 runs without a pager. Plan bounded access to older runs, their issues and eligible rollback. Acceptance: find a run beyond 100, inspect its issues and rollback preview. A retained deep link or current notification is not a complete historical browser.
+- [x] **I2 — Obvious file selection.** Delivered visible native-selectable upload area, drag/drop alternative, keyboard/mobile selection and cancellation/valid retry while retaining automatic processing and duplicate/abandonment guards.
+- [x] **I3 — Empty purpose/alternative booking text.** Delivered explicit mapped-text fallback, grouped diagnostics and consent for truly empty rows; mixed-column, all-empty, manual-mapping and repeated-import cases pass. The originally reported six real rows have not been inspected, so original-file acceptance remains E5.
 
-- [ ] **I1 — Alte Importe und Klärungen erreichbar machen.** Historie aktuell auf 100 Läufe ohne Nachladen begrenzt. Begrenzten, nachladbaren Zugriff einschließlich alter Klärungen und berechtigter CSV-Rücknahme planen. Abnahme: bei mehr als 100 Läufen einen älteren Lauf finden, Hinweise und Rücknahmevorschau öffnen. Neue Erweiterung über die bisher dokumentierte Begrenzung hinaus; vor Umsetzung einplanen.
-- [ ] **I2 — Dateiauswahl offensichtlich bedienbar machen.** Klarer Uploadbereich mit eindeutigem „Datei hochladen“-Button und erkennbarer klickbarer Fläche; Drag-and-drop zusätzlich. Dateidialog per Maus/Tastatur erreichbar, auch mobil. Kein Wissen über das Anklicken eines unauffälligen CSV-Labels voraussetzen. Vorhandenen UFileUpload, automatische Verarbeitung und Schutz vor Doppelimport/Abbruch erhalten. Abnahme: Button/Uploadfläche, Tastatur, Abbruch und anschließender gültiger Upload auf Desktop/Mobil. Neue Interaktionskorrektur, getrennt von I1 und dem bereits gelieferten Parser.
-- [ ] **I3 — Importfehler „Buchungstext fehlt“ nachvollziehen und beheben.** Sechs betroffene Zeilen gemeldet. Synthetisch belegt: leeres automatisch gewähltes „Verwendungszweck“-Feld verwirft eine Zeile trotz gefülltem „Buchungstext“; Ursache der Originaldatei noch unbestätigt. Zeilenweisen Fallback auf bekannte ausdrücklich zugeordnete alternative Textspalten prüfen; keine künstlichen Inhalte erfinden oder Finanzzeilen still verwerfen. Wirklich textlose Zeilen bleiben klar zu entscheiden. Gleiche Fehler kompakt gruppieren, Zeilen und nächste Aktion aufklappbar zeigen statt langer Warntextfläche. Manuelle Spaltenwahl, Quellidentitäten, Dublettenschutz und Teilimport-Zustimmung erhalten. Abnahme: gemischt gefüllte Zweck-/Buchungstextspalten, beide leer, manuelle Zuordnung und Wiederholungsimport; bestehende Umsätze nicht still ändern. Originaldatei-Abnahme bleibt E5, allgemeine Feldfehler bleiben R2.
+## P/A — Delivered planning and group scope
 
-## P — Noch nicht gelieferte Vertragsplanung
+- [x] **P1 — Due-month planned total.** The calendar sums actual scheduled due amounts separately from monthly averages: annual EUR 120 contributes EUR 120 in its due month, not EUR 10. Month ends/leap years/effective revisions/inclusive end and exact group-scoped events are tested. No bank transaction is created.
+- [x] **A1 — Several accounts in one scope.** Saved account groups provide deduplicated multi-account ledger/report/detail/calendar scopes, including inactive historical members. Empty groups stay empty; deleted groups fail instead of widening scope. Accountless scope remains explicitly separate. This delivers named groups, not an unreviewed arbitrary filter model.
 
-- [ ] **P1 — Tatsächlich fällige Monatsgesamtsumme.** Vertragsfälligkeiten eines gewählten Monats summieren und Termine zeigen. Jährliche 120 € zählen im Fälligkeitsmonat als 120 €, getrennt vom vorhandenen Monatsdurchschnitt von 10 €. Monatsende, Schaltjahr, zukünftige Preise und einschließlich geltendes Ende beachten. Keine Bankbuchungen erzeugen/Ist-Werte verändern. Abnahme: exakte Gesamtsumme und Drill-down über verschiedene Rhythmen/Monatswechsel. Ursprung: P3.2 und Finanzfluss-Plan; später eigenständig zurückgestellt, nicht umgesetzt. Umfang/Freigabe vor Umsetzung bestätigen.
+## B — Separate unapproved budget scope
 
-## B — Budgets: eigener, nicht zur Umsetzung freigegebener Rückstand
+Budget work still requires joint Stage 1 acceptance and explicit budget approval. The later contract/calendar approval did not create a budget prerequisite for contract corrections or approve budgets.
 
-Abhängigkeit: gemeinsame Stage-1-Abnahme und gesonderte Budgetfreigabe. Verträge wurden unabhängig davon beauftragt und geliefert; keine erneute Budget-Voraussetzung für Vertragskorrekturen erfinden.
+- [ ] **B1 — Model/API.** Per-category monthly budget, unique database identity, exact cents, shared Zod/OpenAPI and CRUD.
+- [ ] **B2 — Explicit previous-month copy.** No silent carry-forward/overwrite; resolve target conflicts visibly.
+- [ ] **B3 — Consumption/refunds.** Booked non-transfer expenses including accountless rows; consumption is max(0, expenses minus explicitly attributed refunds). Ordinary income is not automatically a refund. Exact remaining/overspend.
+- [ ] **B4 — UI/recalculation.** Month, budget/consumption/remaining/overspend, both modes, field/empty states and recalculation after classification/category changes.
+- [ ] **B5 — Verification/acceptance.** Populated migration, cent/month/year limits, copy conflicts, excess refunds and transaction states; keep technical delivery separate from user acceptance.
 
-- [ ] **B1 — Modell und API.** Monatsbudget je Ausgabenkategorie, eindeutiger DB-Schlüssel, exakte Centbeträge, Zod/OpenAPI, Anlegen/Bearbeiten/Löschen.
-- [ ] **B2 — Vormonat ausdrücklich übernehmen.** Keine automatische Übertragung; Zielbudgets nicht still überschreiben. Konflikte sichtbar entscheiden.
-- [ ] **B3 — Verbrauch und Erstattungen.** Nur gebuchte Ausgaben einschließlich kontoloser Buchungen, ohne Vormerkungen/Umbuchungen. Verbrauch = `max(0, Ausgaben - ausdrücklich zugeordnete Erstattungen)`. Gewöhnliche Einnahmen nicht automatisch als Erstattung behandeln. Rest/Überschreitung exakt berechnen.
-- [ ] **B4 — Oberfläche und Nachberechnung.** Monatswahl, Budget/Verbrauch/Rest/Überschreitung, beide Modi, Feldfehler und Leerzustände. Spätere Kategorie-/Buchungsänderungen berücksichtigen.
-- [ ] **B5 — Prüfung und separate Abnahme.** Migration auf befülltem Altstand, Cent-Grenzen, Monats-/Jahreswechsel, Übernahme-Konflikte, Erstattungen über Ausgaben und Buchungszustände prüfen. Technische Lieferung und gemeinsame Budgetabnahme getrennt dokumentieren.
+## C — Older optional import details
 
-## C/A — Ältere Detailanforderungen, Umfang vor Umsetzung klären
+These are not automatically authorized corrections to the integrated feature.
 
-Diese Punkte stammen aus der ursprünglichen Spezifikation. Sie fehlen im Code, waren aber keine vollständige Zusage der letzten UX-Lieferung. Optionale Funktionen nicht als bereits beauftragte Pflichtkorrektur behandeln.
+- [ ] **C1 — Separate debit/credit columns.** Plan explicit signs/empty/conflict rules, manual mapping and repeat-import acceptance. Current import uses one signed amount column.
+- [ ] **C2 — Explicit CSV source balance.** Only with unambiguous account/type/observation date mapping. Current CSV mapping has no balance column; never derive bank balance from transaction sums.
+- [ ] **C3 — Configurable limits.** Current fixed limits are 10 MiB/50,000 rows. Any configurable bounded replacement needs scope agreement and consistent browser/contracts/API limits before processing.
 
-- [ ] **C1 — Separate Soll-/Haben-Spalten.** Optionales CSV-Mapping mit eindeutigen Vorzeichen-/Leerwertregeln planen. Aktuell nur eine vorzeichenbehaftete Betragsspalte. Abnahme: Soll/Haben, leere Felder, widersprüchliche Doppelbelegung und erneuter Import.
-- [ ] **C2 — CSV-Quellsaldo.** Optional einen ausdrücklich zuordenbaren Quellsaldo übernehmen; Konto/Typ/Beobachtungsdatum müssen eindeutig sein. Mapping bisher ohne Saldospalte. Niemals aus Umsatzsummen einen Bankkontostand erfinden.
-- [ ] **C3 — Konfigurierbare Importgrenzen.** Aktuell feste 10 MiB/50.000 Zeilen. Falls weiterhin gewünscht, konsistente begrenzte Konfiguration über Browser, Verträge und API planen; vor Verarbeitung sicher begrenzen.
-- [ ] **A1 — Mehrere Konten gemeinsam filtern.** Aktuell einzelnes Konto, alle Konten oder „Ohne Konto“, keine ausgewählte Kontomenge. Filtersemantik für Umsätze, Analysen und Drill-down festlegen. Abnahme: mindestens zwei ausgewählte Konten, ausgeschlossene Konten und kontolose Buchungen korrekt behandeln.
+## E — Other external prerequisites and acceptance
 
-## E — Externe Voraussetzungen und Abnahmen
+- [ ] **E1 — Own FinTS registration/official endpoint.** Obtain your own product ID and bank-confirmed endpoint/access/TAN capabilities; [registration guide](fints-registration.md). No borrowed ID or credentials in chat/repository.
+- [ ] **E2 — Supervised live bank test.** After E1 and separate approval, verify account detection, balances/history, TAN/media/app approval, cancellation and idempotent repeat import. Synthetic tests do not establish compatibility.
+- [ ] **E3 — Least-privilege registry access.** Inspect/restrict the protected server account to read-only package access. A successful pull does not prove minimum privilege.
+- [ ] **E4 — Host reboot acceptance.** Only in a separately approved maintenance window, verifying data, startup, HTTPS and backup health. Container restart/CI does not prove shared-host reboot behavior.
+- [ ] **E5 — Original CSV/everyday workflow.** Jointly review the actual export, rollback/reupload, categories, proposals and reports. Keep private financial data out of public evidence.
+- [ ] **E6 — Joint product/Stage 1 acceptance.** Review compactness, text, exact figures, exceptions, accessibility and operational/bank boundaries. Technical checks are not full user acceptance; budgets need additional explicit approval.
 
-- [ ] **E1 — Eigene FinTS-Registrierung und offizieller Endpunkt.** Eigene Produkt-ID beantragen/erhalten; Sparkasse Bodensee bestätigt Endpunkt, Zugang und TAN-Fähigkeiten. [Anleitung](fints-registration.md). Keine fremde Produkt-ID, keine Zugangsdaten in Chat/Repository.
-- [ ] **E2 — Begleiteter realer Banktest.** Nach E1 und separater Freigabe Kontenerkennung, Salden, Historie, TAN/Medien/App-Freigabe, Abbruch und wiederholten Import ohne Doppelzählung prüfen. Bankgrenzen bereinigt dokumentieren. Synthetische Tests ersetzen diesen Nachweis nicht.
-- [ ] **E3 — Registry-Berechtigungen minimieren.** Bestehenden geschützten Serverzugang auf ausschließlich lesenden Paketzugriff prüfen/begrenzen. Erfolgreiche Pulls belegen keine minimale Berechtigung.
-- [ ] **E4 — Host-Neustart prüfen.** Nur im separat freigegebenen Wartungsfenster. Daten, Startreihenfolge, HTTPS und anschließende Backup-Gesundheit nachweisen. Container-Neustart/CI ersetzen keinen Neustart des gemeinsam genutzten Hosts.
-- [ ] **E5 — Original-CSV und Alltagsworkflow abnehmen.** Echten Export, erneuten Upload nach Rücknahme, Kategorien, Vorschläge und Auswertungen gemeinsam prüfen. Keine Finanzdaten in öffentliche Nachweise übernehmen.
-- [ ] **E6 — Gemeinsame Produkt-/Stage-1-Abnahme.** Nach Korrekturen Bedienung, Textmenge, Layout, exakte Zahlen, Klärungen und Betriebs-/Bankgrenzen bewerten. Technische Lieferung ist erfolgt; keine vollständige Benutzerabnahme erklärt. Budgetbeginn benötigt zusätzliche ausdrückliche Freigabe.
+## Documentation and historical delivery
 
-## D — Dokumentationsbereinigung dieses Auftrags
+- [x] **D1 — Current status reconciliation.** The earlier audit retained stable IDs and archived previous requirements. This integrated follow-up now distinguishes source delivery, unexecuted Linux acceptance and unchanged production. Historical materials remain in [the archive](archive/todo-2026-11-08-before-audit.md).
 
-- [x] **D1 — Statuskorrektur abschließen.** Pläne/Nachweise gekennzeichnet, abgeschlossene Merge-/Rollout-Gates berichtigt, Lücken mit stabilen IDs erfasst und alte To-dos vollständig archiviert. Format-/Lint-/Verweisprüfung erfolgreich; Abschluss im zugehörigen Dokumentations-Commit auf `codex/3-docs-status-audit`. Keine Produktimplementierung oder Serveränderung.
+Previously delivered: CSV automation/encodings/short years/accountless assignment/deduplication/rollback; categories/rules/classifications; contracts/payment links/history/forecasts; actual multi-month analytics; theme controls/navigation; image-only deployment, .33, health checks, daily encrypted seven-day backups and the separately approved d193639 rollout. The new integrated source extends those features without claiming a newer production deployment.
 
-## Bereits geliefert
-
-- CSV-Automatik, Kodierungen, Sparkasse-Kurzjahr, kontoloser Import/spätere Zuordnung, Dublettenschutz und geschützte Rücknahme.
-- Kategorienvorlagen/-regeln, geschützte manuelle Entscheidungen, Fix/Variabel.
-- Verträge, Zahlungsregeln/-zuordnung, Historie, rollierende Fälligkeiten, Monatsdurchschnitt und Kategorien-/Artenanalyse.
-- Mehrmonats-Ist-Analysen mit Durchschnitt/Trend/Aufteilung, exakten Tabellen und Umsatzfiltern.
-- Nuxt-UI-Bedienelemente, Datums-/Monatswahl, Theme-Kacheln/sechs Ayu-Varianten, Kreisbutton und überarbeitete Navigation.
-- Image-only-Deployment, .33, Compose-Healthchecks, tägliche verschlüsselte Backups mit sieben Kalendertagen Aufbewahrung, befüllter Restore und zuletzt freigegebener Rollout `d193639`.
-
-## Abschlussregeln
-
-Erst nach Umsetzung und passenden Prüfungen abhaken; Benutzerabnahmen separat nachweisen. Historische Haken sind keine pauschale Erfüllung aller Details. Quellcode bleibt lokal. Kein Server-Repository, unbeauftragter Bankzugriff, Reboot oder neuer Merge/Rollout durch diesen Dokumentationsauftrag.
+Only tick implementation after scoped validation and publication; record user/operational acceptance independently. No server repository, unauthorized bank access/reboot, merge or deployment is implied by this task list.

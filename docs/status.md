@@ -1,74 +1,54 @@
-# Aktueller Projektstand
+# Project status
 
-Stand: 8. November 2026. Diese Seite und [todo.md](todo.md) sind die zentrale Statusquelle. Alte Pläne beschreiben Anforderungen und historische Entscheidungen, nicht automatisch den aktuellen Erledigungsstand. Aufgabe: [Issue #3](https://github.com/mfurti/financial-tracking/issues/3).
+Updated 2026-11-20. This page and [todo.md](todo.md) are the current status source. Historical plans/checklists retain their dated meaning. Integrated source delivery: [issue #13](https://github.com/mfurti/financial-tracking/issues/13), related to [issue #3](https://github.com/mfurti/financial-tracking/issues/3).
 
-## Neu aufgenommenes Nutzerfeedback
+## Integrated source delivery
 
-Prio 1 ist wieder **Finanzguru als visuelle Referenz**: kompakter App-Charakter, weniger Text, Monatsnavigation nach Habit-Tracker-Vorbild und intuitiver Dateiupload. Acht Browserkommentare sind ohne Doppelaufgaben in R1 konkretisiert; I2 ergänzt die Upload-Interaktion, I3 den Buchungstext-Fehler mit kompakteren Diagnosen. Aufnahme/Dublettenprüfung/Ist-Abgleich sind beauftragt, die Ergänzung ist noch nicht implementiert. Details im [bestehenden Usability-Plan](vertragsanalyse-usability-plan.md#nutzerfeedback-app-charakter-und-import--8-november-2026).
+The approved 39-view concept is implemented on branch 13-implement-integrated-household-finance-concept. It includes responsive overview/analysis composition, shared stationary tiles/dialogs, refined depth/spacing/contrast/motion, exact merchant/monthly drill-downs, maintenance/import improvements, contract calendar, explicit reserve sources, immutable wealth capture, isolated synthetic investments/roles and focused settings.
 
-Synthetisch belegt: leeres automatisch gewähltes Verwendungszweck-Feld führt zur Zurückweisung trotz gefülltem Buchungstext. Ob derselbe Mechanismus die Originaldatei erklärt, ist unbestätigt. E5 bleibt offen; Produktivstand und vorhandene Testergebnisse unten ändern sich nicht.
+Server metadata covers profile, account groups and source-bound in-app read receipts. Device preferences cover DE/EN, masking, modules/chart style and paired custom appearance. Existing singleton sessions/CSRF remain authoritative. Demo state never grants access or writes real finances. The constitution remains an unratified template; the user explicitly approved documented project rules as governance for this feature.
 
-Der anschließend beauftragte [Codecheck mit K1-Bereinigung](code-audit.md) ist lokal abgeschlossen: 16 ungenutzte CSS-Klassen und der alte lokale Vertragsvorschlagszweig entfernt, UI-Metadaten gebündelt. Alle 19 Komponenten und direkte Abhängigkeiten bleiben erhalten. Zehn Browserfälle vor/nach der Änderung, CSS-/Optionen-Erhaltungsnachweis, vollständiger Typecheck, Lint und Produktionsbuild bestanden. K1 ist eine lokale Quelllieferung; neue CI/PR-Abnahme, Merge und Rollout stehen separat aus. Daten und Produktivstand `d193639` unverändert; R1/I2/I3 bleiben offen.
+All local gates passed: Prisma generation/validation, repository formatting/lint, full types, 225 unit/integration tests in 42 files, production API/web builds, and the complete 440-case browser selection. Browser results are 428 passes, 12 intentional extra-recording/theme skips outside reference widths, zero failures and zero flaky cases across 24 isolated batches. All 39 view identities were checked in DE/EN across 360/390/700/701/768/1024/1100/1101/1440 px. Source fingerprints, geometry, five visual dimensions and six normal/reduced-motion recordings are documented in [feature validation](../specs/001-integrated-household-concept/validation.md).
 
-## Belegter Lieferstand
+Both additive migrations preserve all old fields in populated disposable fixtures. The actual pre-feature application, its contracts and historical generated Prisma client were rebuilt and exercised on the expanded schema. Exact financial values, credentials and new metadata remained intact. See [migration evidence](feature-migrations.md); this is not proof of production lock timing or deployed-image compatibility.
 
-- PR #10 wurde als `3b990ec` gemergt und separat freigegeben ausgerollt.
-- [PR #11](https://github.com/mfurti/financial-tracking/pull/11) wurde als `d193639762a543e9283b62a604804ab5245f30dd` gemergt und separat freigegeben ausgerollt. Das ist der zuletzt geprüfte Produktivstand.
-- [Main-CI 42499226320](https://github.com/mfurti/financial-tracking/actions/runs/42499226320) war erfolgreich: 131 Unit-/Integrationstests, 20 Browserfälle, Linux-Container-/Restore-Prüfung und Image-Veröffentlichung.
-- Frisches verschlüsseltes Backup vor dem Rollout isoliert wiederhergestellt: 10 Sekunden, tatsächlich befüllte Finanzdaten, alle ursprünglichen Felder und Datensätze aus 17 Anwendungstabellen erhalten. Wartungspause: 212 Sekunden. Beide additiven Migrationen aus PR #11 wurden angewendet.
-- Vier Laufzeitdienste waren gesund; HTTPS, Zugriffsschutz, exakte Ist-Analysen, monatliche Vertragsplanwerte und lesende API-Prüfungen waren erfolgreich. Konfiguration/Secrets blieben erhalten; verschlüsselte Konfiguration zusätzlich geprüft außerhalb des Servers gesichert.
-- Laufzeitverzeichnis `/root/docker/financial-tracking`, Web-IP `192.168.178.33`, nur Compose/Konfiguration/Secrets und veröffentlichte GitHub-Images. Kein Server-Repository, Server-Build, Reboot oder echter Bankzugriff.
+## Current external gate
 
-Rolloutnachweis: [Issue #3, Kommentar 6724648706](https://github.com/mfurti/financial-tracking/issues/3#issuecomment-6724648706). Lokale Detailnachweise liegen ignoriert unter `.local/releases/d193639`. Archive und private Schlüssel gehören nicht ins Repository. Der aktuelle Dokumentationsabgleich verwendet vorhandene Nachweise und Quellcode; er behauptet keine neue Serverprobe oder Wiederholung der Anwendungstests.
+Published implementation candidate 58211fafc0d4946721a5d39fad7b1b6787e12c48 has [CI run 44748728462](https://github.com/mfurti/financial-tracking/actions/runs/44748728462). GitHub did not start verify or operations because recent account payments failed or the spending limit needs attention. Both jobs executed zero steps; publishing is correctly skipped on a feature branch. Linux container/restore acceptance for this feature remains unverified. An older successful run does not satisfy that gate. No billing setting, merge, deployment, production migration, reboot or live bank test was authorized/performed by this source delivery.
 
-## Funktionen und offene Grenzen
+Review remains open until the exact review head has successful required CI/restore proof and the user separately approves merging. Deployment needs its own writer/backup/migration approval. The delivery PR and final task commits are linked from issue #13; later documentation commits do not claim new production evidence.
 
-| Bereich    | Vorhanden                                                                                                                                          | Noch offen                                                                                  |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| CSV        | Formaterkennung, Sparkasse-Kurzjahr, automatischer gültiger Upload, kontolose Buchungen, Dublettenklärung, spätere Zuordnung, geschützte Rücknahme | Originaldatei-/Alltagsabnahme; ältere optionale Detailanforderungen C1–C3                   |
-| Kategorien | Vorlagen, Verwaltung, geordnete Regeln, manueller Vorrang einschließlich leerer Kategorie, Fix/Variabel                                            | Gemeinsame fachliche Abnahme                                                                |
-| Verträge   | Vorschläge, Bestätigung, Versionierung, Zahlungszuordnung, Historie, nächste Fälligkeit, Monatsdurchschnitt und Kategorien-/Artenanalyse           | Aussagekräftige Belegvorschau R3; tatsächliche Gesamtbelastung eines ausgewählten Monats P1 |
-| Analysen   | Mehrmonatswerte, Durchschnitt, Trend, Kategorienanteile, Fix/Variabel, exakte Tabellen, Umsatz-Drill-down                                          | Gemeinsame Auswahl mehrerer Konten A1                                                       |
-| Oberfläche | Nuxt-UI-Bedienelemente, Datums-/Monatswahl, Desktop-Verwaltung, mobile Mehr-Seite, 23 Theme-Kacheln/sechs Ayu-Varianten                            | Überschriften/Textreduktion R1 und Feldfehler R2 nicht durchgängig                          |
-| Importe    | Historie und Rücknahme sichtbarer abgeschlossener CSV-Läufe                                                                                        | Auf 100 Läufe begrenzt, kein Nachladen; ältere Klärungen regulär nicht erreichbar I1        |
-| Budgets    | Nicht implementiert                                                                                                                                | Separater, bisher nicht zur Umsetzung freigegebener Rückstand B1–B5                         |
-| FinTS      | Adapter, manuelle Oberfläche und synthetische Autorisierungstests                                                                                  | Eigene Registrierung, bestätigter Endpunkt und begleiteter Banktest E1–E2                   |
+## Last verified production delivery
 
-## Korrigierte Paketbewertung
+The most recent evidenced production revision remains d193639762a543e9283b62a604804ab5245f30dd from [PR #11](https://github.com/mfurti/financial-tracking/pull/11). PR #10 was previously merged/deployed as 3b990ec. [Main CI 42499226320](https://github.com/mfurti/financial-tracking/actions/runs/42499226320) passed 131 tests, 20 browser cases, Linux container/restore acceptance and image publication.
 
-| Paket        | Aktueller Status                                                                                                         |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| F0           | Dokumentation geliefert; spätere Statuswidersprüche durch diesen Abgleich korrigiert.                                    |
-| F1 / N1–N2   | Nuxt-UI-Umstellung und Datums-/Monatswahl geliefert; konsistente Feldfehler nur teilweise erfüllt, siehe R2.             |
-| F2 / N3      | Theme-Kacheln implementiert und technisch geprüft.                                                                       |
-| F3 / N5      | Kategorienregeln und Klassifizierung implementiert; keine pauschale Benutzerabnahme.                                     |
-| F4 / N6      | Vertragskern implementiert. Aggregierte Monatsbelastung aus dem Plan zurückgestellt, nicht geliefert: P1.                |
-| F5 / N4 / N7 | Ist-Analysen und Navigation implementiert; neuere Gestaltungskorrekturen und ältere Mehrkontenanforderung separat offen. |
-| F6 / N8      | Technische Lieferung einschließlich Merge/Rollout abgeschlossen; gemeinsame Produktabnahme offen.                        |
-| UX0–UX1      | Planaufzeichnung und Import-Rücknahme geliefert.                                                                         |
-| UX2          | Teilweise erfüllt: Navigation/Farben/Symbole vorhanden, Überschriften/Textreduktion nicht durchgängig: R1.               |
-| UX3          | Monatsdurchschnitt und Vertragsanalyse geliefert; keine tatsächlich fällige Monatsgesamtsumme.                           |
-| UX4          | Kartenfolge und Entscheidungen geliefert; Belegvorschau rudimentär: R3.                                                  |
-| UX5          | Technische Lieferung, aktuelle CI, Merge und Rollout abgeschlossen; Benutzerabnahme offen.                               |
+The separately approved PR #11 rollout restored a fresh encrypted populated backup in isolation in 10 seconds, preserving original fields/rows from 17 application tables. Writer downtime was 212 seconds; both PR #11 additive migrations were applied. Four runtime services were healthy; HTTPS/access protection, exact actual reports, monthly contract forecasts and read-only API checks passed. Configuration/secrets were retained and encrypted configuration was backed up off-host.
 
-## Verbindliche Einordnung
+Runtime location remains /root/docker/financial-tracking, web IP 192.168.178.33, with Compose/config/secrets and published images only. No server repository/build, reboot or live banking was involved. Evidence: [issue #3 rollout comment](https://github.com/mfurti/financial-tracking/issues/3#issuecomment-6724648706); ignored local evidence remains under .local/releases/d193639. This historical evidence is not a new server probe.
 
-- Aufgaben mit stabilen IDs, Prüfkriterien und Abhängigkeiten stehen ausschließlich in [todo.md](todo.md).
-- R1–R3 sind Restarbeiten aus beauftragten Oberflächenanforderungen. Diese Dokumentationsbereinigung implementiert sie nicht und genehmigt keinen neuen Merge/Rollout.
-- Budgets, Monatsbelastungsplanung und ältere optionale CSV-/Mehrkontenanforderungen bleiben getrennt vom gelieferten Umfang. Vor Umsetzung Umfang und erforderliche Freigaben klären.
-- Die spätere ausdrückliche Freigabe des Vertragsausbaus ersetzte dessen frühere Budget-Abhängigkeit. Budgets wurden dadurch weder umgesetzt noch freigegeben.
-- Gemeinsame Zod-Verträge ersetzen die ursprünglich vorgesehenen class-validator-/generierten Client-Duplikate. Konto-unabhängiger automatischer CSV-Import ersetzt Pflichtkonto und routinemäßige Bestätigung bei vollständig gültigen Dateien. Die spätere Vertragsfreigabe erlaubt eindeutige automatische Zahlungszuordnung; die alte Beschränkung auf ausschließlich manuelle Zuordnung gilt nicht mehr. Diese ersetzten Anforderungen sind keine offenen Implementierungslücken.
-- Grüne Tests ersetzen weder vollständige Planerfüllung noch gemeinsame fachliche/visuelle Abnahme. Historische Checklisten sind keine zweite aktuelle Aufgabenliste.
+## Delivered source and retained boundaries
 
-## Dokumente lesen
+| Area           | Current source                                                                                                                                          | Remaining boundary                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| CSV/imports    | Automatic valid import, mapped-text fallback, native selection, compact exception review, accountless history, duplicate comparison, protected rollback | Original-file acceptance E5; latest-100 history without paging I1; optional C1–C3 |
+| Categories     | Templates, ordered rules, protected manual/empty choices and fixed/variable annotations                                                                 | Joint domain acceptance E6                                                        |
+| Contracts      | Suggestions/decisions, revisions/payment history, monthly forecast and due-month calendar with exact totals                                             | Legacy field feedback R2; richer proposal evidence R3; joint acceptance           |
+| Analysis       | Exact monthly/merchant/category/classification drill-down, saved account-group scopes, configurable modules                                             | User review E6; no budget inference                                               |
+| Reserve/wealth | Explicit BOOKED source coverage, positive goal and immutable captures                                                                                   | No invented bank balances or earlier history                                      |
+| Demo           | Synthetic portfolio/plans/activity/scenarios and local display roles                                                                                    | Device-only; no real permissions, broker or bank                                  |
+| Settings       | Server profile/groups/read receipts; DE/EN, first-render masking, custom colors and device choices                                                      | Device storage limitations remain visible                                         |
+| Appearance     | Approved integrated layout, 23 preset choices, paired custom colors, stable hover and reduced motion                                                    | Human visual acceptance E6                                                        |
+| Budgets        | Not implemented                                                                                                                                         | Separate unapproved scope B1–B5                                                   |
+| FinTS          | Existing adapter/manual challenge flow and synthetic tests                                                                                              | Own registration, confirmed endpoint and supervised real test E1–E2               |
 
-| Dokument                                                                                                                                                                         | Rolle                                                                             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [todo.md](todo.md)                                                                                                                                                               | Einzige aktuelle Aufgabenliste                                                    |
-| [Grundplan](plan.md), [Spezifikation](haushaltsbuch-implementierungsspezifikation.md), [initiale Checkliste](initial-implementation-checklist.md)                                | Historischer Grundumfang und damalige Nachweise; geänderte Anforderungen beachten |
-| [Ausbauplan](ausbauplan.md), [Stufenplan](HAUSHALTSBUCH_CODEX_PLAN.md)                                                                                                           | Stufenanforderungen; offene Budgets/Monatsplanung im aktuellen Rückstand          |
-| [Finanzfluss-Plan](finanzfluss-umsetzungsplan.md), [Usability-Plan](vertragsanalyse-usability-plan.md)                                                                           | Gelieferte und teilweise erfüllte Erweiterungen; korrigierte Bewertung oben       |
-| [Stage-1-Abnahme](stage-one-acceptance.md), [Finanzfluss-Abnahme](finanzfluss-abnahme.md), [Usability-Abnahme](vertragsanalyse-usability-abnahme.md), [Fortschritt](progress.md) | Datierte technische Nachweise, keine pauschale Produktabnahme                     |
-| [API](api.md), [Darstellung](appearance.md), [Bankintegration](banking.md), [Registrierung](fints-registration.md), [Bedienung](user-guide.md)                                   | Funktionsreferenz; bekannte Grenzen zusätzlich in todo.md                         |
-| [Deployment](deployment.md), [Migrationen](feature-migrations.md), [Recovery](recovery.md), [Coding-Guidelines](coding-guidelines.md)                                            | Betriebs-/Entwicklungsregeln                                                      |
-| [Archivierte To-dos](archive/todo-2026-11-08-before-audit.md)                                                                                                                    | Historische Aufgabeninhalte mit ausdrücklich damaligem Status                     |
+R1/I2/I3/P1/A1 now have source delivery through the approved integrated feature; their previous “not implemented” status is superseded. R2/R3 and the latest-100 history limit remain explicit existing backlog, not a claim that all earlier UX details passed. K1 was the earlier source cleanup; its audit remains in [code-audit.md](code-audit.md).
+
+## Reading the documentation
+
+[Feature spec/plan/tasks](../specs/001-integrated-household-concept/spec.md), [validation](../specs/001-integrated-household-concept/validation.md) and [quickstart](../specs/001-integrated-household-concept/quickstart.md) describe the approved integrated delivery. [todo.md](todo.md) owns current stable backlog IDs.
+
+Earlier [base plan](plan.md), [specification](haushaltsbuch-implementierungsspezifikation.md), [initial checklist](initial-implementation-checklist.md), [expansion plan](ausbauplan.md), [stage plan](HAUSHALTSBUCH_CODEX_PLAN.md), [Finanzfluss plan](finanzfluss-umsetzungsplan.md) and [usability plan](vertragsanalyse-usability-plan.md) preserve historical requirements, including the eight November 8 UI comments. Their old status does not override this delivery record.
+
+Dated [Stage 1](stage-one-acceptance.md), [Finanzfluss](finanzfluss-abnahme.md), [usability](vertragsanalyse-usability-abnahme.md) and [progress](progress.md) evidence is not blanket product acceptance. Runtime guidance remains in [API](api.md), [appearance](appearance.md), [user guide](user-guide.md), [banking](banking.md), [registration](fints-registration.md), [deployment](deployment.md), [migrations](feature-migrations.md), [recovery](recovery.md) and [coding guidelines](coding-guidelines.md). The [archived backlog](archive/todo-2026-11-08-before-audit.md) retains its historical status.
+
+Shared Zod contracts supersede duplicate class-validator/generated-client models. Automatic valid accountless import supersedes mandatory account selection and routine confirmation. Explicitly approved contract expansion removed its earlier budget prerequisite and allowed unambiguous automatic payment matching; budgets themselves remain unapproved. Passing technical checks never replaces user acceptance or merge/deployment approval.
