@@ -65,6 +65,6 @@ T009 completes proposal preparation. The actual external G2 response remains pen
 
 Each completed file-changing task was separately committed and immediately pushed; actual source commit provenance is retained by version control and sanitized issue tracking. Task checkboxes change only after validation/push; read-only proof does not require empty commits.
 
-T001–T008 evidence is complete; T009 proposal is prepared for its commit/push. T010–T015 have not started, T016 needs an actual owner decision, and T017 must report remaining limits accurately.
+T001–T009 preparation is complete and its task commits were immediately pushed. T010–T015 have not started, T016 needs an actual owner decision, and T017 must report remaining limits accurately.
 
 An automatic review rejected an operationally detailed public issue update. The safe alternative reduced public tracking to task/check outcomes and kept exact bindings locally; no indirect tool was used to publish the rejected payload.
