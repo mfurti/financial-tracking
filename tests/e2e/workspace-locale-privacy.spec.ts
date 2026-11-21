@@ -88,11 +88,13 @@ test('English device language covers destinations and exact large amounts withou
     ).toBe(true);
   }
   await page.goto('/accounts');
-  await expect(page.getByText('€9,007,199,254,740,993.01', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText(/10\/11\/2026, 13:00/).first()).toBeVisible();
-  await expect(page.getByText(conceptFixtureLabels.checking, { exact: true }).first()).toBeVisible();
-  expect(await (await page.request.get('/api/v1/transactions?limit=100')).json()).toEqual(before);
+  const checking = page.getByRole('region', { name: conceptFixtureLabels.checking, exact: true });
+  await expect(checking.getByText('€9,007,199,254,740,993.01', { exact: true })).toBeVisible();
   await page.screenshot({ path: `.local/concept-english-accounts-${info.project.name}.png`, fullPage: true });
+  await checking.getByRole('link').click();
+  await expect(page.getByRole('heading', { name: conceptFixtureLabels.checking, exact: true })).toBeVisible();
+  await expect(page.getByText(/10\/11\/2026, 13:00/).first()).toBeVisible();
+  expect(await (await page.request.get('/api/v1/transactions?limit=100')).json()).toEqual(before);
 });
 
 test('early masking removes financial text and chart accessibility across real and demo destinations', /** Observe every mutation from initial document creation; a later CSS overlay cannot hide a leaked first render. */ async ({

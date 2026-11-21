@@ -16,7 +16,6 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
   await page.goto('/?month=2026-11');
-  await expect(page.getByRole('link', { name: /Gehalt November/ })).toBeVisible();
   await expect(page.getByText('Noch kein Saldo', { exact: true })).toBeVisible();
   expect(
     await page.evaluate(
@@ -25,6 +24,11 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
     ),
   ).toBe(true);
   await page.screenshot({ path: `.local/dashboard-${info.project.name}.png`, fullPage: true });
+  await page
+    .getByRole('region', { name: 'Letzte Buchungen', exact: true })
+    .getByRole('link', { name: 'Alle Umsätze', exact: true })
+    .click();
+  await expect(page.getByRole('link', { name: /Gehalt November/ })).toBeVisible();
   await page.getByRole('link', { name: 'Analysen', exact: true }).click();
   await page.getByRole('link', { name: 'Kategorien & Regeln', exact: true }).click();
   await page.getByRole('button', { name: 'Kategorien verwalten', exact: true }).click();

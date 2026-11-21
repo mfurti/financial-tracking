@@ -52,7 +52,7 @@ test('confirmed recurring payments keep real bookings, expose contract badges an
     originalContract.revisions,
   );
   await page.goto('/contracts');
-  const costCard = page.getByRole('link', { name: /Durchschnittliche Fixkosten \/ Monat/ });
+  const costCard = page.getByRole('region', { name: 'Ausgaben / Monat', exact: true }).getByRole('link');
   await expect(costCard).toContainText('10,00');
   await costCard.click();
   await expect(page).toHaveURL(/\/contracts\/analysis$/);
