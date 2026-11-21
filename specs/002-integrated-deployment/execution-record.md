@@ -38,7 +38,7 @@ On failure, keep access paused or use the approved pre-migration abort. A recove
 | T012 internal readiness and completed encrypted backup  | Passed                              |
 | T013 external reopening/write boundary                  | Passed after controlled reopening   |
 | T014 authenticated workflow checks                      | Not started                         |
-| T015 runtime/persistence/access/backup checks           | Not started                         |
+| T015 runtime/persistence/access/backup checks           | Passed                              |
 | T016 owner experience acceptance                        | Pending actual observation          |
 
 Only actual outcomes may replace these states. T009 completes proposal preparation; its external approval response belongs to G2 before T010, not an automatic implementation result.
@@ -62,3 +62,7 @@ The candidate web container became healthy and the reverse proxy logged HTTP 200
 ## T013 — Controlled reopening
 
 The owner approved a second controlled start of the web container. Web became healthy and ordinary write access resumed. Fresh Chromium contexts received HTTP 200 over private HTTPS and rendered the localized login heading, both credential fields and the submit button in German and English. Direct LAN access returned HTTP 403. The elapsed time from the first pause to final reopening remained within the approved window. The protected execution record holds both write boundaries and their measured times. The first reopening attempt remains documented above. No owner credentials were submitted as part of these checks.
+
+## T015 — Running deployment checks
+
+All four services were healthy, and the three application containers matched the approved immutable images and revision. PostgreSQL retained the original persistent volume. API and PostgreSQL exposed no host ports. The trusted-proxy configuration, private HTTPS, direct-address denial and retained authenticated post-update backup were verified. Temporary resources created for the isolated final restore were removed. Authenticated read-only workflows and owner acceptance remain open.
