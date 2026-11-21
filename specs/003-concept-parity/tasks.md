@@ -10,7 +10,7 @@
 
 ## Phase 2: Foundation
 
-- [ ] T002 Reconcile reusable dialog and month-control behavior in apps/web/app/components/FinanceDialog.vue and apps/web/app/components/MonthPicker.vue. Existing callers must keep their behavior. Dialogs retain the active trigger, contain keyboard focus, dismiss with Escape, and leave the underlying route unchanged. Validate shared instructions against specs/003-concept-parity/contracts/ui.md.
+- [x] T002 Reconcile reusable dialog and month-control behavior in apps/web/app/components/FinanceDialog.vue and apps/web/app/components/MonthPicker.vue. Existing callers must keep their behavior. Dialogs retain the active trigger, contain keyboard focus, dismiss with Escape, and leave the underlying route unchanged. Validate shared instructions against specs/003-concept-parity/contracts/ui.md.
 - [ ] T003 Reconcile the shared tile and responsive rules in apps/web/app/components/FinanceTile.vue, apps/web/app/assets/main.css and apps/web/app/locales/de.ts and apps/web/app/locales/en.ts. Check contrast, unchanged tile geometry on hover, visible keyboard focus, touch targets, locale key parity and reduced motion. Keep normal, empty/error and unknown states legible. Follow docs/coding-guidelines.md, including JSDoc on new functions and callbacks.
 
 ## Phase 3: US1 — Overview and shared navigation (P1, MVP)
