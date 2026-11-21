@@ -6,6 +6,13 @@ const api = useApi();
 const route = useRoute();
 const records = ref<z.infer<typeof c.contractSchema>[]>([]);
 const reviewing = ref(false);
+const contractActionsOpen = ref(false);
+const directionFilter = ref<'EXPENSE' | 'INCOME' | 'ALL'>('EXPENSE');
+const directions = [
+  { value: 'EXPENSE', label: 'Ausgaben' },
+  { value: 'INCOME', label: 'Einnahmen' },
+  { value: 'ALL', label: 'Alle' },
+] as const;
 const summary = ref<z.infer<typeof c.contractSummarySchema> | null>(null);
 const suggestions = ref<z.infer<typeof c.contractSuggestionSchema>[]>([]);
 const detail = ref<z.infer<typeof c.contractSchema> | null>(null);
@@ -54,7 +61,8 @@ const contractGroups = computed(
           label: option.label,
           interval: option.value,
           contracts: records.value.filter(
-            /** Future revisions apply only when effective at the displayed next due date. */ (contract) =>
+            /** Keep direction and effective rhythm in the same visible scope. */ (contract) =>
+              (directionFilter.value === 'ALL' || contract.direction === directionFilter.value) &&
               contract.revisions
                 .filter(
                   /** Keep later price/rhythm changes out of earlier dues. */ (rule) =>
@@ -121,6 +129,7 @@ async function load() {
 }
 /** Open manual creation or metadata editing; suggestions are handled by ContractReview. */
 function openEditor(edit = false) {
+  contractActionsOpen.value = false;
   editorSaving.value = false;
   editing.value = edit;
   editorOpen.value = true;
@@ -167,7 +176,7 @@ async function search() {
       query: {
         search: searchText.value || undefined,
         status: 'BOOKED',
-        direction: 'EXPENSE',
+        direction: detail.value?.direction ?? 'EXPENSE',
         excludeTransfers: 'true',
         limit: 100,
       },
@@ -262,15 +271,25 @@ onBeforeUnmount(
 </script>
 
 <template>
-  <div class="page-heading">
+  <div class="page-heading finance-contract-heading">
     <div>
       <h1>{{ detail?.name ?? tr('Verträge') }}</h1>
     </div>
     <div class="toolbar">
       <ContractCalendarPreview :contracts="records" />
-      <UButton :disabled="loading || reviewing" variant="soft" @click="openEditor()">{{
-        tr('Vertrag anlegen')
-      }}</UButton>
+      <UPopover v-if="!route.params.id" v-model:open="contractActionsOpen">
+        <UButton variant="ghost" color="neutral" :aria-label="tr('Weitere Aktionen')"
+          ><FinanceIcon name="filter"
+        /></UButton>
+        <template #content>
+          <div class="finance-overview-actions">
+            <UButton :disabled="loading || reviewing" variant="soft" @click="openEditor()">{{
+              tr('Vertrag anlegen')
+            }}</UButton>
+            <UButton to="/contracts/analysis" variant="ghost">{{ tr('Geplante Vertragskosten') }}</UButton>
+          </div>
+        </template>
+      </UPopover>
     </div>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
@@ -278,7 +297,7 @@ onBeforeUnmount(
   <p v-if="loading" role="status">{{ tr('Verträge werden geladen …') }}</p>
   <UButton v-if="route.params.id" to="/contracts" variant="link" class="mb-4">{{ tr('Alle Verträge') }}</UButton>
   <template v-if="detail && !loading && !error">
-    <SectionPanel :title="detail.provider" icon="contracts" compact class="mb-5">
+    <SectionPanel :title="detail.provider" icon="contracts" compact class="contract-provider mb-5">
       <template #actions
         ><UButton color="neutral" variant="soft" @click="openEditor(true)">{{
           tr('Vertrag bearbeiten')
@@ -436,26 +455,46 @@ onBeforeUnmount(
     <UButton color="error" variant="ghost" @click="deleteOpen = true">{{ tr('Vertrag löschen') }}</UButton>
   </template>
   <template v-else-if="!route.params.id && !loading && !error">
-    <div v-if="summary" class="finance-feature-grid mb-6">
+    <div class="toolbar finance-contract-directions" role="group" :aria-label="tr('Zahlungsrichtung')">
+      <UButton
+        v-for="option in directions"
+        :key="option.value"
+        :aria-pressed="directionFilter === option.value"
+        color="neutral"
+        :variant="directionFilter === option.value ? 'soft' : 'ghost'"
+        @click="directionFilter = option.value"
+        >{{ tr(option.label) }}</UButton
+      >
+    </div>
+    <div v-if="summary" class="finance-summary-grid finance-contract-summary">
+      <FinanceTile to="/contracts/analysis" variant="stat" :label="tr('Ausgaben / Monat')" financial>
+        <template #value
+          ><span class="negative">{{ money(summary.monthlyCents) }}</span></template
+        >
+      </FinanceTile>
+      <FinanceTile variant="stat" :label="tr('Einnahmen / Monat')" financial>
+        <template #value
+          ><span class="positive">{{ money(summary.monthlyIncomeCents) }}</span></template
+        >
+      </FinanceTile>
       <FinanceTile
-        v-if="summary"
-        to="/contracts/analysis"
-        variant="insight"
-        :label="tr('Ausgaben / Monat')"
-        :value="money(summary.monthlyCents)"
-        :context="
-          tr('{0} {1} · Planwert · Analyse öffnen', [
-            summary.count,
-            summary.count === 1 ? tr('Vertrag') : tr('Verträge'),
-          ])
-        "
+        variant="stat"
+        :label="tr('Geplant übrig')"
+        :value="money(summary.monthlyRemainderCents ?? String(-BigInt(summary.monthlyCents)))"
         financial
       />
-      <FinanceTile variant="insight" :label="tr('Einnahmen / Monat')" :value="tr('Nicht erfasst')" />
-      <FinanceTile variant="insight" :label="tr('Geplant übrig')" :value="tr('Nicht berechenbar')" />
     </div>
-    <SectionPanel v-if="!records.length" :title="tr('Deine Verträge')" icon="contracts" class="mb-5" compact>
-      <p class="empty-copy">{{ tr('Noch keine Verträge. Bestätige einen Vorschlag oder lege einen Vertrag an.') }}</p>
+    <div class="toolbar mb-5">
+      <UBadge variant="outline" color="neutral">{{ tr('Planwerte') }}</UBadge>
+      <UButton to="/contracts/analysis" variant="ghost" size="sm">{{ tr('Geplante Vertragskosten') }} ↗</UButton>
+    </div>
+    <SectionPanel v-if="!contractGroups.length" :title="tr('Deine Verträge')" class="mb-5" compact>
+      <p class="empty-copy">
+        {{ tr(records.length ? 'Keine Verträge in dieser Zahlungsrichtung.' : 'Noch keine Verträge.') }}
+      </p>
+      <UButton :disabled="loading || reviewing" variant="soft" @click="openEditor()">{{
+        tr('Vertrag anlegen')
+      }}</UButton>
     </SectionPanel>
     <SectionPanel
       v-for="group in contractGroups"
@@ -480,9 +519,17 @@ onBeforeUnmount(
             ><small>{{ contractKinds[contract.kind].label }} · {{ contract.provider }}</small></span
           ></span
         ><span
-          ><strong data-financial :class="contract.active ? 'amount-expense' : 'muted'"
+          ><strong
+            data-financial
+            :class="contract.active ? (contract.direction === 'INCOME' ? 'positive' : 'negative') : 'muted'"
             ><template v-if="!amountsMasked()">{{
-              contract.nextAmountCents ? money(contract.nextAmountCents) : '—'
+              contract.nextAmountCents
+                ? money(
+                    contract.direction === 'INCOME'
+                      ? contract.nextAmountCents
+                      : String(-BigInt(contract.nextAmountCents)),
+                  )
+                : '—'
             }}</template
             ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
           ><small>{{
@@ -566,6 +613,11 @@ onBeforeUnmount(
   gap: 16px;
 }
 .contract-list-row strong {
+  overflow-wrap: anywhere;
+}
+.finance-contract-heading > :first-child,
+.contract-provider :deep(.section-heading h2) {
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 </style>

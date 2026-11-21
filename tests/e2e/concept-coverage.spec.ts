@@ -231,13 +231,13 @@ for (const language of ['de', 'en'] as const) {
         row.name === conceptFixtureLabels.contract,
     )!;
     const routes: [string, string, string][] = [
-      ['seite-03', '/?month=2026-11', 'Finanzieller Überblick'],
-      ['seite-04', '/transactions', 'Deine Umsätze'],
+      ['seite-03', '/?month=2026-11', 'Übersicht'],
+      ['seite-04', '/transactions', 'Umsätze'],
       ['seite-05', `/transactions/${booking.id}`, 'Umsatzdetails'],
       ['analysis-details', '/analytics/details?from=2026-10-01&to=2026-10-31', 'Einnahmen und Ausgaben'],
       ['seite-07', '/categories?month=2026-11', 'Kategorien & Auswertung'],
       ['seite-08', '/contracts', 'Verträge'],
-      ['konten', '/accounts', 'Deine Konten'],
+      ['konten', '/accounts', 'Konten'],
       ['konto-detail', `/accounts/${checking.id}`, checking.name],
       ['scalable', '/wealth', 'Vermögen'],
       ['sparplaene', '/wealth/demo/plans', 'Demo-Sparpläne'],
@@ -273,10 +273,13 @@ for (const language of ['de', 'en'] as const) {
         await expect(bookings.getByText(/Nicht kategorisiert/)).toHaveCount(0);
       }
       if (language === 'en' && id === 'seite-06') {
-        await expect(page.locator('.contract-list-row').filter({ hasText: 'Uncategorised' }).first()).toBeVisible();
-        await expect(page.getByRole('link').filter({ hasText: 'Unknown merchant' }).first()).toBeVisible();
-        await expect(page.getByText('Nicht kategorisiert', { exact: true })).toHaveCount(0);
-        await expect(page.getByText('Unbekannter Händler', { exact: true })).toHaveCount(0);
+        const details = page.locator('.finance-full-analysis');
+        await details.locator('summary').click();
+        await expect(details.locator('.contract-list-row').filter({ hasText: 'Uncategorised' }).first()).toBeVisible();
+        await expect(details.getByRole('link').filter({ hasText: 'Unknown merchant' }).first()).toBeVisible();
+        await expect(details.getByText('Nicht kategorisiert', { exact: true })).toHaveCount(0);
+        await expect(details.getByText('Unbekannter Händler', { exact: true })).toHaveCount(0);
+        await details.locator('summary').click();
       }
       if (language === 'en' && id === 'seite-10')
         await expect(page.getByRole('button').filter({ hasText: 'No category' }).first()).toBeVisible();
@@ -349,7 +352,11 @@ for (const language of ['de', 'en'] as const) {
       await capture(page, info, language, 'seite-22', evidence);
       await page.keyboard.press('Escape');
       await page.goto('/contracts');
-      await page.getByRole('button', { name: label('Vertrag anlegen'), exact: true }).click();
+      await page.getByRole('button', { name: label('Weitere Aktionen'), exact: true }).click();
+      await page
+        .getByRole('button', { name: label('Vertrag anlegen'), exact: true })
+        .last()
+        .click();
       await expect(page.getByRole('dialog', { name: label('Vertrag anlegen'), exact: true })).toBeVisible();
       await capture(page, info, language, 'seite-23', evidence);
       await page.keyboard.press('Escape');

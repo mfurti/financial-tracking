@@ -32,9 +32,10 @@ const gradient = computed(() => {
     />
   </span>
   <span
-    v-else-if="kind === 'ring' && gradient"
+    v-else-if="kind === 'ring'"
     class="mini-finance-ring"
-    :style="{ background: gradient }"
+    :class="{ 'mini-finance-ring--empty': !gradient }"
+    :style="gradient ? { background: gradient } : undefined"
     aria-hidden="true"
   />
 </template>

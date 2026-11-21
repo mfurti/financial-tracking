@@ -123,6 +123,7 @@ export class ContractsService {
                 name: contract.name,
                 provider: contract.provider,
                 kind: contract.kind,
+                direction: contract.direction,
                 accountId: contract.accountId,
                 categoryId: contract.categoryId,
                 revisionId: occurrence.revisionId,
@@ -140,10 +141,12 @@ export class ContractsService {
               }),
             );
             const month = byMonth.get(occurrence.dueDate.slice(0, 7))!;
-            month.plannedCents = String(BigInt(month.plannedCents) + occurrence.amountCents);
+            if (contract.direction === 'EXPENSE') {
+              month.plannedCents = String(BigInt(month.plannedCents) + occurrence.amountCents);
+              total += occurrence.amountCents;
+            }
             month.eventCount++;
             if (payment) month.paymentCount++;
-            total += occurrence.amountCents;
           }
         }
         events.sort(
@@ -202,6 +205,8 @@ export class ContractsService {
       /** Contract and safe initial links commit together. */ async (tx) => {
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(16817834)::text`;
         if (input.suggestionKey) {
+          if (input.direction === 'INCOME')
+            throw new AppError('CONTRACT_DIRECTION', 'Ausgabenvorschläge bleiben Ausgaben.');
           const prior = await tx.contractSuggestionDecision.findUnique({ where: { key: input.suggestionKey } });
           if (prior?.state === 'CONFIRMED' && prior.contractId) return prior.contractId;
           if (
@@ -218,6 +223,7 @@ export class ContractsService {
             name: input.name,
             provider: input.provider,
             kind: input.kind,
+            direction: input.direction ?? 'EXPENSE',
             accountId: input.accountId,
             categoryId: input.categoryId,
             startDate: new Date(input.startDate),
@@ -365,8 +371,17 @@ export class ContractsService {
           where: { id: input.transactionId },
           include: { contractPayment: true },
         });
-        if (!row || !occurrence || row.status !== 'BOOKED' || row.isTransfer || row.amountCents >= 0n)
-          throw new AppError('CONTRACT_PAYMENT', 'Wähle eine gebuchte Ausgabe und eine gültige Vertragsfälligkeit.');
+        if (
+          !row ||
+          !occurrence ||
+          row.status !== 'BOOKED' ||
+          row.isTransfer ||
+          (contract.direction === 'INCOME' ? row.amountCents <= 0n : row.amountCents >= 0n)
+        )
+          throw new AppError(
+            'CONTRACT_PAYMENT',
+            'Wähle eine gebuchte Zahlung in der Vertragsrichtung und eine gültige Fälligkeit.',
+          );
         if (
           row.contractPayment ||
           contract.payments.some(

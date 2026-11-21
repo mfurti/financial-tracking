@@ -16,7 +16,9 @@ test('merchant and category details retain exact scope, refunds and return navig
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await page.waitForURL(/** Await the real session before opening scoped analysis. */ (url) => url.pathname === '/');
   await page.goto('/analytics?from=2026-10-01&to=2026-10-31');
-  await page.getByRole('link', { name: new RegExp(conceptFixtureLabels.merchant) }).click();
+  const details = page.locator('.finance-full-analysis');
+  await details.locator('summary').click();
+  await details.getByRole('link', { name: new RegExp(conceptFixtureLabels.merchant) }).click();
   await expect(page).toHaveURL(/analytics\/details\?.*merchantKey=/);
   const detailUrl = page.url();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(conceptFixtureLabels.merchant);
@@ -49,7 +51,8 @@ test('merchant and category details retain exact scope, refunds and return navig
   await expect(page.getByRole('link', { name: /Einkauf Oktober/ })).toHaveCount(1);
   await expect(page.getByRole('link', { name: /Kontolose CSV Ausgabe/ })).toHaveCount(0);
   await page.goto('/analytics?from=2026-10-01&to=2026-10-31&unassigned=true');
-  await page.getByRole('link', { name: /Nicht kategorisiert/ }).click();
+  await details.locator('summary').click();
+  await details.getByRole('link', { name: /Nicht kategorisiert/ }).click();
   await expect(page).toHaveURL(/analytics\/details/);
   await expect(page).toHaveURL(/unassigned=true/);
   await expect(page.locator('[data-analysis-total]')).toHaveText('1,23 €');

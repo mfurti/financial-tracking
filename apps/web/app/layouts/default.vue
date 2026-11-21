@@ -11,7 +11,7 @@ const primaryLinks = [
   { to: '/accounts', label: tr('Konten'), icon: 'accounts' },
   { to: '/analytics', label: tr('Analysen'), icon: 'categories' },
   { to: '/contracts', label: tr('Verträge'), icon: 'contracts' },
-  { to: '/wealth', label: tr('Vermögen'), icon: 'history' },
+  { to: '/wealth', label: tr('Vermögen'), icon: 'wealth' },
 ] as const;
 const accountMenu = [
   { to: '/settings/profile', label: 'Persönliche Angaben' },
@@ -72,7 +72,7 @@ async function logout() {
           ><span class="brand-mark">H</span><strong>{{ tr('Haushaltsbuch') }}</strong></UButton
         >
         <div class="finance-tools">
-          <FinanceDialog v-model:open="accountMenuOpen" :title="tr('Accountverwaltung')">
+          <FinanceDialog v-model:open="accountMenuOpen" :title="tr('Accountverwaltung')" panel="profile">
             <template #trigger>
               <UButton variant="ghost" color="neutral" class="finance-profile" :aria-label="tr('Accountverwaltung')">
                 <span aria-hidden="true">{{ api.session.value?.username?.slice(0, 1).toUpperCase() }}</span>

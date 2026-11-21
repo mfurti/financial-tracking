@@ -49,8 +49,11 @@ test('analysis modules retain selected order, cancellation and chart preference 
         ),
     ),
   ).toEqual(['merchants', 'months', 'history', 'reserve', 'contracts']);
+  const details = page.locator('.finance-full-analysis');
+  await details.locator('summary').click();
   await page.getByRole('button', { name: 'Ringdiagramme', exact: true }).click();
   await page.reload();
+  await details.locator('summary').click();
   await expect(modules).toHaveCount(5);
   await expect(modules.first()).toHaveAttribute('data-analysis-module', 'merchants');
   await expect(page.getByRole('button', { name: 'Ringdiagramme', exact: true })).toHaveAttribute(

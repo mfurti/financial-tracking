@@ -4,7 +4,11 @@ import type { Contract, ContractRevision } from './generated/prisma/client.js';
 import { isoDay } from './contract-schedule.js';
 
 /** Persistence projection required for today's contract-only monthly plan. */
-export type CostContract = Contract & { revisions: ContractRevision[]; category: { name: string } | null };
+export type CostContract = Omit<Contract, 'direction'> & {
+  direction?: Contract['direction'];
+  revisions: ContractRevision[];
+  category: { name: string } | null;
+};
 const labels: Record<string, string> = {
   SUBSCRIPTION: 'Abo',
   RENT: 'Miete',
@@ -16,6 +20,8 @@ const labels: Record<string, string> = {
 
 /** Sum the same rounded per-contract cents shown in every row, never bank transactions. */
 export function summarizeContracts(records: CostContract[], today: string) {
+  let income = 0n;
+  let incomeCount = 0;
   const contracts: z.infer<typeof c.contractCostSchema>[] = [];
   for (const record of records) {
     if (isoDay(record.startDate) > today || (record.endDate && isoDay(record.endDate) < today)) continue;
@@ -31,6 +37,11 @@ export function summarizeContracts(records: CostContract[], today: string) {
     if (!revision) continue;
     const divisor = BigInt(revision.intervalMonths);
     const monthlyCents = (revision.amountCents + divisor / 2n) / divisor;
+    if (record.direction === 'INCOME') {
+      income += monthlyCents;
+      incomeCount++;
+      continue;
+    }
     contracts.push(
       c.contractCostSchema.parse({
         id: record.id,
@@ -71,16 +82,14 @@ export function summarizeContracts(records: CostContract[], today: string) {
             : 1,
     );
   }
+  const expenses = contracts.reduce((total, row) => total + BigInt(row.monthlyCents), 0n);
   return c.contractSummarySchema.parse({
     asOf: today,
     count: contracts.length,
-    monthlyCents: String(
-      contracts.reduce(
-        /** Accumulate exact rounded cents, including beyond individual BIGINT limits. */ (total, row) =>
-          total + BigInt(row.monthlyCents),
-        0n,
-      ),
-    ),
+    monthlyCents: String(expenses),
+    monthlyIncomeCents: String(income),
+    monthlyRemainderCents: String(income - expenses),
+    incomeCount,
     contracts,
     categories: groups('category'),
     kinds: groups('kind'),

@@ -284,6 +284,7 @@ model Contract {
   name String
   provider String
   kind String
+  direction String @default("EXPENSE")
   suggestionDecision ContractSuggestionDecision?
   accountId String? @db.Uuid
   account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)

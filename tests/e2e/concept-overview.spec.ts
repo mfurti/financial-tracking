@@ -111,7 +111,8 @@ test('planned payment widget separates failure, empty plan and recovered real ob
   } finally {
     releaseEmpty();
   }
-  await expect(payments).toContainText('Keine anstehenden bestätigten Vertragszahlungen');
+  await expect(payments.getByText('Keine anstehenden Vertragszahlungen.', { exact: true })).toBeVisible();
+  await expect(payments.locator('.contract-list-row')).toHaveCount(0);
   await page.unroute('**/api/v1/contracts');
   await page.reload();
   await expect(payments).toContainText(conceptFixtureLabels.contract);

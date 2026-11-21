@@ -20,6 +20,7 @@ const form = reactive({
   name: '',
   provider: '',
   kind: 'SUBSCRIPTION',
+  direction: 'EXPENSE',
   accountId: '',
   categoryId: '',
   startDate: '',
@@ -36,6 +37,7 @@ watchEffect(
       name: record?.name ?? suggestion?.provider ?? '',
       provider: record?.provider ?? suggestion?.provider ?? '',
       kind: record?.kind ?? 'SUBSCRIPTION',
+      direction: record?.direction ?? 'EXPENSE',
       accountId: record?.accountId ?? suggestion?.accountId ?? '',
       categoryId: record?.categoryId ?? '',
       startDate:
@@ -81,6 +83,7 @@ async function save() {
       ? c.contractPatchSchema.parse(metadata)
       : c.contractInputSchema.parse({
           ...metadata,
+          direction: form.direction,
           startDate: form.startDate,
           amountCents: euroCents(form.amountEuro),
           intervalMonths: form.intervalMonths,
@@ -146,6 +149,16 @@ onBeforeUnmount(
           ]"
       /></UFormField>
       <template v-if="!contract">
+        <UFormField v-if="!suggestion" name="direction" :label="tr('Zahlungsrichtung')">
+          <ChoiceSelect
+            v-model="form.direction"
+            :searchable="false"
+            :items="[
+              { label: tr('Ausgaben'), value: 'EXPENSE' },
+              { label: tr('Einnahmen'), value: 'INCOME' },
+            ]"
+          />
+        </UFormField>
         <UFormField name="startDate" :label="tr('Erste Fälligkeit')"
           ><DatePicker v-model="form.startDate" :label="tr('Erste Fälligkeit')"
         /></UFormField>

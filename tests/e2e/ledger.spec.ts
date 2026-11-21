@@ -14,7 +14,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   await page.goto('/?month=2026-11');
   await expect(page.getByText('Noch kein Saldo', { exact: true })).toBeVisible();
   expect(
@@ -45,7 +45,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
       'latin1',
     ),
   });
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   await expect(
     page
       .getByRole('alert')
@@ -118,7 +118,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
   await page.getByRole('button', { name: 'Als Umbuchung markieren' }).click();
   await expect(page.getByRole('button', { name: 'Umbuchung aufheben' })).toBeVisible();
   await page.goto('/accounts');
-  await expect(page.getByRole('heading', { name: 'Deine Konten', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Konten', exact: true })).toBeVisible();
   await page.goto('/connections');
   await expect(page.getByRole('heading', { name: 'Bankverbindungen', exact: true })).toBeVisible();
   await page.goto('/settings');

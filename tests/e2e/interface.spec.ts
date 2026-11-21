@@ -35,7 +35,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   await page.goto('/?month=2026-11');
   const largerHeader = await page.addStyleTag({ content: '.topbar { font-size: 16px; }' });
   expect(
@@ -49,7 +49,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
       element.parentNode?.removeChild(element);
     },
   );
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Zum Inhalt springen' })).toBeFocused();
   await page.keyboard.press('Enter');
@@ -80,18 +80,19 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
           /** Require the shared surfaces and text to follow the active theme. */ () =>
             getComputedStyle(document.body).backgroundColor,
         ),
-      ).toBe(mode === 'Dunkel' ? 'rgb(19, 19, 31)' : 'rgb(246, 247, 251)');
+      ).toBe(mode === 'Dunkel' ? 'rgb(31, 36, 48)' : 'rgb(246, 247, 251)');
       if (path.startsWith('/?'))
         await page.screenshot({ path: `.local/dashboard-${mode}-${info.project.name}.png`, fullPage: true });
     }
   }
   await page.goto('/transactions?from=2026-11-01&to=2026-11-30');
-  await page.getByText('Weitere Filter', { exact: true }).click();
+  await page.getByRole('button', { name: 'Weitere Filter', exact: true }).click();
   await page.getByRole('button', { name: 'Von auswählen', exact: true }).click();
   await page.screenshot({ path: `.local/date-picker-${info.project.name}.png` });
   await page.getByRole('button', { name: /15.*November.*2026/ }).click();
   await page.getByRole('button', { name: 'Filtern', exact: true }).click();
   await expect(page).toHaveURL(/from=2026-11-15/);
+  await page.getByRole('button', { name: 'Weitere Filter', exact: true }).click();
   await page.getByRole('button', { name: 'Von löschen', exact: true }).click();
   await page.getByRole('button', { name: 'Filtern', exact: true }).click();
   await expect(page).not.toHaveURL(/from=/);

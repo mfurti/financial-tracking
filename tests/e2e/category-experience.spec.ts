@@ -9,7 +9,7 @@ test('monthly categories explain real expenses and lead to persisted assignments
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   if (info.project.name === 'mobile') {
     await page.getByRole('link', { name: 'Mehr', exact: true }).click();
     await expect(page).toHaveURL(/\/more$/);
@@ -69,7 +69,12 @@ test('monthly categories explain real expenses and lead to persisted assignments
   );
   await page.getByRole('link', { name: 'Buchungen zuordnen', exact: true }).click();
   await expect(page).toHaveURL(/uncategorized=true/);
-  await expect(page.getByLabel('Ohne Kategorie', { exact: true })).toBeChecked();
+  const filters = page.getByRole('button', { name: 'Weitere Filter', exact: true });
+  await filters.click();
+  const uncategorized = page.getByLabel('Ohne Kategorie', { exact: true });
+  await expect(uncategorized).toBeChecked();
+  await filters.click();
+  await expect(uncategorized).toBeHidden();
   await choose(page, page.getByLabel(`Kategorie für ${label}`, { exact: true }), label);
   await expect(page.getByRole('link', { name: new RegExp(label) })).not.toBeVisible();
   await page.goto('/categories?month=2031-03');
@@ -161,7 +166,7 @@ test('monthly categories explain real expenses and lead to persisted assignments
     buffer: Buffer.from(`Datum;Betrag;Text;Bankreferenz\n12.05.2032;-19,25;${ruleText};rule-${info.project.name}\n`),
   });
   await expect(page).toHaveURL(/month=2032-05/);
-  await page.goto(`/transactions?search=${ruleText}`);
+  await page.goto(`/transactions?from=2032-05-01&to=2032-05-31&search=${encodeURIComponent(ruleText)}`);
   await expect(page.getByLabel(`Kategorie für ${ruleText}`, { exact: true })).toContainText('Mode');
   await expect(page.getByRole('link', { name: new RegExp(ruleText) })).toContainText(
     `Regel: Mode ${info.project.name}`,

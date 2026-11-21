@@ -2,7 +2,10 @@ import type { Contract, ContractRevision, Transaction, Prisma } from './generate
 import { AppError } from './errors.js';
 
 /** A persisted contract with immutable, time-effective payment rules. */
-export type ScheduledContract = Contract & { revisions: ContractRevision[] };
+export type ScheduledContract = Omit<Contract, 'direction'> & {
+  direction?: Contract['direction'];
+  revisions: ContractRevision[];
+};
 /** A forecast occurrence has no bank identity and is never a ledger transaction. */
 export type ContractOccurrence = { dueDate: string; amountCents: bigint; revisionId: string };
 /** Read the local business day independently of the execution host's timezone. */
@@ -61,7 +64,7 @@ export function paymentMatches(contract: ScheduledContract, occurrence: Contract
   return (
     row.status === 'BOOKED' &&
     !row.isTransfer &&
-    row.amountCents === -occurrence.amountCents &&
+    row.amountCents === (contract.direction === 'INCOME' ? occurrence.amountCents : -occurrence.amountCents) &&
     row.counterpartyName?.trim().toLocaleLowerCase('de-DE') === contract.provider.trim().toLocaleLowerCase('de-DE') &&
     (!contract.accountId || contract.accountId === row.accountId) &&
     Math.abs(row.bookingDate.getTime() - new Date(occurrence.dueDate).getTime()) <= 5 * 86400000
@@ -72,11 +75,13 @@ export async function matchContractPayments(tx: Prisma.TransactionClient) {
   await tx.$queryRaw`SELECT pg_advisory_xact_lock(16817834)::text`;
   const contracts = await tx.contract.findMany({ include: { revisions: true, payments: true } });
   if (!contracts.length) return;
+  const hasIncome = contracts.some((contract) => contract.direction === 'INCOME');
+  const hasExpense = contracts.some((contract) => contract.direction !== 'INCOME');
   const rows = await tx.transaction.findMany({
     where: {
       status: 'BOOKED',
       isTransfer: false,
-      amountCents: { lt: 0n },
+      amountCents: hasIncome && hasExpense ? { not: 0n } : hasIncome ? { gt: 0n } : { lt: 0n },
       contractAutoBlocked: false,
       contractPayment: null,
     },

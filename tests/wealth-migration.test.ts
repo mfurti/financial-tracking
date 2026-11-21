@@ -3,7 +3,7 @@ import { Client } from 'pg';
 import { randomUUID } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { testDatabase } from './database.js';
+import { seedHistoricalContract, testDatabase } from './database.js';
 import { LedgerService } from '../apps/api/src/ledger.js';
 
 const migration = '202611180001_reserve_wealth';
@@ -36,7 +36,7 @@ describe('additive reserve and recorded-wealth migration', /** Upgrade represent
   let accountId: string;
   beforeAll(
     /** Apply only pre-feature migrations to a fresh disposable database, then populate every existing table. */ async () => {
-      resource = await testDatabase({ empty: true });
+      resource = await testDatabase({ empty: true, isolated: true });
       client = new Client({ connectionString: resource.url });
       await client.connect();
       for (const name of (await readdir(migrationRoot))
@@ -144,28 +144,18 @@ describe('additive reserve and recorded-wealth migration', /** Upgrade represent
       await db.assignmentReceipt.create({
         data: { id: randomUUID(), inputHash: 'b'.repeat(64), result: { updated: 0, results: [] } },
       });
-      const contract = await db.contract.create({
-        data: {
-          name: 'Legacy contract',
-          provider: 'Legacy provider',
-          kind: 'OTHER',
-          accountId,
-          startDate: new Date('2035-01-31'),
-          revisions: { create: { effectiveDate: new Date('2035-01-31'), amountCents: 1234n, intervalMonths: 1 } },
-        },
-        include: { revisions: true },
-      });
+      const { contractId, revisionId } = await seedHistoricalContract(client, accountId);
       await db.contractPayment.create({
         data: {
-          contractId: contract.id,
-          revisionId: contract.revisions[0]!.id,
+          contractId,
+          revisionId,
           dueDate: new Date('2035-01-31'),
           transactionId: transaction.id,
           source: 'MANUAL',
         },
       });
       await db.contractSuggestionDecision.create({
-        data: { key: 'c'.repeat(64), state: 'CONFIRMED', contractId: contract.id },
+        data: { key: 'c'.repeat(64), state: 'CONFIRMED', contractId },
       });
     },
   );

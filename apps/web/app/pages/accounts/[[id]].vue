@@ -40,26 +40,25 @@ const active = computed(
   /** Inactive accounts retain their own history without inflating the current observed summary. */ () =>
     accounts.value.filter(/** Include only explicitly active accounts. */ (row) => row.isActive),
 );
-const known = computed(
-  /** Unknown BOOKED observations never become invented zero balances. */ () =>
-    active.value.flatMap(
-      /** Sum the latest actual booked observation of each active account only. */ (row) => {
-        const value = booked(row);
-        return value ? [value] : [];
-      },
-    ),
-);
-const total = computed(
-  /** Aggregate observed integer cents without passing through floating-point numbers. */ () =>
-    known.value.length
-      ? String(
-          known.value.reduce(
-            /** Preserve signed source balances exactly. */ (sum, balance) => sum + BigInt(balance.amountCents),
-            0n,
-          ),
-        )
-      : null,
-);
+/** A recorded balance is known only for a real active EUR account with a booked observation. */
+function knownTotal(rows: readonly Account[]) {
+  const balances = rows.filter((row) => row.currency === 'EUR').flatMap((row) => booked(row) ?? []);
+  return balances.length ? balances.reduce((sum, value) => sum + BigInt(value.amountCents), 0n) : null;
+}
+const balanceSummary = computed(() => {
+  const providers = new Set(
+    connections.value
+      .filter((connection) => /^scalable(?: capital)?$/i.test(connection.name.trim()))
+      .map((connection) => connection.id),
+  );
+  const brokerage = active.value.filter((row) => providers.has(row.bankConnectionId));
+  const bank = active.value.filter((row) => !providers.has(row.bankConnectionId));
+  return [
+    { label: 'Gesamtvermögen', balance: knownTotal(active.value) },
+    { label: 'Bankguthaben', balance: knownTotal(bank) },
+    { label: 'Scalable', balance: knownTotal(brokerage) },
+  ];
+});
 const connectionName = computed(
   /** Resolve confirmed account ownership to a persisted connection label. */ () =>
     connections.value.find(
@@ -153,12 +152,11 @@ onBeforeUnmount(
 
 <template>
   <div class="page-heading">
-    <h1>{{ account && route.params.id ? account.name : route.params.id ? tr('Kontodetails') : tr('Deine Konten') }}</h1>
-    <div class="toolbar">
-      <UButton v-if="route.params.id" to="/accounts" variant="soft">{{ tr('Alle Konten') }}</UButton
-      ><UButton v-else to="/accounts/add">{{ tr('Konto hinzufügen') }}</UButton
-      ><UButton to="/connections" variant="soft">{{ tr('Bankverbindungen') }}</UButton
-      ><UButton :disabled="loading || busy" variant="ghost" @click="load">{{ tr('Aktualisieren') }}</UButton>
+    <h1>{{ account && route.params.id ? account.name : route.params.id ? tr('Kontodetails') : tr('Konten') }}</h1>
+    <div v-if="route.params.id" class="toolbar">
+      <UButton to="/accounts" variant="soft">{{ tr('Alle Konten') }}</UButton>
+      <UButton to="/connections" variant="soft">{{ tr('Bankverbindungen') }}</UButton>
+      <UButton :disabled="loading || busy" variant="ghost" @click="load">{{ tr('Aktualisieren') }}</UButton>
     </div>
   </div>
   <UAlert v-if="loadError" role="alert" color="error" :description="loadError" class="mb-4" />
@@ -166,7 +164,7 @@ onBeforeUnmount(
   <FinanceTile v-if="loading" :label="tr('Konten')" variant="stat" state="loading" />
   <template v-else-if="!loadError">
     <template v-if="!route.params.id">
-      <div class="toolbar mb-4">
+      <div class="toolbar finance-accounts-actions">
         <ChoiceSelect
           v-model="accountType"
           :aria-label="tr('Kontotyp')"
@@ -175,15 +173,33 @@ onBeforeUnmount(
             ...Object.entries(accountTypes).map(([value, label]) => ({ value, label })),
           ]"
         />
-        <UButton to="/wealth" variant="ghost">{{ tr('Reserve & Vermögen') }}</UButton>
+        <UButton to="/accounts/add">{{ tr('Konto hinzufügen') }}</UButton>
+        <UButton to="/transactions?period=all&amp;mode=transfer" variant="soft">{{ tr('Geld verschieben') }}</UButton>
+        <UPopover>
+          <UButton variant="ghost" color="neutral" :aria-label="tr('Weitere Aktionen')"
+            ><FinanceIcon name="more"
+          /></UButton>
+          <template #content
+            ><div class="finance-overview-actions">
+              <UButton to="/connections" variant="ghost">{{ tr('Bankverbindungen') }}</UButton>
+              <UButton to="/wealth" variant="ghost">{{ tr('Reserve & Vermögen') }}</UButton>
+              <UButton :disabled="loading || busy" variant="ghost" @click="load">{{ tr('Aktualisieren') }}</UButton>
+              <small>{{ tr('Nur bekannte EUR-Kontostände') }}</small>
+            </div></template
+          >
+        </UPopover>
       </div>
-      <FinanceTile
-        :label="tr('Bekannte Kontostände')"
-        :value="total === null ? tr('Noch kein Saldo') : money(total)"
-        :financial="total !== null"
-        variant="stat"
-        :context="tr('{0} von {1} aktiven Konten · fehlende Salden bleiben unbekannt', [known.length, active.length])"
-      />
+      <div class="finance-summary-grid finance-account-summary">
+        <FinanceTile
+          v-for="item in balanceSummary"
+          :key="item.label"
+          :class="{ 'finance-summary-primary': item.label === 'Gesamtvermögen' }"
+          :label="tr(item.label)"
+          :value="item.balance === null ? tr('Noch kein Saldo') : money(item.balance)"
+          :financial="item.balance !== null"
+          variant="stat"
+        />
+      </div>
       <div class="finance-account-grid mt-5">
         <FinanceTile
           v-for="row in visibleAccounts"

@@ -10,9 +10,10 @@ test('confirmed recurring payments keep real bookings, expose contract badges an
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   await page.goto('/contracts');
-  await page.getByRole('button', { name: 'Vertrag anlegen', exact: true }).click();
+  await page.getByRole('button', { name: 'Weitere Aktionen', exact: true }).click();
+  await page.getByRole('button', { name: 'Vertrag anlegen', exact: true }).last().click();
   const costDialog = page.getByRole('dialog', { name: 'Vertrag anlegen', exact: true });
   await expect(costDialog).toHaveClass(/finance-dialog/);
   await costDialog.getByLabel('Vertragsname', { exact: true }).fill(`Jahreskosten ${info.project.name}`);
@@ -153,8 +154,11 @@ test('confirmed recurring payments keep real bookings, expose contract badges an
   await expect(page).toHaveURL(/\/contracts\/[a-f0-9-]+$/);
   await expect(page.getByRole('heading', { level: 1, name: provider })).toBeVisible();
   const contractPath = new URL(page.url()).pathname;
-  await page.screenshot({ path: `.local/contracts-${info.project.name}.png`, fullPage: true });
   await expect(page.getByRole('link', { name: 'Automatisch zugeordnet', exact: true })).toHaveCount(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+  await page.screenshot({ path: `.local/contracts-${info.project.name}.png`, fullPage: true });
   const payments = await (
     await page.request.get(`/api/v1${contractPath}/payments?from=2033-01-01&to=2033-03-31`)
   ).json();

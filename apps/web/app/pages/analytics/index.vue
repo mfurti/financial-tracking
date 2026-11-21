@@ -4,6 +4,13 @@ import * as c from '@financial-tracking/contracts';
 import type { AnalysisModuleId } from '../../utils/workspace-preferences';
 const api = useApi();
 const route = useRoute();
+const fullAnalysisOpen = ref(Boolean(route.hash));
+watch(
+  () => route.hash,
+  (hash) => {
+    if (hash) fullAnalysisOpen.value = true;
+  },
+);
 const router = useRouter();
 const { preferences, updatePreferences } = useWorkspacePreferences();
 const availableModules: readonly AnalysisModuleId[] = [
@@ -130,10 +137,7 @@ const reasons: Record<string, string> = {
   PARTIAL: tr('Nur teilweise ausgewählt'),
 };
 const classificationLabels = { FIXED: tr('Fix'), VARIABLE: tr('Variabel'), UNCLASSIFIED: tr('Nicht eingeordnet') };
-const navigation = [
-  { label: tr('Analysen'), to: '/analytics', exact: true },
-  { label: tr('Kategorien & Regeln'), to: '/categories' },
-];
+
 /** Read exactly the chosen range/identity filters for both report and drill-down. */
 function filters() {
   return c.analyticsOverviewQuerySchema.parse({
@@ -251,7 +255,7 @@ onBeforeUnmount(
 </script>
 
 <template>
-  <div class="page-heading">
+  <div class="page-heading finance-analysis-heading">
     <div>
       <h1>{{ tr('Analysen') }}</h1>
     </div>
@@ -263,61 +267,65 @@ onBeforeUnmount(
             'Gebuchte Umsätze einschließlich Ohne Konto zählen. Umbuchungen und Vormerkungen sind ausgeschlossen. Erstattungen sind Einnahmen. Durchschnitte berücksichtigen vollständig ausgewählte, abgeschlossene Monate mit Buchungen; vorhandene Daten beweisen keine vollständige Bankhistorie.',
           )
         "
-      /><UButton to="/imports/csv">{{ tr('CSV importieren') }}</UButton>
+      />
+      <details class="finance-analysis-filters">
+        <summary :aria-label="tr('Zeitraum und Filter')"><FinanceIcon name="filter" /></summary>
+        <div class="panel finance-analysis-filter-panel">
+          <div class="toolbar mb-4">
+            <UButton
+              v-for="count in [3, 6, 12]"
+              :key="count"
+              color="neutral"
+              variant="outline"
+              :disabled="busy"
+              @click="preset(count)"
+              >{{ count }} {{ tr('Monate') }}</UButton
+            >
+          </div>
+          <HelpPopover
+            :title="tr('Zeitraum')"
+            :text="
+              tr(
+                'Schnellwahl: abgeschlossene Monate. Eigener Zeitraum: maximal 36 Monate. Laufende Monate zählen zu den Summen, aber nicht zum Durchschnitt.',
+              )
+            "
+            class="mb-4"
+          />
+          <form class="filter-grid" @submit.prevent="apply">
+            <UFormField :label="tr('Zeitraum von')"
+              ><DatePicker v-model="from" :label="tr('Zeitraum von')" /></UFormField
+            ><UFormField :label="tr('Zeitraum bis')"><DatePicker v-model="to" :label="tr('Zeitraum bis')" /></UFormField
+            ><UFormField :label="tr('Konto')"
+              ><!-- Filter real account identities only. --><AccountScopeSelect
+                v-model:account-id="accountId"
+                v-model:group-id="groupId"
+                :accounts="accounts" /></UFormField
+            ><UFormField :label="tr('Kategorie')"
+              ><ChoiceSelect
+                v-model="categoryId"
+                :items="[
+                  { label: tr('Alle Kategorien'), value: '' },
+                  { label: tr('Nicht kategorisiert'), value: 'UNCATEGORIZED' },
+                  ...categories.map(
+                    /** Existing category IDs drive both report and transactions. */ (category) => ({
+                      label: category.name,
+                      value: category.id,
+                    }),
+                  ),
+                ]" /></UFormField
+            ><UButton type="submit" :loading="busy">{{ tr('Auswertung anzeigen') }}</UButton>
+          </form>
+          <UButton to="/imports/csv" variant="ghost" class="mt-3">{{ tr('CSV importieren') }}</UButton>
+        </div>
+      </details>
     </div>
   </div>
-  <UNavigationMenu :items="navigation" class="mb-5" :aria-label="tr('Analysebereiche')" />
-  <details class="panel mb-5 finance-analysis-filters">
-    <summary>{{ tr('Zeitraum und Filter') }}</summary>
-    <div class="toolbar mb-4">
-      <UButton
-        v-for="count in [3, 6, 12]"
-        :key="count"
-        color="neutral"
-        variant="outline"
-        :disabled="busy"
-        @click="preset(count)"
-        >{{ count }} {{ tr('Monate') }}</UButton
-      >
-    </div>
-    <HelpPopover
-      :title="tr('Zeitraum')"
-      :text="
-        tr(
-          'Schnellwahl: abgeschlossene Monate. Eigener Zeitraum: maximal 36 Monate. Laufende Monate zählen zu den Summen, aber nicht zum Durchschnitt.',
-        )
-      "
-      class="mb-4"
-    />
-    <form class="filter-grid" @submit.prevent="apply">
-      <UFormField :label="tr('Zeitraum von')"><DatePicker v-model="from" :label="tr('Zeitraum von')" /></UFormField
-      ><UFormField :label="tr('Zeitraum bis')"><DatePicker v-model="to" :label="tr('Zeitraum bis')" /></UFormField
-      ><UFormField :label="tr('Konto')"
-        ><!-- Filter real account identities only. --><AccountScopeSelect
-          v-model:account-id="accountId"
-          v-model:group-id="groupId"
-          :accounts="accounts" /></UFormField
-      ><UFormField :label="tr('Kategorie')"
-        ><ChoiceSelect
-          v-model="categoryId"
-          :items="[
-            { label: tr('Alle Kategorien'), value: '' },
-            { label: tr('Nicht kategorisiert'), value: 'UNCATEGORIZED' },
-            ...categories.map(
-              /** Existing category IDs drive both report and transactions. */ (category) => ({
-                label: category.name,
-                value: category.id,
-              }),
-            ),
-          ]" /></UFormField
-      ><UButton type="submit" :loading="busy">{{ tr('Auswertung anzeigen') }}</UButton>
-    </form>
-  </details>
+
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <p v-if="busy" role="status">{{ tr('Auswertung wird geladen …') }}</p>
   <template v-if="report && !busy">
     <div class="finance-analysis-hub">
-      <SectionPanel :title="tr('Monatsrückblick')" icon="calendar" class="finance-analysis-top" :bare="true">
+      <SectionPanel :title="tr('Monatsrückblick')" class="finance-analysis-top finance-month-review" :bare="true">
         <FinanceTile
           v-if="latestMonth"
           :label="monthName(latestMonth.month)"
@@ -331,9 +339,16 @@ onBeforeUnmount(
           "
           actionable
           @activate="openDetail('review')"
-        />
+          ><template #graphic
+            ><span class="finance-month-badge" aria-hidden="true">{{
+              new Intl.DateTimeFormat(displayLocale(), { month: 'short', timeZone: 'UTC' }).format(
+                new Date(latestMonth.month + '-01T12:00:00Z'),
+              )
+            }}</span></template
+          ></FinanceTile
+        >
       </SectionPanel>
-      <SectionPanel :title="tr('Einnahmen und Ausgaben')" icon="categories" class="finance-analysis-top" :bare="true">
+      <SectionPanel :title="tr('Einnahmen und Ausgaben')" class="finance-analysis-top" :bare="true">
         <div class="analytics-metrics finance-analysis-insights">
           <FinanceTile
             :label="tr('Durchschnittliche Ausgaben')"
@@ -365,7 +380,9 @@ onBeforeUnmount(
               ><span :class="report.trend && BigInt(report.trend.changeCents) < 0n ? 'negative' : undefined">{{
                 report.trend ? money(report.trend.changeCents) : tr('Noch kein vergleichbarer Trend')
               }}</span></template
-            ><template #graphic><FinanceIcon name="transactions" /></template
+            ><template #graphic
+              ><FinanceIcon
+                :name="report.trend && BigInt(report.trend.changeCents) < 0n ? 'trendDown' : 'wealth'" /></template
           ></FinanceTile>
         </div>
       </SectionPanel>
@@ -380,6 +397,7 @@ onBeforeUnmount(
           :error-text="moduleErrors.history"
           :value="wealth?.preview.totalCents != null ? money(wealth.preview.totalCents) : tr('Keine bekannten Beträge')"
           :financial="wealth?.preview.totalCents != null"
+          :context="id === 'wealth' ? tr('{0} Konten mit bekanntem Saldo', [wealthAmounts.length]) : undefined"
           actionable
           @activate="openDetail(id)"
           @retry="loadWorkspaceModule('history')"
@@ -387,35 +405,12 @@ onBeforeUnmount(
           <template #graphic
             ><FinanceMiniChart v-if="id === 'distribution'" kind="ring" :values="wealthAmounts" /><FinanceIcon
               v-else
-              name="history"
+              name="wealth"
           /></template>
         </FinanceTile>
       </div>
     </SectionPanel>
-    <div class="finance-analysis-actuals">
-      <NuxtLink :to="link({ direction: 'INCOME' })"
-        >{{ tr('Einnahmen') }}
-        <strong class="positive" data-financial
-          ><template v-if="!amountsMasked()">{{ money(report.incomeCents) }}</template
-          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
-        ></NuxtLink
-      >
-      <NuxtLink :to="link({ direction: 'EXPENSE' })"
-        >{{ tr('Ausgaben') }}
-        <strong data-financial
-          ><template v-if="!amountsMasked()">{{ money(report.expenseCents) }}</template
-          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
-        ></NuxtLink
-      >
-      <span
-        >{{ tr('Saldo der Geldflüsse') }}
-        <strong data-financial
-          ><template v-if="!amountsMasked()">{{ money(report.netCents) }}</template
-          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
-        ></span
-      >
-    </div>
-    <SectionPanel :title="tr('Deine Analysen')" icon="categories" bare>
+    <SectionPanel :title="tr('Deine Analysen')" bare>
       <template #actions><AnalysisModulePicker :available="availableModules" /></template>
       <AnalysisModuleGrid
         :report="report"
@@ -447,7 +442,7 @@ onBeforeUnmount(
             actionable
             @activate="openDetail('history')"
             @retry="loadWorkspaceModule('history')"
-            ><template #graphic><FinanceIcon name="history" /></template
+            ><template #graphic><FinanceIcon name="wealth" /></template
           ></FinanceTile>
         </template>
         <template #reserve>
@@ -570,172 +565,203 @@ onBeforeUnmount(
         <UButton to="/wealth" variant="soft">{{ tr('Vermögen') }}</UButton>
       </template>
     </FinanceDialog>
-    <div class="toolbar finance-chart-choice" role="group" :aria-label="tr('Diagrammdarstellung')">
-      <UButton
-        :aria-pressed="preferences.chart === 'bar'"
-        :variant="preferences.chart === 'bar' ? 'soft' : 'ghost'"
-        @click="updatePreferences({ chart: 'bar' })"
-        >{{ tr('Balkendiagramme') }}</UButton
-      >
-      <UButton
-        :aria-pressed="preferences.chart === 'ring'"
-        :variant="preferences.chart === 'ring' ? 'soft' : 'ghost'"
-        @click="updatePreferences({ chart: 'ring' })"
-        >{{ tr('Ringdiagramme') }}</UButton
-      >
-    </div>
-    <SectionPanel
-      id="monatsverlauf"
-      :title="tr('Dein Monatsverlauf')"
-      icon="categories"
-      class="mb-5"
-      :help="
-        tr(
-          'Der Trend vergleicht den letzten geeigneten Monat mit seinem direkten Kalendervormonat. Beide müssen vollständig ausgewählt sein und Buchungen enthalten.',
-        )
-      "
+    <NuxtLink to="/categories" class="text-link finance-category-link">{{ tr('Kategorien & Regeln') }}</NuxtLink>
+    <details
+      class="finance-full-analysis"
+      :open="fullAnalysisOpen"
+      @toggle="fullAnalysisOpen = ($event.currentTarget as HTMLDetailsElement).open"
     >
-      <p v-if="preferences.chart === 'ring'" class="muted mb-4">
-        {{
-          tr(
-            'Der Ring zeigt Ausgabenanteile der Monate. Einnahmen, Ausgaben und Lücken stehen centgenau in der Tabelle.',
-          )
-        }}
-      </p>
-      <MonthlyChart :report="report" :chart="preferences.chart" @select="monthSelect" />
-      <div v-if="report.trend" class="data-context">
-        <strong
-          >{{ tr('Ausgabentrend:') }} {{ money(report.trend.changeCents)
-          }}<span v-if="report.trend.percent !== null">
-            ({{ financialPercentage(report.trend.percent) }} %)</span
-          ></strong
-        ><span
-          >{{ monthName(report.trend.month) }} {{ tr('gegenüber') }} {{ monthName(report.trend.previousMonth)
-          }}<span v-if="report.trend.percent === null"> {{ tr('· kein Prozentwert bei Nullbasis') }}</span></span
+      <summary>{{ tr('Detaillierte Auswertung') }}</summary>
+      <div class="finance-analysis-actuals">
+        <NuxtLink :to="link({ direction: 'INCOME' })"
+          >{{ tr('Einnahmen') }}
+          <strong class="positive" data-financial
+            ><template v-if="!amountsMasked()">{{ money(report.incomeCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+          ></NuxtLink
+        >
+        <NuxtLink :to="link({ direction: 'EXPENSE' })"
+          >{{ tr('Ausgaben') }}
+          <strong data-financial
+            ><template v-if="!amountsMasked()">{{ money(report.expenseCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+          ></NuxtLink
+        >
+        <span
+          >{{ tr('Saldo der Geldflüsse') }}
+          <strong data-financial
+            ><template v-if="!amountsMasked()">{{ money(report.netCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+          ></span
         >
       </div>
-      <p v-else class="muted">{{ tr('Noch kein vergleichbarer Trend.') }}</p>
-    </SectionPanel>
-    <div class="dashboard-grid mb-5">
-      <SectionPanel id="kategorien" :title="tr('Ausgaben nach Kategorien')" icon="categories">
-        <ExpenseChart
-          v-if="report.categories.length"
-          :groups="report.categories"
-          :total-cents="report.expenseCents"
-          :chart="preferences.chart"
-          :label="tr('Ausgabenanteile nach Kategorien')"
-          @select="navigateTo(categoryLink($event))"
-        />
-        <p v-else class="empty-copy">{{ tr('Keine gebuchten Ausgaben im gewählten Zeitraum.') }}</p>
+      <div class="toolbar finance-chart-choice" role="group" :aria-label="tr('Diagrammdarstellung')">
         <UButton
-          v-for="group in report.categories"
-          :key="group.categoryId ?? 'none'"
-          :to="categoryLink(group.categoryId)"
-          color="neutral"
-          variant="link"
-          class="contract-list-row"
-          ><span
-            >{{ categoryDisplayLabel(group.categoryId, group.name)
-            }}<small
-              >{{ financialPercentage(group.share * 100, { maximumFractionDigits: 1 }) }} % · {{ group.count }}
-              {{ tr('Buchungen') }}</small
-            ></span
-          ><strong>{{ money(group.expenseCents) }}</strong></UButton
+          :aria-pressed="preferences.chart === 'bar'"
+          :variant="preferences.chart === 'bar' ? 'soft' : 'ghost'"
+          @click="updatePreferences({ chart: 'bar' })"
+          >{{ tr('Balkendiagramme') }}</UButton
         >
-      </SectionPanel>
+        <UButton
+          :aria-pressed="preferences.chart === 'ring'"
+          :variant="preferences.chart === 'ring' ? 'soft' : 'ghost'"
+          @click="updatePreferences({ chart: 'ring' })"
+          >{{ tr('Ringdiagramme') }}</UButton
+        >
+      </div>
       <SectionPanel
+        id="monatsverlauf"
+        :title="tr('Dein Monatsverlauf')"
+        icon="categories"
+        class="mb-5"
         :help="
           tr(
-            'Manuelle Kennzeichnung hat Vorrang. Bestätigte Vertragszahlungen gelten sonst als fix; der Rest bleibt nicht eingeordnet.',
+            'Der Trend vergleicht den letzten geeigneten Monat mit seinem direkten Kalendervormonat. Beide müssen vollständig ausgewählt sein und Buchungen enthalten.',
           )
         "
-        :title="tr('Fix oder variabel?')"
-        icon="categories"
       >
-        <UButton
-          v-for="group in report.classification"
-          :key="group.classification"
-          :to="link({ classification: group.classification, direction: 'EXPENSE' })"
-          color="neutral"
-          variant="link"
+        <p v-if="preferences.chart === 'ring'" class="muted mb-4">
+          {{
+            tr(
+              'Der Ring zeigt Ausgabenanteile der Monate. Einnahmen, Ausgaben und Lücken stehen centgenau in der Tabelle.',
+            )
+          }}
+        </p>
+        <MonthlyChart :report="report" :chart="preferences.chart" @select="monthSelect" />
+        <div v-if="report.trend" class="data-context">
+          <strong
+            >{{ tr('Ausgabentrend:') }} {{ money(report.trend.changeCents)
+            }}<span v-if="report.trend.percent !== null">
+              ({{ financialPercentage(report.trend.percent) }} %)</span
+            ></strong
+          ><span
+            >{{ monthName(report.trend.month) }} {{ tr('gegenüber') }} {{ monthName(report.trend.previousMonth)
+            }}<span v-if="report.trend.percent === null"> {{ tr('· kein Prozentwert bei Nullbasis') }}</span></span
+          >
+        </div>
+        <p v-else class="muted">{{ tr('Noch kein vergleichbarer Trend.') }}</p>
+      </SectionPanel>
+      <div class="dashboard-grid mb-5">
+        <SectionPanel id="kategorien" :title="tr('Ausgaben nach Kategorien')" icon="categories">
+          <ExpenseChart
+            v-if="report.categories.length"
+            :groups="report.categories"
+            :total-cents="report.expenseCents"
+            :chart="preferences.chart"
+            :label="tr('Ausgabenanteile nach Kategorien')"
+            @select="navigateTo(categoryLink($event))"
+          />
+          <p v-else class="empty-copy">{{ tr('Keine gebuchten Ausgaben im gewählten Zeitraum.') }}</p>
+          <UButton
+            v-for="group in report.categories"
+            :key="group.categoryId ?? 'none'"
+            :to="categoryLink(group.categoryId)"
+            color="neutral"
+            variant="link"
+            class="contract-list-row"
+            ><span
+              >{{ categoryDisplayLabel(group.categoryId, group.name)
+              }}<small
+                >{{ financialPercentage(group.share * 100, { maximumFractionDigits: 1 }) }} % · {{ group.count }}
+                {{ tr('Buchungen') }}</small
+              ></span
+            ><strong>{{ money(group.expenseCents) }}</strong></UButton
+          >
+        </SectionPanel>
+        <SectionPanel
+          :help="
+            tr(
+              'Manuelle Kennzeichnung hat Vorrang. Bestätigte Vertragszahlungen gelten sonst als fix; der Rest bleibt nicht eingeordnet.',
+            )
+          "
+          :title="tr('Fix oder variabel?')"
+          icon="categories"
+        >
+          <UButton
+            v-for="group in report.classification"
+            :key="group.classification"
+            :to="link({ classification: group.classification, direction: 'EXPENSE' })"
+            color="neutral"
+            variant="link"
+            class="contract-list-row"
+            ><span
+              >{{ classificationLabels[group.classification]
+              }}<small
+                >{{ financialPercentage(group.share * 100, { maximumFractionDigits: 1 }) }} % · {{ group.count }}
+                {{ tr('Buchungen') }}</small
+              ></span
+            ><strong>{{ money(group.expenseCents) }}</strong></UButton
+          >
+        </SectionPanel>
+      </div>
+      <SectionPanel id="haendler" :title="tr('Wo gibst du dein Geld aus?')" icon="categories" class="mb-5">
+        <NuxtLink
+          v-for="merchant in merchants?.merchants"
+          :key="merchant.key"
+          :to="merchantLink(merchant.key)"
           class="contract-list-row"
           ><span
-            >{{ classificationLabels[group.classification]
-            }}<small
-              >{{ financialPercentage(group.share * 100, { maximumFractionDigits: 1 }) }} % · {{ group.count }}
-              {{ tr('Buchungen') }}</small
-            ></span
-          ><strong>{{ money(group.expenseCents) }}</strong></UButton
+            >{{ merchant.key === 'unknown' ? tr('Unbekannter Händler') : merchant.label
+            }}<small>{{ merchant.count }} {{ tr('Buchungen') }}</small></span
+          ><strong data-financial
+            ><template v-if="!amountsMasked()">{{ money(merchant.expenseCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+          ></NuxtLink
         >
+        <p v-if="!merchants?.merchants.length" class="empty-copy">
+          {{ tr('Keine gebuchten Ausgaben im gewählten Zeitraum.') }}
+        </p>
       </SectionPanel>
-    </div>
-    <SectionPanel id="haendler" :title="tr('Wo gibst du dein Geld aus?')" icon="categories" class="mb-5">
-      <NuxtLink
-        v-for="merchant in merchants?.merchants"
-        :key="merchant.key"
-        :to="merchantLink(merchant.key)"
-        class="contract-list-row"
-        ><span
-          >{{ merchant.key === 'unknown' ? tr('Unbekannter Händler') : merchant.label
-          }}<small>{{ merchant.count }} {{ tr('Buchungen') }}</small></span
-        ><strong data-financial
-          ><template v-if="!amountsMasked()">{{ money(merchant.expenseCents) }}</template
-          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
-        ></NuxtLink
+      <SectionPanel
+        :title="tr('Exakte Monatswerte')"
+        icon="categories"
+        :help="
+          tr(
+            'Durchschnitt nur aus vollständig ausgewählten, abgeschlossenen Monaten mit Buchungen. Lücken sowie laufende und angeschnittene Monate bleiben sichtbar. Einzelne Buchungen werden nicht aufgeteilt.',
+          )
+        "
       >
-      <p v-if="!merchants?.merchants.length" class="empty-copy">
-        {{ tr('Keine gebuchten Ausgaben im gewählten Zeitraum.') }}
-      </p>
-    </SectionPanel>
-    <SectionPanel
-      :title="tr('Exakte Monatswerte')"
-      icon="categories"
-      :help="
-        tr(
-          'Durchschnitt nur aus vollständig ausgewählten, abgeschlossenen Monaten mit Buchungen. Lücken sowie laufende und angeschnittene Monate bleiben sichtbar. Einzelne Buchungen werden nicht aufgeteilt.',
-        )
-      "
-    >
-      <div class="analytics-table-scroll">
-        <table class="analytics-table">
-          <caption class="sr-only">
-            {{
-              tr('Monatliche Einnahmen, Ausgaben, Saldo und Eignung für den Durchschnitt')
-            }}
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">{{ tr('Monat') }}</th>
-              <th scope="col">{{ tr('Einnahmen') }}</th>
-              <th scope="col">{{ tr('Ausgaben') }}</th>
-              <th scope="col">{{ tr('Saldo') }}</th>
-              <th scope="col">{{ tr('Durchschnitt') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="month in report.months" :key="month.month">
-              <th scope="row">{{ monthName(month.month) }}</th>
-              <td>
-                <UButton variant="link" color="neutral" @click="monthSelect(month.month, 'INCOME')">{{
-                  money(month.incomeCents)
-                }}</UButton>
-              </td>
-              <td>
-                <UButton variant="link" color="neutral" @click="monthSelect(month.month, 'EXPENSE')">{{
-                  money(month.expenseCents)
-                }}</UButton>
-              </td>
-              <td>{{ money(month.netCents) }}</td>
-              <td>{{ month.averageEligible ? tr('Berücksichtigt') : reasons[month.excludedReason!] }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="muted mt-4">
-        {{ report.average.excludedMonths.length }} {{ tr('von') }} {{ report.months.length }}
-        {{ tr('Monaten ausgeschlossen.') }}
-      </p>
-    </SectionPanel>
+        <div class="analytics-table-scroll">
+          <table class="analytics-table">
+            <caption class="sr-only">
+              {{
+                tr('Monatliche Einnahmen, Ausgaben, Saldo und Eignung für den Durchschnitt')
+              }}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">{{ tr('Monat') }}</th>
+                <th scope="col">{{ tr('Einnahmen') }}</th>
+                <th scope="col">{{ tr('Ausgaben') }}</th>
+                <th scope="col">{{ tr('Saldo') }}</th>
+                <th scope="col">{{ tr('Durchschnitt') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="month in report.months" :key="month.month">
+                <th scope="row">{{ monthName(month.month) }}</th>
+                <td>
+                  <UButton variant="link" color="neutral" @click="monthSelect(month.month, 'INCOME')">{{
+                    money(month.incomeCents)
+                  }}</UButton>
+                </td>
+                <td>
+                  <UButton variant="link" color="neutral" @click="monthSelect(month.month, 'EXPENSE')">{{
+                    money(month.expenseCents)
+                  }}</UButton>
+                </td>
+                <td>{{ money(month.netCents) }}</td>
+                <td>{{ month.averageEligible ? tr('Berücksichtigt') : reasons[month.excludedReason!] }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted mt-4">
+          {{ report.average.excludedMonths.length }} {{ tr('von') }} {{ report.months.length }}
+          {{ tr('Monaten ausgeschlossen.') }}
+        </p>
+      </SectionPanel>
+    </details>
   </template>
 </template>
 

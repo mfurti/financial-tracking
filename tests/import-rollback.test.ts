@@ -73,7 +73,7 @@ describe('previewed CSV rollback', /** Real PostgreSQL source ownership, links a
     expect(first.items[0]).toMatchObject({ amountCents: '-1220', description: fixture.label, protection: null });
   });
   it('upgrades legacy ownership conservatively without changing original financial fields', /** Apply the actual migration over the populated immediately preceding schema. */ async () => {
-    const old = await testDatabase({ empty: true });
+    const old = await testDatabase({ empty: true, isolated: true });
     const client = new Client({ connectionString: old.url });
     await client.connect();
     try {

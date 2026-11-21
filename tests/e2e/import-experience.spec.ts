@@ -7,7 +7,7 @@ async function signIn(page: import('@playwright/test').Page) {
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
 }
 
 test('upload alone opens full-period analytics and recovers a lost commit response', /** Persist real decoded bank rows once, without manual setup or confirmation. */ async ({
