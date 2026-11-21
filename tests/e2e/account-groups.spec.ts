@@ -87,7 +87,9 @@ test('groups retain exact report, detail and calendar scope through failure, rel
   await expect(page.getByRole('button', { name: 'Konto', exact: true })).toContainText(
     'Kontogruppe: Gemeinsame Haushaltskonten',
   );
-  await page.getByRole('link', { name: new RegExp(conceptFixtureLabels.merchant) }).click();
+  const details = page.locator('.finance-full-analysis');
+  await details.locator('summary').click();
+  await details.getByRole('link', { name: new RegExp(conceptFixtureLabels.merchant) }).click();
   await expect(page).toHaveURL(new RegExp(`groupId=${primary.id}`));
   await expect(page.locator('[data-analysis-total]')).toHaveText('99,99 €');
   await expect(page.getByText(/Kontogruppe: Gemeinsame Haushaltskonten/)).toBeVisible();

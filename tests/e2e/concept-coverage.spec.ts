@@ -273,10 +273,13 @@ for (const language of ['de', 'en'] as const) {
         await expect(bookings.getByText(/Nicht kategorisiert/)).toHaveCount(0);
       }
       if (language === 'en' && id === 'seite-06') {
-        await expect(page.locator('.contract-list-row').filter({ hasText: 'Uncategorised' }).first()).toBeVisible();
-        await expect(page.getByRole('link').filter({ hasText: 'Unknown merchant' }).first()).toBeVisible();
-        await expect(page.getByText('Nicht kategorisiert', { exact: true })).toHaveCount(0);
-        await expect(page.getByText('Unbekannter Händler', { exact: true })).toHaveCount(0);
+        const details = page.locator('.finance-full-analysis');
+        await details.locator('summary').click();
+        await expect(details.locator('.contract-list-row').filter({ hasText: 'Uncategorised' }).first()).toBeVisible();
+        await expect(details.getByRole('link').filter({ hasText: 'Unknown merchant' }).first()).toBeVisible();
+        await expect(details.getByText('Nicht kategorisiert', { exact: true })).toHaveCount(0);
+        await expect(details.getByText('Unbekannter Händler', { exact: true })).toHaveCount(0);
+        await details.locator('summary').click();
       }
       if (language === 'en' && id === 'seite-10')
         await expect(page.getByRole('button').filter({ hasText: 'No category' }).first()).toBeVisible();
