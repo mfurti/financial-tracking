@@ -11,7 +11,7 @@ Feature 002-integrated-deployment uses [issue #15](https://github.com/mfurti/fin
 - Existing documented project/deployment rules apply; the constitution remains an unratified template.
 - Runtime bindings, private inventory/archive identities and timing measurements stay in the protected local operator dossier. Public tracking contains task/check outcomes and public source provenance only. Original financial rows remain in private memory; no original credentials/private values are logged.
 
-Current state: final-backup-verified. The full sequence remains draft → prepared → recovery-rehearsed → awaiting-production-approval → approved → writers-paused → final-backup-verified → migrated → internally-verified → reopened → technically-accepted.
+Current state: migrated. The full sequence remains draft → prepared → recovery-rehearsed → awaiting-production-approval → approved → writers-paused → final-backup-verified → migrated → internally-verified → reopened → technically-accepted.
 
 Preflight failure blocks mutation. Later failure keeps access paused and uses a reviewed recovery decision; new writes after reopening require preservation/reconciliation. Absence of an approval is never a passed gate.
 

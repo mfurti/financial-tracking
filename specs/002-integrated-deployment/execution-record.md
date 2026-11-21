@@ -4,7 +4,7 @@
 
 Preparation tasks T001–T009 and the concretely approved production execution T010–T015 are authorized. The concrete operator proposal is prepared and held locally with its exact target, candidate/previous images, migration chain, protected recovery records and proposed window.
 
-**State**: final-backup-verified.
+**State**: migrated.
 **G2 response**: received; the owner submitted “Ja” to the concrete production proposal, conditional on successful current CI and fresh preflight.
 **Production mutation**: approved execution in progress.
 **Owner acceptance**: pending.
@@ -34,7 +34,7 @@ On failure, keep access paused or use the approved pre-migration abort. A recove
 | ------------------------------------------------------- | ----------------------------------- |
 | G2 concrete proposal/window response                    | Approved; prerequisite gates passed |
 | T010 drain/pause/final checkpoint                       | Passed                              |
-| T011 reviewed migration and original-field preservation | Not started                         |
+| T011 reviewed migration and original-field preservation | Passed                              |
 | T012 internal readiness and completed encrypted backup  | Not started                         |
 | T013 external reopening/write boundary                  | Not started                         |
 | T014 authenticated workflow checks                      | Not started                         |
@@ -46,3 +46,7 @@ Only actual outcomes may replace these states. T009 completes proposal preparati
 ## T010 — Observed execution
 
 The approved write pause and drain completed. PostgreSQL and its original volume remained running. A fresh quiescent encrypted checkpoint was copied off-host and authenticated. This actual archive was restored into a newly empty isolated target; every original field and original migration-ledger record matched the paused source. The reviewed candidate upgrade passed on that restored input. Protected configuration equality and recovery material were retained. No production migration has run at this boundary.
+
+## T011 — Observed execution
+
+Only the approved immutable image assignments were changed atomically; other configuration, secrets and topology were preserved. The matching one-shot migrator completed only the reviewed pending chain. Before API startup, every original application field and original ledger record matched the paused baseline. All expected additive tables, reviewed checksums/status and sole approved initial default were verified; no financial or historical metadata was fabricated.
