@@ -59,6 +59,7 @@ const month = ref(
     ? String(route.query.from).slice(0, 7)
     : new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7),
 );
+const days = computed(() => Object.entries(Object.groupBy(rows.value, (row) => row.bookingDate)));
 async function applyMonth(offset = 0) {
   const date = new Date(`${month.value}-01T12:00:00Z`);
   if (!Number.isFinite(date.getTime())) return;
@@ -407,46 +408,50 @@ onBeforeUnmount(
       <p v-if="!busy && !rows.length" class="empty-copy">
         {{ tr('Keine Umsätze gefunden. Passe deine Filter an oder importiere Buchungen.') }}
       </p>
-      <div v-for="row in rows" :key="row.id" class="ledger-row">
-        <UCheckbox
-          :model-value="selected.includes(row.id)"
-          :aria-label="tr('{0} auswählen', [row.description])"
-          @update:model-value="selectTransaction(row.id, $event)"
-        />
-        <div class="ledger-description">
-          <NuxtLink :to="bookingLink(row.id)"
-            ><strong>{{ row.description }}</strong
-            ><small
-              >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || tr('Keine Gegenpartei')
-              }}<span v-if="row.isTransfer"> {{ tr('· Umbuchung') }}</span
-              ><span v-if="row.accountId === null"> {{ tr('· Ohne Konto') }}</span
-              ><span v-if="row.status === 'PENDING'"> {{ tr('· Vorgemerkt') }}</span
-              ><span v-if="row.categoryOrigin === 'RULE'"> {{ tr('· Regel:') }} {{ row.categoryRuleName }}</span
-              ><span v-if="row.categoryRuleConflict">
-                {{ tr('· Kategorie klären: gleichrangige Regeln widersprechen sich') }}</span
-              ><span v-if="row.effectiveClassification !== 'UNCLASSIFIED'">
-                · {{ row.effectiveClassification === 'FIXED' ? tr('Fix') : tr('Variabel') }}</span
-              ></small
-            ></NuxtLink
-          ><UButton v-if="row.contract" :to="`/contracts/${row.contract.id}`" size="xs" variant="soft" class="mt-1">{{
-            row.contract.name
-          }}</UButton>
+      <div v-for="[day, bookings] in days" :key="day" class="finance-booking-day">
+        <h3>{{ calendarDate(day) }}</h3>
+        <div v-for="row in bookings" :key="row.id" class="ledger-row finance-booking-row">
+          <UCheckbox
+            :model-value="selected.includes(row.id)"
+            :aria-label="tr('{0} auswählen', [row.description])"
+            @update:model-value="selectTransaction(row.id, $event)"
+          />
+          <div class="ledger-description">
+            <NuxtLink :to="bookingLink(row.id)"
+              ><strong>{{ row.description }}</strong
+              ><small
+                >{{ categoryName(row.categoryId) }} · {{ accountLabel(row.accountId)
+                }}<span v-if="row.isTransfer"> {{ tr('· Umbuchung') }}</span
+                ><span v-if="row.status === 'PENDING'"> {{ tr('· Vorgemerkt') }}</span
+                ><span v-if="row.categoryOrigin === 'RULE'"> {{ tr('· Regel:') }} {{ row.categoryRuleName }}</span
+                ><span v-if="row.categoryRuleConflict">
+                  {{ tr('· Kategorie klären: gleichrangige Regeln widersprechen sich') }}</span
+                ><span v-if="row.effectiveClassification !== 'UNCLASSIFIED'">
+                  · {{ row.effectiveClassification === 'FIXED' ? tr('Fix') : tr('Variabel') }}</span
+                ></small
+              ></NuxtLink
+            ><UButton v-if="row.contract" :to="`/contracts/${row.contract.id}`" size="xs" variant="soft" class="mt-1">{{
+              row.contract.name
+            }}</UButton>
+          </div>
+          <ChoiceSelect
+            :model-value="row.categoryId ?? ''"
+            :aria-label="tr('Kategorie für {0}', [row.description])"
+            :searchable="true"
+            :items="[
+              { label: tr('Nicht kategorisiert'), value: '' },
+              ...categories.map(
+                /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
+              ),
+            ]"
+            @update:model-value="assign(row.id, $event)"
+          /><strong
+            data-financial
+            :class="BigInt(row.amountCents) > 0n ? 'positive' : BigInt(row.amountCents) < 0n ? 'negative' : ''"
+            ><template v-if="!amountsMasked()">{{ money(row.amountCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+          >
         </div>
-        <ChoiceSelect
-          :model-value="row.categoryId ?? ''"
-          :aria-label="tr('Kategorie für {0}', [row.description])"
-          :searchable="true"
-          :items="[
-            { label: tr('Nicht kategorisiert'), value: '' },
-            ...categories.map(
-              /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
-            ),
-          ]"
-          @update:model-value="assign(row.id, $event)"
-        /><strong data-financial :class="BigInt(row.amountCents) > 0n ? 'positive' : ''"
-          ><template v-if="!amountsMasked()">{{ money(row.amountCents) }}</template
-          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
-        >
       </div>
       <UButton v-if="nextCursor" :loading="busy" variant="soft" class="mt-5" @click="more">{{
         tr('Weitere Umsätze laden')
