@@ -154,8 +154,11 @@ test('confirmed recurring payments keep real bookings, expose contract badges an
   await expect(page).toHaveURL(/\/contracts\/[a-f0-9-]+$/);
   await expect(page.getByRole('heading', { level: 1, name: provider })).toBeVisible();
   const contractPath = new URL(page.url()).pathname;
-  await page.screenshot({ path: `.local/contracts-${info.project.name}.png`, fullPage: true });
   await expect(page.getByRole('link', { name: 'Automatisch zugeordnet', exact: true })).toHaveCount(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+  await page.screenshot({ path: `.local/contracts-${info.project.name}.png`, fullPage: true });
   const payments = await (
     await page.request.get(`/api/v1${contractPath}/payments?from=2033-01-01&to=2033-03-31`)
   ).json();

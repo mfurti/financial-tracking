@@ -297,7 +297,7 @@ onBeforeUnmount(
   <p v-if="loading" role="status">{{ tr('Verträge werden geladen …') }}</p>
   <UButton v-if="route.params.id" to="/contracts" variant="link" class="mb-4">{{ tr('Alle Verträge') }}</UButton>
   <template v-if="detail && !loading && !error">
-    <SectionPanel :title="detail.provider" icon="contracts" compact class="mb-5">
+    <SectionPanel :title="detail.provider" icon="contracts" compact class="contract-provider mb-5">
       <template #actions
         ><UButton color="neutral" variant="soft" @click="openEditor(true)">{{
           tr('Vertrag bearbeiten')
@@ -613,6 +613,11 @@ onBeforeUnmount(
   gap: 16px;
 }
 .contract-list-row strong {
+  overflow-wrap: anywhere;
+}
+.finance-contract-heading > :first-child,
+.contract-provider :deep(.section-heading h2) {
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 </style>
