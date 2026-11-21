@@ -11,6 +11,7 @@ import { freePort, testDatabase } from '../tests/database.js';
 import { createApp } from '../apps/api/dist/app.js';
 import { passwordHash } from '../apps/api/dist/auth.js';
 import { createDb } from '../apps/api/dist/db.js';
+import { loadTargetMigrationReview, verifyTargetBackupUpgrade } from './target-backup-verification.js';
 
 if (process.env.CI || process.env.TEST_DATABASE_URL)
   throw new Error('Target backup checks require an owned local database, never CI/shared PostgreSQL.');
@@ -37,23 +38,6 @@ let step = 'encrypted restore';
 async function completed(child: ChildProcess) {
   const [code] = await once(child, 'exit');
   if (code !== 0) throw new Error('Owned recovery child failed');
-}
-/** Keep only in-memory rows for preservation comparison; never write them to logs or files. */
-async function snapshot(connection: Client) {
-  const tables = [
-    'User',
-    'BankConnection',
-    'Account',
-    'Transaction',
-    'Category',
-    'ImportRun',
-    'ImportIssue',
-    'TransactionIdentity',
-    'TransferGroup',
-  ];
-  const result: Record<string, Record<string, unknown>[]> = {};
-  for (const table of tables) result[table] = (await connection.query(`SELECT * FROM "${table}" ORDER BY id`)).rows;
-  return result;
 }
 
 try {
@@ -101,23 +85,27 @@ try {
   const connection = new Client({ connectionString: resource.url });
   await connection.connect();
   try {
-    const before = await snapshot(connection);
-    assert.ok(before.User!.length > 0, 'Backup must contain an initialized application');
     step = 'forward migrations and preservation';
-    await completed(
-      spawn(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], {
-        cwd: resolve('apps/api'),
-        env: { ...process.env, DATABASE_URL: resource.url },
-        stdio: 'ignore',
-        windowsHide: true,
-      }),
+    const review = await loadTargetMigrationReview();
+    const upgrade = await verifyTargetBackupUpgrade(
+      connection,
+      /** Run candidate-reviewed forward migrations only against this helper's owned isolated database. */ async () => {
+        await completed(
+          spawn(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], {
+            cwd: resolve('apps/api'),
+            env: { ...process.env, DATABASE_URL: resource.url },
+            stdio: 'ignore',
+            windowsHide: true,
+          }),
+        );
+      },
+      review,
     );
-    const after = await snapshot(connection);
-    for (const [table, rows] of Object.entries(before)) {
-      assert.equal(after[table]!.length, rows.length);
-      for (let index = 0; index < rows.length; index++)
-        for (const [key, value] of Object.entries(rows[index]!)) assert.deepEqual(after[table]![index]![key], value);
-    }
+    const afterCounts = new Map(
+      upgrade.after.tables.map(
+        /** Keep only counts for later safe application checks. */ (table) => [table.name, table.rows.length] as const,
+      ),
+    );
 
     step = 'isolated authentication and application';
     const user = await resource.db.user.findFirstOrThrow();
@@ -175,7 +163,7 @@ try {
       assert.equal(response.status(), 200);
       assert.equal(
         (await response.json()).length,
-        path === 'imports' ? Math.min(after[table]!.length, 100) : after[table]!.length,
+        path === 'imports' ? Math.min(afterCounts.get(table)!, 100) : afterCounts.get(table)!,
       );
     }
     const transactionMonth =
@@ -209,8 +197,14 @@ try {
         .digest('hex'),
       durationSeconds: Math.ceil((Date.now() - started) / 1000),
       initializedBackup: true,
-      populatedFinancialBackup: after.Transaction!.length > 0,
+      populatedFinancialBackup: afterCounts.get('Transaction')! > 0,
       preservation: true,
+      preservedApplicationTables: upgrade.proof.tableCount,
+      preservedOriginalColumns: upgrade.proof.columnCount,
+      preservedOriginalRows: upgrade.proof.rowCount,
+      migrationHistoryVerified: upgrade.ledgerVerified,
+      newMetadataDefaultsVerified: upgrade.newTablesVerified,
+      pendingMigrations: upgrade.pendingMigrations,
       forwardMigrations: true,
       isolatedPasswordRotation: true,
       login: true,

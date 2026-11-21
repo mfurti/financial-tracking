@@ -12,6 +12,8 @@ This directory contains only Compose, configuration templates, instructions, and
 
 ## Install or update
 
+For an existing-installation update, follow the [reviewed deployment runbook](../specs/002-integrated-deployment/runbook.md) with protected operator bindings and separate production approval. Its explicit paused-writer migration/preservation gates precede application startup; after successful one-shot migration, use dependency-free application starts so Compose cannot silently rerun the migrator. The generic installation commands below do not replace those update gates.
+
 Obtain the bundle built by successful CI for the intended full revision. A failed/unfinished publisher or PR artifact is not a production release. Record existing digests/configuration, verify a fresh encrypted pre-update backup, and agree on the maintenance window. Stop writes before applying a reviewed data migration. Keep the old deployment recovery copy encrypted off-server until acceptance.
 
 ```sh
