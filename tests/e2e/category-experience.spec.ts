@@ -14,8 +14,8 @@ test('monthly categories explain real expenses and lead to persisted assignments
     await page.getByRole('link', { name: 'Mehr', exact: true }).click();
     await expect(page).toHaveURL(/\/more$/);
     await page
-      .getByRole('navigation', { name: 'Weitere Seiten' })
-      .getByRole('link', { name: 'Konten', exact: true })
+      .getByRole('navigation', { name: 'Mein Geld' })
+      .getByRole('link', { name: /^Konten/ })
       .click();
     await expect(page).toHaveURL(/\/accounts$/);
   } else {

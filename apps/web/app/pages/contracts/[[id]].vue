@@ -267,8 +267,10 @@ onBeforeUnmount(
       <h1>{{ detail?.name ?? tr('Verträge') }}</h1>
     </div>
     <div class="toolbar">
-      <UButton to="/contracts/calendar" variant="soft">{{ tr('Vertragskalender') }}</UButton
-      ><UButton :disabled="loading || reviewing" @click="openEditor()">{{ tr('Vertrag anlegen') }}</UButton>
+      <ContractCalendarPreview :contracts="records" />
+      <UButton :disabled="loading || reviewing" variant="soft" @click="openEditor()">{{
+        tr('Vertrag anlegen')
+      }}</UButton>
     </div>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
@@ -434,18 +436,24 @@ onBeforeUnmount(
     <UButton color="error" variant="ghost" @click="deleteOpen = true">{{ tr('Vertrag löschen') }}</UButton>
   </template>
   <template v-else-if="!route.params.id && !loading && !error">
-    <FinanceTile
-      v-if="summary"
-      to="/contracts/analysis"
-      variant="insight"
-      :label="tr('Durchschnittliche Fixkosten / Monat')"
-      :value="money(summary.monthlyCents)"
-      :context="
-        tr('{0} {1} · Planwert · Analyse öffnen', [summary.count, summary.count === 1 ? tr('Vertrag') : tr('Verträge')])
-      "
-      financial
-      class="mb-6"
-    />
+    <div v-if="summary" class="finance-feature-grid mb-6">
+      <FinanceTile
+        v-if="summary"
+        to="/contracts/analysis"
+        variant="insight"
+        :label="tr('Ausgaben / Monat')"
+        :value="money(summary.monthlyCents)"
+        :context="
+          tr('{0} {1} · Planwert · Analyse öffnen', [
+            summary.count,
+            summary.count === 1 ? tr('Vertrag') : tr('Verträge'),
+          ])
+        "
+        financial
+      />
+      <FinanceTile variant="insight" :label="tr('Einnahmen / Monat')" :value="tr('Nicht erfasst')" />
+      <FinanceTile variant="insight" :label="tr('Geplant übrig')" :value="tr('Nicht berechenbar')" />
+    </div>
     <SectionPanel v-if="!records.length" :title="tr('Deine Verträge')" icon="contracts" class="mb-5" compact>
       <p class="empty-copy">{{ tr('Noch keine Verträge. Bestätige einen Vorschlag oder lege einen Vertrag an.') }}</p>
     </SectionPanel>

@@ -6,6 +6,7 @@ import {
   monthlySchema,
   transactionPageSchema,
   runSchema,
+  accountGroupSchema,
   type Account,
   type Monthly,
   type Transaction,
@@ -21,6 +22,24 @@ const month = ref(
     : new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7),
 );
 const accounts = ref<Account[]>([]);
+const groupId = ref(typeof route.query.groupId === 'string' ? route.query.groupId : '');
+const groupDialog = ref(false);
+const groups = ref<z.infer<typeof accountGroupSchema>[]>([]);
+const groupError = ref('');
+watch(groupDialog, async (open) => {
+  if (!open) return;
+  groupError.value = '';
+  try {
+    groups.value = await api.request('/account-groups', z.array(accountGroupSchema));
+  } catch (cause) {
+    groupError.value = userErrorMessage(cause);
+  }
+});
+async function selectGroup(value: string) {
+  groupId.value = value;
+  groupDialog.value = false;
+  await load();
+}
 const report = ref<Monthly | null>(null);
 const recent = ref<Transaction[]>([]);
 const error = ref('');
@@ -45,7 +64,7 @@ const uncategorizedCount = computed(
 );
 const transactionsLink = computed(
   /** Keep navigation in the displayed month. */ () =>
-    `/transactions?${new URLSearchParams(monthRangeQuery(month.value))}`,
+    `/transactions?${new URLSearchParams({ ...monthRangeQuery(month.value), ...(groupId.value ? { groupId: groupId.value } : {}) })}`,
 );
 const uncategorizedLink = computed(
   /** Open real records awaiting a category. */ () => `${transactionsLink.value}&uncategorized=true`,
@@ -99,17 +118,21 @@ async function load() {
   if (disposed || route.path !== '/') return;
   const version = ++loadVersion;
   const selectedMonth = month.value;
+  const selectedGroup = groupId.value;
   const requestedImport = typeof route.query.import === 'string' ? route.query.import : null;
   busy.value = true;
   error.value = '';
   try {
     const [a, r, t, runs, standalone] = await Promise.all([
       api.request('/accounts', z.array(accountSchema)),
-      api.request('/analytics/monthly', monthlySchema, { query: { month: selectedMonth } }),
+      api.request('/analytics/monthly', monthlySchema, {
+        query: { month: selectedMonth, groupId: selectedGroup || undefined },
+      }),
       api.request('/transactions', transactionPageSchema, {
         query: {
           status: 'BOOKED',
-          limit: 10,
+          limit: 5,
+          groupId: selectedGroup || undefined,
           ...monthRangeQuery(selectedMonth),
         },
       }),
@@ -117,7 +140,13 @@ async function load() {
       api.request('/transactions', transactionPageSchema, { query: { unassigned: 'true', limit: 1 } }),
     ]);
     if (disposed || version !== loadVersion || route.path !== '/') return;
-    accounts.value = a;
+    if (selectedGroup && !groups.value.some((group) => group.id === selectedGroup)) {
+      const loaded = await api.request('/account-groups', z.array(accountGroupSchema));
+      if (disposed || version !== loadVersion || route.path !== '/') return;
+      groups.value = loaded;
+    }
+    const members = groups.value.find((group) => group.id === selectedGroup)?.accountIds ?? [];
+    accounts.value = selectedGroup ? a.filter((account) => members.includes(account.id)) : a;
     report.value = r;
     recent.value = t.items;
     importResult.value =
@@ -131,7 +160,7 @@ async function load() {
       0,
     );
     unassigned.value = standalone.items.length > 0;
-    await router.replace({ query: { month: selectedMonth } });
+    await router.replace({ query: { month: selectedMonth, ...(selectedGroup ? { groupId: selectedGroup } : {}) } });
   } catch (cause) {
     if (disposed || version !== loadVersion) return;
     report.value = null;
@@ -161,13 +190,41 @@ onBeforeUnmount(
     </div>
     <div class="toolbar finance-month-controls">
       <UButton variant="ghost" color="neutral" :aria-label="tr('Vorheriger Monat')" @click="shiftMonth(-1)">‹</UButton>
-      <MonthPicker v-model="month" @change="load" />
+      <MonthPicker v-model="month" compact @change="load" />
       <UButton variant="ghost" color="neutral" :aria-label="tr('Nächster Monat')" @click="shiftMonth(1)">›</UButton>
+    </div>
+  </div>
+  <FinanceDialog v-model:open="groupDialog" :title="tr('Kontogruppen')">
+    <template #trigger
+      ><UButton variant="soft" size="sm" :aria-label="tr('Kontogruppen wählen')">{{
+        groupId ? (groups.find((group) => group.id === groupId)?.name ?? tr('Kontogruppe')) : tr('Alle Konten')
+      }}</UButton></template
+    >
+    <div class="finance-dialog-options">
+      <UAlert v-if="groupError" role="alert" color="error" :description="groupError" />
+      <UButton variant="outline" color="neutral" :aria-pressed="!groupId" @click="selectGroup('')">{{
+        tr('Alle Konten')
+      }}</UButton>
+      <UButton
+        v-for="group in groups"
+        :key="group.id"
+        variant="outline"
+        color="neutral"
+        :aria-pressed="groupId === group.id"
+        @click="selectGroup(group.id)"
+        >{{ group.name }}</UButton
+      >
+      <UButton variant="ghost" to="/settings/account-groups">{{ tr('Gruppen verwalten') }}</UButton>
+    </div>
+  </FinanceDialog>
+  <details class="finance-overview-actions">
+    <summary>{{ tr('Weitere Aktionen') }}</summary>
+    <div class="toolbar">
       <UButton variant="ghost" @click="currentMonth">{{ tr('Dieser Monat') }}</UButton>
       <UButton variant="ghost" :loading="busy" @click="load">{{ tr('Aktualisieren') }}</UButton
       ><UButton to="/imports/csv">{{ tr('CSV hochladen') }}</UButton>
     </div>
-  </div>
+  </details>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <UButton v-if="error && !busy" variant="soft" class="mb-5" @click="load">{{ tr('Erneut versuchen') }}</UButton>
   <UAlert
@@ -221,7 +278,7 @@ onBeforeUnmount(
       >
       <FinanceTile :label="tr('Ausgaben')" variant="stat"
         ><template #value
-          ><span data-financial
+          ><span class="negative" data-financial
             ><template v-if="!amountsMasked()">{{ money(report.expenseCents) }}</template
             ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></span
           ></template
@@ -229,7 +286,10 @@ onBeforeUnmount(
       >
     </div>
     <div class="data-context">
-      <span>{{ transactionCount }} {{ tr('gebuchte Umsätze · inklusive Buchungen ohne Konto') }}</span>
+      <span
+        >{{ transactionCount }}
+        {{ tr(groupId ? 'Buchungen' : 'gebuchte Umsätze · inklusive Buchungen ohne Konto') }}</span
+      >
       <HelpPopover
         :title="tr('Monatszahlen')"
         :text="
@@ -259,11 +319,7 @@ onBeforeUnmount(
             ><span class="transaction-icon"><FinanceIcon name="transactions" /></span>
             <div>
               <strong>{{ row.counterpartyName?.trim() || row.description }}</strong>
-              <small v-if="row.counterpartyName?.trim() && row.description.trim() !== row.counterpartyName.trim()">{{
-                row.description
-              }}</small>
-              <small
-                >{{ calendarDate(row.bookingDate) }} ·
+              <small>
                 {{
                   row.isTransfer
                     ? tr('Eigene Umbuchung')

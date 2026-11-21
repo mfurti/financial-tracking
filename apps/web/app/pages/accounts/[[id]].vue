@@ -12,6 +12,10 @@ const api = useApi();
 const { validation, formError, formInvalid } = useFormFeedback();
 const route = useRoute();
 const accounts = ref<Account[]>([]);
+const accountType = ref('');
+const visibleAccounts = computed(() =>
+  accounts.value.filter((account) => !accountType.value || account.accountType === accountType.value),
+);
 const connections = ref<Connection[]>([]);
 const loadError = ref('');
 const error = ref('');
@@ -162,6 +166,17 @@ onBeforeUnmount(
   <FinanceTile v-if="loading" :label="tr('Konten')" variant="stat" state="loading" />
   <template v-else-if="!loadError">
     <template v-if="!route.params.id">
+      <div class="toolbar mb-4">
+        <ChoiceSelect
+          v-model="accountType"
+          :aria-label="tr('Kontotyp')"
+          :items="[
+            { label: tr('Alle Konten'), value: '' },
+            ...Object.entries(accountTypes).map(([value, label]) => ({ value, label })),
+          ]"
+        />
+        <UButton to="/wealth" variant="ghost">{{ tr('Reserve & Vermögen') }}</UButton>
+      </div>
       <FinanceTile
         :label="tr('Bekannte Kontostände')"
         :value="total === null ? tr('Noch kein Saldo') : money(total)"
@@ -169,17 +184,9 @@ onBeforeUnmount(
         variant="stat"
         :context="tr('{0} von {1} aktiven Konten · fehlende Salden bleiben unbekannt', [known.length, active.length])"
       />
-      <p class="muted my-5">
-        {{
-          tr(
-            'Beobachtete Kontostände sind von gebuchten Monatszahlen getrennt. Du kannst CSV-Dateien auch ohne Konto importieren.',
-          )
-        }}
-      </p>
-      <ReserveGoalTile />
-      <div class="finance-account-grid">
+      <div class="finance-account-grid mt-5">
         <FinanceTile
-          v-for="row in accounts"
+          v-for="row in visibleAccounts"
           :key="row.id"
           :data-account-card="row.id"
           :label="row.name"
@@ -189,15 +196,13 @@ onBeforeUnmount(
           :to="`/accounts/${row.id}`"
           ><template #context
             ><span
-              >{{ accountTypes[row.accountType] }} · {{ row.isActive ? tr('Aktiv') : tr('Inaktiv') }} ·
-              {{ row.iban ? `•••• ${row.iban.slice(-4)}` : tr('Keine IBAN') }}</span
-            ><span class="block mt-2">{{ observation(row) }}</span></template
+              >{{ accountTypes[row.accountType] }}<template v-if="!row.isActive"> · {{ tr('Inaktiv') }}</template></span
+            ></template
           ><template #graphic><FinanceIcon name="accounts" /></template
         ></FinanceTile>
       </div>
       <div v-if="!accounts.length" class="empty-state">
         <h2>{{ tr('Noch keine Konten vorhanden.') }}</h2>
-        <p>{{ tr('Ein Konto ist optional. Importierte Buchungen bleiben auch ohne Zuordnung erhalten.') }}</p>
         <UButton to="/accounts/add" variant="soft">{{ tr('Erstes Konto hinzufügen') }}</UButton
         ><UButton to="/imports/csv" variant="ghost">{{ tr('CSV importieren') }}</UButton>
       </div>

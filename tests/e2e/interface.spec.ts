@@ -86,6 +86,7 @@ test('themes, responsive pages, form errors, retry and session expiry', /** Brow
     }
   }
   await page.goto('/transactions?from=2026-11-01&to=2026-11-30');
+  await page.getByText('Weitere Filter', { exact: true }).click();
   await page.getByRole('button', { name: 'Von auswählen', exact: true }).click();
   await page.screenshot({ path: `.local/date-picker-${info.project.name}.png` });
   await page.getByRole('button', { name: /15.*November.*2026/ }).click();

@@ -83,6 +83,7 @@ test('groups retain exact report, detail and calendar scope through failure, rel
     .click();
   await expect(page).toHaveURL(new RegExp(`groupId=${primary.id}`));
   await page.goto(`/analytics?from=2026-10-01&to=2026-10-31&groupId=${primary.id}`);
+  await page.getByText('Zeitraum und Filter', { exact: true }).click();
   await expect(page.getByRole('button', { name: 'Konto', exact: true })).toContainText(
     'Kontogruppe: Gemeinsame Haushaltskonten',
   );
@@ -112,6 +113,30 @@ test('groups retain exact report, detail and calendar scope through failure, rel
   );
   await page.goto(`/contracts/analysis?groupId=${empty.id}`);
   await expect(page.getByRole('region', { name: 'Monatliche Fixkosten', exact: true })).toContainText('0,00 €');
+  await page.goto('/?month=2026-11');
+  const picker = page.getByRole('button', { name: 'Kontogruppen wählen', exact: true });
+  const groups = page.getByRole('dialog', { name: 'Kontogruppen', exact: true });
+  const preview = page.locator('[data-overview-section="bookings"]');
+  await picker.click();
+  await groups.getByRole('button', { name: 'Gemeinsame Haushaltskonten', exact: true }).click();
+  await expect(groups).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`groupId=${primary.id}`));
+  await expect(preview.getByRole('link', { name: 'Alle Umsätze', exact: true })).toHaveAttribute(
+    'href',
+    new RegExp(`groupId=${primary.id}`),
+  );
+  await page.reload();
+  await expect(picker).toHaveText('Gemeinsame Haushaltskonten');
+  await expect(page.locator('[data-overview-section="accounts"]')).toContainText(checking.name);
+  await picker.click();
+  await groups.getByRole('button', { name: 'Leere Gruppe', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`groupId=${empty.id}`));
+  await expect(preview.getByText(/In diesem Monat sind noch keine Buchungen vorhanden/)).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Monatsbilanz', exact: true })).toContainText('0,00 €');
+  await picker.click();
+  await groups.getByRole('button', { name: 'Alle Konten', exact: true }).click();
+  await expect(page).toHaveURL(/\?month=2026-11$/);
+  await expect(preview.getByRole('link', { name: 'Alle Umsätze', exact: true })).toBeVisible();
   await page.goto('/settings/account-groups');
   const row = page.locator(`[data-account-group="${primary.id}"]`);
   await row.getByRole('button', { name: 'Löschen', exact: true }).click();

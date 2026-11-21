@@ -6,10 +6,9 @@ const props = defineProps<{
   report: z.infer<typeof analyticsOverviewSchema>;
   merchantCount: number;
   available: readonly AnalysisModuleId[];
-  monthsHref: string;
-  categoriesHref: string;
-  merchantsHref: string;
+  merchantAmounts: readonly string[];
 }>();
+const emit = defineEmits<{ activate: [id: 'months' | 'categories' | 'merchants'] }>();
 const { preferences } = useWorkspacePreferences();
 const slots = useSlots();
 const visible = computed(
@@ -35,8 +34,10 @@ const visible = computed(
           :label="tr('Deine letzten Monate')"
           :value="tr('{0} Monate', [report.months.length])"
           :context="tr('{0} abgeschlossene Monate mit Buchungen', [report.average.monthCount])"
-          :to="monthsHref"
-          ><template #graphic><FinanceIcon name="calendar" /></template
+          actionable
+          @activate="emit('activate', 'months')"
+          ><template #graphic
+            ><FinanceMiniChart kind="bars" :values="report.months.map((month) => month.expenseCents)" /></template
         ></FinanceTile>
         <FinanceTile
           v-else-if="id === 'categories'"
@@ -44,8 +45,12 @@ const visible = computed(
           :value="money(report.expenseCents)"
           financial
           :context="tr('Gebuchte Ausgaben im gewählten Zeitraum')"
-          :to="categoriesHref"
-          ><template #graphic><FinanceIcon name="categories" /></template
+          actionable
+          @activate="emit('activate', 'categories')"
+          ><template #graphic
+            ><FinanceMiniChart
+              kind="ring"
+              :values="report.categories.map((category) => category.expenseCents)" /></template
         ></FinanceTile>
         <FinanceTile
           v-else-if="id === 'merchants'"
@@ -53,8 +58,9 @@ const visible = computed(
           :value="money(report.expenseCents)"
           financial
           :context="tr('{0} Händler · inklusive unbekannter Gegenparteien', [merchantCount])"
-          :to="merchantsHref"
-          ><template #graphic><FinanceIcon name="transactions" /></template
+          actionable
+          @activate="emit('activate', 'merchants')"
+          ><template #graphic><FinanceMiniChart kind="ring" :values="merchantAmounts" /></template
         ></FinanceTile>
       </slot>
     </div>

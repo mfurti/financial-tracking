@@ -192,7 +192,6 @@ onBeforeUnmount(
       </template>
     </FinanceTile>
   </SectionPanel>
-  <UAlert v-if="error && goal && !editing" role="alert" color="error" :description="error" class="mb-4" />
   <p v-if="notice" role="status" class="muted my-3">{{ notice }}</p>
   <SectionPanel
     v-if="account && goal && !loading"
@@ -219,6 +218,7 @@ onBeforeUnmount(
     <UButton variant="soft" class="mt-4" :loading="saving" @click="saveDesignation">{{
       tr('Reserve-Zuordnung speichern')
     }}</UButton>
+    <UAlert v-if="error && !editing" role="alert" color="error" :description="error" class="mt-4" />
   </SectionPanel>
   <FinanceDialog
     v-model:open="editing"
