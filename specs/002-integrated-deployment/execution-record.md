@@ -4,7 +4,7 @@
 
 Preparation tasks T001–T009 and the concretely approved production execution T010–T015 are authorized. The concrete operator proposal is prepared and held locally with its exact target, candidate/previous images, migration chain, protected recovery records and proposed window.
 
-**State**: internally-verified.
+**State**: web paused after the reopening check.
 **G2 response**: received; the owner submitted “Ja” to the concrete production proposal, conditional on successful current CI and fresh preflight.
 **Production mutation**: approved execution in progress.
 **Owner acceptance**: pending.
@@ -30,16 +30,16 @@ On failure, keep access paused or use the approved pre-migration abort. A recove
 
 ## Execution milestones
 
-| Milestone                                               | Current outcome                     |
-| ------------------------------------------------------- | ----------------------------------- |
-| G2 concrete proposal/window response                    | Approved; prerequisite gates passed |
-| T010 drain/pause/final checkpoint                       | Passed                              |
-| T011 reviewed migration and original-field preservation | Passed                              |
-| T012 internal readiness and completed encrypted backup  | Passed                              |
-| T013 external reopening/write boundary                  | Not started                         |
-| T014 authenticated workflow checks                      | Not started                         |
-| T015 runtime/persistence/access/backup checks           | Not started                         |
-| T016 owner experience acceptance                        | Pending actual observation          |
+| Milestone                                               | Current outcome                           |
+| ------------------------------------------------------- | ----------------------------------------- |
+| G2 concrete proposal/window response                    | Approved; prerequisite gates passed       |
+| T010 drain/pause/final checkpoint                       | Passed                                    |
+| T011 reviewed migration and original-field preservation | Passed                                    |
+| T012 internal readiness and completed encrypted backup  | Passed                                    |
+| T013 external reopening/write boundary                  | Reopening check failed; web stopped again |
+| T014 authenticated workflow checks                      | Not started                               |
+| T015 runtime/persistence/access/backup checks           | Not started                               |
+| T016 owner experience acceptance                        | Pending actual observation                |
 
 Only actual outcomes may replace these states. T009 completes proposal preparation; its external approval response belongs to G2 before T010, not an automatic implementation result.
 
@@ -54,3 +54,7 @@ Only the approved immutable image assignments were changed atomically; other con
 ## T012 — Observed execution
 
 The candidate API and backup services started with dependency traversal disabled while external web remained stopped. Internal health and actual immutable image identities passed. A newly completed encrypted post-update archive was copied off-host and authenticated; the original persistent database remained in use.
+
+## T013 — Reopening attempt
+
+The candidate web container became healthy and the reverse proxy logged HTTP 200 for the login page. The operator also required a German text match. The combined check failed and the operator stopped web again. The exact reason the check failed remains unverified. The reverse proxy logged only the login-page GET during the brief reopening. The proposed next check verifies the login form over HTTPS in either supported locale and confirms direct-address denial. T013 remains open pending successful reopening.
