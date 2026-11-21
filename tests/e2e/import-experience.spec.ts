@@ -274,7 +274,7 @@ test('only real format, mapping and invalid-row exceptions need input; abandoned
     await staged;
     await page.getByRole('link', { name: 'Mehr', exact: true }).click();
     await page
-      .getByRole('navigation', { name: 'Weitere Seiten', exact: true })
+      .getByRole('navigation', { name: 'Verwalten', exact: true })
       .getByRole('link', { name: 'Einstellungen', exact: true })
       .click();
     await expect(page.getByRole('heading', { name: 'Einstellungen', exact: true })).toBeVisible();

@@ -50,7 +50,7 @@
 
 **Independent check**: Open and dismiss the forecast calendar, switch between non-monthly and all contracts, inspect the three summary cards and find every More destination.
 
-- [ ] T014 [P] [US4] Reconcile the contract heading, three plan summaries and centered calendar in apps/web/app/pages/contracts/[[id]].vue and apps/web/app/components/ContractCalendarPreview.vue (comments 16, 17, 29). Compare placement and density, verify the twelve-month forecast and both recurrence views. Preserve exact expense plans; keep planned income and remainder explicitly unavailable under the outgoing-only model. Track any request for recurring income separately.
+- [x] T014 [P] [US4] Reconcile the contract heading, three plan summaries and centered calendar in apps/web/app/pages/contracts/[[id]].vue and apps/web/app/components/ContractCalendarPreview.vue (comments 16, 17, 29). Compare placement and density, verify the twelve-month forecast and both recurrence views. Preserve exact expense plans; keep planned income and remainder explicitly unavailable under the outgoing-only model. Track any request for recurring income separately.
 - [ ] T015 [P] [US4] Reconcile My Money and Manage in apps/web/app/pages/more.vue (comments 18, 31). Compare grouping, order and density with the concept across widths; verify destination links and preserve the separation of observed finances from the Scalable demo.
 
 ## Phase 7: Polish and handover
