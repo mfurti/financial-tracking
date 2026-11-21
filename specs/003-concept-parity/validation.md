@@ -45,3 +45,9 @@ The feature worktree was built after the scoped UI adoption. Its application sou
 The candidate passed 15 browser cases across the dark concept and related flows and three light concept cases. The tests exercised compact navigation, month switching, dialogs, focus restoration, hover geometry, tile graphics, theme reveal and reduced-motion fallback. Sixteen desktop/mobile regression cases also passed, including analytics filters, imports, category edits and session behavior.
 
 The direct review confirmed some visible differences. Accounts keeps one observed balance summary, since the concept’s bank and brokerage totals do not map directly to the current read model. On tablet the contract cards wrap to two columns, while the reference uses three. Analytics keeps additional filter and report controls, and the overview keeps explanatory account metadata. Existing typography and palette differ from the HTML. These differences are disclosed for visual acceptance rather than treated as pixel parity or approval.
+
+## T017 — Candidate regression checks
+
+Three additional browser cases verified populated, empty and cleared account groups from the dashboard through reload and scoped reading. The candidate therefore had 37 passing browser cases across the targeted batches.
+
+The full local Vitest run passed 224 of 225 cases and identified two missing message keys in the analytics dialog. Both locale dictionaries now include them. The focused post-fix run passed all 38 localization, appearance and preference cases. No full-suite pass is inferred from that rerun. The corrected candidate passed the local build, root and Vue types, lint, and format checks. Hosted CI verifies the published candidate independently.

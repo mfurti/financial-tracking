@@ -1507,6 +1507,8 @@ export const en: Record<keyof typeof de, string> = {
   'Nicht erfasst': 'Not tracked',
   'Nicht berechenbar': 'Cannot be calculated',
   'Reserve & Vermögen': 'Reserve & wealth',
+  Planwert: 'Planned amount',
+  'Geplante Vertragskosten': 'Planned contract costs',
   Userverwaltung: 'User management',
   'Banken & Konten hinzufügen': 'Add banks & accounts',
 };

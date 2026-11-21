@@ -1527,6 +1527,8 @@ export const de = {
   'Nicht erfasst': 'Nicht erfasst',
   'Nicht berechenbar': 'Nicht berechenbar',
   'Reserve & Vermögen': 'Reserve & Vermögen',
+  Planwert: 'Planwert',
+  'Geplante Vertragskosten': 'Geplante Vertragskosten',
   Userverwaltung: 'Userverwaltung',
   'Banken & Konten hinzufügen': 'Banken & Konten hinzufügen',
 } as const;
