@@ -14,15 +14,17 @@ test('shared concept navigation stays compact and marks existing destinations co
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation', exact: true });
   await expect(navigation).toHaveCount(1);
   await expect(navigation).toHaveCSS('position', 'fixed');
-  for (const label of ['Umsätze', 'Konten', 'Analysen', 'Verträge', 'Mehr', 'Übersicht']) {
+  for (const label of ['Umsätze', 'Konten', 'Analysen', 'Verträge', 'Vermögen', 'Übersicht', 'Mehr']) {
     await navigation.getByRole('link', { name: label, exact: true }).click();
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(navigation.locator('[aria-current="page"]')).toHaveCount(1);
     await expect(navigation.getByRole('link', { name: label, exact: true })).toHaveAttribute('aria-current', 'page');
   }
-  await page.getByRole('link', { name: 'Einstellungen', exact: true }).first().click();
+  await page
+    .getByRole('navigation', { name: 'Verwalten', exact: true })
+    .getByRole('link', { name: 'Einstellungen', exact: true })
+    .click();
   await expect(navigation.getByRole('link', { name: 'Mehr', exact: true })).toHaveAttribute('aria-current', 'page');
-  await expect(navigation.getByRole('link', { name: 'Vermögen', exact: true })).toHaveCount(0);
   expect(
     await page.evaluate(
       /** Navigation cannot establish document overflow at boundary widths. */ () =>

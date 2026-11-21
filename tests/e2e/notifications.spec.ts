@@ -55,7 +55,11 @@ test('notifications page and replay-safe read state preserve their real import a
     );
     expect(own).toHaveLength(21);
     const sourceKey = own[0].sourceKey;
-    await page.getByRole('link', { name: 'Benachrichtigungen', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Accountverwaltung', exact: true }).click();
+    await page
+      .getByRole('dialog', { name: 'Accountverwaltung', exact: true })
+      .getByRole('link', { name: 'Benachrichtigungen', exact: true })
+      .click();
     await expect(page.getByRole('heading', { level: 1, name: 'Benachrichtigungen', exact: true })).toBeVisible();
     const keys: string[] = [];
     await page.route(
