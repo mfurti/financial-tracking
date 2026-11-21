@@ -4,16 +4,23 @@ import { userErrorMessage } from '../utils/api-error';
 const api = useApi();
 const route = useRoute();
 const error = ref('');
+const accountMenuOpen = ref(false);
 const primaryLinks = [
   { to: '/', label: tr('Übersicht'), icon: 'home' },
   { to: '/transactions', label: tr('Umsätze'), icon: 'transactions' },
   { to: '/accounts', label: tr('Konten'), icon: 'accounts' },
   { to: '/analytics', label: tr('Analysen'), icon: 'categories' },
   { to: '/contracts', label: tr('Verträge'), icon: 'contracts' },
+  { to: '/wealth', label: tr('Vermögen'), icon: 'history' },
+] as const;
+const accountMenu = [
+  { to: '/settings/profile', label: 'Persönliche Angaben' },
+  { to: '/notifications', label: 'Benachrichtigungen' },
+  { to: '/accounts/add', label: 'Banken & Konten hinzufügen' },
+  { to: '/settings/users', label: 'Userverwaltung' },
 ] as const;
 const secondaryLinks = [
   { to: '/notifications', label: tr('Benachrichtigungen'), icon: 'calendar' },
-  { to: '/wealth', label: tr('Vermögen'), icon: 'history' },
   { to: '/imports', label: tr('Importhistorie'), icon: 'history' },
   { to: '/connections', label: tr('Bankverbindungen'), icon: 'bank' },
   { to: '/settings', label: tr('Einstellungen'), icon: 'settings' },
@@ -65,23 +72,25 @@ async function logout() {
           ><span class="brand-mark">H</span><strong>{{ tr('Haushaltsbuch') }}</strong></UButton
         >
         <div class="finance-tools">
-          <UButton
-            to="/notifications"
-            variant="ghost"
-            color="neutral"
-            :aria-label="tr('Benachrichtigungen')"
-            :title="tr('Benachrichtigungen')"
-            ><FinanceIcon name="calendar"
-          /></UButton>
-          <UButton
-            variant="ghost"
-            color="neutral"
-            to="/settings"
-            class="finance-profile"
-            :aria-label="tr('Einstellungen')"
-            :title="tr('Angemeldet: {0}', [api.session.value?.username])"
-            ><span aria-hidden="true">{{ api.session.value?.username?.slice(0, 1).toUpperCase() }}</span></UButton
-          ><ThemeToggle /><UButton
+          <FinanceDialog v-model:open="accountMenuOpen" :title="tr('Accountverwaltung')">
+            <template #trigger>
+              <UButton variant="ghost" color="neutral" class="finance-profile" :aria-label="tr('Accountverwaltung')">
+                <span aria-hidden="true">{{ api.session.value?.username?.slice(0, 1).toUpperCase() }}</span>
+              </UButton>
+            </template>
+            <div class="finance-account-menu">
+              <UButton
+                v-for="item in accountMenu"
+                :key="item.to"
+                :to="item.to"
+                variant="outline"
+                color="neutral"
+                @click="accountMenuOpen = false"
+                >{{ tr(item.label) }}</UButton
+              >
+            </div>
+          </FinanceDialog>
+          <ThemeToggle /><UButton
             size="sm"
             variant="ghost"
             color="neutral"
