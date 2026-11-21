@@ -4,7 +4,7 @@
 
 Preparation tasks T001–T009 and the concretely approved production execution T010–T015 are authorized. The concrete operator proposal is prepared and held locally with its exact target, candidate/previous images, migration chain, protected recovery records and proposed window.
 
-**State**: reopened.
+**State**: technically accepted.
 **G2 response**: received; the owner submitted “Ja” to the concrete production proposal, conditional on successful current CI and fresh preflight.
 **Production mutation**: approved migration and web reopening complete.
 **Owner acceptance**: pending.
@@ -37,7 +37,7 @@ On failure, keep access paused or use the approved pre-migration abort. A recove
 | T011 reviewed migration and original-field preservation | Passed                              |
 | T012 internal readiness and completed encrypted backup  | Passed                              |
 | T013 external reopening/write boundary                  | Passed after controlled reopening   |
-| T014 authenticated workflow checks                      | Not started                         |
+| T014 authenticated workflow checks                      | Passed                              |
 | T015 runtime/persistence/access/backup checks           | Passed                              |
 | T016 owner experience acceptance                        | Pending actual observation          |
 
@@ -65,4 +65,4 @@ The owner approved a second controlled start of the web container. Web became he
 
 ## T015 — Running deployment checks
 
-All four services were healthy, and the three application containers matched the approved immutable images and revision. PostgreSQL retained the original persistent volume. API and PostgreSQL exposed no host ports. The trusted-proxy configuration, private HTTPS, direct-address denial and retained authenticated post-update backup were verified. Temporary resources created for the isolated final restore were removed. Authenticated read-only workflows and owner acceptance remain open.
+All four services were healthy, and the three application containers matched the approved immutable images and revision. PostgreSQL retained the original persistent volume. API and PostgreSQL exposed no host ports. The trusted-proxy configuration, private HTTPS, direct-address denial and retained authenticated post-update backup were verified. Temporary resources created for the isolated final restore were removed. Authenticated read-only checks are recorded in [acceptance.md](acceptance.md). Owner acceptance remains open.
