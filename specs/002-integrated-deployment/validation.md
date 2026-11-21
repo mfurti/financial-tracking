@@ -45,17 +45,26 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 - See [target-baseline.md](target-baseline.md) for observed identities and remaining execution preflight limits, including the router DHCP fact not independently inspected.
 - T002 was separately committed and immediately pushed as dcd3b4a1129600d0a858d0c57df3d0af35024e3c; its checkbox changed only after successful push.
 
+## T004 — Complete original-field comparator
+
+- Added scripts/backup-preservation.ts: dynamically inventories every public application table, column name/type/nullability and exact server-rendered JSON row. The migration ledger is deliberately delegated to T005's dedicated gate.
+- Snapshot capture uses an exclusively owned idle connection, one REPEATABLE READ READ ONLY transaction and transaction-local UTC rendering. Exact BIGINT digits, timestamp microseconds, nulls, quoted identifiers, composite/non-id tables and duplicate multiplicity are preserved in memory. Only explicitly reviewed new tables are allowed; diagnostics contain fixed failure codes rather than original values.
+- Behavioral tests first failed because the comparator module was absent, then all 10 passed against disposable local PostgreSQL fixtures. They exercise 13 original application tables, including a table beyond the old nine-table list, omitted empty tables/columns, changed signed amounts, types/timestamps, duplicate removal, malformed inventory, row order and timezone independence.
+- One sandboxed database attempt was blocked by loopback EACCES; this was not counted as verification. The authorized local-only rerun passed all 10 tests in 6.44 seconds. Scoped ESLint and root strict TypeScript checks passed. No production connection or mutation was involved.
+- T003 was separately committed and immediately pushed as b587478009e0bf4345470c7b5bf6e0757b400910; its task marker changed only after successful push.
+
 ## Task evidence index
 
-| Task      | Evidence owner                                    | Status                                                              |
-| --------- | ------------------------------------------------- | ------------------------------------------------------------------- |
-| T001      | This setup/authorization ledger                   | Scoped validation; actual pushed commit is recorded in issue #15    |
-| T002      | release-readiness.md                              | Release verification passed; pushed commit is recorded in issue #15 |
-| T003      | target-baseline.md                                | Read-only inventory passed                                          |
-| T004/T005 | Recovery comparator/harness tests and this ledger | Pending                                                             |
-| T006      | recovery-validation.md                            | Pending                                                             |
-| T007/T008 | runbook.md / rehearsal.md                         | Pending                                                             |
-| T009      | execution-record.md approval packet               | Pending                                                             |
-| T010–T015 | Production execution and technical acceptance     | G2 not granted                                                      |
-| T016      | acceptance.md owner decision                      | Pending                                                             |
-| T017      | Accurate final handover                           | Pending                                                             |
+| Task      | Evidence owner                                      | Status                                                              |
+| --------- | --------------------------------------------------- | ------------------------------------------------------------------- |
+| T001      | This setup/authorization ledger                     | Scoped validation; actual pushed commit is recorded in issue #15    |
+| T002      | release-readiness.md                                | Release verification passed; pushed commit is recorded in issue #15 |
+| T003      | target-baseline.md                                  | Read-only inventory passed                                          |
+| T004      | Recovery comparator and 10 focused PostgreSQL tests | Passed scoped lint/types and behavioral checks                      |
+| T005      | Recovery harness integration                        | Pending                                                             |
+| T006      | recovery-validation.md                              | Pending                                                             |
+| T007/T008 | runbook.md / rehearsal.md                           | Pending                                                             |
+| T009      | execution-record.md approval packet                 | Pending                                                             |
+| T010–T015 | Production execution and technical acceptance       | G2 not granted                                                      |
+| T016      | acceptance.md owner decision                        | Pending                                                             |
+| T017      | Accurate final handover                             | Pending                                                             |
