@@ -6,10 +6,12 @@ const props = defineProps<{
   report: z.infer<typeof analyticsOverviewSchema>;
   merchantCount: number;
   available: readonly AnalysisModuleId[];
-  monthsHref: string;
-  categoriesHref: string;
-  merchantsHref: string;
+  merchantAmounts?: readonly string[];
+  monthsHref?: string;
+  categoriesHref?: string;
+  merchantsHref?: string;
 }>();
+const emit = defineEmits<{ activate: [id: 'months' | 'categories' | 'merchants'] }>();
 const { preferences } = useWorkspacePreferences();
 const slots = useSlots();
 const visible = computed(
@@ -36,7 +38,10 @@ const visible = computed(
           :value="tr('{0} Monate', [report.months.length])"
           :context="tr('{0} abgeschlossene Monate mit Buchungen', [report.average.monthCount])"
           :to="monthsHref"
-          ><template #graphic><FinanceIcon name="calendar" /></template
+          :actionable="!monthsHref"
+          @activate="emit('activate', 'months')"
+          ><template #graphic
+            ><FinanceMiniChart kind="bars" :values="report.months.map((month) => month.expenseCents)" /></template
         ></FinanceTile>
         <FinanceTile
           v-else-if="id === 'categories'"
@@ -45,7 +50,12 @@ const visible = computed(
           financial
           :context="tr('Gebuchte Ausgaben im gewählten Zeitraum')"
           :to="categoriesHref"
-          ><template #graphic><FinanceIcon name="categories" /></template
+          :actionable="!categoriesHref"
+          @activate="emit('activate', 'categories')"
+          ><template #graphic
+            ><FinanceMiniChart
+              kind="ring"
+              :values="report.categories.map((category) => category.expenseCents)" /></template
         ></FinanceTile>
         <FinanceTile
           v-else-if="id === 'merchants'"
@@ -54,7 +64,9 @@ const visible = computed(
           financial
           :context="tr('{0} Händler · inklusive unbekannter Gegenparteien', [merchantCount])"
           :to="merchantsHref"
-          ><template #graphic><FinanceIcon name="transactions" /></template
+          :actionable="!merchantsHref"
+          @activate="emit('activate', 'merchants')"
+          ><template #graphic><FinanceMiniChart kind="ring" :values="merchantAmounts ?? []" /></template
         ></FinanceTile>
       </slot>
     </div>

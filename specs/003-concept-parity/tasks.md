@@ -32,7 +32,7 @@
 
 - [x] T008 [US2] Reconcile month switching and visible search/account/category controls in apps/web/app/pages/transactions/[[id]].vue (comments 7, 9, 21). Preserve existing explicit date ranges, filter deep links and CSV access. Exercise month boundaries and restore advanced filters on return.
 - [x] T009 [US2] Reconcile compact date-grouped rows in apps/web/app/pages/transactions/[[id]].vue (comments 8, 22). Check right-aligned signed cents, brief secondary labels, paging, focus, inline category changes and bulk selection; compare row height and scanability at all three widths.
-- [ ] T010 [P] [US2] Reconcile account summary and card density in apps/web/app/pages/accounts/[[id]].vue (comments 10, 23 and FR-07). Compare the reduced copy, type filter and card grid against the concept with both populated and empty data. Correct unnecessary copy without substituting zero or simulated holdings for missing observed balances.
+- [x] T010 [P] [US2] Reconcile account summary and card density in apps/web/app/pages/accounts/[[id]].vue (comments 10, 23 and FR-07). Compare the reduced copy, type filter and card grid against the concept with both populated and empty data. Correct unnecessary copy without substituting zero or simulated holdings for missing observed balances.
 
 ## Phase 5: US3 — Analytics and in-place details (P1)
 
