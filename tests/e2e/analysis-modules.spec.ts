@@ -57,11 +57,15 @@ test('analysis modules retain selected order, cancellation and chart preference 
     'aria-pressed',
     'true',
   );
-  await modules.first().getByRole('link').click();
-  await expect(page).toHaveURL(/#haendler$/);
+  const beforeDetail = page.url();
+  const merchantTile = modules.first().getByRole('button');
+  await merchantTile.click();
+  await expect(page.getByRole('dialog', { name: 'Wo gibst du dein Geld aus?', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(beforeDetail);
   expect(new URL(page.url()).searchParams.has('accountId')).toBe(false);
   expect(new URL(page.url()).searchParams.has('categoryId')).toBe(false);
-  await expect(page.getByRole('heading', { name: 'Wo gibst du dein Geld aus?', exact: true })).toBeInViewport();
+  await page.keyboard.press('Escape');
+  await expect(merchantTile).toBeFocused();
   await page.evaluate(
     /** Capture sticky navigation at its real top position after separately proving section navigation. */ () =>
       window.scrollTo(0, 0),

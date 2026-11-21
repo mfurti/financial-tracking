@@ -50,9 +50,11 @@ test('multi-month analysis explains observed averages and drills into exact acco
   await expect(page.getByRole('img', { name: 'Einnahmen und Ausgaben im Monatsverlauf', exact: true })).toBeVisible();
   await page.screenshot({ path: `.local/analytics-${info.project.name}.png`, fullPage: true });
   await expect(page.getByRole('heading', { name: 'Monatsrückblick', exact: true })).toBeVisible();
+  await page.locator('.finance-tile').filter({ hasText: 'Trend zum Vormonat' }).getByRole('button').click();
   await expect(
-    page.locator('.finance-tile').filter({ hasText: 'Trend zum Vormonat' }).getByRole('link'),
+    page.getByRole('dialog', { name: 'Trend zum Vormonat' }).getByRole('link', { name: 'Buchungen', exact: true }),
   ).toHaveAttribute('href', /from=2025-04-01&to=2025-04-30/);
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Ringdiagramme', exact: true }).click();
   await expect(page.getByRole('img', { name: 'Ausgabenanteile im Monatsverlauf', exact: true })).toBeVisible();
   await expect(page.getByRole('table')).toContainText('März 2025');
@@ -90,9 +92,11 @@ test('multi-month analysis explains observed averages and drills into exact acco
     .getByRole('link', { name: /Nicht eingeordnet/ })
     .click();
   await expect(page).toHaveURL(/classification=UNCLASSIFIED/);
+  await page.getByText('Weitere Filter', { exact: true }).click();
   await expect(page.getByLabel('Fix/Variabel', { exact: true })).toContainText('Nicht eingeordnet');
   await expect(page.getByRole('link', { name: new RegExp(tag) })).toHaveCount(2);
   await page.goto('/analytics?from=2025-01-01&to=2025-05-31&unassigned=true');
+  await page.getByText('Zeitraum und Filter', { exact: true }).click();
   await choose(page, page.getByLabel('Kategorie', { exact: true }), 'Nicht kategorisiert');
   await page.getByRole('button', { name: 'Auswertung anzeigen', exact: true }).click();
   await expect(page.getByRole('table')).toBeVisible();
@@ -106,6 +110,7 @@ test('multi-month analysis explains observed averages and drills into exact acco
   await expect(page).toHaveURL(/analytics\/details/);
   await expect(page.getByRole('link', { name: new RegExp(tag) })).toHaveCount(2);
   await page.goto('/analytics?from=2025-01-01&to=2025-05-31');
+  await page.getByText('Zeitraum und Filter', { exact: true }).click();
   await page.route(
     '**/api/v1/analytics/overview?*',
     /** Fail one report refresh to verify old totals disappear. */ async (route) =>
@@ -135,6 +140,7 @@ test('completed-month presets retain exact inclusive calendar windows on reload'
   );
   await page.goto('/analytics');
   await expect(page.getByRole('table')).toBeVisible();
+  await page.getByText('Zeitraum und Filter', { exact: true }).click();
   const lastDay = await page.evaluate(
     /** Derive expected Berlin month-end using calendar dates, never monetary values. */ () => {
       const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());

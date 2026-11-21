@@ -10,9 +10,8 @@ test('recorded wealth confirms dated sources and safely retries a lost response'
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await page.waitForURL(/** Await the authenticated private workspace. */ (url) => url.pathname === '/');
   const before = await (await page.request.get('/api/v1/transactions?limit=100')).json();
-  await page.getByRole('link', { name: 'Mehr', exact: true }).click();
   await page
-    .getByRole('navigation', { name: 'Weitere Seiten' })
+    .getByRole('navigation', { name: 'Hauptnavigation' })
     .getByRole('link', { name: 'Vermögen', exact: true })
     .click();
   await expect(page.getByRole('heading', { level: 1, name: 'Vermögen', exact: true })).toBeVisible();
@@ -136,10 +135,11 @@ test('wealth pages paginate real captures and analysis modules retain explicit g
     ),
   ).toBe(true);
   await page.screenshot({ path: `.local/concept-wealth-modules-${info.project.name}.png`, fullPage: true });
-  await history.getByRole('link').click();
-  await expect(page).toHaveURL(/\/wealth$/);
-  await page.goBack();
+  await history.getByRole('button').click();
+  await expect(page.getByRole('dialog', { name: 'Aufgezeichnetes Vermögen', exact: true })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`accountId=${checking.id}`));
+  await page.keyboard.press('Escape');
+  await expect(history.getByRole('button')).toBeFocused();
   const target = all[0];
   const source = target.components.find(
     /** Project an actually retained source label without modifying its captured amount or date. */ (item: {

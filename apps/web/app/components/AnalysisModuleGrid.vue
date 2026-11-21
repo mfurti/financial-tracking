@@ -6,10 +6,7 @@ const props = defineProps<{
   report: z.infer<typeof analyticsOverviewSchema>;
   merchantCount: number;
   available: readonly AnalysisModuleId[];
-  merchantAmounts?: readonly string[];
-  monthsHref?: string;
-  categoriesHref?: string;
-  merchantsHref?: string;
+  merchantAmounts: readonly string[];
 }>();
 const emit = defineEmits<{ activate: [id: 'months' | 'categories' | 'merchants'] }>();
 const { preferences } = useWorkspacePreferences();
@@ -37,8 +34,7 @@ const visible = computed(
           :label="tr('Deine letzten Monate')"
           :value="tr('{0} Monate', [report.months.length])"
           :context="tr('{0} abgeschlossene Monate mit Buchungen', [report.average.monthCount])"
-          :to="monthsHref"
-          :actionable="!monthsHref"
+          actionable
           @activate="emit('activate', 'months')"
           ><template #graphic
             ><FinanceMiniChart kind="bars" :values="report.months.map((month) => month.expenseCents)" /></template
@@ -49,8 +45,7 @@ const visible = computed(
           :value="money(report.expenseCents)"
           financial
           :context="tr('Gebuchte Ausgaben im gewählten Zeitraum')"
-          :to="categoriesHref"
-          :actionable="!categoriesHref"
+          actionable
           @activate="emit('activate', 'categories')"
           ><template #graphic
             ><FinanceMiniChart
@@ -63,10 +58,9 @@ const visible = computed(
           :value="money(report.expenseCents)"
           financial
           :context="tr('{0} Händler · inklusive unbekannter Gegenparteien', [merchantCount])"
-          :to="merchantsHref"
-          :actionable="!merchantsHref"
+          actionable
           @activate="emit('activate', 'merchants')"
-          ><template #graphic><FinanceMiniChart kind="ring" :values="merchantAmounts ?? []" /></template
+          ><template #graphic><FinanceMiniChart kind="ring" :values="merchantAmounts" /></template
         ></FinanceTile>
       </slot>
     </div>
