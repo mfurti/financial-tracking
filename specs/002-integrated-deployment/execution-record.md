@@ -4,9 +4,9 @@
 
 Preparation tasks T001–T009 and the concretely approved production execution T010–T015 are authorized. The concrete operator proposal is prepared and held locally with its exact target, candidate/previous images, migration chain, protected recovery records and proposed window.
 
-**State**: web paused after the reopening check.
+**State**: reopened.
 **G2 response**: received; the owner submitted “Ja” to the concrete production proposal, conditional on successful current CI and fresh preflight.
-**Production mutation**: approved execution in progress.
+**Production mutation**: approved migration and web reopening complete.
 **Owner acceptance**: pending.
 
 This public record deliberately omits confidential operational bindings. The operator supplies the protected local manifest and proposal directly for the owner's review; source approval or a public progress update does not grant production authority.
@@ -30,16 +30,16 @@ On failure, keep access paused or use the approved pre-migration abort. A recove
 
 ## Execution milestones
 
-| Milestone                                               | Current outcome                           |
-| ------------------------------------------------------- | ----------------------------------------- |
-| G2 concrete proposal/window response                    | Approved; prerequisite gates passed       |
-| T010 drain/pause/final checkpoint                       | Passed                                    |
-| T011 reviewed migration and original-field preservation | Passed                                    |
-| T012 internal readiness and completed encrypted backup  | Passed                                    |
-| T013 external reopening/write boundary                  | Reopening check failed; web stopped again |
-| T014 authenticated workflow checks                      | Not started                               |
-| T015 runtime/persistence/access/backup checks           | Not started                               |
-| T016 owner experience acceptance                        | Pending actual observation                |
+| Milestone                                               | Current outcome                     |
+| ------------------------------------------------------- | ----------------------------------- |
+| G2 concrete proposal/window response                    | Approved; prerequisite gates passed |
+| T010 drain/pause/final checkpoint                       | Passed                              |
+| T011 reviewed migration and original-field preservation | Passed                              |
+| T012 internal readiness and completed encrypted backup  | Passed                              |
+| T013 external reopening/write boundary                  | Passed after controlled reopening   |
+| T014 authenticated workflow checks                      | Not started                         |
+| T015 runtime/persistence/access/backup checks           | Not started                         |
+| T016 owner experience acceptance                        | Pending actual observation          |
 
 Only actual outcomes may replace these states. T009 completes proposal preparation; its external approval response belongs to G2 before T010, not an automatic implementation result.
 
@@ -57,4 +57,8 @@ The candidate API and backup services started with dependency traversal disabled
 
 ## T013 — Reopening attempt
 
-The candidate web container became healthy and the reverse proxy logged HTTP 200 for the login page. The operator also required a German text match. The combined check failed and the operator stopped web again. The exact reason the check failed remains unverified. The reverse proxy logged only the login-page GET during the brief reopening. The proposed next check verifies the login form over HTTPS in either supported locale and confirms direct-address denial. T013 remains open pending successful reopening.
+The candidate web container became healthy and the reverse proxy logged HTTP 200 for the login page. The operator also required a German text match. The combined check failed and the operator stopped web again. The exact reason the check failed remains unverified. The reverse proxy logged only the login-page GET during the brief reopening. The proposed next check verifies the login form over HTTPS in either supported locale and confirms direct-address denial. The subsequent reopening is recorded below.
+
+## T013 — Controlled reopening
+
+The owner approved a second controlled start of the web container. Web became healthy and ordinary write access resumed. Fresh Chromium contexts received HTTP 200 over private HTTPS and rendered the localized login heading, both credential fields and the submit button in German and English. Direct LAN access returned HTTP 403. The elapsed time from the first pause to final reopening remained within the approved window. The protected execution record holds both write boundaries and their measured times. The first reopening attempt remains documented above. No owner credentials were submitted as part of these checks.

@@ -11,7 +11,7 @@ Feature 002-integrated-deployment uses [issue #15](https://github.com/mfurti/fin
 - Existing documented project/deployment rules apply; the constitution remains an unratified template.
 - Runtime bindings, private inventory/archive identities and timing measurements stay in the protected local operator dossier. Public tracking contains task/check outcomes and public source provenance only. Original financial rows remain in private memory; no original credentials/private values are logged.
 
-Current state: web paused after the reopening check. The migrated database, original-field verification, internal startup and new encrypted archive passed.
+Current state: reopened after a controlled retry. German and English login forms passed in Chromium over private HTTPS; direct LAN requests returned HTTP 403. The migrated database, original-field verification, internal startup and new encrypted archive passed.
 
 Preflight failure blocks mutation. Later failure keeps access paused and uses a reviewed recovery decision; new writes after reopening require preservation/reconciliation. Absence of an approval is never a passed gate.
 
