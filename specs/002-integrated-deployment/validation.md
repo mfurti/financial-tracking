@@ -53,6 +53,15 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 - One sandboxed database attempt was blocked by loopback EACCES; this was not counted as verification. The authorized local-only rerun passed all 10 tests in 6.44 seconds. Scoped ESLint and root strict TypeScript checks passed. No production connection or mutation was involved.
 - T003 was separately committed and immediately pushed as b587478009e0bf4345470c7b5bf6e0757b400910; its task marker changed only after successful push.
 
+## T005 — Recovery harness and candidate migration gates
+
+- scripts/verify-target-backup.ts now delegates to the complete comparator and the testable scripts/target-backup-verification.ts gate. The task/structure paths were reconciled before delivery; the CLI's owned-target guard still rejects CI/shared TEST_DATABASE_URL and never opens production.
+- The gate pins all eight candidate c06e7cc SQL byte checksums, requires a complete successful historical migration prefix, preserves every original ledger field, permits only actually pending reviewed additive tables and verifies their existence/empty metadata/default seed. Previously applied reserve targets are original data and are not reset. Populated financial recovery evidence is mandatory.
+- Dedicated tests first failed for the absent gate module, then 13 passed. Combined comparator, harness and existing reserve/workspace migration suites passed 32/32 tests in four files (101.57 seconds); scoped ESLint, root strict TypeScript and changed-document/source formatting passed.
+- Negative cases cover altered original credentials, checksum/history/SQL changes, omitted schema, an incorrect seed, invented profile metadata, extra migration entries, empty archives and sanitized migration failure. SQL fixture upgrades are disposable local checks, not encrypted Docker/production restore evidence.
+- The CLI emits only sanitized coverage/count/gate results. Login password rotation and session deletion remain confined to the owned restored copy, after original-field comparison; no private values/screenshots are emitted.
+- T004 was separately committed and immediately pushed as d0e40dec2646e48222556034ce103aac6575603a; its checkbox changed only after successful push.
+
 ## Task evidence index
 
 | Task      | Evidence owner                                      | Status                                                              |
@@ -61,7 +70,7 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 | T002      | release-readiness.md                                | Release verification passed; pushed commit is recorded in issue #15 |
 | T003      | target-baseline.md                                  | Read-only inventory passed                                          |
 | T004      | Recovery comparator and 10 focused PostgreSQL tests | Passed scoped lint/types and behavioral checks                      |
-| T005      | Recovery harness integration                        | Pending                                                             |
+| T005      | Recovery harness integration                        | 32 tests plus lint/types/format passed                              |
 | T006      | recovery-validation.md                              | Pending                                                             |
 | T007/T008 | runbook.md / rehearsal.md                           | Pending                                                             |
 | T009      | execution-record.md approval packet                 | Pending                                                             |
