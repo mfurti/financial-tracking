@@ -13,7 +13,7 @@
 
 ## Execution state and evidence policy
 
-Current state: draft; release readiness is established and target/recovery preparation remains pending. The complete state sequence is:
+Current state: prepared; candidate release and read-only target baseline are established. Recovery rehearsal is not yet completed. The complete state sequence is:
 
 draft → prepared → recovery-rehearsed → awaiting-production-approval → approved → writers-paused → final-backup-verified → migrated → internally-verified → reopened → technically-accepted.
 
@@ -38,13 +38,20 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 - See [release-readiness.md](release-readiness.md) for actual immutable references and limits. No production runtime changed.
 - T001 was separately committed and immediately pushed as d46135acac75825605da579154a03119937abb63; its checkbox changed only after successful push.
 
+## T003 — Read-only target inventory
+
+- Actual application revision d193639, four healthy services, preserved production volume/network topology and byte-identical candidate/deployed Compose were observed.
+- Exactly the two planned migrations are pending; all 18 original application tables must be covered, including populated accountless transaction history. Existing encrypted backup metadata was inspected without generating a new archive or changing production.
+- See [target-baseline.md](target-baseline.md) for observed identities and remaining execution preflight limits, including the router DHCP fact not independently inspected.
+- T002 was separately committed and immediately pushed as dcd3b4a1129600d0a858d0c57df3d0af35024e3c; its checkbox changed only after successful push.
+
 ## Task evidence index
 
 | Task      | Evidence owner                                    | Status                                                              |
 | --------- | ------------------------------------------------- | ------------------------------------------------------------------- |
 | T001      | This setup/authorization ledger                   | Scoped validation; actual pushed commit is recorded in issue #15    |
 | T002      | release-readiness.md                              | Release verification passed; pushed commit is recorded in issue #15 |
-| T003      | target-baseline.md                                | Pending                                                             |
+| T003      | target-baseline.md                                | Read-only inventory passed                                          |
 | T004/T005 | Recovery comparator/harness tests and this ledger | Pending                                                             |
 | T006      | recovery-validation.md                            | Pending                                                             |
 | T007/T008 | runbook.md / rehearsal.md                         | Pending                                                             |
