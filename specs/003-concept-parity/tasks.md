@@ -40,7 +40,7 @@
 
 **Independent check**: Compare the order and density of sections; activate all six module types, verify focus and scope, inspect genuine/missing chart values and drill into one report without losing the original filter.
 
-- [ ] T011 [P] [US3] Reconcile bar and ring previews in apps/web/app/components/FinanceMiniChart.vue and apps/web/app/components/AnalysisModuleGrid.vue (comments 14, 26). Use existing exact aggregates and bounded drawing ratios, provide an empty state without inventing observations, and hide financial graphics when amounts are masked.
+- [x] T011 [P] [US3] Reconcile bar and ring previews in apps/web/app/components/FinanceMiniChart.vue and apps/web/app/components/AnalysisModuleGrid.vue (comments 14, 26). Use existing exact aggregates and bounded drawing ratios, provide an empty state without inventing observations, and hide financial graphics when amounts are masked.
 - [ ] T012 [US3] Reconcile monthly review, cashflow, red negative trend, Wealth and Distribution cards, and configurable analyses in apps/web/app/pages/analytics/index.vue (comments 12, 13, 24, 25). Compare the landing hierarchy and trim persistent copy; preserve access to filters, exact tables and useful explanatory text.
 - [ ] T013 [US3] Reconcile tile activation in apps/web/app/pages/analytics/index.vue and coverage in tests/e2e/analysis-modules.spec.ts and tests/e2e/recorded-wealth.spec.ts (comment 15). Check same-page dialog open, scoped detail, explicit booking navigation, focus return and zero anchor jumps. Verify configurable tile order and existing wealth privacy.
 

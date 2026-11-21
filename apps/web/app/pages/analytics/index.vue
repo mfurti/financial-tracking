@@ -79,6 +79,36 @@ const groupId = ref(String(route.query.groupId ?? ''));
 const categoryId = ref(route.query.uncategorized === 'true' ? 'UNCATEGORIZED' : String(route.query.categoryId ?? ''));
 const error = ref('');
 const busy = ref(true);
+type Detail = AnalysisModuleId | 'review' | 'average' | 'trend' | 'wealth' | 'distribution';
+const detailOpen = ref(false);
+const detail = ref<Detail>('months');
+const detailLabels: Record<Detail, string> = {
+  months: 'Dein Monatsverlauf',
+  categories: 'Ausgaben nach Kategorien',
+  merchants: 'Wo gibst du dein Geld aus?',
+  history: 'Aufgezeichnetes Vermögen',
+  reserve: 'Notgroschen',
+  contracts: 'Vertragskosten',
+  review: 'Monatsrückblick',
+  average: 'Durchschnittliche Ausgaben',
+  trend: 'Trend zum Vormonat',
+  wealth: 'Vermögen',
+  distribution: 'Verteilung',
+};
+let detailTrigger: HTMLElement | null = null;
+function openDetail(value: Detail) {
+  detailTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  detail.value = value;
+  detailOpen.value = true;
+}
+watch(detailOpen, async (open) => {
+  if (open) return;
+  await nextTick();
+  detailTrigger?.focus({ preventScroll: true });
+});
+const wealthAmounts = computed(
+  () => wealth.value?.preview.components.flatMap((item) => (item.amountCents === null ? [] : [item.amountCents])) ?? [],
+);
 const latestMonth = computed(
   /** Review the actual final selected month, including explicitly disclosed empty or partial periods. */ () =>
     report.value?.months.at(-1),
@@ -198,12 +228,6 @@ function merchantLink(key: string) {
   return link({ merchantKey: key, direction: 'EXPENSE' }).replace('/transactions?', '/analytics/details?');
 }
 /** Navigate to delivered chart/list content without losing the displayed report's effective scope. */
-function analysisAnchor(id: string) {
-  if (!report.value) return '/analytics';
-  const params = new URLSearchParams({ from: report.value.from, to: report.value.to });
-  for (const [key, value] of Object.entries(appliedFilters.value)) if (value !== undefined) params.set(key, value);
-  return `/analytics?${params}#${id}`;
-}
 /** A selected chart month/direction opens that month's contributing actual transactions. */
 async function monthSelect(month: string, direction: 'INCOME' | 'EXPENSE') {
   const row = report.value?.months.find(
@@ -243,7 +267,8 @@ onBeforeUnmount(
     </div>
   </div>
   <UNavigationMenu :items="navigation" class="mb-5" :aria-label="tr('Analysebereiche')" />
-  <section class="panel mb-5">
+  <details class="panel mb-5 finance-analysis-filters">
+    <summary>{{ tr('Zeitraum und Filter') }}</summary>
     <div class="toolbar mb-4">
       <UButton
         v-for="count in [3, 6, 12]"
@@ -287,7 +312,7 @@ onBeforeUnmount(
           ]" /></UFormField
       ><UButton type="submit" :loading="busy">{{ tr('Auswertung anzeigen') }}</UButton>
     </form>
-  </section>
+  </details>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <p v-if="busy" role="status">{{ tr('Auswertung wird geladen …') }}</p>
   <template v-if="report && !busy">
@@ -305,7 +330,7 @@ onBeforeUnmount(
             ])
           "
           actionable
-          @activate="monthSelect(latestMonth!.month, 'EXPENSE')"
+          @activate="openDetail('review')"
         />
       </SectionPanel>
       <SectionPanel :title="tr('Einnahmen und Ausgaben')" icon="categories" class="finance-analysis-top" :bare="true">
@@ -318,8 +343,10 @@ onBeforeUnmount(
               report.average.expenseCents === null ? tr('Noch nicht berechenbar') : money(report.average.expenseCents)
             "
             :context="tr('Ø aus {0} Monaten', [report.average.monthCount])"
-            :to="link({ direction: 'EXPENSE' })"
-            ><template #graphic><FinanceIcon name="categories" /></template
+            actionable
+            @activate="openDetail('average')"
+            ><template #graphic
+              ><FinanceMiniChart kind="bars" :values="report.months.map((month) => month.expenseCents)" /></template
           ></FinanceTile>
           <FinanceTile
             :label="tr('Trend zum Vormonat')"
@@ -331,12 +358,40 @@ onBeforeUnmount(
                 ? tr('{0} gegenüber {1}', [monthName(report.trend.month), monthName(report.trend.previousMonth)])
                 : tr('Zwei aufeinanderfolgende geeignete Monate erforderlich')
             "
-            :to="trendLink"
+            actionable
+            :disabled="!report.trend"
+            @activate="openDetail('trend')"
+            ><template #value
+              ><span :class="report.trend && BigInt(report.trend.changeCents) < 0n ? 'negative' : undefined">{{
+                report.trend ? money(report.trend.changeCents) : tr('Noch kein vergleichbarer Trend')
+              }}</span></template
             ><template #graphic><FinanceIcon name="transactions" /></template
           ></FinanceTile>
         </div>
       </SectionPanel>
     </div>
+    <SectionPanel :title="tr('Vermögen')" bare>
+      <div class="finance-wealth-pair">
+        <FinanceTile
+          v-for="id in ['wealth', 'distribution'] as const"
+          :key="id"
+          :label="tr(detailLabels[id])"
+          :state="moduleState.history"
+          :error-text="moduleErrors.history"
+          :value="wealth?.preview.totalCents != null ? money(wealth.preview.totalCents) : tr('Keine bekannten Beträge')"
+          :financial="wealth?.preview.totalCents != null"
+          actionable
+          @activate="openDetail(id)"
+          @retry="loadWorkspaceModule('history')"
+        >
+          <template #graphic
+            ><FinanceMiniChart v-if="id === 'distribution'" kind="ring" :values="wealthAmounts" /><FinanceIcon
+              v-else
+              name="history"
+          /></template>
+        </FinanceTile>
+      </div>
+    </SectionPanel>
     <div class="finance-analysis-actuals">
       <NuxtLink :to="link({ direction: 'INCOME' })"
         >{{ tr('Einnahmen') }}
@@ -366,9 +421,8 @@ onBeforeUnmount(
         :report="report"
         :merchant-count="merchants?.merchants.length ?? 0"
         :available="availableModules"
-        :months-href="analysisAnchor('monatsverlauf')"
-        :categories-href="analysisAnchor('kategorien')"
-        :merchants-href="analysisAnchor('haendler')"
+        :merchant-amounts="merchants?.merchants.map((merchant) => merchant.expenseCents) ?? []"
+        @activate="openDetail"
       >
         <template #history>
           <FinanceTile
@@ -390,7 +444,8 @@ onBeforeUnmount(
                   ])
                 : tr('Gesamter Arbeitsbereich · nur ausdrücklich aufgezeichnete Beobachtungen')
             "
-            to="/wealth"
+            actionable
+            @activate="openDetail('history')"
             @retry="loadWorkspaceModule('history')"
             ><template #graphic><FinanceIcon name="history" /></template
           ></FinanceTile>
@@ -404,7 +459,8 @@ onBeforeUnmount(
               reserve?.currentCents === null || !reserve ? tr('Keine beobachtete Reserve') : money(reserve.currentCents)
             "
             :financial="reserve?.currentCents !== null && Boolean(reserve)"
-            to="/wealth"
+            actionable
+            @activate="openDetail('reserve')"
             @retry="loadWorkspaceModule('reserve')"
           >
             <template #context
@@ -436,13 +492,84 @@ onBeforeUnmount(
                   ])
                 : undefined
             "
-            to="/contracts/analysis"
+            actionable
+            @activate="openDetail('contracts')"
             @retry="loadWorkspaceModule('contracts')"
             ><template #graphic><FinanceIcon name="contracts" /></template
           ></FinanceTile>
         </template>
       </AnalysisModuleGrid>
     </SectionPanel>
+    <FinanceDialog v-model:open="detailOpen" :title="tr(detailLabels[detail])">
+      <template v-if="['months', 'review', 'average', 'trend'].includes(detail)">
+        <MonthlyChart :report="report" :chart="preferences.chart" @select="monthSelect" />
+        <UButton
+          v-if="detail === 'review' && latestMonth"
+          variant="soft"
+          @click="monthSelect(latestMonth.month, 'EXPENSE')"
+          >{{ tr('Buchungen') }}</UButton
+        >
+        <UButton
+          v-if="detail === 'average' || detail === 'trend'"
+          :to="detail === 'trend' ? trendLink : link({ direction: 'EXPENSE' })"
+          variant="soft"
+          >{{ tr('Buchungen') }}</UButton
+        >
+      </template>
+      <template v-else-if="detail === 'categories' || detail === 'merchants'">
+        <ExpenseChart
+          v-if="detail === 'categories' && report.categories.length"
+          :groups="report.categories"
+          :total-cents="report.expenseCents"
+          :chart="preferences.chart"
+          :label="tr('Ausgabenanteile nach Kategorien')"
+          @select="navigateTo(categoryLink($event))"
+        />
+        <template v-if="detail === 'categories'">
+          <UButton
+            v-for="group in report.categories"
+            :key="group.categoryId ?? 'none'"
+            :to="categoryLink(group.categoryId)"
+            class="contract-list-row"
+            variant="ghost"
+            >{{ categoryDisplayLabel(group.categoryId, group.name)
+            }}<strong>{{ money(group.expenseCents) }}</strong></UButton
+          >
+        </template>
+        <template v-else>
+          <FinanceMiniChart
+            v-if="!amountsMasked()"
+            kind="ring"
+            :values="merchants?.merchants.map((merchant) => merchant.expenseCents) ?? []"
+          />
+          <UButton
+            v-for="merchant in merchants?.merchants"
+            :key="merchant.key"
+            :to="merchantLink(merchant.key)"
+            class="contract-list-row"
+            variant="ghost"
+            >{{ merchant.key === 'unknown' ? tr('Unbekannter Händler') : merchant.label
+            }}<strong>{{ money(merchant.expenseCents) }}</strong></UButton
+          >
+        </template>
+        <p v-if="detail === 'categories' ? !report.categories.length : !merchants?.merchants.length" class="empty-copy">
+          {{ tr('Keine gebuchten Ausgaben im gewählten Zeitraum.') }}
+        </p>
+      </template>
+      <ReserveGoalTile v-else-if="detail === 'reserve'" />
+      <template v-else-if="detail === 'contracts'">
+        <p v-if="contractCosts">{{ money(contractCosts.monthlyCents) }} · {{ tr('Planwert') }}</p>
+        <UButton to="/contracts/analysis" variant="soft">{{ tr('Geplante Vertragskosten') }}</UButton>
+      </template>
+      <RecordedWealth v-else-if="detail === 'history'" />
+      <template v-else>
+        <FinanceMiniChart v-if="detail === 'distribution' && !amountsMasked()" kind="ring" :values="wealthAmounts" />
+        <p>
+          {{ wealth?.preview.totalCents != null ? money(wealth.preview.totalCents) : tr('Keine bekannten Beträge') }}
+        </p>
+        <UButton to="/wealth" variant="soft">{{ tr('Vermögen') }}</UButton>
+      </template>
+    </FinanceDialog>
     <div class="toolbar finance-chart-choice" role="group" :aria-label="tr('Diagrammdarstellung')">
       <UButton
         :aria-pressed="preferences.chart === 'bar'"
