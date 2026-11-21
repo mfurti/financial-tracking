@@ -4,7 +4,7 @@
 
 Preparation tasks T001–T009 and the concretely approved production execution T010–T015 are authorized. The concrete operator proposal is prepared and held locally with its exact target, candidate/previous images, migration chain, protected recovery records and proposed window.
 
-**State**: migrated.
+**State**: internally-verified.
 **G2 response**: received; the owner submitted “Ja” to the concrete production proposal, conditional on successful current CI and fresh preflight.
 **Production mutation**: approved execution in progress.
 **Owner acceptance**: pending.
@@ -35,7 +35,7 @@ On failure, keep access paused or use the approved pre-migration abort. A recove
 | G2 concrete proposal/window response                    | Approved; prerequisite gates passed |
 | T010 drain/pause/final checkpoint                       | Passed                              |
 | T011 reviewed migration and original-field preservation | Passed                              |
-| T012 internal readiness and completed encrypted backup  | Not started                         |
+| T012 internal readiness and completed encrypted backup  | Passed                              |
 | T013 external reopening/write boundary                  | Not started                         |
 | T014 authenticated workflow checks                      | Not started                         |
 | T015 runtime/persistence/access/backup checks           | Not started                         |
@@ -50,3 +50,7 @@ The approved write pause and drain completed. PostgreSQL and its original volume
 ## T011 — Observed execution
 
 Only the approved immutable image assignments were changed atomically; other configuration, secrets and topology were preserved. The matching one-shot migrator completed only the reviewed pending chain. Before API startup, every original application field and original ledger record matched the paused baseline. All expected additive tables, reviewed checksums/status and sole approved initial default were verified; no financial or historical metadata was fabricated.
+
+## T012 — Observed execution
+
+The candidate API and backup services started with dependency traversal disabled while external web remained stopped. Internal health and actual immutable image identities passed. A newly completed encrypted post-update archive was copied off-host and authenticated; the original persistent database remained in use.
