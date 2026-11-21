@@ -54,6 +54,19 @@ const filter = reactive({
   uncategorized: route.query.uncategorized === 'true',
   excludeTransfers: route.query.excludeTransfers === 'true',
 });
+const month = ref(
+  /^\d{4}-(0[1-9]|1[0-2])$/.test(String(route.query.from ?? '').slice(0, 7))
+    ? String(route.query.from).slice(0, 7)
+    : new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7),
+);
+async function applyMonth(offset = 0) {
+  const date = new Date(`${month.value}-01T12:00:00Z`);
+  if (!Number.isFinite(date.getTime())) return;
+  date.setUTCMonth(date.getUTCMonth() + offset);
+  month.value = date.toISOString().slice(0, 7);
+  Object.assign(filter, monthRangeQuery(month.value));
+  await search();
+}
 const unassignedSelection = computed(
   /** Only genuinely unassigned selected transactions enter the explicit assignment workflow. */ () =>
     rows.value
@@ -221,7 +234,12 @@ onBeforeUnmount(
     <div>
       <h1>{{ route.params.id ? tr('Umsatzdetails') : tr('Deine Umsätze') }}</h1>
     </div>
-    <UButton :to="route.params.id ? (returnTarget ?? '/transactions') : '/imports/csv'" variant="soft">{{
+    <div v-if="!route.params.id" class="toolbar finance-month-controls">
+      <UButton variant="ghost" color="neutral" :aria-label="tr('Vorheriger Monat')" @click="applyMonth(-1)">‹</UButton>
+      <MonthPicker v-model="month" compact @change="applyMonth()" />
+      <UButton variant="ghost" color="neutral" :aria-label="tr('Nächster Monat')" @click="applyMonth(1)">›</UButton>
+    </div>
+    <UButton v-else :to="returnTarget ?? '/transactions'" variant="soft">{{
       route.params.id
         ? returnTarget?.startsWith('/analytics/details?')
           ? tr('Zur Analyse zurück')
@@ -288,11 +306,11 @@ onBeforeUnmount(
     @complete="assigned"
   />
   <template v-if="!route.params.id"
-    ><SectionPanel :title="tr('Umsätze filtern')" icon="transactions" class="mb-5" compact>
+    ><div class="mb-5">
       <p v-if="filter.merchantKey" class="data-context">
         {{ tr('Exakter Händlerfilter aktiv. Die Suche erweitert diesen Filter nicht.') }}
       </p>
-      <form class="filter-grid" @submit.prevent="search">
+      <form class="finance-transaction-filters" :aria-label="tr('Umsätze filtern')" @submit.prevent="search">
         <label
           >{{ tr('Suche')
           }}<UInput
@@ -305,8 +323,6 @@ onBeforeUnmount(
             v-model:group-id="filter.groupId"
             searchable
             :accounts="accounts" /></label
-        ><label>{{ tr('Von') }}<DatePicker v-model="filter.from" :label="tr('Von')" /></label
-        ><label>{{ tr('Bis') }}<DatePicker v-model="filter.to" :label="tr('Bis')" /></label
         ><label
           >{{ tr('Kategorie')
           }}<ChoiceSelect
@@ -317,49 +333,58 @@ onBeforeUnmount(
               ...categories.map(
                 /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
               ),
-            ]" /></label
-        ><label
-          >{{ tr('Status')
-          }}<ChoiceSelect
-            v-model="filter.status"
-            :searchable="false"
-            :items="[
-              { label: tr('Alle Buchungen'), value: '' },
-              { label: tr('Gebucht'), value: 'BOOKED' },
-              { label: tr('Vorgemerkt'), value: 'PENDING' },
-            ]" /></label
-        ><label
-          >{{ tr('Richtung')
-          }}<ChoiceSelect
-            v-model="filter.direction"
-            :searchable="false"
-            :items="[
-              { label: tr('Einnahmen & Ausgaben'), value: '' },
-              { label: tr('Einnahmen'), value: 'INCOME' },
-              { label: tr('Ausgaben'), value: 'EXPENSE' },
             ]"
         /></label>
-        <UFormField :label="tr('Fix/Variabel')"
-          ><ChoiceSelect
-            v-model="filter.classification"
-            :searchable="false"
-            :items="[
-              { label: tr('Alle Kennzeichnungen'), value: '' },
-              { label: tr('Fix'), value: 'FIXED' },
-              { label: tr('Variabel'), value: 'VARIABLE' },
-              { label: tr('Nicht eingeordnet'), value: 'UNCLASSIFIED' },
-            ]"
-        /></UFormField>
-        <div class="toolbar">
-          <UCheckbox v-model="filter.uncategorized" :label="tr('Ohne Kategorie')" /><UCheckbox
-            v-model="filter.excludeTransfers"
-            :label="tr('Ohne Umbuchungen')"
-          />
-        </div>
-        <UButton type="submit" :loading="busy">{{ tr('Filtern') }}</UButton>
+        <details class="finance-advanced-filters">
+          <summary>{{ tr('Weitere Filter') }}</summary>
+          <div class="filter-grid">
+            <label>{{ tr('Von') }}<DatePicker v-model="filter.from" :label="tr('Von')" /></label>
+            <label>{{ tr('Bis') }}<DatePicker v-model="filter.to" :label="tr('Bis')" /></label>
+            <label
+              >{{ tr('Status')
+              }}<ChoiceSelect
+                v-model="filter.status"
+                :searchable="false"
+                :items="[
+                  { label: tr('Alle Buchungen'), value: '' },
+                  { label: tr('Gebucht'), value: 'BOOKED' },
+                  { label: tr('Vorgemerkt'), value: 'PENDING' },
+                ]" /></label
+            ><label
+              >{{ tr('Richtung')
+              }}<ChoiceSelect
+                v-model="filter.direction"
+                :searchable="false"
+                :items="[
+                  { label: tr('Einnahmen & Ausgaben'), value: '' },
+                  { label: tr('Einnahmen'), value: 'INCOME' },
+                  { label: tr('Ausgaben'), value: 'EXPENSE' },
+                ]"
+            /></label>
+            <UFormField :label="tr('Fix/Variabel')"
+              ><ChoiceSelect
+                v-model="filter.classification"
+                :searchable="false"
+                :items="[
+                  { label: tr('Alle Kennzeichnungen'), value: '' },
+                  { label: tr('Fix'), value: 'FIXED' },
+                  { label: tr('Variabel'), value: 'VARIABLE' },
+                  { label: tr('Nicht eingeordnet'), value: 'UNCLASSIFIED' },
+                ]"
+            /></UFormField>
+            <div class="toolbar">
+              <UCheckbox v-model="filter.uncategorized" :label="tr('Ohne Kategorie')" /><UCheckbox
+                v-model="filter.excludeTransfers"
+                :label="tr('Ohne Umbuchungen')"
+              />
+            </div>
+          </div>
+        </details>
+        <UButton type="submit" variant="soft" :loading="busy">{{ tr('Filtern') }}</UButton>
+        <UButton to="/imports/csv" variant="ghost">{{ tr('CSV importieren') }}</UButton>
       </form>
-    </SectionPanel>
-    <SectionPanel :title="tr('Buchungen')" icon="transactions" compact>
+    </div>
+    <SectionPanel :title="tr('Buchungen')" bare>
       <div v-if="selected.length" class="toolbar mb-5">
         <span>{{ selected.length }} {{ tr('ausgewählt') }}</span
         ><ChoiceSelect
