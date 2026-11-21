@@ -13,7 +13,7 @@
 
 ## Execution state and evidence policy
 
-Current state: draft; preparation has started. The complete state sequence is:
+Current state: draft; release readiness is established and target/recovery preparation remains pending. The complete state sequence is:
 
 draft → prepared → recovery-rehearsed → awaiting-production-approval → approved → writers-paused → final-backup-verified → migrated → internally-verified → reopened → technically-accepted.
 
@@ -32,17 +32,23 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 - No .specify/extensions.yml exists, so no pre-implementation hook is registered.
 - This increment creates the ledger and records G1 in feature metadata. It does not run recovery or contact/change production.
 
+## T002 — Candidate release verification
+
+- Exact main verify/operations/publish passed; artifact ZIP checksum matches GitHub metadata, inner archive/REVISION/runtime allowlist passed, and all three GHCR labels were independently read and matched.
+- See [release-readiness.md](release-readiness.md) for actual immutable references and limits. No production runtime changed.
+- T001 was separately committed and immediately pushed as d46135acac75825605da579154a03119937abb63; its checkbox changed only after successful push.
+
 ## Task evidence index
 
-| Task      | Evidence owner                                    | Status                                                           |
-| --------- | ------------------------------------------------- | ---------------------------------------------------------------- |
-| T001      | This setup/authorization ledger                   | Scoped validation; actual pushed commit is recorded in issue #15 |
-| T002      | release-readiness.md                              | Pending                                                          |
-| T003      | target-baseline.md                                | Pending                                                          |
-| T004/T005 | Recovery comparator/harness tests and this ledger | Pending                                                          |
-| T006      | recovery-validation.md                            | Pending                                                          |
-| T007/T008 | runbook.md / rehearsal.md                         | Pending                                                          |
-| T009      | execution-record.md approval packet               | Pending                                                          |
-| T010–T015 | Production execution and technical acceptance     | G2 not granted                                                   |
-| T016      | acceptance.md owner decision                      | Pending                                                          |
-| T017      | Accurate final handover                           | Pending                                                          |
+| Task      | Evidence owner                                    | Status                                                              |
+| --------- | ------------------------------------------------- | ------------------------------------------------------------------- |
+| T001      | This setup/authorization ledger                   | Scoped validation; actual pushed commit is recorded in issue #15    |
+| T002      | release-readiness.md                              | Release verification passed; pushed commit is recorded in issue #15 |
+| T003      | target-baseline.md                                | Pending                                                             |
+| T004/T005 | Recovery comparator/harness tests and this ledger | Pending                                                             |
+| T006      | recovery-validation.md                            | Pending                                                             |
+| T007/T008 | runbook.md / rehearsal.md                         | Pending                                                             |
+| T009      | execution-record.md approval packet               | Pending                                                             |
+| T010–T015 | Production execution and technical acceptance     | G2 not granted                                                      |
+| T016      | acceptance.md owner decision                      | Pending                                                             |
+| T017      | Accurate final handover                           | Pending                                                             |

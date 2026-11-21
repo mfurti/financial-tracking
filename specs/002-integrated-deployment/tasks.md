@@ -32,7 +32,7 @@ No production writer pause, backup creation on the target, runtime configuration
 
 **Purpose**: Reconcile approvals, selected checkout and evidence ownership before executable work.
 
-- [ ] T001 Establish the deployment execution/evidence ledger in specs/002-integrated-deployment/validation.md using spec.md, tasks.md and data-model.md; record G0/G1 approvals, candidate/tooling identities and task/check/commit provenance, preserve the existing 48-task delivery, and define the exact state sequence "draft → prepared → recovery-rehearsed → awaiting-production-approval → approved → writers-paused → final-backup-verified → migrated → internally-verified → reopened → technically-accepted"; failed preflight stays blocked and migration/readiness failure enters paused-failure without recording fictional success.
+- [x] T001 Establish the deployment execution/evidence ledger in specs/002-integrated-deployment/validation.md using spec.md, tasks.md and data-model.md; record G0/G1 approvals, candidate/tooling identities and task/check/commit provenance, preserve the existing 48-task delivery, and define the exact state sequence "draft → prepared → recovery-rehearsed → awaiting-production-approval → approved → writers-paused → final-backup-verified → migrated → internally-verified → reopened → technically-accepted"; failed preflight stays blocked and migration/readiness failure enters paused-failure without recording fictional success.
 
 **Acceptance**: Selected checkout/issue/branch and actual approvals are recorded; no live change or incomplete task is marked complete.
 
