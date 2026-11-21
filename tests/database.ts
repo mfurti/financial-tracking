@@ -6,6 +6,23 @@ import { resolve, relative } from 'node:path';
 import { createServer } from 'node:net';
 import { createDb } from '../apps/api/src/db.js';
 
+/** Seed the original contract shape on a database that deliberately predates the direction column. */
+export async function seedHistoricalContract(client: Client, accountId: string) {
+  const contractId = randomUUID();
+  const revisionId = randomUUID();
+  await client.query(
+    `INSERT INTO "Contract" (id, name, provider, kind, "accountId", "startDate")
+     VALUES ($1, 'Legacy contract', 'Legacy provider', 'OTHER', $2, '2035-01-31')`,
+    [contractId, accountId],
+  );
+  await client.query(
+    `INSERT INTO "ContractRevision" (id, "contractId", "effectiveDate", "amountCents", "intervalMonths")
+     VALUES ($1, $2, '2035-01-31', 1234, 1)`,
+    [revisionId, contractId],
+  );
+  return { contractId, revisionId };
+}
+
 /** Find a free local port for the isolated PostgreSQL process. */
 export async function freePort(): Promise<number> {
   const server = createServer();
