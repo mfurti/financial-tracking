@@ -3,30 +3,61 @@ const mode = useColorMode();
 const isDark = computed(
   /** Start with the resolved device preference until the user makes an explicit choice. */ () => mode.value === 'dark',
 );
-let transitionTimer: ReturnType<typeof setTimeout> | undefined;
+let transitioning = false;
 
-/** Toggle one persisted preference and animate icon colors/opacity only for this deliberate user action; financial surfaces change immediately. */
-function toggleTheme() {
-  if (transitionTimer) clearTimeout(transitionTimer);
-  document.documentElement.classList.remove('theme-transition');
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    document.documentElement.classList.add('theme-transition');
-    transitionTimer = setTimeout(
-      /** Avoid animating unrelated future UI changes. */ () => {
-        document.documentElement.classList.remove('theme-transition');
-        transitionTimer = undefined;
-      },
-      180,
-    );
+/** Reveal the new palette from the pointer, or from the toggle for keyboard activation. */
+async function toggleTheme(event: MouseEvent) {
+  if (transitioning) return;
+  const preference = isDark.value ? 'light' : 'dark';
+  if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    mode.preference = preference;
+    return;
   }
-  mode.preference = isDark.value ? 'light' : 'dark';
+  const root = document.documentElement;
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  const x = event.detail ? event.clientX : rect.left + rect.width / 2;
+  const y = event.detail ? event.clientY : rect.top + rect.height / 2;
+  const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) * 1.18;
+  try {
+    // Keep the selected palette if navigation interrupts the old document before its capture callback.
+    localStorage.setItem('haushaltsbuch-theme', preference);
+  } catch {
+    // Nuxt still applies the in-memory choice when device storage is unavailable.
+  }
+  transitioning = true;
+  root.classList.add('theme-reveal');
+  try {
+    const transition = document.startViewTransition(async () => {
+      mode.preference = preference;
+      await nextTick();
+    });
+    await transition.ready;
+    const frames = Array.from({ length: 25 }, (_, index) => {
+      const progress = index / 24;
+      const points = Array.from({ length: 80 }, (_, point) => {
+        const angle = (point * Math.PI) / 40;
+        const wave = 1 + Math.sin(angle * 5 + progress * 7) * 0.075 * (1 - progress);
+        const distance = radius * progress * wave;
+        return `${x + Math.cos(angle) * distance}px ${y + Math.sin(angle) * distance}px`;
+      });
+      return {
+        clipPath: `polygon(${points.join(',')})`,
+        filter: `brightness(${1 + 0.07 * Math.sin(progress * Math.PI)})`,
+      };
+    });
+    const animation = root.animate(frames, {
+      duration: 1700,
+      easing: 'cubic-bezier(.22,.55,.3,1)',
+      pseudoElement: '::view-transition-new(root)',
+    });
+    await animation.finished;
+  } catch {
+    mode.preference = preference;
+  } finally {
+    root.classList.remove('theme-reveal');
+    transitioning = false;
+  }
 }
-onBeforeUnmount(
-  /** Clear the global animation class when moving between login and app layouts. */ () => {
-    if (transitionTimer) clearTimeout(transitionTimer);
-    document.documentElement.classList.remove('theme-transition');
-  },
-);
 </script>
 
 <template>
