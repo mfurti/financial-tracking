@@ -1,8 +1,17 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ title: string; description?: string; dismissible?: boolean }>(), {
-  description: undefined,
-  dismissible: true,
-});
+withDefaults(
+  defineProps<{
+    title: string;
+    description?: string;
+    dismissible?: boolean;
+    panel?: 'profile' | 'groups' | 'calendar';
+  }>(),
+  {
+    description: undefined,
+    dismissible: true,
+    panel: undefined,
+  },
+);
 const open = defineModel<boolean>('open', { default: false });
 </script>
 
@@ -14,7 +23,7 @@ const open = defineModel<boolean>('open', { default: false });
     :dismissible="dismissible"
     :transition="true"
     :ui="{
-      content: 'finance-dialog finance-dialog-motion',
+      content: ['finance-dialog finance-dialog-motion', panel && 'finance-dialog--' + panel].filter(Boolean).join(' '),
       overlay: 'finance-overlay finance-dialog-motion',
       body: 'finance-dialog__body',
     }"

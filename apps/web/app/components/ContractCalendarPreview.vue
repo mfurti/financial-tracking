@@ -1,24 +1,23 @@
 <script setup lang="ts">
 import { contractCalendarSchema } from '@financial-tracking/contracts';
 import type { z } from 'zod';
+import { contractKinds, contractIntervalOptions } from '../utils/contract-presentation';
 const props = defineProps<{ contracts: readonly { revisions: readonly { id: string; intervalMonths: number }[] }[] }>();
 const api = useApi();
 const open = ref(false);
 const all = ref(false);
 const status = ref<'loading' | 'ready' | 'error'>('loading');
 const events = ref<z.infer<typeof contractCalendarSchema>['events']>([]);
-const monthly = computed(
+const intervals = computed(
   () =>
-    new Set(
-      props.contracts.flatMap((item) =>
-        item.revisions.filter((rule) => rule.intervalMonths === 1).map((rule) => rule.id),
-      ),
+    new Map(
+      props.contracts.flatMap((contract) => contract.revisions.map((rule) => [rule.id, rule.intervalMonths] as const)),
     ),
 );
 const days = computed(() =>
   Object.entries(
     Object.groupBy(
-      events.value.filter((event) => all.value || !monthly.value.has(event.revisionId)),
+      events.value.filter((event) => all.value || intervals.value.get(event.revisionId) !== 1),
       (event) => event.dueDate,
     ),
   ),
@@ -50,12 +49,12 @@ watch(open, (visible) => {
 </script>
 
 <template>
-  <FinanceDialog v-model:open="open" :title="tr('Vertragskalender')">
+  <FinanceDialog v-model:open="open" :title="tr('Vertragskalender')" panel="calendar">
     <template #trigger
       ><UButton variant="ghost" color="neutral" :aria-label="tr('Vertragskalender')"
         ><FinanceIcon name="calendar" /></UButton
     ></template>
-    <div class="toolbar mb-4">
+    <div class="toolbar finance-calendar-controls">
       <UButton size="sm" :variant="all ? 'ghost' : 'soft'" :aria-pressed="!all" @click="all = false">{{
         tr('Nicht monatlich')
       }}</UButton>
@@ -69,24 +68,39 @@ watch(open, (visible) => {
     <template v-else>
       <p v-if="!days.length" class="empty-copy">{{ tr('Keine Fälligkeiten im gewählten Zeitraum.') }}</p>
       <section v-for="[day, entries] in days" :key="day" class="finance-booking-day">
-        <h3>{{ calendarDate(day) }}</h3>
+        <h3>
+          {{
+            new Intl.DateTimeFormat(displayLocale(), { dateStyle: 'long', timeZone: 'UTC' }).format(
+              new Date(day + 'T12:00:00Z'),
+            )
+          }}
+        </h3>
         <NuxtLink
           v-for="entry in entries"
           :key="entry.contractId"
           :to="`/contracts/${entry.contractId}`"
-          class="contract-list-row finance-booking-row"
+          class="contract-list-row finance-booking-row finance-calendar-entry"
           @click="open = false"
         >
+          <span class="contract-kind-icon" :style="{ '--kind-color': contractKinds[entry.kind].color }"
+            ><FinanceIcon :name="contractKinds[entry.kind].icon"
+          /></span>
           <span
-            >{{ entry.name }}<small>{{ entry.provider }}</small></span
+            ><strong>{{ entry.name }}</strong
+            ><small>{{
+              contractIntervalOptions.find((option) => option.value === intervals.get(entry.revisionId))?.label ??
+              entry.provider
+            }}</small></span
           >
-          <strong class="negative" data-financial>{{
-            amountsMasked() ? tr('Betrag ausgeblendet') : money(String(-BigInt(entry.plannedCents)))
+          <strong :class="entry.direction === 'INCOME' ? 'positive' : 'negative'" data-financial>{{
+            amountsMasked()
+              ? tr('Betrag ausgeblendet')
+              : money(entry.direction === 'INCOME' ? entry.plannedCents : String(-BigInt(entry.plannedCents)))
           }}</strong>
         </NuxtLink>
       </section>
     </template>
-    <UButton to="/contracts/calendar" variant="soft" class="mt-4" @click="open = false">{{
+    <UButton to="/contracts/calendar" variant="ghost" size="sm" class="mt-4" @click="open = false">{{
       tr('Vollständigen Kalender öffnen')
     }}</UButton>
   </FinanceDialog>

@@ -17,8 +17,11 @@ async function load() {
     const rows = await api.request('/contracts', z.array(contractSchema));
     if (current === version) {
       upcoming.value = rows
-        .filter(/** Hide ended and undated obligations. */ (row) => row.active && row.nextDueDate)
-        .slice(0, 5);
+        .filter(
+          /** Hide ended and undated obligations. */ (row) =>
+            row.active && row.nextDueDate && row.direction === 'EXPENSE',
+        )
+        .slice(0, 3);
       error.value = '';
     }
   } catch (cause) {
@@ -73,7 +76,7 @@ onBeforeUnmount(
       >{{ tr('Erneut laden') }}</UButton
     >
     <p v-if="!upcoming.length && !error && !busy" class="empty-copy">
-      {{ tr('Keine anstehenden bestätigten Vertragszahlungen. Prüfe wiederkehrende Zahlungen unter Verträge.') }}
+      {{ tr('Keine anstehenden Vertragszahlungen.') }}
     </p>
     <UButton
       v-for="contract in busy ? [] : upcoming"

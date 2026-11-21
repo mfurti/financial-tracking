@@ -16,6 +16,11 @@ export function financeReturnTarget(value: unknown) {
     const query = schema.parse(Object.fromEntries(url.searchParams));
     const params = new URLSearchParams();
     for (const [key, entry] of Object.entries(query)) if (entry !== undefined) params.set(key, String(entry));
+    if (url.pathname === '/transactions') {
+      if (url.searchParams.get('period') === 'all' && !params.has('from') && !params.has('to'))
+        params.set('period', 'all');
+      if (url.searchParams.get('mode') === 'transfer') params.set('mode', 'transfer');
+    }
     return `${url.pathname}?${params}`;
   } catch {
     return null;

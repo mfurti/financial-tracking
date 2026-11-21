@@ -40,33 +40,66 @@ const error = ref('');
 const busy = ref(false);
 let loadGeneration = 0;
 let disposed = false;
-const filter = reactive({
-  accountId: route.query.unassigned === 'true' ? 'UNASSIGNED' : String(route.query.accountId ?? ''),
-  groupId: String(route.query.groupId ?? ''),
-  from: String(route.query.from ?? ''),
-  to: String(route.query.to ?? ''),
-  search: String(route.query.search ?? ''),
-  status: String(route.query.status ?? ''),
-  categoryId: String(route.query.categoryId ?? ''),
-  direction: String(route.query.direction ?? ''),
-  classification: String(route.query.classification ?? ''),
-  merchantKey: String(route.query.merchantKey ?? ''),
-  uncategorized: route.query.uncategorized === 'true',
-  excludeTransfers: route.query.excludeTransfers === 'true',
-});
-const month = ref(
-  /^\d{4}-(0[1-9]|1[0-2])$/.test(String(route.query.from ?? '').slice(0, 7))
-    ? String(route.query.from).slice(0, 7)
-    : new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7),
-);
+const currentMonth = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7);
+const filter = reactive(readRouteFilters());
+const allMonths = ref(route.query.period === 'all' && !filter.from && !filter.to);
+const month = ref(currentMonth);
+const monthCaption = ref<string>();
+const advancedFilters = ref(false);
+let scopeSearchQueued = false;
 const days = computed(() => Object.entries(Object.groupBy(rows.value, (row) => row.bookingDate)));
+syncMonth();
+
+/** Read URL filters independently of the effective default month. */
+function readRouteFilters() {
+  const q = route.query;
+  return {
+    accountId: q.unassigned === 'true' ? 'UNASSIGNED' : String(q.accountId ?? ''),
+    groupId: String(q.groupId ?? ''),
+    from: String(q.from ?? ''),
+    to: String(q.to ?? ''),
+    search: String(q.search ?? ''),
+    status: String(q.status ?? ''),
+    categoryId: String(q.categoryId ?? ''),
+    direction: String(q.direction ?? ''),
+    classification: String(q.classification ?? ''),
+    merchantKey: String(q.merchantKey ?? ''),
+    uncategorized: q.uncategorized === 'true',
+    excludeTransfers: q.excludeTransfers === 'true',
+  };
+}
+
+/** Use the month name only when the applied filter covers that exact calendar month. */
+function syncMonth() {
+  const from = filter.from || filter.to;
+  const anchor = from.slice(0, 7);
+  month.value = /^\d{4}-(0[1-9]|1[0-2])$/.test(anchor) ? anchor : currentMonth;
+  const range = monthRangeQuery(month.value);
+  monthCaption.value = from
+    ? filter.from === range.from && filter.to === range.to
+      ? undefined
+      : 'Eigener Zeitraum'
+    : allMonths.value
+      ? 'Alle Monate'
+      : undefined;
+}
+
+/** Apply an inclusive month while preserving independent account and category filters. */
 async function applyMonth(offset = 0) {
   const date = new Date(`${month.value}-01T12:00:00Z`);
   if (!Number.isFinite(date.getTime())) return;
   date.setUTCMonth(date.getUTCMonth() + offset);
   month.value = date.toISOString().slice(0, 7);
+  allMonths.value = false;
   Object.assign(filter, monthRangeQuery(month.value));
   await search();
+}
+
+/** Display a full date in the user's locale without shifting the booked date. */
+function bookingDate(day: string) {
+  return new Intl.DateTimeFormat(displayLocale(), { dateStyle: 'long', timeZone: 'UTC' }).format(
+    new Date(`${day}T12:00:00Z`),
+  );
 }
 const unassignedSelection = computed(
   /** Only genuinely unassigned selected transactions enter the explicit assignment workflow. */ () =>
@@ -88,12 +121,14 @@ function bookingLink(id: string) {
   return `/transactions/${id}?${new URLSearchParams({ returnTo: route.fullPath })}`;
 }
 /** Serialize only nonempty filter values before schema validation. */
-function query(cursor?: string) {
+function query(cursor?: string, includeDefaultMonth = true) {
   const value: Record<string, string | undefined> = {};
   for (const [key, field] of Object.entries(filter)) {
     if (key === 'accountId' && field === 'UNASSIGNED') value.unassigned = 'true';
     else if (field) value[key] = String(field);
   }
+  if (includeDefaultMonth && !filter.from && !filter.to && !allMonths.value)
+    Object.assign(value, monthRangeQuery(currentMonth));
   if (cursor) value.cursor = cursor;
   return transactionQuerySchema.parse(value);
 }
@@ -125,19 +160,41 @@ async function load(append = false) {
 /** Start a fresh filtered page from a form submission. */
 async function search() {
   try {
-    const q = query();
-    await router.replace({
-      query: Object.fromEntries(
-        Object.entries(q).filter(
-          /** Only an explicit filter submission changes the current URL. */ ([key, value]) =>
-            key !== 'limit' && key !== 'cursor' && value !== undefined,
-        ),
+    if (allMonths.value) Object.assign(filter, { from: '', to: '' });
+    const q = Object.fromEntries(
+      Object.entries(query(undefined, false)).filter(
+        ([key, value]) => key !== 'limit' && key !== 'cursor' && value !== undefined,
       ),
-    });
-    await load(false);
+    );
+    const next = { query: { ...q, period: allMonths.value ? 'all' : undefined, mode: route.query.mode } };
+    if (router.resolve(next).fullPath === route.fullPath) {
+      syncMonth();
+      await load(false);
+    } else await router.replace(next);
   } catch {
     error.value = tr('Bitte Filter und Zeitraum prüfen.');
   }
+}
+watch(
+  () => route.fullPath,
+  () => {
+    if (route.path !== '/transactions') return;
+    Object.assign(filter, readRouteFilters());
+    allMonths.value = route.query.period === 'all' && !filter.from && !filter.to;
+    syncMonth();
+    rows.value = [];
+    selected.value = [];
+    nextCursor.value = null;
+    void load();
+  },
+);
+/** The account picker updates group and account together; submit the combined scope once. */
+async function searchScope() {
+  if (scopeSearchQueued) return;
+  scopeSearchQueued = true;
+  await nextTick();
+  scopeSearchQueued = false;
+  await search();
 }
 /** Request the next cursor page without resetting existing rows. */
 async function more() {
@@ -231,14 +288,28 @@ onBeforeUnmount(
 </script>
 
 <template>
-  <div class="page-heading">
+  <div class="page-heading finance-period-heading">
     <div>
-      <h1>{{ route.params.id ? tr('Umsatzdetails') : tr('Deine Umsätze') }}</h1>
+      <h1>{{ route.params.id ? tr('Umsatzdetails') : tr('Umsätze') }}</h1>
     </div>
     <div v-if="!route.params.id" class="toolbar finance-month-controls">
-      <UButton variant="ghost" color="neutral" :aria-label="tr('Vorheriger Monat')" @click="applyMonth(-1)">‹</UButton>
-      <MonthPicker v-model="month" compact @change="applyMonth()" />
-      <UButton variant="ghost" color="neutral" :aria-label="tr('Nächster Monat')" @click="applyMonth(1)">›</UButton>
+      <UButton
+        variant="ghost"
+        color="neutral"
+        class="finance-month-step"
+        :aria-label="tr('Vorheriger Monat')"
+        @click="applyMonth(-1)"
+        >‹</UButton
+      >
+      <MonthPicker v-model="month" :caption="monthCaption" compact @change="applyMonth()" />
+      <UButton
+        variant="ghost"
+        color="neutral"
+        class="finance-month-step"
+        :aria-label="tr('Nächster Monat')"
+        @click="applyMonth(1)"
+        >›</UButton
+      >
     </div>
     <UButton v-else :to="returnTarget ?? '/transactions'" variant="soft">{{
       route.params.id
@@ -307,7 +378,10 @@ onBeforeUnmount(
     @complete="assigned"
   />
   <template v-if="!route.params.id"
-    ><div class="mb-5">
+    ><div class="finance-transaction-filter-area">
+      <p v-if="route.query.mode === 'transfer'" class="muted">
+        {{ tr('Zwei Buchungen für eine Umbuchung auswählen.') }}
+      </p>
       <p v-if="filter.merchantKey" class="data-context">
         {{ tr('Exakter Händlerfilter aktiv. Die Suche erweitert diesen Filter nicht.') }}
       </p>
@@ -316,14 +390,20 @@ onBeforeUnmount(
           >{{ tr('Suche')
           }}<UInput
             v-model="filter.search"
-            :placeholder="tr('Text oder Gegenpartei')"
-            :aria-label="tr('Umsätze durchsuchen')" /></label
+            :placeholder="tr('Name oder Buchung')"
+            :aria-label="tr('Umsätze durchsuchen')"
+            ><template #trailing>
+              <button v-if="!advancedFilters" type="submit" class="finance-search-submit" :aria-label="tr('Filtern')">
+                <FinanceIcon name="search" />
+              </button> </template></UInput></label
         ><label
           >{{ tr('Konto') }}<!-- Build a persisted choice. --><AccountScopeSelect
             v-model:account-id="filter.accountId"
             v-model:group-id="filter.groupId"
             searchable
-            :accounts="accounts" /></label
+            :accounts="accounts"
+            @update:account-id="searchScope"
+            @update:group-id="searchScope" /></label
         ><label
           >{{ tr('Kategorie')
           }}<ChoiceSelect
@@ -335,55 +415,82 @@ onBeforeUnmount(
                 /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
               ),
             ]"
+            @update:model-value="search"
         /></label>
-        <details class="finance-advanced-filters">
-          <summary>{{ tr('Weitere Filter') }}</summary>
-          <div class="filter-grid">
-            <label>{{ tr('Von') }}<DatePicker v-model="filter.from" :label="tr('Von')" /></label>
-            <label>{{ tr('Bis') }}<DatePicker v-model="filter.to" :label="tr('Bis')" /></label>
-            <label
-              >{{ tr('Status')
-              }}<ChoiceSelect
-                v-model="filter.status"
-                :searchable="false"
-                :items="[
-                  { label: tr('Alle Buchungen'), value: '' },
-                  { label: tr('Gebucht'), value: 'BOOKED' },
-                  { label: tr('Vorgemerkt'), value: 'PENDING' },
-                ]" /></label
-            ><label
-              >{{ tr('Richtung')
-              }}<ChoiceSelect
-                v-model="filter.direction"
-                :searchable="false"
-                :items="[
-                  { label: tr('Einnahmen & Ausgaben'), value: '' },
-                  { label: tr('Einnahmen'), value: 'INCOME' },
-                  { label: tr('Ausgaben'), value: 'EXPENSE' },
-                ]"
-            /></label>
-            <UFormField :label="tr('Fix/Variabel')"
-              ><ChoiceSelect
-                v-model="filter.classification"
-                :searchable="false"
-                :items="[
-                  { label: tr('Alle Kennzeichnungen'), value: '' },
-                  { label: tr('Fix'), value: 'FIXED' },
-                  { label: tr('Variabel'), value: 'VARIABLE' },
-                  { label: tr('Nicht eingeordnet'), value: 'UNCLASSIFIED' },
-                ]"
-            /></UFormField>
-            <div class="toolbar">
-              <UCheckbox v-model="filter.uncategorized" :label="tr('Ohne Kategorie')" /><UCheckbox
-                v-model="filter.excludeTransfers"
-                :label="tr('Ohne Umbuchungen')"
-              />
-            </div>
-          </div>
-        </details>
-        <UButton type="submit" variant="soft" :loading="busy">{{ tr('Filtern') }}</UButton>
-        <UButton to="/imports/csv" variant="ghost">{{ tr('CSV importieren') }}</UButton>
       </form>
+      <UPopover v-model:open="advancedFilters">
+        <UButton
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          class="transaction-filter-trigger"
+          :aria-label="tr('Weitere Filter')"
+          ><FinanceIcon name="filter" /><span class="sr-only">{{ tr('Weitere Filter') }}</span></UButton
+        >
+        <template #content>
+          <form
+            class="finance-advanced-filters"
+            @submit.prevent="
+              search();
+              advancedFilters = false;
+            "
+          >
+            <div class="filter-grid">
+              <label
+                >{{ tr('Von')
+                }}<DatePicker v-model="filter.from" :label="tr('Von')" @update:model-value="allMonths = false"
+              /></label>
+              <label
+                >{{ tr('Bis')
+                }}<DatePicker v-model="filter.to" :label="tr('Bis')" @update:model-value="allMonths = false"
+              /></label>
+              <label
+                >{{ tr('Status')
+                }}<ChoiceSelect
+                  v-model="filter.status"
+                  :searchable="false"
+                  :items="[
+                    { label: tr('Alle Buchungen'), value: '' },
+                    { label: tr('Gebucht'), value: 'BOOKED' },
+                    { label: tr('Vorgemerkt'), value: 'PENDING' },
+                  ]" /></label
+              ><label
+                >{{ tr('Richtung')
+                }}<ChoiceSelect
+                  v-model="filter.direction"
+                  :searchable="false"
+                  :items="[
+                    { label: tr('Einnahmen & Ausgaben'), value: '' },
+                    { label: tr('Einnahmen'), value: 'INCOME' },
+                    { label: tr('Ausgaben'), value: 'EXPENSE' },
+                  ]"
+              /></label>
+              <UFormField :label="tr('Fix/Variabel')"
+                ><ChoiceSelect
+                  v-model="filter.classification"
+                  :searchable="false"
+                  :items="[
+                    { label: tr('Alle Kennzeichnungen'), value: '' },
+                    { label: tr('Fix'), value: 'FIXED' },
+                    { label: tr('Variabel'), value: 'VARIABLE' },
+                    { label: tr('Nicht eingeordnet'), value: 'UNCLASSIFIED' },
+                  ]"
+              /></UFormField>
+              <div class="toolbar">
+                <UCheckbox v-model="allMonths" :label="tr('Alle Monate')" />
+                <UCheckbox v-model="filter.uncategorized" :label="tr('Ohne Kategorie')" /><UCheckbox
+                  v-model="filter.excludeTransfers"
+                  :label="tr('Ohne Umbuchungen')"
+                />
+              </div>
+            </div>
+            <div class="toolbar">
+              <UButton type="submit" variant="soft" :loading="busy">{{ tr('Filtern') }}</UButton>
+              <UButton to="/imports/csv" variant="ghost">{{ tr('CSV importieren') }}</UButton>
+            </div>
+          </form>
+        </template>
+      </UPopover>
     </div>
     <SectionPanel :title="tr('Buchungen')" bare>
       <div v-if="selected.length" class="toolbar mb-5">
@@ -409,7 +516,7 @@ onBeforeUnmount(
         {{ tr('Keine Umsätze gefunden. Passe deine Filter an oder importiere Buchungen.') }}
       </p>
       <div v-for="[day, bookings] in days" :key="day" class="finance-booking-day">
-        <h3>{{ calendarDate(day) }}</h3>
+        <h3>{{ bookingDate(day) }}</h3>
         <div v-for="row in bookings" :key="row.id" class="ledger-row finance-booking-row">
           <UCheckbox
             :model-value="selected.includes(row.id)"

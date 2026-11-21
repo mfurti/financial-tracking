@@ -4,7 +4,7 @@ const groups = [
     title: 'Mein Geld',
     links: [
       { to: '/accounts', label: 'Konten', icon: 'accounts', context: 'Giro, Sparen, Tagesgeld & Festgeld' },
-      { to: '/wealth', label: 'Scalable', icon: 'history', context: 'Depot, Guthaben & Sparpläne' },
+      { to: '/wealth', label: 'Scalable', icon: 'wealth', context: 'Depot, Guthaben & Sparpläne' },
     ],
   },
   {
@@ -20,7 +20,7 @@ const groups = [
 </script>
 
 <template>
-  <div class="page-heading">
+  <div class="page-heading finance-more-heading">
     <h1>{{ tr('Mehr') }}</h1>
   </div>
   <div class="finance-more-grid">
@@ -33,7 +33,8 @@ const groups = [
           color="neutral"
           variant="link"
           class="finance-management-row"
-          ><FinanceIcon :name="link.icon" /><span
+          :class="{ 'finance-management-row--identity': 'context' in link }"
+          ><FinanceIcon v-if="'context' in link" :name="link.icon" /><span
             >{{ tr(link.label) }}<small v-if="'context' in link">{{ tr(link.context) }}</small></span
           ><span aria-hidden="true">›</span></UButton
         >

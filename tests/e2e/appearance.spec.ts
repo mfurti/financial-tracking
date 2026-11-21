@@ -15,7 +15,7 @@ test('theme tiles apply, retain Ayu brightness/borders and restore before reload
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   await page.goto('/settings/appearance');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.getByRole('radio')).toHaveCount(23);

@@ -184,47 +184,76 @@ onBeforeUnmount(
 </script>
 
 <template>
-  <div class="page-heading">
+  <div class="page-heading finance-period-heading">
     <div>
-      <h1>{{ tr('Finanzieller Überblick') }}</h1>
+      <h1>{{ tr('Übersicht') }}</h1>
     </div>
     <div class="toolbar finance-month-controls">
-      <UButton variant="ghost" color="neutral" :aria-label="tr('Vorheriger Monat')" @click="shiftMonth(-1)">‹</UButton>
+      <UButton
+        variant="ghost"
+        color="neutral"
+        class="finance-month-step"
+        :aria-label="tr('Vorheriger Monat')"
+        @click="shiftMonth(-1)"
+        >‹</UButton
+      >
       <MonthPicker v-model="month" compact @change="load" />
-      <UButton variant="ghost" color="neutral" :aria-label="tr('Nächster Monat')" @click="shiftMonth(1)">›</UButton>
+      <UButton
+        variant="ghost"
+        color="neutral"
+        class="finance-month-step"
+        :aria-label="tr('Nächster Monat')"
+        @click="shiftMonth(1)"
+        >›</UButton
+      >
     </div>
   </div>
-  <FinanceDialog v-model:open="groupDialog" :title="tr('Kontogruppen')">
-    <template #trigger
-      ><UButton variant="soft" size="sm" :aria-label="tr('Kontogruppen wählen')">{{
-        groupId ? (groups.find((group) => group.id === groupId)?.name ?? tr('Kontogruppe')) : tr('Alle Konten')
-      }}</UButton></template
-    >
-    <div class="finance-dialog-options">
-      <UAlert v-if="groupError" role="alert" color="error" :description="groupError" />
-      <UButton variant="outline" color="neutral" :aria-pressed="!groupId" @click="selectGroup('')">{{
-        tr('Alle Konten')
-      }}</UButton>
-      <UButton
-        v-for="group in groups"
-        :key="group.id"
-        variant="outline"
-        color="neutral"
-        :aria-pressed="groupId === group.id"
-        @click="selectGroup(group.id)"
-        >{{ group.name }}</UButton
+  <div class="finance-overview-tools">
+    <FinanceDialog v-model:open="groupDialog" :title="tr('Kontogruppen')" panel="groups">
+      <template #trigger
+        ><UButton variant="soft" size="sm" :aria-label="tr('Kontogruppen wählen')">{{
+          groupId ? (groups.find((group) => group.id === groupId)?.name ?? tr('Kontogruppe')) : tr('Alle Konten')
+        }}</UButton></template
       >
-      <UButton variant="ghost" to="/settings/account-groups">{{ tr('Gruppen verwalten') }}</UButton>
-    </div>
-  </FinanceDialog>
-  <details class="finance-overview-actions">
-    <summary>{{ tr('Weitere Aktionen') }}</summary>
-    <div class="toolbar">
-      <UButton variant="ghost" @click="currentMonth">{{ tr('Dieser Monat') }}</UButton>
-      <UButton variant="ghost" :loading="busy" @click="load">{{ tr('Aktualisieren') }}</UButton
-      ><UButton to="/imports/csv">{{ tr('CSV hochladen') }}</UButton>
-    </div>
-  </details>
+      <div class="finance-dialog-options">
+        <UAlert v-if="groupError" role="alert" color="error" :description="groupError" />
+        <UButton variant="outline" color="neutral" :aria-pressed="!groupId" @click="selectGroup('')">{{
+          tr('Alle Konten')
+        }}</UButton>
+        <UButton
+          v-for="group in groups"
+          :key="group.id"
+          variant="outline"
+          color="neutral"
+          :aria-pressed="groupId === group.id"
+          @click="selectGroup(group.id)"
+          >{{ group.name }}</UButton
+        >
+        <UButton variant="ghost" to="/settings/account-groups">{{ tr('Gruppen verwalten') }}</UButton>
+      </div>
+    </FinanceDialog>
+    <UPopover>
+      <UButton variant="ghost" color="neutral" size="sm" :aria-label="tr('Weitere Aktionen')"
+        ><FinanceIcon name="more"
+      /></UButton>
+      <template #content
+        ><div class="finance-overview-actions">
+          <p class="muted">{{ monthPhase }}</p>
+          <UButton variant="ghost" @click="currentMonth">{{ tr('Dieser Monat') }}</UButton>
+          <UButton variant="ghost" :loading="busy" @click="load">{{ tr('Aktualisieren') }}</UButton>
+          <UButton to="/imports/csv">{{ tr('CSV hochladen') }}</UButton>
+          <NuxtLink v-if="reviews" to="/imports">{{ reviews }} {{ tr('Buchungen klären') }}</NuxtLink>
+          <NuxtLink v-if="uncategorizedCount" :to="uncategorizedLink"
+            >{{ uncategorizedCount }} {{ tr('Kategorien ergänzen (freiwillig)') }}</NuxtLink
+          >
+          <small v-if="report"
+            >{{ transactionCount }} {{ tr('Buchungen') }} · {{ money(report.deltaCents) }}
+            {{ tr('zum Vormonat') }}</small
+          >
+        </div></template
+      >
+    </UPopover>
+  </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <UButton v-if="error && !busy" variant="soft" class="mb-5" @click="load">{{ tr('Erneut versuchen') }}</UButton>
   <UAlert
@@ -251,7 +280,6 @@ onBeforeUnmount(
     />
   </div>
   <template v-else-if="report && !error">
-    <p class="overview-month-phase">{{ monthPhase }}</p>
     <div class="stats-grid finance-overview-stats">
       <FinanceTile :label="tr('Monatsbilanz')" variant="stat" class="month-balance">
         <template #value
@@ -259,13 +287,6 @@ onBeforeUnmount(
             ><template v-if="!amountsMasked()">{{ money(report.netCents) }}</template
             ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></span
           ></template
-        >
-        <template #context
-          ><span data-financial
-            ><template v-if="!amountsMasked()">{{ money(report.deltaCents) }}</template
-            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></span
-          >
-          {{ tr('zum Vormonat') }}</template
         >
       </FinanceTile>
       <FinanceTile :label="tr('Einnahmen')" variant="stat"
@@ -285,29 +306,9 @@ onBeforeUnmount(
         ></FinanceTile
       >
     </div>
-    <div class="data-context">
-      <span
-        >{{ transactionCount }}
-        {{ tr(groupId ? 'Buchungen' : 'gebuchte Umsätze · inklusive Buchungen ohne Konto') }}</span
-      >
-      <HelpPopover
-        :title="tr('Monatszahlen')"
-        :text="
-          tr(
-            'Gebuchte Einnahmen minus Ausgaben. Eigene Umbuchungen und vorgemerkte Zahlungen zählen nicht mit. Auch Buchungen ohne Konto zählen mit.',
-          )
-        "
-      />
-    </div>
-    <div v-if="reviews || uncategorizedCount" class="review-summary" :aria-label="tr('Nächste Schritte')">
-      <NuxtLink v-if="reviews" to="/imports">{{ reviews }} {{ tr('Buchungen klären') }}</NuxtLink
-      ><NuxtLink v-if="uncategorizedCount" :to="uncategorizedLink"
-        >{{ uncategorizedCount }} {{ tr('Kategorien ergänzen (freiwillig)') }}</NuxtLink
-      >
-    </div>
     <OverviewColumns>
       <template #bookings>
-        <SectionPanel :title="tr('Letzte Buchungen')" icon="transactions" compact data-overview-section="bookings">
+        <SectionPanel :title="tr('Letzte Buchungen')" compact data-overview-section="bookings">
           <p v-if="!recent.length" class="empty-copy">
             {{
               tr(
@@ -316,7 +317,11 @@ onBeforeUnmount(
             }}
           </p>
           <NuxtLink v-for="row in recent" :key="row.id" :to="`/transactions/${row.id}`" class="transaction-row"
-            ><span class="transaction-icon"><FinanceIcon name="transactions" /></span>
+            ><span class="transaction-icon" aria-hidden="true">{{
+              Array.from(row.counterpartyName?.trim() || row.description.trim())[0]?.toLocaleUpperCase(
+                displayLocale(),
+              ) || '·'
+            }}</span>
             <div>
               <strong>{{ row.counterpartyName?.trim() || row.description }}</strong>
               <small>
@@ -343,8 +348,7 @@ onBeforeUnmount(
       <template #payments><UpcomingContracts data-overview-section="payments" /></template>
       <template #accounts>
         <SectionPanel
-          :title="tr('Deine Konten')"
-          icon="accounts"
+          :title="tr('Meine Konten')"
           compact
           data-overview-section="accounts"
           :help="tr('CSV-Dateien liefern Umsätze. Bankgemeldete Kontostände bleiben von der Monatsbilanz getrennt.')"
@@ -357,13 +361,8 @@ onBeforeUnmount(
             <div>
               <strong>{{ account.name }}</strong
               ><small
-                >{{ account.iban ? `•••• ${account.iban.slice(-4)}` : tr('Manuelles Konto') }} ·
-                {{ account.isActive ? tr('Aktiv') : tr('Inaktiv') }}</small
-              ><small>{{ observedTime(account.balances[0]?.observedAt ?? null) }}</small
-              ><small
-                v-if="account.balances[0] && Date.now() - Date.parse(account.balances[0].observedAt) > 48 * 3600000"
-                class="negative"
-                >{{ tr('Saldo älter als 48 Stunden') }}</small
+                >{{ tr({ CHECKING: 'Girokonto', SAVINGS: 'Sparkonto', OTHER: 'Sonstiges Konto' }[account.accountType])
+                }}<template v-if="!account.isActive"> · {{ tr('Inaktiv') }}</template></small
               >
             </div>
             <strong data-financial

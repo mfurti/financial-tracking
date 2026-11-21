@@ -14,7 +14,7 @@ test('multi-month analysis explains observed averages and drills into exact acco
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   await page.goto('/imports/csv');
   await page.getByLabel('CSV-Datei', { exact: true }).setInputFiles({
     name: 'analysis.csv',
@@ -31,12 +31,15 @@ test('multi-month analysis explains observed averages and drills into exact acco
   await page.keyboard.press('Space');
   await expect(page.getByText(/Gebuchte Umsätze einschließlich Ohne Konto zählen/)).toBeVisible();
   await page.keyboard.press('Escape');
+  const details = page.locator('.finance-full-analysis');
+  await details.locator('summary').click();
   const exactSection = page
     .locator('.section-block')
     .filter({ has: page.getByRole('heading', { name: 'Exakte Monatswerte', exact: true }) });
   await expect(exactSection.locator(':scope > .section-heading')).toContainText('Exakte Monatswerte');
   await expect(exactSection.locator('.panel h2')).toHaveCount(0);
   await page.goto('/analytics?from=2025-01-01&to=2025-05-31&unassigned=true');
+  await details.locator('summary').click();
   await expect(page.getByRole('table')).toBeVisible();
   await expect(
     page.locator('.analytics-metrics section').filter({ hasText: 'Durchschnittliche Ausgaben' }),
@@ -60,6 +63,7 @@ test('multi-month analysis explains observed averages and drills into exact acco
   await expect(page.getByRole('table')).toContainText('März 2025');
   await expect(page.getByRole('table')).toContainText('20,00');
   await page.reload();
+  await page.locator('.finance-full-analysis summary').click();
   await expect(page.getByRole('button', { name: 'Ringdiagramme', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -92,11 +96,12 @@ test('multi-month analysis explains observed averages and drills into exact acco
     .getByRole('link', { name: /Nicht eingeordnet/ })
     .click();
   await expect(page).toHaveURL(/classification=UNCLASSIFIED/);
-  await page.getByText('Weitere Filter', { exact: true }).click();
+  await page.getByRole('button', { name: 'Weitere Filter', exact: true }).click();
   await expect(page.getByLabel('Fix/Variabel', { exact: true })).toContainText('Nicht eingeordnet');
   await expect(page.getByRole('link', { name: new RegExp(tag) })).toHaveCount(2);
   await page.goto('/analytics?from=2025-01-01&to=2025-05-31&unassigned=true');
-  await page.getByText('Zeitraum und Filter', { exact: true }).click();
+  await details.locator('summary').click();
+  await page.locator('summary[aria-label="Zeitraum und Filter"]').click();
   await choose(page, page.getByLabel('Kategorie', { exact: true }), 'Nicht kategorisiert');
   await page.getByRole('button', { name: 'Auswertung anzeigen', exact: true }).click();
   await expect(page.getByRole('table')).toBeVisible();
@@ -110,7 +115,8 @@ test('multi-month analysis explains observed averages and drills into exact acco
   await expect(page).toHaveURL(/analytics\/details/);
   await expect(page.getByRole('link', { name: new RegExp(tag) })).toHaveCount(2);
   await page.goto('/analytics?from=2025-01-01&to=2025-05-31');
-  await page.getByText('Zeitraum und Filter', { exact: true }).click();
+  await details.locator('summary').click();
+  await page.locator('summary[aria-label="Zeitraum und Filter"]').click();
   await page.route(
     '**/api/v1/analytics/overview?*',
     /** Fail one report refresh to verify old totals disappear. */ async (route) =>
@@ -139,8 +145,9 @@ test('completed-month presets retain exact inclusive calendar windows on reload'
     /** Complete real authentication before selecting report windows. */ (url) => url.pathname === '/',
   );
   await page.goto('/analytics');
+  await page.locator('.finance-full-analysis summary').click();
   await expect(page.getByRole('table')).toBeVisible();
-  await page.getByText('Zeitraum und Filter', { exact: true }).click();
+  await page.locator('summary[aria-label="Zeitraum und Filter"]').click();
   const lastDay = await page.evaluate(
     /** Derive expected Berlin month-end using calendar dates, never monetary values. */ () => {
       const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());
@@ -158,6 +165,7 @@ test('completed-month presets retain exact inclusive calendar windows on reload'
     expect(new URL(page.url()).searchParams.get('from')).toBe(first.toISOString().slice(0, 10));
   }
   await page.reload();
+  await page.locator('.finance-full-analysis summary').click();
   await expect(page.getByRole('row')).toHaveCount(13);
   expect(new URL(page.url()).searchParams.get('to')).toBe(lastDay);
 });

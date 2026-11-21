@@ -9,7 +9,7 @@ test('manual bank setup, method/media/TAN/app approval, pending, failures and ca
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   const financialBefore = await (await page.request.get('/api/v1/transactions?limit=100')).json();
   await page.goto('/connections');
   await expect(page.getByText('Bankanbindung vorbereiten', { exact: true })).toBeVisible();

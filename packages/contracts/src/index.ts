@@ -279,6 +279,7 @@ export const categoryRuleBackfillResultSchema = z.object({
   conflicting: z.number().int(),
   protected: z.number().int(),
 });
+export const contractDirectionSchema = z.enum(['EXPENSE', 'INCOME']);
 export const contractKindSchema = z.enum(['SUBSCRIPTION', 'RENT', 'INSURANCE', 'ENERGY', 'TELECOM', 'OTHER']);
 export const suggestionKeySchema = z.string().regex(/^[a-f0-9]{64}$/);
 export const suggestionQuerySchema = z.object({ dismissed: z.enum(['true', 'false']).optional() });
@@ -295,6 +296,7 @@ export const contractInputSchema = z
     name: z.string().trim().min(1).max(100),
     provider: z.string().trim().min(1).max(200),
     kind: contractKindSchema,
+    direction: contractDirectionSchema.optional(),
     accountId: idSchema.nullable().default(null),
     categoryId: idSchema.nullable().default(null),
     startDate: dateSchema,
@@ -342,6 +344,7 @@ export const contractSchema = z.object({
   name: z.string(),
   provider: z.string(),
   kind: contractKindSchema,
+  direction: contractDirectionSchema.default('EXPENSE'),
   accountId: idSchema.nullable(),
   categoryId: idSchema.nullable(),
   startDate: dateSchema,
@@ -493,6 +496,7 @@ export const contractCalendarEventSchema = z.object({
   name: z.string(),
   provider: z.string(),
   kind: contractKindSchema,
+  direction: contractDirectionSchema.default('EXPENSE'),
   accountId: idSchema.nullable(),
   categoryId: idSchema.nullable(),
   revisionId: idSchema,
@@ -547,6 +551,9 @@ export const contractCostGroupSchema = z.object({
 export const contractSummarySchema = z.object({
   asOf: dateSchema,
   monthlyCents: aggregateCentsSchema,
+  monthlyIncomeCents: aggregateCentsSchema.default('0'),
+  monthlyRemainderCents: aggregateCentsSchema.optional(),
+  incomeCount: z.number().int().nonnegative().default(0),
   count: z.number().int().nonnegative(),
   contracts: z.array(contractCostSchema),
   categories: z.array(contractCostGroupSchema),

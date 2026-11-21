@@ -10,7 +10,7 @@ test('CSV without accounts, later assignment and explicit overlap review', /** E
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   const accounts = await page.request.get('/api/v1/accounts');
   // The second project shares the test instance after the first project has created one real account.
   if (info.project.name === 'empty-desktop') expect(await accounts.json()).toEqual([]);

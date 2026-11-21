@@ -10,9 +10,10 @@ test('confirmed recurring payments keep real bookings, expose contract badges an
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   await page.goto('/contracts');
-  await page.getByRole('button', { name: 'Vertrag anlegen', exact: true }).click();
+  await page.getByRole('button', { name: 'Weitere Aktionen', exact: true }).click();
+  await page.getByRole('button', { name: 'Vertrag anlegen', exact: true }).last().click();
   const costDialog = page.getByRole('dialog', { name: 'Vertrag anlegen', exact: true });
   await expect(costDialog).toHaveClass(/finance-dialog/);
   await costDialog.getByLabel('Vertragsname', { exact: true }).fill(`Jahreskosten ${info.project.name}`);

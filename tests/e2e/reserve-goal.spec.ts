@@ -10,6 +10,7 @@ test('reserve goal and explicit Tagesgeld designation persist with honest observ
   await page.waitForURL(/** Await the real private session before reserve reads. */ (url) => url.pathname === '/');
   const before = await (await page.request.get('/api/v1/transactions?limit=100')).json();
   await page.goto('/accounts');
+  await page.getByRole('button', { name: 'Weitere Aktionen', exact: true }).click();
   await page.getByRole('link', { name: 'Reserve & Vermögen', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Beobachtete Reserve', exact: true })).toContainText(
     'Keine beobachtete Reserve',

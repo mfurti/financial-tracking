@@ -9,7 +9,7 @@ test('monthly categories explain real expenses and lead to persisted assignments
   await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
   if (info.project.name === 'mobile') {
     await page.getByRole('link', { name: 'Mehr', exact: true }).click();
     await expect(page).toHaveURL(/\/more$/);

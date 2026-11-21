@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { parseDate, type DateValue } from '@internationalized/date';
-withDefaults(defineProps<{ label?: string; compact?: boolean }>(), { label: 'Monat', compact: false });
+withDefaults(defineProps<{ label?: string; caption?: string; compact?: boolean }>(), {
+  label: 'Monat',
+  caption: undefined,
+  compact: false,
+});
 const model = defineModel<string>({ required: true });
 const emit = defineEmits<{ change: [month: string] }>();
 const open = ref(false);
@@ -21,7 +25,7 @@ function update(value: unknown) {
 <template>
   <UPopover v-model:open="open">
     <UButton color="neutral" :variant="compact ? 'ghost' : 'outline'" :aria-label="tr(label)"
-      ><FinanceIcon v-if="!compact" name="calendar" />{{ monthName(model) }}</UButton
+      ><FinanceIcon v-if="!compact" name="calendar" />{{ caption ? tr(caption) : monthName(model) }}</UButton
     >
     <template #content
       ><UCalendar type="month" :model-value="value" class="p-2" @update:model-value="update"
