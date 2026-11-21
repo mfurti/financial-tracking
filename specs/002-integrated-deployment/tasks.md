@@ -2,7 +2,7 @@
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md), [data-model.md](data-model.md), [deployment contract](contracts/deployment.md), [quickstart.md](quickstart.md).
 **Generated**: 2026-11-21.
-**Authorization**: The user approved task generation, then explicitly approved deployment issue #15, its linked branch and a separate planning commit/push. G0 is approved. Preparation implementation, production mutation, personal acceptance and merge remain separately gated; no implementation task is completed by recording planning artifacts.
+**Authorization**: The user approved task generation, deployment issue #15, its linked branch and separate planning commit/push, then explicitly invoked speckit-implement/coding-workflow for the presented T001–T009 preparation scope. G0/G1 are approved. Production mutation (G2 before T010), personal acceptance and merge remain separately gated; no task is completed by approval alone.
 **Checkout**: Reuse the existing V:/GitHub/financial-tracking checkout on the GitHub-linked branch 15-deploy-integrated-household-finance-workspace, verified starting at origin/main c06e7cc0d0639e4be8092473de696f4b6a3912b0. It predates this follow-up. Track work in [deployment issue #15](https://github.com/mfurti/financial-tracking/issues/15). Original issue #13/PR #14 are completed; do not reopen them or regenerate their 48 tasks.
 **Governance**: Existing documented project/deployment rules apply. The constitution remains an unratified template. No dependency upgrade, new business schema, hosting framework, network replacement, credential rotation, reboot or live bank operation.
 

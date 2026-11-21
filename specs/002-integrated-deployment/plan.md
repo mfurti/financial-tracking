@@ -4,7 +4,7 @@
 **Issue**: [#15](https://github.com/mfurti/financial-tracking/issues/15), related to completed #13/PR #14. The user explicitly approved issue creation, its linked branch in the existing checkout and a separate planning commit with immediate push.
 **Feature context**: 002-integrated-deployment.
 **Input**: Deployment follow-up to the completed [integrated implementation](../001-integrated-household-concept/plan.md).
-**Status**: Phase 0 research, Phase 1 design and task generation are complete. Issue #15 and its linked branch are created; the planning artifacts are approved for a separate commit/push. Ordered tasks remain pending in [tasks.md](tasks.md). Preparation implementation (G1), production execution (G2), personal acceptance and merge retain separate decisions.
+**Status**: Phase 0 research, Phase 1 design and task generation are complete. Issue #15 and its linked branch/planning commit are published. The user approved preparation implementation T001–T009 (G1); execution evidence is in validation.md and task progress in [tasks.md](tasks.md). Production execution (G2 before T010), personal acceptance and merge remain separate decisions.
 
 ## Summary
 

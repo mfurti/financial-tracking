@@ -2,7 +2,7 @@
 
 **Feature Branch**: 15-deploy-integrated-household-finance-workspace, linked to [deployment issue #15](https://github.com/mfurti/financial-tracking/issues/15).
 **Created**: 2026-11-21
-**Status**: Plan accepted for task generation by explicit speckit-tasks invocation; no implementation or deployment authorized.
+**Status**: Preparation implementation T001–T009 approved by explicit speckit-implement invocation; production execution and personal acceptance remain separately gated.
 **Input**: User description: "deployment", following the completed integrated household concept.
 **Related delivery**: [Integrated feature](../001-integrated-household-concept/spec.md), issue #13, merged PR #14.
 
