@@ -13,7 +13,7 @@
 
 ## Execution state and evidence policy
 
-Current state: prepared; candidate release and read-only target baseline are established. Recovery rehearsal is not yet completed. The complete state sequence is:
+Current state: recovery-rehearsed; candidate release, read-only target baseline and protected isolated recovery are established. Production approval remains pending. The complete state sequence is:
 
 draft → prepared → recovery-rehearsed → awaiting-production-approval → approved → writers-paused → final-backup-verified → migrated → internally-verified → reopened → technically-accepted.
 
@@ -62,6 +62,14 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 - The CLI emits only sanitized coverage/count/gate results. Login password rotation and session deletion remain confined to the owned restored copy, after original-field comparison; no private values/screenshots are emitted.
 - T004 was separately committed and immediately pushed as d0e40dec2646e48222556034ce103aac6575603a; its checkbox changed only after successful push.
 
+## T006 — Actual protected archive and container recovery
+
+- Original existing encrypted backup and protected configuration copy authenticated; the protected configuration matches current runtime bytes without exposing values/fingerprints.
+- Local complete harness passed in 49 seconds. Independent actual-image Linux PostgreSQL 17.11 recovery/migrator/login/report/responsive proof passed in 33 seconds, preserving 18 original tables, 135 columns and 1538 rows; see [recovery-validation.md](recovery-validation.md).
+- Selected recovery is isolated restore with actual previous images on the recovered original schema. Expanded-schema image-only rollback is not claimed. Original private age identity stayed local; one-use test identity/plaintext existed only in isolated container tmpfs and was removed.
+- The candidate's isolated post-update encrypted archive authenticated and passed structure inspection. Actual production images/volume/services remained unchanged and healthy; no new production backup or write pause occurred.
+- T005 was separately committed and immediately pushed as 170efe47d8aa32c01fee86d2018441e51bb1cb50; its checkbox changed only after successful push.
+
 ## Task evidence index
 
 | Task      | Evidence owner                                      | Status                                                              |
@@ -71,7 +79,7 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 | T003      | target-baseline.md                                  | Read-only inventory passed                                          |
 | T004      | Recovery comparator and 10 focused PostgreSQL tests | Passed scoped lint/types and behavioral checks                      |
 | T005      | Recovery harness integration                        | 32 tests plus lint/types/format passed                              |
-| T006      | recovery-validation.md                              | Pending                                                             |
+| T006      | recovery-validation.md                              | Actual encrypted/local and PostgreSQL 17 container recovery passed  |
 | T007/T008 | runbook.md / rehearsal.md                           | Pending                                                             |
 | T009      | execution-record.md approval packet                 | Pending                                                             |
 | T010–T015 | Production execution and technical acceptance       | G2 not granted                                                      |
