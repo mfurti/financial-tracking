@@ -37,3 +37,11 @@ The final run passed 15 Chromium cases across the three widths and six desktop/m
 - The existing model records outgoing contracts. Income and remainder previews explicitly show unavailable states. The concept’s income-contract workflow would need a product and model change.
 - Full tables, chart preferences, date/account filters, real category edits and focused drill-down routes remain available alongside the shorter landing surfaces. These can still make the application more dense than the concept.
 - Acceptance of these differences is still open. The work is local and has not been deployed.
+
+## T016 — Direct comparison on the feature candidate
+
+The feature worktree was built after the scoped UI adoption. Its application source matched the reviewed adoption baseline. Chromium captured six screens and four dialogs on desktop (1440 × 1000), tablet (768 × 1024), and phone (390 × 844), each in light and dark appearance. Both sides were rendered independently. The 60 pairs are stored in the ignored comparison viewers, with 30 pairs in `.local/concept-parity/index.html` and 30 in `.local/concept-parity-light/index.html`. They contain disposable fixture data only.
+
+The candidate passed 15 browser cases across the dark concept and related flows and three light concept cases. The tests exercised compact navigation, month switching, dialogs, focus restoration, hover geometry, tile graphics, theme reveal and reduced-motion fallback. Sixteen desktop/mobile regression cases also passed, including analytics filters, imports, category edits and session behavior.
+
+The direct review confirmed some visible differences. Accounts keeps one observed balance summary, since the concept’s bank and brokerage totals do not map directly to the current read model. On tablet the contract cards wrap to two columns, while the reference uses three. Analytics keeps additional filter and report controls, and the overview keeps explanatory account metadata. Existing typography and palette differ from the HTML. These differences are disclosed for visual acceptance rather than treated as pixel parity or approval.
