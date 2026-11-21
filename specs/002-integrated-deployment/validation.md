@@ -70,6 +70,15 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 - The candidate's isolated post-update encrypted archive authenticated and passed structure inspection. Actual production images/volume/services remained unchanged and healthy; no new production backup or write pause occurred.
 - T005 was separately committed and immediately pushed as 170efe47d8aa32c01fee86d2018441e51bb1cb50; its checkbox changed only after successful push.
 
+## T007 — Operator runbook and protected bindings
+
+- Added [runbook.md](runbook.md) with explicit staged publication checks, drain/write pause, fresh final checkpoint, protected configuration binding, one-shot migration, complete pre-start preservation, dependency-free internal startup, backup verification, reopening and post-resume recovery decisions.
+- Existing operator instructions point to the reviewed update gates. Installed Compose options were checked before binding the migration/startup commands; generic all-service startup cannot bypass the explicit reviewed one-shot.
+- Exact target-specific values are in an ignored protected local operator manifest, not duplicated in public progress. The public runbook uses validated parameter names. The original restore harness retains isolation guards; live read-only comparison uses only its reusable comparator under later explicit G2 authority.
+- The actual owner session/interactive login is a later acceptance prerequisite; the runbook forbids production password resets or forged owner sessions. Anonymous health is not authenticated workflow acceptance.
+- Public issue synchronization was automatically rejected when it contained operational infrastructure details. A reduced task/check-only issue body was accepted; no alternative tool was used to publish the rejected content.
+- T006 was separately committed and immediately pushed as e24cfd3a7ee952cc220320164000df1da03bbee5; its checkbox changed only after successful push.
+
 ## Task evidence index
 
 | Task      | Evidence owner                                      | Status                                                              |
@@ -80,7 +89,8 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 | T004      | Recovery comparator and 10 focused PostgreSQL tests | Passed scoped lint/types and behavioral checks                      |
 | T005      | Recovery harness integration                        | 32 tests plus lint/types/format passed                              |
 | T006      | recovery-validation.md                              | Actual encrypted/local and PostgreSQL 17 container recovery passed  |
-| T007/T008 | runbook.md / rehearsal.md                           | Pending                                                             |
+| T007      | runbook.md plus protected local parameter binding   | Prepared; production approval not granted                           |
+| T008      | rehearsal.md failure/success proof                  | Pending                                                             |
 | T009      | execution-record.md approval packet                 | Pending                                                             |
 | T010–T015 | Production execution and technical acceptance       | G2 not granted                                                      |
 | T016      | acceptance.md owner decision                        | Pending                                                             |
