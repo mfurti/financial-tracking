@@ -6,7 +6,7 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Record the current workspace, tracked/untracked correction paths, remote feature base and existing synthetic evidence in specs/003-concept-parity/validation.md. Preserve all working changes and isolate the correction diff from the pending specs/002-integrated-deployment/acceptance.md edit and deployment commits. Verify branch ancestry before transferring or staging any product files.
+- [x] T001 Record the current workspace, tracked/untracked correction paths, remote feature base and existing synthetic evidence in specs/003-concept-parity/validation.md. Preserve all working changes and isolate the correction diff from the pending specs/002-integrated-deployment/acceptance.md edit and deployment commits. Verify branch ancestry before transferring or staging any product files.
 
 ## Phase 2: Foundation
 

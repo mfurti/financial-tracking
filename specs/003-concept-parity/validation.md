@@ -6,6 +6,10 @@ Issue [#17](https://github.com/mfurti/financial-tracking/issues/17) uses its lin
 
 The adoption allowlist covers the modified and new files under `apps/web/app/` and `tests/e2e/` only. Their base files match the corresponding application and test files on `main`. Paths and baseline hashes are recorded locally so subsequent scoped commits can be compared with the original correction pass. The earlier 21 browser passes and synthetic comparison are baseline evidence; candidate verification remains a separate step.
 
+## T002 — Shared controls
+
+The compact month picker uses the existing typed month model and change event. Existing callers keep the original calendar icon and outline treatment by default. In-place views reuse FinanceDialog and the existing Nuxt UI modal for keyboard dismissal and focus management. The final browser pass verifies the route and focus behavior on the actual surfaces.
+
 ## Baseline visual comparison
 
 The review compares the final integrated HTML with a locally built application and disposable PostgreSQL data. Width × height: 1440 × 1000, 768 × 1024 and 390 × 844. Use the local `.local/concept-parity/index.html` viewer for the paired captures. The comparison uses dark appearance as in the owner’s marks. Application and concept fixture values differ.
