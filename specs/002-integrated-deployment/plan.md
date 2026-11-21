@@ -10,15 +10,15 @@
 
 Deploy the integrated household application through the existing immutable-image, runtime-only update procedure. Preserve actual production data and provide candidate-specific recovery proof before writes. Reuse existing scripts, Compose, encrypted backups and CI. A bounded preparation change must close the existing target-backup verifier's incomplete table coverage; it is not implemented by this plan.
 
-Initial candidate: c06e7cc0d0639e4be8092473de696f4b6a3912b0, merged PR #14. Last documented production: d193639 from PR #11; read the actual running images and migration ledger before any execution. [Main CI 44894725587](https://github.com/mfurti/financial-tracking/actions/runs/44894725587) was still verifying at discovery; operations and verified-image upload succeeded, but no published deployment bundle was present. These observations are a snapshot, not release approval.
+Initial application source candidate: c06e7cc0d0639e4be8092473de696f4b6a3912b0, merged PR #14. Its [main CI](https://github.com/mfurti/financial-tracking/actions/runs/44894725587) subsequently completed publication successfully. The actual installed baseline, immutable operational bindings and protected observations are held in the local operator dossier and must be revalidated before execution. Public source identity and successful publication do not grant production authority.
 
 ## Technical Context
 
 **Language/Version**: Existing Node >=24.22.1 <25, pnpm 11.25.0, strict TypeScript; existing Bash/Linux runtime operations.
 **Primary Dependencies**: Existing NestJS/Nuxt/Prisma application, Docker Compose, PostgreSQL 17, GHCR, age and current Traefik integration. No dependency upgrades.
-**Storage**: Existing household-ledger_postgres_data volume; protected runtime configuration; encrypted backup directory; no new business schema beyond candidate migrations.
+**Storage**: Preserve the existing production data volume, protected configuration and encrypted backup storage; add no business schema beyond the reviewed candidate migrations.
 **Testing**: Existing Vitest migration/operations/bundle coverage and Linux operations CI; complete target-archive preservation rehearsal; exact production-image compatibility; bounded private-HTTPS smoke.
-**Target Platform**: Existing rocky host, /root/docker/financial-tracking, project household-ledger, FRITZBOX and traefik-public; HTTPS haushaltsbuch.mfurti.de; documented web IP 192.168.178.33, subject to live reinspection.
+**Target Platform**: Existing Linux Docker deployment, bound through the protected operator manifest. Preserve the observed project, data volume, external networks, assigned address and private HTTPS entry point; revalidate them before execution.
 **Project Type**: Operational delivery of the existing web application, plus bounded recovery-verifier preparation.
 **Performance Goals**: Measure backup, restore, migration and outage duration. Existing Compose readiness wait is 240 seconds per invocation, not an outage SLA. Approve the actual maintenance window after rehearsal.
 **Constraints**: Explicit production approval; paused writers; no production reset/down-migration; no secrets/financial payloads in Git or logs; no server builds, shared network recreation, reboot or live bank operation.

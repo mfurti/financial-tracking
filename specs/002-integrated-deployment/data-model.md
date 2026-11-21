@@ -45,4 +45,4 @@ This plan adds no application tables, API entities or business migrations. The e
 
 ## Evidence Storage
 
-Tracked documents contain release IDs, sanitized counts/equality outcomes, timestamps and links. Encrypted archives, secrets, identities, private screenshots and runtime configuration remain in protected operator storage. Temporary local diagnostic evidence belongs in ignored .local paths only when it contains no unprotected personal data.
+Tracked documents contain public source provenance and sanitized task/check outcomes. Exact runtime bindings, target inventories, archive identities and operational timing samples remain in the protected local operator dossier. Encrypted archives, secrets, identities, private screenshots and runtime configuration remain outside tracked files. Original financial rows stay in private memory; ignored local diagnostics must not contain unprotected personal data.

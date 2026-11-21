@@ -8,11 +8,11 @@
 - **Decision**: Pin initial candidate c06e7cc0d0639e4be8092473de696f4b6a3912b0 and require successful main verify, operations and publish, plus its revision-matching release bundle and immutable API/web/backup digests.
 - **Rationale**: .github/workflows/ci.yml publishes the tested saved images only for successful main pushes; scripts/publish-images.sh validates revision labels; scripts/package-deployment.mjs accepts immutable references and packages only runtime inputs.
 - **Alternatives considered**: Deploying PR artifacts, rebuilding on the host, mutable tags or treating merged source as an already published release.
-- **Observed snapshot**: Main run 44894725587 was in progress; operations succeeded and verified-images-c06e7cc0d0639e4be8092473de696f4b6a3912b0 existed (artifact 14703552453, expires 2026-11-22T10:34:26Z). No final bundle existed at discovery. Final bundles have 30-day retention; recheck availability at execution.
+- **Observed snapshot**: Publication was initially pending and subsequently completed successfully. The public readiness summary records the outcome; exact artifact/runtime bindings and timing observations remain in the protected local dossier. Recheck them at execution.
 
 ## 2. Existing environment
 
-- **Decision**: Upgrade the existing rocky runtime-only installation, preserving project, volume, secret paths, backup directory, private HTTPS and external networks.
+- **Decision**: Upgrade the existing runtime-only installation using protected bindings while preserving its current storage, configuration, access and network boundaries.
 - **Rationale**: docs/deployment.md and infrastructure/DEPLOYMENT.md identify the established target and forbid server source/builds or shared network replacement.
 - **Alternatives considered**: New host, router changes, new registry model, credential rotation or application reinstallation.
 - **Execution inputs**: Actual live revision, migration ledger, image pull access, disk capacity, IP/DHCP/network state and protected secret/identity access. These require discovery, not guesses in a static plan.
@@ -36,12 +36,12 @@
 - **Decision**: Review the actual pending chain and run the candidate migrate service explicitly before starting API/web.
 - **Rationale**: infrastructure/compose.yaml gives migrate and API the same image. apps/api/bootstrap.mjs uses Prisma migrate deploy. Candidate migrations 202611180001_reserve_wealth and 202611180002_workspace_settings add eight tables; only ReserveGoal is seeded to 300000 cents.
 - **Alternatives considered**: Schema synchronization, migration reset, down-migrations or inventing default account eligibility/balances/groups.
-- **Limit**: Last documented production d193639 is not automatically the pre-feature source base. Any additional pending migration requires review and matching rehearsal before approval.
+- **Limit**: Last documented production the observed previous application revision is not automatically the pre-feature source base. Any additional pending migration requires review and matching rehearsal before approval.
 
 ## 6. Compatibility-based recovery
 
 - **Decision**: Choose image-only rollback only after proving the actual previous production image against the expanded schema; otherwise restore the verified pre-update archive into a new isolated stack.
-- **Rationale**: tests/previous-app-compat.test.ts validates source base 1f8d113bfa9294707bcd3b6ea6a3a03e8e12ec62, not recorded production d193639. docs/recovery.md explicitly refuses restore over an active/nonempty database.
+- **Rationale**: tests/previous-app-compat.test.ts validates source base 1f8d113bfa9294707bcd3b6ea6a3a03e8e12ec62, not recorded production the observed previous application revision. docs/recovery.md explicitly refuses restore over an active/nonempty database.
 - **Alternatives considered**: Claiming an arbitrary old image is compatible, automatic schema reversal or deleting the production volume.
 - **Post-resume limit**: A pre-update archive predates new writes. Preserve/reconcile them and obtain the corresponding recovery decision before any cutover that discards them.
 

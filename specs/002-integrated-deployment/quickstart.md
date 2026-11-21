@@ -2,14 +2,14 @@
 
 ## Prerequisites
 
-Use the existing V:/GitHub/financial-tracking checkout and Node 24.22.1/pnpm 11.25.0. This guide validates planning/release readiness; it does not authorize production deployment. See [deployment contract](contracts/deployment.md) and [evidence model](data-model.md).
+Use the existing selected checkout and Node 24.22.1/pnpm 11.25.0. This guide validates planning/release readiness; it does not authorize production deployment. See [deployment contract](contracts/deployment.md) and [evidence model](data-model.md).
 
 ## 1. Resolve the intended planning context
 
 PowerShell, repository root:
 
 ```powershell
-$env:SPECIFY_FEATURE_DIRECTORY = 'V:/GitHub/financial-tracking/specs/002-integrated-deployment'
+$env:SPECIFY_FEATURE_DIRECTORY = 'specs/002-integrated-deployment'
 $env:SPECIFY_FEATURE_NO_PERSIST = '1'
 & ./.specify/scripts/powershell/check-prerequisites.ps1 -PathsOnly -Json
 git status --short

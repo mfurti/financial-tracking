@@ -59,7 +59,7 @@ These are phase-specific primitives, not an authorized copy/paste production scr
 - Before migration: return to the protected old configuration and existing data only through the approved abort path.
 - After migration, before reopening: use previous images only with proven actual image/schema compatibility; retain additive tables. Otherwise recover the verified archive into a new isolated empty stack and verify before switching.
 - After reopening: preserve/reconcile any new writes. Restoring the pre-update archive is not lossless and requires a concrete recovery/cutover decision.
-- Never restore over the active database, run down --volumes, reset migrations, auto-drop new tables, rebuild source on rocky, recreate shared networks, disable proxy/security or reboot the shared host.
+- Never restore over the active database, run down --volumes, reset migrations, auto-drop new tables, rebuild source on the target, recreate shared networks, disable proxy/security or reboot the shared host.
 
 ## Evidence and interfaces
 
