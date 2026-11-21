@@ -79,6 +79,14 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 - Public issue synchronization was automatically rejected when it contained operational infrastructure details. A reduced task/check-only issue body was accepted; no alternative tool was used to publish the rejected content.
 - T006 was separately committed and immediately pushed as e24cfd3a7ee952cc220320164000df1da03bbee5; its checkbox changed only after successful push.
 
+## T008 — Isolated operator success and failure drills
+
+- [rehearsal.md](rehearsal.md) records seven successful scenario outcomes: unavailable image, missing secret, actual migration failure, original-field difference, readiness failure, independent empty-target recovery and controlled Compose success.
+- The actual-image migrator and --no-deps application starts followed the reviewed order. Failure states kept test web stopped and original data intact where expected; the success path had no canonical migration rerun and produced an authenticated encrypted post-update archive.
+- Exact runtime bindings and timing samples remain in the protected local record. No private financial values, secret values or new infrastructure bindings were added to public progress.
+- All uniquely labeled test containers, clone volume/network, owned runtime files and synthetic TLS inputs were removed after evidence retention; production services stayed healthy and unchanged. Original private key and real encrypted archives remain protected.
+- T007 was separately committed and immediately pushed as 2728c9f43e4d1042ab58efe7a89d31240086b34f; its checkbox changed only after successful push.
+
 ## Task evidence index
 
 | Task      | Evidence owner                                      | Status                                                              |
@@ -90,7 +98,7 @@ Every completed file-changing task receives a scoped commit and immediate verifi
 | T005      | Recovery harness integration                        | 32 tests plus lint/types/format passed                              |
 | T006      | recovery-validation.md                              | Actual encrypted/local and PostgreSQL 17 container recovery passed  |
 | T007      | runbook.md plus protected local parameter binding   | Prepared; production approval not granted                           |
-| T008      | rehearsal.md failure/success proof                  | Pending                                                             |
+| T008      | rehearsal.md failure/success proof                  | All seven isolated scenarios passed; owned resources cleaned        |
 | T009      | execution-record.md approval packet                 | Pending                                                             |
 | T010–T015 | Production execution and technical acceptance       | G2 not granted                                                      |
 | T016      | acceptance.md owner decision                        | Pending                                                             |
