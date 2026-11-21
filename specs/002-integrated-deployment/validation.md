@@ -6,12 +6,12 @@ Feature 002-integrated-deployment uses [issue #15](https://github.com/mfurti/fin
 
 - G0 issue/branch/planning commit and immediate push were explicitly approved.
 - G1 preparation T001–T009 was explicitly approved through speckit-implement/coding-workflow: scoped code/docs, read-only discovery and protected isolated recovery.
-- G2 production maintenance is not granted. No production writer pause, target checkpoint creation, runtime replacement, migration or reopening has started.
+- G2 production maintenance T010–T015 was explicitly approved. Required current CI and a fresh read-only preflight passed before the writer pause; actual milestones are recorded in execution-record.md. Personal acceptance and PR merge remain separate.
 - Personal acceptance remains pending. The original integrated 48-task delivery is preserved; PWA is separate future backlog.
 - Existing documented project/deployment rules apply; the constitution remains an unratified template.
 - Runtime bindings, private inventory/archive identities and timing measurements stay in the protected local operator dossier. Public tracking contains task/check outcomes and public source provenance only. Original financial rows remain in private memory; no original credentials/private values are logged.
 
-Current state: awaiting-production-approval. The full sequence remains draft → prepared → recovery-rehearsed → awaiting-production-approval → approved → writers-paused → final-backup-verified → migrated → internally-verified → reopened → technically-accepted.
+Current state: final-backup-verified. The full sequence remains draft → prepared → recovery-rehearsed → awaiting-production-approval → approved → writers-paused → final-backup-verified → migrated → internally-verified → reopened → technically-accepted.
 
 Preflight failure blocks mutation. Later failure keeps access paused and uses a reviewed recovery decision; new writes after reopening require preservation/reconciliation. Absence of an approval is never a passed gate.
 
@@ -59,7 +59,7 @@ Only uniquely owned resources were altered. All temporary test containers, clone
 
 [execution-record.md](execution-record.md) records the pending authority. The local proposal contains exact target/candidate/previous identities, reviewed pending migrations, protected recovery evidence, measured rehearsal and the proposed window/check/abort sequence.
 
-T009 completes proposal preparation. The actual external G2 response remains pending before T010. No final paused checkpoint is invented; T010 must generate/verify that actual archive under later approval.
+T009 completes proposal preparation. The actual external G2 response was received before T010. Execution milestones contain observed proof from the actual final paused checkpoint.
 
 ## Commit and task provenance
 
