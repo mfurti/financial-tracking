@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod';
+import { expenseChartGroups } from '../utils/financial-labels';
 const props = withDefaults(
   defineProps<{
     groups: { categoryId: string | null; name: string; expenseCents: string }[];
@@ -7,13 +8,18 @@ const props = withDefaults(
     label: string;
     centerLabel?: string;
     description?: string;
+    chart?: 'bar' | 'ring';
   }>(),
-  { centerLabel: 'Ausgegeben', description: 'Exakte Beträge und Links zu den Buchungen stehen neben dem Diagramm.' },
+  {
+    centerLabel: 'Ausgegeben',
+    description: 'Exakte Beträge und Links zu den Buchungen stehen neben dem Diagramm.',
+    chart: 'ring',
+  },
 );
 const emit = defineEmits<{ select: [id: string | null] }>();
 const data = computed(
   /** Floating geometry is display-only; every shown amount uses its original integer-cent string. */ () =>
-    props.groups.map(
+    expenseChartGroups(props.groups).map(
       /** Preserve each exact value and identity next to its plot coordinate. */ (row) => ({
         ...row,
         value: Number(row.expenseCents) / 100,
@@ -42,14 +48,15 @@ function select(point: unknown) {
 /** Resolve the accessible tooltip label to its exact source amount. */
 function exact(label: string) {
   return money(
-    props.groups.find(/** Category names are unique persisted labels. */ (row) => row.name === label)?.expenseCents ??
+    data.value.find(/** Category names are unique persisted labels. */ (row) => row.name === label)?.expenseCents ??
       '0',
   );
 }
 </script>
 <template>
   <UChart
-    type="donut"
+    v-if="!amountsMasked()"
+    :type="chart === 'ring' ? 'donut' : 'bar'"
     :data="data"
     index="name"
     :categories="['value']"
@@ -57,20 +64,21 @@ function exact(label: string) {
     :height="260"
     :legend="false"
     :aria-label="label"
-    :aria-description="description"
+    :aria-description="tr(description)"
     @select="select"
   >
-    <template #center
+    <template v-if="chart === 'ring'" #center
       ><div class="chart-center">
-        <small>{{ centerLabel }}</small
+        <small>{{ tr(centerLabel) }}</small
         ><strong>{{ money(totalCents) }}</strong>
       </div></template
     >
-    <template #tooltip="{ rows }"
+    <template #tooltip="{ title, rows }"
       ><div v-for="row in rows" :key="row.label">
-        <strong>{{ row.label }}</strong>
-        <p>{{ exact(row.label) }}</p>
+        <strong>{{ chart === 'bar' ? title : row.label }}</strong>
+        <p>{{ exact(chart === 'bar' && title ? title : row.label) }}</p>
       </div></template
     >
   </UChart>
+  <p v-else role="status">{{ tr('Diagramm bei ausgeblendeten Beträgen verborgen.') }}</p>
 </template>

@@ -5,7 +5,7 @@ const isDark = computed(
 );
 let transitionTimer: ReturnType<typeof setTimeout> | undefined;
 
-/** Toggle one persisted preference and animate colors only for this deliberate user action. */
+/** Toggle one persisted preference and animate icon colors/opacity only for this deliberate user action; financial surfaces change immediately. */
 function toggleTheme() {
   if (transitionTimer) clearTimeout(transitionTimer);
   document.documentElement.classList.remove('theme-transition');
@@ -16,7 +16,7 @@ function toggleTheme() {
         document.documentElement.classList.remove('theme-transition');
         transitionTimer = undefined;
       },
-      320,
+      180,
     );
   }
   mode.preference = isDark.value ? 'light' : 'dark';
@@ -36,14 +36,14 @@ onBeforeUnmount(
     color="neutral"
     class="theme-toggle"
     :class="{ 'is-dark': isDark }"
-    aria-label="Dunkelmodus"
+    :aria-label="tr('Dunkelmodus')"
     :aria-pressed="isDark"
-    :title="isDark ? 'Zum hellen Modus wechseln' : 'Zum dunklen Modus wechseln'"
+    :title="isDark ? tr('Zum hellen Modus wechseln') : tr('Zum dunklen Modus wechseln')"
     @click="toggleTheme"
   >
     <svg
       class="theme-symbol"
-      :style="{ transform: isDark ? 'rotate(-20deg)' : 'rotate(0)' }"
+      :style="{ opacity: isDark ? 0.85 : 1 }"
       aria-hidden="true"
       viewBox="0 0 24 24"
       fill="none"

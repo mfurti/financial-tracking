@@ -3,6 +3,105 @@ import { z } from 'zod';
 export const idSchema = z.uuid().toLowerCase();
 export const dateSchema = z.iso.date();
 export const timeSchema = z.iso.datetime();
+/** Account, group and accountless-only identities are mutually exclusive financial scopes. */
+function validAccountScope(value: { accountId?: string; groupId?: string; unassigned?: 'true' | 'false' }) {
+  return Number(Boolean(value.accountId)) + Number(Boolean(value.groupId)) + Number(value.unassigned === 'true') <= 1;
+}
+/** Shared optional account/group scope preserves the existing global default. */
+export const accountScopeQuerySchema = z
+  .object({ accountId: idSchema.optional(), groupId: idSchema.optional() })
+  .refine(validAccountScope, 'Konto oder Kontogruppe auswählen.');
+/** Contact metadata never changes the owner's username, credentials or recovery identity. */
+export const workspaceProfileInputSchema = z
+  .object({
+    displayName: z.string().trim().min(1).max(80),
+    contactEmail: z.string().trim().max(254).pipe(z.email()).nullable().optional(),
+  })
+  .strict();
+/** Null update time explicitly identifies the unpersisted current-owner display fallback. */
+export const workspaceProfileSchema = workspaceProfileInputSchema.extend({
+  userId: idSchema,
+  contactEmail: z.email().max(254).nullable(),
+  updatedAt: timeSchema.nullable(),
+});
+/** Atomic group membership rejects duplicate UUIDs after canonicalization. */
+const groupAccountIdsSchema = z
+  .array(idSchema)
+  .max(1000)
+  .refine(
+    /** A selected account contributes once even when UUID case differs. */ (ids) => new Set(ids).size === ids.length,
+    'Konto nur einmal auswählen.',
+  );
+/** Create groups with bounded display names and an explicit stable default order. */
+export const accountGroupInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(60),
+    accountIds: groupAccountIdsSchema,
+    sortOrder: z.number().int().min(0).max(2147483647).default(0),
+  })
+  .strict();
+/** Partial edits must not default absent order or membership fields and erase existing choices. */
+export const accountGroupPatchSchema = z
+  .object({
+    name: z.string().trim().min(1).max(60).optional(),
+    accountIds: groupAccountIdsSchema.optional(),
+    sortOrder: z.number().int().min(0).max(2147483647).optional(),
+  })
+  .strict()
+  .refine(
+    /** Reject meaningless empty mutation requests. */ (value) => Object.keys(value).length > 0,
+    'Mindestens eine Änderung angeben.',
+  );
+/** Public groups contain references only, never duplicated financial amounts. */
+export const accountGroupSchema = accountGroupInputSchema.extend({
+  id: idSchema,
+  createdAt: timeSchema,
+  updatedAt: timeSchema,
+});
+/** Deleting a group requires explicit consent and never implies account deletion. */
+export const accountGroupDeleteSchema = z.object({ confirm: z.literal(true) }).strict();
+/** Stable source revisions are bounded without truncating existing financial source fields. */
+export const notificationSourceKeySchema = z.string().trim().min(1).max(256);
+/** Clients can acknowledge only a source key, never another owner or arbitrary timestamp. */
+export const notificationAcknowledgementInputSchema = z.object({ sourceKey: notificationSourceKeySchema }).strict();
+/** Durable acknowledgement is metadata independent of its financial source. */
+export const notificationAcknowledgementSchema = notificationAcknowledgementInputSchema.extend({
+  userId: idSchema,
+  acknowledgedAt: timeSchema,
+});
+/** Only actionable import reviews and confirmed upcoming plans generate in-app events. */
+export const notificationKindSchema = z.enum(['IMPORT_REVIEW', 'CONTRACT_DUE']);
+/** Bounded current-source pages use opaque source identities, never offsets or financial mutation tokens. */
+export const notificationsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  cursor: notificationSourceKeySchema.optional(),
+  kind: notificationKindSchema.optional(),
+});
+/** Derived event data separates planned money from import metadata and durable acknowledgement. */
+export const notificationSchema = z
+  .object({
+    sourceKey: notificationSourceKeySchema,
+    kind: notificationKindSchema,
+    sourceLabel: z.string(),
+    occurredAt: timeSchema,
+    dueDate: dateSchema.nullable(),
+    plannedCents: z
+      .lazy(
+        /** Resolve the shared bounded positive-money schema after module initialization. */ () => positiveCentsSchema,
+      )
+      .nullable(),
+    rowNumber: z.number().int().nullable(),
+    href: z.string().regex(/^\/(imports\?run=|contracts\/)[0-9a-f-]{36}$/),
+    acknowledgedAt: timeSchema.nullable(),
+  })
+  .strict();
+/** Counts refer to the complete bounded selected source kind, not merely the visible cursor page. */
+export const notificationsSchema = z.object({
+  items: z.array(notificationSchema),
+  nextCursor: notificationSourceKeySchema.nullable(),
+  unreadCount: z.number().int().nonnegative(),
+  asOf: timeSchema,
+});
 export const centsSchema = z
   .string()
   .regex(/^-?(0|[1-9]\d*)$/)
@@ -186,7 +285,9 @@ export const suggestionQuerySchema = z.object({ dismissed: z.enum(['true', 'fals
 export const suggestionDecisionSchema = z.object({ decision: z.literal('DISMISSED') });
 export const contractIntervalSchema = z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]);
 export const positiveCentsSchema = centsSchema.refine(
-  /** Contract forecasts are positive expense magnitudes. */ (value) => BigInt(value) > 0n,
+  /** Contract forecasts are positive expense magnitudes; invalid syntax must reject without throwing during refinement. */ (
+    value,
+  ) => /^[1-9]\d*$/.test(value),
   'Betrag muss größer als null sein.',
 );
 export const contractInputSchema = z
@@ -275,6 +376,156 @@ export const contractSuggestionSchema = z.object({
 });
 /** Aggregated totals can exceed a single PostgreSQL BIGINT while retaining integer-cent precision. */
 export const aggregateCentsSchema = z.string().regex(/^-?(0|[1-9]\d*)$/);
+export const accountPresentationInputSchema = z.object({ reserveEligible: z.boolean() }).strict();
+export const accountPresentationSchema = accountPresentationInputSchema.extend({ accountId: idSchema });
+export const reserveGoalInputSchema = z.object({ targetCents: positiveCentsSchema }).strict();
+export const reserveGoalSettingSchema = reserveGoalInputSchema.extend({ updatedAt: timeSchema });
+export const wealthCoverageSchema = z.enum(['COMPLETE', 'PARTIAL']);
+export const reserveGoalSchema = reserveGoalSettingSchema.extend({
+  asOf: timeSchema,
+  currentCents: aggregateCentsSchema.nullable(),
+  coverage: wealthCoverageSchema,
+  eligibleCount: z.number().int().nonnegative(),
+  observedCount: z.number().int().nonnegative(),
+  presentations: z.array(accountPresentationSchema),
+  excludedAccounts: z.array(
+    z.object({ accountId: idSchema, name: z.string(), reason: z.enum(['INACTIVE', 'NON_EUR']) }),
+  ),
+  components: z.array(
+    z.object({
+      accountId: idSchema,
+      name: z.string(),
+      currency: z.literal('EUR'),
+      amountCents: centsSchema.nullable(),
+      observedAt: timeSchema.nullable(),
+      source: z.string().nullable(),
+      stale: z.boolean(),
+    }),
+  ),
+});
+export const wealthRecordInputSchema = z
+  .object({
+    idempotencyKey: z
+      .string()
+      .min(1)
+      .max(128)
+      .refine(
+        /** Preserve exact retry identities while rejecting an entirely blank key. */ (value) =>
+          value.trim().length > 0,
+        'Schlüssel darf nicht leer sein.',
+      ),
+  })
+  .strict();
+export const wealthRecordComponentSchema = z.object({
+  id: idSchema,
+  recordId: idSchema,
+  accountId: idSchema.nullable(),
+  sourceLabel: z.string().min(1).max(120),
+  amountCents: centsSchema.nullable(),
+  observedAt: timeSchema.nullable(),
+  sourceType: z.string().min(1).max(64),
+});
+export const wealthRecordSchema = z.object({
+  id: idSchema,
+  recordedAt: timeSchema,
+  totalCents: centsSchema,
+  coverage: wealthCoverageSchema,
+  idempotencyKey: wealthRecordInputSchema.shape.idempotencyKey,
+  components: z.array(wealthRecordComponentSchema),
+});
+export const wealthRecordsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  cursor: idSchema.optional(),
+});
+export const wealthPreviewSchema = z.object({
+  asOf: timeSchema,
+  provenance: z.literal('OBSERVED_BOOKED_BALANCES'),
+  totalCents: aggregateCentsSchema.nullable(),
+  coverage: wealthCoverageSchema,
+  componentCount: z.number().int().nonnegative(),
+  observedCount: z.number().int().nonnegative(),
+  recordable: z.boolean(),
+  blockingReason: z
+    .enum([
+      'NO_ACCOUNTS',
+      'TOTAL_OUT_OF_RANGE',
+      'SOURCE_LABEL_TOO_LONG',
+      'SOURCE_TYPE_TOO_LONG',
+      'SOURCE_METADATA_INVALID',
+    ])
+    .nullable(),
+  components: z.array(
+    z.object({
+      accountId: idSchema,
+      sourceLabel: z.string(),
+      currency: z.string(),
+      amountCents: centsSchema.nullable(),
+      observedAt: timeSchema.nullable(),
+      sourceType: z.string(),
+      stale: z.boolean(),
+    }),
+  ),
+});
+export const wealthRecordsSchema = z.object({
+  items: z.array(wealthRecordSchema),
+  nextCursor: idSchema.nullable(),
+  preview: wealthPreviewSchema,
+});
+export const contractCalendarQuerySchema = z
+  .object({
+    from: dateSchema,
+    to: dateSchema,
+    accountId: idSchema.optional(),
+    groupId: idSchema.optional(),
+  })
+  .refine(validAccountScope, 'Konto oder Kontogruppe auswählen.')
+  .refine(
+    /** Bound recurrence expansion to at most 36 inclusive calendar months. */ (value) =>
+      value.from <= value.to &&
+      (Number(value.to.slice(0, 4)) - Number(value.from.slice(0, 4))) * 12 +
+        Number(value.to.slice(5, 7)) -
+        Number(value.from.slice(5, 7)) <
+        36,
+    { path: ['to'], message: 'Gültigen Zeitraum mit höchstens 36 Kalendermonaten wählen.' },
+  );
+export const contractCalendarEventSchema = z.object({
+  contractId: idSchema,
+  name: z.string(),
+  provider: z.string(),
+  kind: contractKindSchema,
+  accountId: idSchema.nullable(),
+  categoryId: idSchema.nullable(),
+  revisionId: idSchema,
+  dueDate: dateSchema,
+  plannedCents: positiveCentsSchema,
+  payment: z
+    .object({
+      transactionId: idSchema,
+      bookingDate: dateSchema,
+      amountCents: centsSchema,
+      status: z.enum(['BOOKED', 'PENDING']),
+      source: z.enum(['AUTO', 'MANUAL']),
+    })
+    .nullable(),
+});
+export const contractCalendarSchema = z.object({
+  from: dateSchema,
+  to: dateSchema,
+  scope: z.object({ accountId: idSchema.nullable(), groupId: idSchema.optional() }),
+  provenance: z.literal('CONTRACT_SCHEDULE'),
+  totalPlannedCents: aggregateCentsSchema,
+  months: z
+    .array(
+      z.object({
+        month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+        plannedCents: aggregateCentsSchema,
+        eventCount: z.number().int().nonnegative(),
+        paymentCount: z.number().int().nonnegative(),
+      }),
+    )
+    .max(36),
+  events: z.array(contractCalendarEventSchema).max(10000),
+});
 export const contractCostSchema = z.object({
   id: idSchema,
   name: z.string(),
@@ -302,18 +553,27 @@ export const contractSummarySchema = z.object({
   kinds: z.array(contractCostGroupSchema),
 });
 export const classificationSchema = z.enum(['FIXED', 'VARIABLE', 'UNCLASSIFIED']);
+/** Opaque exact-trimmed merchant identity; canonical UTF-8 contents are validated before database access. */
+export const merchantKeySchema = z
+  .string()
+  .regex(/^(unknown|name:[A-Za-z0-9_-]+)$/)
+  .describe(
+    'unknown or name: plus canonical unpadded base64url UTF-8 of an exact trimmed nonempty source name; NUL is invalid',
+  );
 export const analyticsOverviewQuerySchema = z
   .object({
     from: dateSchema.optional(),
     to: dateSchema.optional(),
     accountId: idSchema.optional(),
+    groupId: idSchema.optional(),
     categoryId: idSchema.optional(),
+    merchantKey: merchantKeySchema.optional(),
     unassigned: z.enum(['true', 'false']).optional(),
     uncategorized: z.enum(['true', 'false']).optional(),
   })
   .refine(
     /** Mutually exclusive identity and null filters must not silently shadow one another. */ (value) =>
-      !(value.accountId && value.unassigned === 'true') && !(value.categoryId && value.uncategorized === 'true'),
+      validAccountScope(value) && !(value.categoryId && value.uncategorized === 'true'),
     'Filter widersprechen sich.',
   )
   .refine(
@@ -377,10 +637,41 @@ export const analyticsOverviewSchema = z.object({
     }),
   ),
 });
+/** Detail bookmarks require an explicit effective window instead of silently applying report defaults. */
+export const analyticsDetailQuerySchema = analyticsOverviewQuerySchema.safeExtend({
+  from: dateSchema,
+  to: dateSchema,
+  direction: z.enum(['INCOME', 'EXPENSE']).default('EXPENSE'),
+});
+export const merchantAnalyticsQuerySchema = analyticsOverviewQuerySchema;
+export const merchantAnalyticsSchema = z.object({
+  scope: z.object({
+    from: dateSchema,
+    to: dateSchema,
+    accountId: idSchema.nullable(),
+    groupId: idSchema.optional(),
+    categoryId: idSchema.nullable(),
+    unassigned: z.boolean(),
+    uncategorized: z.boolean(),
+    merchantKey: merchantKeySchema.optional(),
+  }),
+  expenseCents: aggregateCentsSchema,
+  merchants: z.array(
+    z.object({
+      key: merchantKeySchema,
+      name: z.string().nullable(),
+      label: z.string(),
+      expenseCents: aggregateCentsSchema,
+      count: z.number().int().nonnegative(),
+    }),
+  ),
+});
 export const transactionQuerySchema = z
   .object({
     classification: classificationSchema.optional(),
+    merchantKey: merchantKeySchema.optional(),
     accountId: idSchema.optional(),
+    groupId: idSchema.optional(),
     unassigned: z.enum(['true', 'false']).optional(),
     from: dateSchema.optional(),
     to: dateSchema.optional(),
@@ -395,7 +686,7 @@ export const transactionQuerySchema = z
   })
   .refine(
     /** A specific account and the unassigned-only view are mutually exclusive. */
-    (query) => !(query.accountId && query.unassigned === 'true'),
+    (query) => validAccountScope(query),
     'Konto und Ohne-Konto-Filter nicht gleichzeitig auswählen.',
   )
   .refine(
@@ -404,9 +695,32 @@ export const transactionQuerySchema = z
     'Ungültiger Zeitraum.',
   );
 export const transactionPageSchema = z.object({ items: z.array(transactionSchema), nextCursor: idSchema.nullable() });
-export const monthlyQuerySchema = z.object({
+export const monthlyQuerySchema = z
+  .object({
+    month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+    accountId: idSchema.optional(),
+    groupId: idSchema.optional(),
+  })
+  .refine(validAccountScope, 'Konto oder Kontogruppe auswählen.');
+export const monthlyReviewQuerySchema = monthlyQuerySchema;
+export const monthlyReviewSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
-  accountId: idSchema.optional(),
+  scope: z.object({ from: dateSchema, to: dateSchema, accountId: idSchema.nullable(), groupId: idSchema.optional() }),
+  incomeCents: aggregateCentsSchema,
+  expenseCents: aggregateCentsSchema,
+  netCents: aggregateCentsSchema,
+  bookedCount: z.number().int().nonnegative(),
+  completeness: z.object({
+    calendar: z.enum(['CLOSED', 'CURRENT', 'FUTURE']),
+    hasBookings: z.boolean(),
+    historyComplete: z.literal(false),
+  }),
+  provenance: z.object({
+    basis: z.literal('BOOKED_NON_TRANSFER'),
+    includesUnassigned: z.boolean(),
+    refunds: z.literal('INCOME'),
+  }),
+  queries: z.object({ income: transactionQuerySchema, expense: transactionQuerySchema }),
 });
 export const monthlySchema = z.object({
   month: z.string(),
@@ -523,6 +837,7 @@ export const csvMappingSchema = z.object({
   bookingDate: z.string().min(1),
   amount: z.string().min(1),
   description: z.string().min(1),
+  descriptionFallback: z.string().optional(),
   valueDate: z.string().optional(),
   counterpartyName: z.string().optional(),
   counterpartyIban: z.string().optional(),
@@ -651,6 +966,20 @@ export interface ApiContract {
 const okSchema = z.object({ ok: z.boolean() });
 /** Operation inventory shared with generated OpenAPI and contract tests. */
 export const apiContracts: Record<string, ApiContract> = {
+  monthlyReview: {
+    method: 'get',
+    path: '/analytics/review',
+    query: monthlyReviewQuerySchema,
+    response: monthlyReviewSchema,
+    status: 200,
+  },
+  merchantAnalytics: {
+    method: 'get',
+    path: '/analytics/merchants',
+    query: merchantAnalyticsQuerySchema,
+    response: merchantAnalyticsSchema,
+    status: 200,
+  },
   analyticsOverview: {
     method: 'get',
     path: '/analytics/overview',
@@ -659,7 +988,20 @@ export const apiContracts: Record<string, ApiContract> = {
     status: 200,
   },
   contracts: { method: 'get', path: '/contracts', response: z.array(contractSchema), status: 200 },
-  contractSummary: { method: 'get', path: '/contracts/summary', response: contractSummarySchema, status: 200 },
+  contractSummary: {
+    method: 'get',
+    path: '/contracts/summary',
+    query: accountScopeQuerySchema,
+    response: contractSummarySchema,
+    status: 200,
+  },
+  contractCalendar: {
+    method: 'get',
+    path: '/contracts/calendar',
+    query: contractCalendarQuerySchema,
+    response: contractCalendarSchema,
+    status: 200,
+  },
   createContract: {
     method: 'post',
     path: '/contracts',
@@ -822,6 +1164,79 @@ export const apiContracts: Record<string, ApiContract> = {
     request: accountPatchSchema,
     response: accountSchema,
     status: 200,
+  },
+  accountPresentation: {
+    method: 'patch',
+    path: '/accounts/{id}/presentation',
+    request: accountPresentationInputSchema,
+    response: accountPresentationSchema,
+    status: 200,
+  },
+  reserveGoal: { method: 'get', path: '/reserve-goal', response: reserveGoalSchema, status: 200 },
+  workspaceProfile: { method: 'get', path: '/workspace/profile', response: workspaceProfileSchema, status: 200 },
+  accountGroups: { method: 'get', path: '/account-groups', response: z.array(accountGroupSchema), status: 200 },
+  notifications: {
+    method: 'get',
+    path: '/notifications',
+    query: notificationsQuerySchema,
+    response: notificationsSchema,
+    status: 200,
+  },
+  acknowledgeNotification: {
+    method: 'put',
+    path: '/notifications/acknowledgement',
+    request: notificationAcknowledgementInputSchema,
+    response: notificationAcknowledgementSchema,
+    status: 200,
+  },
+  createAccountGroup: {
+    method: 'post',
+    path: '/account-groups',
+    request: accountGroupInputSchema,
+    response: accountGroupSchema,
+    status: 201,
+  },
+  patchAccountGroup: {
+    method: 'patch',
+    path: '/account-groups/{id}',
+    request: accountGroupPatchSchema,
+    response: accountGroupSchema,
+    status: 200,
+  },
+  deleteAccountGroup: {
+    method: 'delete',
+    path: '/account-groups/{id}',
+    request: accountGroupDeleteSchema,
+    response: okSchema,
+    status: 200,
+  },
+  saveWorkspaceProfile: {
+    method: 'patch',
+    path: '/workspace/profile',
+    request: workspaceProfileInputSchema,
+    response: workspaceProfileSchema,
+    status: 200,
+  },
+  setReserveGoal: {
+    method: 'put',
+    path: '/reserve-goal',
+    request: reserveGoalInputSchema,
+    response: reserveGoalSchema,
+    status: 200,
+  },
+  wealthRecords: {
+    method: 'get',
+    path: '/wealth-records',
+    query: wealthRecordsQuerySchema,
+    response: wealthRecordsSchema,
+    status: 200,
+  },
+  captureWealth: {
+    method: 'post',
+    path: '/wealth-records',
+    request: wealthRecordInputSchema,
+    response: wealthRecordSchema,
+    status: 201,
   },
   balances: { method: 'get', path: '/accounts/{id}/balances', response: z.array(balanceSchema), status: 200 },
   transactions: {

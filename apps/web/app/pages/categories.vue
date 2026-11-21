@@ -9,7 +9,7 @@ import {
 } from '@financial-tracking/contracts';
 
 const api = useApi();
-const { validation, formError } = useFormFeedback();
+const { validation, formError, formInvalid, clearFieldError } = useFormFeedback();
 const route = useRoute();
 const categories = ref<Category[]>([]);
 const month = ref(
@@ -41,9 +41,9 @@ const deleteOpen = computed({
 });
 const form = reactive({ name: '', kind: 'EXPENSE' as 'INCOME' | 'EXPENSE' | 'BOTH' });
 const kinds = [
-  { label: 'Ausgaben', value: 'EXPENSE' },
-  { label: 'Einnahmen', value: 'INCOME' },
-  { label: 'Beides', value: 'BOTH' },
+  { label: tr('Ausgaben'), value: 'EXPENSE' },
+  { label: tr('Einnahmen'), value: 'INCOME' },
+  { label: tr('Beides'), value: 'BOTH' },
 ];
 /** Reload persisted categories after an edit. */
 async function load() {
@@ -133,95 +133,123 @@ onBeforeUnmount(
 <template>
   <UNavigationMenu
     :items="[
-      { label: 'Analysen', to: '/analytics', exact: true },
-      { label: 'Kategorien & Regeln', to: '/categories' },
+      { label: tr('Analysen'), to: '/analytics', exact: true },
+      { label: tr('Kategorien & Regeln'), to: '/categories' },
     ]"
     class="mb-5"
-    aria-label="Analysebereiche"
+    :aria-label="tr('Analysebereiche')"
   />
   <div class="page-heading">
     <div>
-      <h1>Kategorien & Auswertung</h1>
+      <h1>{{ tr('Kategorien & Auswertung') }}</h1>
     </div>
     <div class="heading-actions">
-      <label class="month-control">Monat<MonthPicker v-model="month" @change="load" /></label
-      ><UButton variant="soft" :loading="loading" @click="load">Aktualisieren</UButton>
+      <label class="month-control">{{ tr('Monat') }}<MonthPicker v-model="month" @change="load" /></label
+      ><UButton variant="soft" :loading="loading" @click="load">{{ tr('Aktualisieren') }}</UButton>
     </div>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
-  <p v-if="loading" role="status" class="muted mb-5">Deine Auswertung wird geladen …</p>
+  <p v-if="loading" role="status" class="muted mb-5">{{ tr('Deine Auswertung wird geladen …') }}</p>
   <template v-if="report && !loading && !error">
     <div class="category-insights mb-6">
-      <section class="panel">
-        <p class="muted">Ausgegeben · {{ monthName(report.month) }}</p>
-        <strong class="insight-amount">{{ money(report.expenseCents) }}</strong>
-      </section>
-      <section class="panel">
-        <p class="muted">Eingenommen</p>
-        <strong class="insight-amount positive">{{ money(report.incomeCents) }}</strong>
-      </section>
-      <section class="panel">
-        <p class="muted">Noch ohne Kategorie</p>
-        <strong class="insight-amount">{{ unclassified?.count ?? 0 }} Buchungen</strong><small>Bereits mitgezählt</small
-        ><NuxtLink v-if="unclassified?.count" :to="unclassifiedLink" class="text-link mt-3"
-          >Buchungen zuordnen</NuxtLink
+      <FinanceTile
+        variant="insight"
+        :label="tr('Ausgegeben · {0}', [monthName(report.month)])"
+        :value="money(report.expenseCents)"
+        financial
+      />
+      <FinanceTile variant="insight" :label="tr('Eingenommen')" :value="money(report.incomeCents)" financial />
+      <FinanceTile
+        variant="insight"
+        :label="tr('Noch ohne Kategorie')"
+        :value="tr('{0} Buchungen', [unclassified?.count ?? 0])"
+        :context="tr('Bereits mitgezählt')"
+        ><template #actions
+          ><NuxtLink v-if="unclassified?.count" :to="unclassifiedLink" class="text-link mt-3">{{
+            tr('Buchungen zuordnen')
+          }}</NuxtLink></template
         >
-      </section>
+      </FinanceTile>
     </div>
     <ExpenseBreakdown :report="report" />
   </template>
   <div class="toolbar my-5">
-    <UButton :to="unclassifiedLink" variant="soft">Umsätze ohne Kategorie öffnen</UButton
+    <UButton :to="unclassifiedLink" variant="soft">{{ tr('Umsätze ohne Kategorie öffnen') }}</UButton
     ><HelpPopover
-      title="So entstehen deine Kategorien"
-      text="Ordne unter Umsätze eine Kategorie zu oder erstelle eine Regel. Manuelle Entscheidungen haben Vorrang."
+      :title="tr('So entstehen deine Kategorien')"
+      :text="
+        tr('Ordne unter Umsätze eine Kategorie zu oder erstelle eine Regel. Manuelle Entscheidungen haben Vorrang.')
+      "
     />
   </div>
-  <DisclosurePanel class="panel category-management" title="Kategorien verwalten"
+  <DisclosurePanel class="panel category-management" :title="tr('Kategorien verwalten')"
     ><div class="mt-6">
-      <h2 class="mb-4">Kategorie anlegen</h2>
-      <UForm ref="validation" :schema="categoryInputSchema" :state="form" class="form-row" @submit="create"
-        ><UFormField label="Name" name="name"
-          ><UInput v-model="form.name" placeholder="Zum Beispiel Lebensmittel" /></UFormField
-        ><UFormField label="Gilt für" name="kind"><USelect v-model="form.kind" :items="kinds" /></UFormField
-        ><UButton type="submit" :loading="busy">Kategorie anlegen</UButton></UForm
+      <h2 class="mb-4">{{ tr('Kategorie anlegen') }}</h2>
+      <UForm
+        ref="validation"
+        :schema="translatedSchema(categoryInputSchema)"
+        :state="form"
+        :validate-on="[]"
+        class="form-row"
+        @submit="create"
+        @error="formInvalid"
+        ><UFormField :label="tr('Name')" name="name"
+          ><UInput
+            v-model="form.name"
+            :placeholder="tr('Zum Beispiel Lebensmittel')"
+            @update:model-value="clearFieldError('name')" /></UFormField
+        ><UFormField :label="tr('Gilt für')" name="kind"><USelect v-model="form.kind" :items="kinds" /></UFormField
+        ><UButton type="submit" :loading="busy">{{ tr('Kategorie anlegen') }}</UButton></UForm
       >
     </div>
     <div class="mt-6">
       <p class="muted mb-4">
-        Umbenennen oder Deaktivieren ändert keine Beträge. Bestehende Zuordnungen bleiben erhalten. Beim Löschen bleiben
-        die Buchungen bestehen und verlieren nur diese Kategorie.
+        {{
+          tr(
+            'Umbenennen oder Deaktivieren ändert keine Beträge. Bestehende Zuordnungen bleiben erhalten. Beim Löschen bleiben die Buchungen bestehen und verlieren nur diese Kategorie.',
+          )
+        }}
       </p>
       <p v-if="!loading && !categories.length && !error" class="empty-copy">
-        Noch keine Kategorien. Lege oben deine erste Kategorie an.
+        {{ tr('Noch keine Kategorien. Lege oben deine erste Kategorie an.') }}
       </p>
       <div
         v-for="category in categories"
         :key="category.id"
         class="editable-row"
         role="group"
-        :aria-label="`Kategorie ${category.name}`"
+        :aria-label="tr('Kategorie {0}', [category.name])"
       >
-        <UInput v-model="category.name" aria-label="Kategoriename" /><USelect
+        <UInput v-model="category.name" :aria-label="tr('Kategoriename')" /><USelect
           v-model="category.kind"
-          aria-label="Kategorieart"
+          :aria-label="tr('Kategorieart')"
           :items="kinds"
-        /><UCheckbox v-model="category.isActive" label="Aktiv" /><UButton variant="soft" @click="save(category)"
-          >Speichern</UButton
-        ><UButton color="error" variant="ghost" @click="remove(category)">Löschen</UButton>
+        /><UCheckbox v-model="category.isActive" :label="tr('Aktiv')" /><UButton
+          variant="soft"
+          @click="save(category)"
+          >{{ tr('Speichern') }}</UButton
+        ><UButton color="error" variant="ghost" @click="remove(category)">{{ tr('Löschen') }}</UButton>
       </div>
     </div></DisclosurePanel
   >
   <CategoryRules :categories="categories" @changed="load" />
-  <UModal
+  <FinanceDialog
     v-model:open="deleteOpen"
-    title="Kategorie löschen?"
-    :description="`„${pendingDelete?.name ?? ''}“ wird entfernt. Die Buchungen bleiben erhalten und verlieren nur diese Kategorie.`"
+    :title="tr('Kategorie löschen?')"
+    :description="
+      tr('„{0}“ wird entfernt. Die Buchungen bleiben erhalten und verlieren nur diese Kategorie.', [
+        pendingDelete?.name ?? '',
+      ])
+    "
     :dismissible="!deleting"
   >
     <template #footer
-      ><UButton color="neutral" variant="outline" :disabled="deleting" @click="pendingDelete = null">Abbrechen</UButton
-      ><UButton color="error" :loading="deleting" @click="confirmDelete">Kategorie löschen</UButton></template
+      ><UButton color="neutral" variant="outline" :disabled="deleting" @click="pendingDelete = null">{{
+        tr('Abbrechen')
+      }}</UButton
+      ><UButton color="error" :loading="deleting" @click="confirmDelete">{{
+        tr('Kategorie löschen')
+      }}</UButton></template
     >
-  </UModal>
+  </FinanceDialog>
 </template>

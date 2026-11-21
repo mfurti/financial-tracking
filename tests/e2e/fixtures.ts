@@ -1,4 +1,6 @@
 import { test as base, expect } from '@playwright/test';
+export { conceptFixtureLabels } from '../../scripts/concept-fixtures.js';
+export { conceptViewports } from '../../scripts/concept-viewports.js';
 
 /** Attach geometry on failure so Linux/mobile regressions are diagnosable without forcing clicks. */
 export const test = base.extend({

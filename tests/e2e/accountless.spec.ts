@@ -38,6 +38,9 @@ test('CSV without accounts, later assignment and explicit overlap review', /** E
   await page.getByRole('button', { name: 'Verbindung anlegen', exact: true }).click();
   await expect(page.getByText(`CSV Quelle ${info.project.name}`, { exact: true })).toBeVisible();
   await page.goto('/accounts');
+  if (info.project.name === 'empty-desktop')
+    await expect(page.getByText('Noch keine Konten vorhanden.', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Konto hinzufügen', exact: true }).click();
   await page.getByLabel('Name', { exact: true }).fill(`Ziel ${info.project.name}`);
   await page.getByRole('button', { name: 'Konto anlegen', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Kontoname' }).last()).toHaveValue(new RegExp(`Ziel|Sparkasse`));

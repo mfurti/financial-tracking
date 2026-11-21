@@ -94,6 +94,23 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
     await page.unroute('**/api/v1/transactions?**');
   }
   await expect(page.getByText(`Lebensmittel ${info.project.name}`, { exact: true }).first()).toBeVisible();
+  await page.route(
+    '**/api/v1/transactions/bulk-classification',
+    /** A rejected annotation must preserve the chosen draft and the original amount. */ async (route) =>
+      route.fulfill({
+        status: 503,
+        json: { error: { code: 'INTERNAL_ERROR', message: 'synthetic', requestId: 'synthetic' } },
+      }),
+  );
+  await choose(page, page.getByLabel('Fix oder variabel', { exact: true }), 'Fix');
+  await page.getByRole('button', { name: 'Kennzeichnung speichern', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByLabel('Fix oder variabel', { exact: true })).toContainText('Fix');
+  await page.unroute('**/api/v1/transactions/bulk-classification');
+  await page.getByRole('button', { name: 'Kennzeichnung speichern', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  const annotated = await (await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`)).json();
+  expect(annotated.items[0]).toMatchObject({ classification: 'FIXED', amountCents: '-1234' });
   await page.getByRole('button', { name: 'Als Umbuchung markieren' }).click();
   await expect(page.getByRole('button', { name: 'Umbuchung aufheben' })).toBeVisible();
   await page.goto('/accounts');

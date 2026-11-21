@@ -5,6 +5,7 @@ export function useFormFeedback() {
   const validation = ref<{
     setErrors: (errors: { name: string; message: string }[]) => void;
     getErrors?: () => { id?: string }[];
+    clear?: (name: string) => void;
     disabled?: boolean;
   } | null>(null);
   const pendingFocus = ref('');
@@ -21,5 +22,13 @@ export function useFormFeedback() {
     pendingFocus.value = validation.value?.getErrors?.()[0]?.id ?? '';
     return userErrorMessage(cause);
   }
-  return { validation, formError };
+  /** Focus the actual first invalid field after Nuxt UI has completed its validation render. */
+  function formInvalid(event: { errors: readonly { id?: string }[] }) {
+    pendingFocus.value = event.errors[0]?.id ?? '';
+  }
+  /** Discard feedback for an explicitly edited field without validating or submitting the new draft. */
+  function clearFieldError(name: string) {
+    validation.value?.clear?.(name);
+  }
+  return { validation, formError, formInvalid, clearFieldError };
 }

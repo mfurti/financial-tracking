@@ -4,7 +4,7 @@ defineProps<{ title: string; text?: string }>();
 
 <template>
   <UPopover>
-    <UButton color="neutral" variant="ghost" size="sm" class="help-button" :aria-label="`Hilfe: ${title}`"
+    <UButton color="neutral" variant="ghost" size="sm" class="help-button" :aria-label="tr('Hilfe: {0}', [title])"
       ><span aria-hidden="true">?</span></UButton
     >
     <template #content

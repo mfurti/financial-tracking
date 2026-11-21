@@ -27,26 +27,26 @@ async function login() {
 </script>
 
 <template>
-  <main class="login-page">
+  <main class="login-page finance-login">
     <div class="login-theme"><ThemeToggle /></div>
     <section class="login-card">
       <div class="brand-mark">H</div>
-      <p class="eyebrow mt-6">DEIN PRIVATER FINANZBEREICH</p>
-      <h1>Willkommen zurück.</h1>
-      <p class="muted mb-7">Alles im Blick. In deinem Haushaltsbuch.</p>
+      <p class="eyebrow mt-6">HAUSHALTSBUCH</p>
+      <h1>{{ tr('Anmelden') }}</h1>
+      <p class="muted mb-7">{{ tr('Dein privater Finanzbereich.') }}</p>
       <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><UForm
         ref="validation"
-        :schema="loginSchema"
+        :schema="translatedSchema(loginSchema)"
         :state="form"
         class="space-y-5"
         @submit="login"
-        ><UFormField label="Benutzername" name="username"
+        ><UFormField :label="tr('Benutzername')" name="username"
           ><UInput v-model="form.username" autocomplete="username" class="w-full" /></UFormField
-        ><UFormField label="Passwort" name="password"
+        ><UFormField :label="tr('Passwort')" name="password"
           ><UInput v-model="form.password" type="password" autocomplete="current-password" class="w-full" /></UFormField
-        ><UButton type="submit" :loading="busy" block size="lg">Anmelden</UButton></UForm
+        ><UButton type="submit" :loading="busy" block size="lg">{{ tr('Anmelden') }}</UButton></UForm
       >
-      <p class="muted text-xs mt-6">Zugang ausschließlich über dein Heimnetz oder VPN.</p>
+      <p class="muted text-xs mt-6">{{ tr('Zugang ausschließlich über dein Heimnetz oder VPN.') }}</p>
     </section>
   </main>
 </template>

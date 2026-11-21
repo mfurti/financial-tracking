@@ -20,7 +20,7 @@ function update(value: unknown) {
 
 <template>
   <UPopover v-model:open="open">
-    <UButton color="neutral" variant="outline" :aria-label="label"
+    <UButton color="neutral" variant="outline" :aria-label="tr(label)"
       ><FinanceIcon name="calendar" />{{ monthName(model) }}</UButton
     >
     <template #content

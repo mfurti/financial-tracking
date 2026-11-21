@@ -22,6 +22,7 @@ const from = ref('');
 const to = ref('');
 const revision = reactive({ effectiveDate: '', amountEuro: '', intervalMonths: 1 });
 const editorOpen = ref(false);
+const editorSaving = ref(false);
 const editing = ref(false);
 const deleteOpen = ref(false);
 const unlinkId = ref<string | null>(null);
@@ -45,13 +46,33 @@ const nextRule = computed(
       )
       .at(-1),
 );
+const contractGroups = computed(
+  /** Group the already next-due-ordered records by their effective payment rhythm, preserving order within each group. */ () =>
+    contractIntervalOptions
+      .map(
+        /** Label only rhythms supported by the existing recurrence contract. */ (option) => ({
+          label: option.label,
+          interval: option.value,
+          contracts: records.value.filter(
+            /** Future revisions apply only when effective at the displayed next due date. */ (contract) =>
+              contract.revisions
+                .filter(
+                  /** Keep later price/rhythm changes out of earlier dues. */ (rule) =>
+                    rule.effectiveDate <= (contract.nextDueDate ?? '9999-12-31'),
+                )
+                .at(-1)?.intervalMonths === option.value,
+          ),
+        }),
+      )
+      .filter(/** Empty rhythms do not become invented obligations. */ (group) => group.contracts.length),
+);
 const selected = computed(
   /** Show the chosen actual booking beside the expected forecast. */ () =>
     candidates.value.find(/** Match an offered identity only. */ (row) => row.id === selectedTransaction.value),
 );
 /** Load list or detail with a stale-response guard across route changes. */
 async function load() {
-  if (reviewing.value) return;
+  if (reviewing.value || editorOpen.value) return;
   const current = ++generation,
     id = String(route.params.id ?? '');
   loading.value = true;
@@ -90,6 +111,8 @@ async function load() {
       detail.value = null;
       records.value = [];
       history.value = null;
+      summary.value = null;
+      suggestions.value = [];
       error.value = userErrorMessage(cause);
     }
   } finally {
@@ -98,11 +121,13 @@ async function load() {
 }
 /** Open manual creation or metadata editing; suggestions are handled by ContractReview. */
 function openEditor(edit = false) {
+  editorSaving.value = false;
   editing.value = edit;
   editorOpen.value = true;
 }
 /** Refresh persisted state after confirmation and navigate to the saved contract. */
 async function saved(id: string) {
+  editorSaving.value = false;
   editorOpen.value = false;
   from.value = '';
   to.value = '';
@@ -126,7 +151,9 @@ async function revise() {
     await load();
   } catch (cause) {
     error.value =
-      cause instanceof Error && cause.message.startsWith('Betrag als Euro') ? cause.message : userErrorMessage(cause);
+      cause instanceof Error && cause.message.startsWith(tr('Betrag als Euro'))
+        ? cause.message
+        : userErrorMessage(cause);
   } finally {
     busy.value = false;
   }
@@ -237,95 +264,119 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <div>
-      <h1>{{ detail?.name ?? 'Verträge' }}</h1>
+      <h1>{{ detail?.name ?? tr('Verträge') }}</h1>
     </div>
-    <UButton @click="openEditor()">Vertrag anlegen</UButton>
+    <div class="toolbar">
+      <UButton to="/contracts/calendar" variant="soft">{{ tr('Vertragskalender') }}</UButton
+      ><UButton :disabled="loading || reviewing" @click="openEditor()">{{ tr('Vertrag anlegen') }}</UButton>
+    </div>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
-  <p v-if="loading" role="status">Verträge werden geladen …</p>
-  <UButton v-if="route.params.id" to="/contracts" variant="link" class="mb-4">Alle Verträge</UButton>
-  <template v-if="detail">
-    <section class="panel mb-5">
-      <div class="panel-heading">
-        <div>
-          <UBadge color="neutral" variant="soft">{{ contractKinds[detail.kind].label }}</UBadge>
-          <h2>{{ detail.provider }}</h2>
-        </div>
-        <UButton color="neutral" variant="outline" @click="openEditor(true)">Vertrag bearbeiten</UButton>
-      </div>
+  <UButton v-if="error && !loading" variant="soft" @click="load">{{ tr('Erneut laden') }}</UButton>
+  <p v-if="loading" role="status">{{ tr('Verträge werden geladen …') }}</p>
+  <UButton v-if="route.params.id" to="/contracts" variant="link" class="mb-4">{{ tr('Alle Verträge') }}</UButton>
+  <template v-if="detail && !loading && !error">
+    <SectionPanel :title="detail.provider" icon="contracts" compact class="mb-5">
+      <template #actions
+        ><UButton color="neutral" variant="soft" @click="openEditor(true)">{{
+          tr('Vertrag bearbeiten')
+        }}</UButton></template
+      >
+      <UBadge color="neutral" variant="soft">{{ contractKinds[detail.kind].label }}</UBadge>
       <p v-if="nextRule" class="muted">
-        Planwert: {{ money(plannedEquivalent(nextRule.amountCents, nextRule.intervalMonths, 1)) }} / Monat (gerundet) ·
-        {{ money(plannedEquivalent(nextRule.amountCents, nextRule.intervalMonths, 12)) }} / Jahr. Keine tatsächlichen
-        Ausgaben.
+        {{ tr('Planwert:') }} {{ money(plannedEquivalent(nextRule.amountCents, nextRule.intervalMonths, 1)) }}
+        {{ tr('/ Monat (gerundet) ·') }}
+        {{ money(plannedEquivalent(nextRule.amountCents, nextRule.intervalMonths, 12)) }}
+        {{ tr('/ Jahr. Keine tatsächlichen Ausgaben.') }}
       </p>
-      <p class="balance-value">
-        {{ detail.nextAmountCents ? money(detail.nextAmountCents) : 'Keine weitere Fälligkeit' }}
-      </p>
+      <FinanceTile
+        variant="insight"
+        :label="tr('Nächster Planbetrag')"
+        :value="detail.nextAmountCents ? money(detail.nextAmountCents) : tr('Keine weitere Fälligkeit')"
+        financial
+        class="my-4"
+      />
       <p>
         {{
           detail.nextDueDate
-            ? `Nächste offene Fälligkeit: ${calendarDate(detail.nextDueDate)}`
-            : 'Für diesen Vertrag steht keine weitere Zahlung an.'
+            ? tr('Nächste offene Fälligkeit: {0}', [calendarDate(detail.nextDueDate)])
+            : tr('Für diesen Vertrag steht keine weitere Zahlung an.')
         }}
       </p>
       <p class="muted">
-        Beginn: {{ calendarDate(detail.startDate)
-        }}<span v-if="detail.endDate"> · einschließlich Ende: {{ calendarDate(detail.endDate) }}</span
-        ><span v-if="detail.cancellationDate"> · Kündigungsdatum: {{ calendarDate(detail.cancellationDate) }}</span>
+        {{ tr('Beginn:') }} {{ calendarDate(detail.startDate)
+        }}<span v-if="detail.endDate"> {{ tr('· einschließlich Ende:') }} {{ calendarDate(detail.endDate) }}</span
+        ><span v-if="detail.cancellationDate">
+          {{ tr('· Kündigungsdatum:') }} {{ calendarDate(detail.cancellationDate) }}</span
+        >
       </p>
-    </section>
+    </SectionPanel>
     <SectionPanel
-      help="Nicht zugeordnet bedeutet: keine eindeutige Buchung verknüpft. Es beweist keinen Zahlungsausfall. Frühere offene Termine blockieren die nächste Fälligkeit nicht."
-      title="Zahlungen & Historie"
+      :help="
+        tr(
+          'Nicht zugeordnet bedeutet: keine eindeutige Buchung verknüpft. Es beweist keinen Zahlungsausfall. Frühere offene Termine blockieren die nächste Fälligkeit nicht.',
+        )
+      "
+      :title="tr('Zahlungen & Historie')"
       icon="contracts"
       class="mb-5"
     >
       <div class="form-row">
-        <UFormField label="Historie von"><DatePicker v-model="from" label="Historie von" /></UFormField
-        ><UFormField label="Historie bis"><DatePicker v-model="to" label="Historie bis" /></UFormField
-        ><UButton :loading="loading" @click="load">Historie aktualisieren</UButton>
+        <UFormField :label="tr('Historie von')"><DatePicker v-model="from" :label="tr('Historie von')" /></UFormField
+        ><UFormField :label="tr('Historie bis')"><DatePicker v-model="to" :label="tr('Historie bis')" /></UFormField
+        ><UButton :loading="loading" @click="load">{{ tr('Historie aktualisieren') }}</UButton>
       </div>
       <div v-for="occurrence in history?.occurrences ?? []" :key="occurrence.dueDate" class="editable-row">
         <div>
           <strong>{{ calendarDate(occurrence.dueDate) }}</strong>
-          <p>{{ money(occurrence.amountCents) }}</p>
+          <p data-financial>
+            <template v-if="!amountsMasked()">{{ money(occurrence.amountCents) }} {{ tr('· Planwert') }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template>
+          </p>
         </div>
         <template v-if="occurrence.payment"
           ><UButton size="xs" variant="soft" :to="`/transactions/${occurrence.payment.transactionId}`">{{
-            occurrence.payment.source === 'AUTO' ? 'Automatisch zugeordnet' : 'Manuell zugeordnet'
+            occurrence.payment.source === 'AUTO' ? tr('Automatisch zugeordnet') : tr('Manuell zugeordnet')
           }}</UButton
-          ><UButton color="error" variant="ghost" @click="unlinkId = occurrence.payment!.id"
-            >Zuordnung entfernen</UButton
-          ></template
+          ><UButton color="error" variant="ghost" @click="unlinkId = occurrence.payment!.id">{{
+            tr('Zuordnung entfernen')
+          }}</UButton></template
         ><template v-else
-          ><span class="muted">Nicht zugeordnet</span
+          ><span class="muted">{{ tr('Nicht zugeordnet') }}</span
           ><UButton
             variant="soft"
             @click="
               dueDate = occurrence.dueDate;
               paymentOpen = true;
             "
-            >Buchung zuordnen</UButton
+            >{{ tr('Buchung zuordnen') }}</UButton
           ></template
         >
       </div>
-      <p v-if="history && !history.occurrences.length" class="empty-copy">Keine Fälligkeiten im gewählten Zeitraum.</p>
+      <p v-if="history && !history.occurrences.length" class="empty-copy">
+        {{ tr('Keine Fälligkeiten im gewählten Zeitraum.') }}
+      </p>
     </SectionPanel>
-    <DisclosurePanel v-model:open="paymentOpen" title="Buchung manuell zuordnen" class="panel mb-5">
+    <DisclosurePanel v-model:open="paymentOpen" :title="tr('Buchung manuell zuordnen')" class="panel mb-5">
       <form class="grid gap-4" @submit.prevent="link">
         <p class="muted">
-          Wähle eine tatsächliche Ausgabe. Betrag und Prognose bleiben unverändert. Eine Buchung kann nur zu einem
-          Vertrag gehören.
+          {{
+            tr(
+              'Wähle eine tatsächliche Ausgabe. Betrag und Prognose bleiben unverändert. Eine Buchung kann nur zu einem Vertrag gehören.',
+            )
+          }}
         </p>
-        <UFormField label="Vertragsfälligkeit"><DatePicker v-model="dueDate" label="Vertragsfälligkeit" /></UFormField>
+        <UFormField :label="tr('Vertragsfälligkeit')"
+          ><DatePicker v-model="dueDate" :label="tr('Vertragsfälligkeit')"
+        /></UFormField>
         <div class="toolbar">
           <UInput
             v-model="searchText"
-            aria-label="Zahlung suchen"
-            placeholder="Buchungstext oder Gegenpartei"
-          /><UButton variant="soft" :loading="busy" @click="search">Buchungen suchen</UButton>
+            :aria-label="tr('Zahlung suchen')"
+            :placeholder="tr('Buchungstext oder Gegenpartei')"
+          /><UButton variant="soft" :loading="busy" @click="search">{{ tr('Buchungen suchen') }}</UButton>
         </div>
-        <UFormField label="Tatsächliche Buchung"
+        <UFormField :label="tr('Tatsächliche Buchung')"
           ><ChoiceSelect
             v-model="selectedTransaction"
             :items="
@@ -339,58 +390,75 @@ onBeforeUnmount(
         /></UFormField>
         <p v-if="selected">
           {{ calendarDate(selected.bookingDate) }} · {{ money(selected.amountCents) }} ·
-          {{ selected.counterpartyName || 'Keine Gegenpartei' }} · {{ selected.description }}
+          {{ selected.counterpartyName || tr('Keine Gegenpartei') }} · {{ selected.description }}
         </p>
         <UCheckbox
           v-model="confirmMismatch"
-          label="Abweichenden Betrag, Datum, Gegenpartei oder Konto geprüft und ausdrücklich bestätigen"
+          :label="tr('Abweichenden Betrag, Datum, Gegenpartei oder Konto geprüft und ausdrücklich bestätigen')"
         />
-        <UButton type="submit" :disabled="!selectedTransaction || !dueDate" :loading="busy">Zahlung zuordnen</UButton>
+        <UButton type="submit" :disabled="!selectedTransaction || !dueDate" :loading="busy">{{
+          tr('Zahlung zuordnen')
+        }}</UButton>
       </form>
     </DisclosurePanel>
-    <DisclosurePanel title="Zahlungsregeln & zukünftige Änderung" class="panel mb-5"
+    <DisclosurePanel :title="tr('Zahlungsregeln & zukünftige Änderung')" class="panel mb-5"
       ><p class="muted mb-4">
-        Änderungen beginnen an einer bereits geplanten zukünftigen Fälligkeit. Historische Regeln und zugeordnete
-        Zahlungen bleiben erhalten.
+        {{
+          tr(
+            'Änderungen beginnen an einer bereits geplanten zukünftigen Fälligkeit. Historische Regeln und zugeordnete Zahlungen bleiben erhalten.',
+          )
+        }}
       </p>
       <ul class="mb-5">
         <li v-for="rule in detail.revisions" :key="rule.id">
-          Ab {{ calendarDate(rule.effectiveDate) }}: {{ money(rule.amountCents) }} · alle
-          {{ rule.intervalMonths }} Monate
+          {{ tr('Ab') }} {{ calendarDate(rule.effectiveDate) }}: {{ money(rule.amountCents) }} {{ tr('· alle') }}
+          {{ rule.intervalMonths }} {{ tr('Monate') }}
         </li>
       </ul>
       <form class="grid gap-4" @submit.prevent="revise">
-        <UFormField label="Änderung ab Fälligkeit"
-          ><DatePicker v-model="revision.effectiveDate" label="Änderung ab Fälligkeit" /></UFormField
-        ><UFormField label="Neuer Betrag in Euro"
-          ><UInput v-model="revision.amountEuro" inputmode="decimal" /></UFormField
-        ><UFormField label="Neuer Rhythmus"
+        <UFormField :label="tr('Änderung ab Fälligkeit')"
+          ><DatePicker v-model="revision.effectiveDate" :label="tr('Änderung ab Fälligkeit')" /></UFormField
+        ><UFormField :label="tr('Neuer Betrag in Euro')"
+          ><UInput
+            v-model="revision.amountEuro"
+            :type="amountsMasked() ? 'password' : 'text'"
+            inputmode="decimal" /></UFormField
+        ><UFormField :label="tr('Neuer Rhythmus')"
           ><ChoiceSelect
             v-model="revision.intervalMonths"
             :searchable="false"
             :items="contractIntervalOptions" /></UFormField
-        ><UButton type="submit" :loading="busy">Zukünftige Zahlungsregel speichern</UButton>
+        ><UButton type="submit" :loading="busy">{{ tr('Zukünftige Zahlungsregel speichern') }}</UButton>
       </form></DisclosurePanel
     >
-    <UButton color="error" variant="ghost" @click="deleteOpen = true">Vertrag löschen</UButton>
+    <UButton color="error" variant="ghost" @click="deleteOpen = true">{{ tr('Vertrag löschen') }}</UButton>
   </template>
-  <template v-else-if="!route.params.id && !loading">
-    <UButton v-if="summary" to="/contracts/analysis" color="neutral" variant="outline" class="fixed-cost-card mb-6">
-      <span class="fixed-cost-label"
-        ><FinanceIcon name="contracts" /><strong>Durchschnittliche Fixkosten / Monat</strong
-        ><UBadge variant="soft">Planwert</UBadge></span
-      >
-      <strong class="fixed-cost-value amount-expense">{{ money(summary.monthlyCents) }}</strong>
-      <span class="muted"
-        >{{ summary.count }} {{ summary.count === 1 ? 'Vertrag' : 'Verträge' }} · Analyse öffnen ›</span
-      >
-    </UButton>
-    <SectionPanel title="Deine Verträge" icon="contracts" class="mb-5">
-      <p v-if="!records.length" class="empty-copy">
-        Noch keine Verträge. Bestätige einen Vorschlag oder lege einen Vertrag an.
-      </p>
+  <template v-else-if="!route.params.id && !loading && !error">
+    <FinanceTile
+      v-if="summary"
+      to="/contracts/analysis"
+      variant="insight"
+      :label="tr('Durchschnittliche Fixkosten / Monat')"
+      :value="money(summary.monthlyCents)"
+      :context="
+        tr('{0} {1} · Planwert · Analyse öffnen', [summary.count, summary.count === 1 ? tr('Vertrag') : tr('Verträge')])
+      "
+      financial
+      class="mb-6"
+    />
+    <SectionPanel v-if="!records.length" :title="tr('Deine Verträge')" icon="contracts" class="mb-5" compact>
+      <p class="empty-copy">{{ tr('Noch keine Verträge. Bestätige einen Vorschlag oder lege einen Vertrag an.') }}</p>
+    </SectionPanel>
+    <SectionPanel
+      v-for="group in contractGroups"
+      :key="group.interval"
+      :title="`${group.label} · ${group.contracts.length}`"
+      icon="contracts"
+      class="contract-rhythm mb-5"
+      compact
+    >
       <UButton
-        v-for="contract in records"
+        v-for="contract in group.contracts"
         :key="contract.id"
         :to="`/contracts/${contract.id}`"
         color="neutral"
@@ -404,20 +472,22 @@ onBeforeUnmount(
             ><small>{{ contractKinds[contract.kind].label }} · {{ contract.provider }}</small></span
           ></span
         ><span
-          ><strong :class="contract.active ? 'amount-expense' : 'muted'">{{
-            contract.nextAmountCents ? money(contract.nextAmountCents) : '—'
-          }}</strong
+          ><strong data-financial :class="contract.active ? 'amount-expense' : 'muted'"
+            ><template v-if="!amountsMasked()">{{
+              contract.nextAmountCents ? money(contract.nextAmountCents) : '—'
+            }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
           ><small>{{
             contract.nextDueDate
               ? calendarDate(contract.nextDueDate)
               : contract.active
-                ? 'Keine offene Fälligkeit'
-                : 'Beendet'
+                ? tr('Keine offene Fälligkeit')
+                : tr('Beendet')
           }}</small></span
         ></UButton
       >
     </SectionPanel>
-    <SectionPanel title="Vertragsvorschläge" icon="contracts"
+    <SectionPanel :title="tr('Vertragsvorschläge')" icon="contracts"
       ><ContractReview
         :suggestions="suggestions"
         :accounts="accounts"
@@ -426,37 +496,68 @@ onBeforeUnmount(
         @changed="load"
     /></SectionPanel>
   </template>
-  <UModal
+  <FinanceDialog
     v-model:open="editorOpen"
-    :title="editing ? 'Vertrag bearbeiten' : 'Vertrag anlegen'"
-    description="Vertragsprognosen erzeugen keine zusätzlichen Buchungen. Bestehende eindeutige Zahlungen werden nach Bestätigung verknüpft."
-    ><template #body
-      ><ContractForm
-        :contract="editing ? detail : null"
-        :accounts="accounts"
-        :categories="categories"
-        @saved="saved" /></template
-  ></UModal>
-  <UModal
+    :title="editing ? tr('Vertrag bearbeiten') : tr('Vertrag anlegen')"
+    :description="
+      tr(
+        'Vertragsprognosen erzeugen keine zusätzlichen Buchungen. Bestehende eindeutige Zahlungen werden nach Bestätigung verknüpft.',
+      )
+    "
+    :dismissible="!editorSaving"
+    :close="!editorSaving"
+    ><ContractForm
+      :contract="editing ? detail : null"
+      :accounts="accounts"
+      :categories="categories"
+      @busy="editorSaving = $event"
+      @saved="saved"
+    />
+  </FinanceDialog>
+  <FinanceDialog
     v-model:open="deleteOpen"
-    title="Vertrag löschen?"
-    description="Vertrag und Zahlungszuordnungen werden entfernt. Alle Bankbuchungen, Beträge und manuellen Kategorien bleiben erhalten."
+    :title="tr('Vertrag löschen?')"
+    :description="
+      tr(
+        'Vertrag und Zahlungszuordnungen werden entfernt. Alle Bankbuchungen, Beträge und manuellen Kategorien bleiben erhalten.',
+      )
+    "
+    :dismissible="!busy"
     ><template #footer
-      ><UButton color="error" :loading="busy" @click="remove()">Vertrag endgültig löschen</UButton
-      ><UButton color="neutral" variant="outline" :disabled="busy" @click="deleteOpen = false"
-        >Abbrechen</UButton
-      ></template
-    ></UModal
+      ><UButton color="error" :loading="busy" @click="remove()">{{ tr('Vertrag endgültig löschen') }}</UButton
+      ><UButton color="neutral" variant="outline" :disabled="busy" @click="deleteOpen = false">{{
+        tr('Abbrechen')
+      }}</UButton></template
+    ></FinanceDialog
   >
-  <UModal
+  <FinanceDialog
     v-model:open="unlinkOpen"
-    title="Zahlungszuordnung entfernen?"
-    description="Die Buchung bleibt erhalten und wird nicht sofort erneut automatisch zugeordnet. Eine spätere ausdrückliche manuelle Zuordnung ist möglich."
+    :title="tr('Zahlungszuordnung entfernen?')"
+    :description="
+      tr(
+        'Die Buchung bleibt erhalten und wird nicht sofort erneut automatisch zugeordnet. Eine spätere ausdrückliche manuelle Zuordnung ist möglich.',
+      )
+    "
+    :dismissible="!busy"
     ><template #footer
-      ><UButton color="error" :loading="busy" @click="remove(unlinkId!)">Zuordnung entfernen</UButton
-      ><UButton color="neutral" variant="outline" :disabled="busy" @click="unlinkId = null"
-        >Abbrechen</UButton
-      ></template
-    ></UModal
+      ><UButton color="error" :loading="busy" @click="remove(unlinkId!)">{{ tr('Zuordnung entfernen') }}</UButton
+      ><UButton color="neutral" variant="outline" :disabled="busy" @click="unlinkId = null">{{
+        tr('Abbrechen')
+      }}</UButton></template
+    ></FinanceDialog
   >
 </template>
+
+<style scoped>
+.contract-rhythm {
+  max-width: 1050px;
+}
+.contract-list-row {
+  min-height: 72px;
+  padding: 12px 0;
+  gap: 16px;
+}
+.contract-list-row strong {
+  overflow-wrap: anywhere;
+}
+</style>

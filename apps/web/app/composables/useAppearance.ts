@@ -16,12 +16,14 @@ export function useAppearance() {
     /** Keep the original palette for existing users. */ () => ({ tone: 'dark', bordered: true }),
   );
   const mode = useColorMode();
+  const { preferences } = useWorkspacePreferences();
   /** Select a bundled family or Ayu variant, retaining the most recently chosen dark tone. */
   function selectTheme(value: unknown) {
     const choice = appearanceChoices.find(
       /** Ignore arbitrary values from storage or events. */ (entry) => entry.value === value,
     );
-    themeId.value = choice?.family ?? resolveAppearanceTheme(value).id;
+    if (value === 'custom' && !preferences.value.custom) return;
+    themeId.value = choice?.family ?? resolveAppearanceTheme(value, preferences.value.custom).id;
     if (choice?.ayu) {
       ayu.value = { tone: choice.mode === 'light' ? ayu.value.tone : choice.ayu.tone, bordered: choice.ayu.bordered };
       mode.preference = choice.mode!;

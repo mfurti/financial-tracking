@@ -112,6 +112,10 @@ describe('authentication and HTTP contract boundaries', /** Exercise real sessio
             properties: {
               encoding: { enum: csvEncodingSchema.options },
               delimiter: { enum: csvDelimiterSchema.options },
+              mapping: {
+                properties: { descriptionFallback: { type: 'string' } },
+                required: ['bookingDate', 'amount', 'description'],
+              },
             },
           },
         },

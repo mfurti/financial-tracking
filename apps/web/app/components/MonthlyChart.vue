@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { z } from 'zod';
 import { analyticsOverviewSchema } from '@financial-tracking/contracts';
-const props = defineProps<{ report: z.infer<typeof analyticsOverviewSchema> }>();
+const props = withDefaults(defineProps<{ report: z.infer<typeof analyticsOverviewSchema>; chart?: 'bar' | 'ring' }>(), {
+  chart: 'bar',
+});
 const emit = defineEmits<{ select: [month: string, direction: 'INCOME' | 'EXPENSE'] }>();
 const data = computed(
   /** Plot coordinates are approximate display-only Euro numbers; financial labels remain exact strings. */ () =>
@@ -14,12 +16,16 @@ const data = computed(
     ),
 );
 const categories = [
-  { key: 'income' as const, label: 'Einnahmen', color: 'var(--positive)' },
-  { key: 'expense' as const, label: 'Ausgaben', color: 'var(--chart-1)' },
+  { key: 'income' as const, label: tr('Einnahmen'), color: 'var(--positive)' },
+  { key: 'expense' as const, label: tr('Ausgaben'), color: 'var(--chart-1)' },
 ];
 /** Format axis ticks only; tooltips and tables read original exact-cent strings. */
 function axis(value: number) {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat(displayLocale(), {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 /** Resolve a tooltip to both exact financial values. */
 function values(month: string) {
@@ -27,8 +33,21 @@ function values(month: string) {
     /** Chart index is the unlocalized calendar identity. */ (row) => row.month === month,
   );
 }
+/** Resolve either chart tooltip representation to original exact monthly rows, never plotted numbers. */
+function tooltipMonths(title: string | undefined, rows: { label: string }[]) {
+  return props.chart === 'ring'
+    ? rows.map(/** Ring tooltip keys are the canonical month labels. */ (row) => row.label)
+    : title
+      ? [title]
+      : [];
+}
 /** Drill down using a validated calendar identity and the selected series direction. */
 function select(point: unknown) {
+  if (props.chart === 'ring') {
+    const selected = z.object({ datum: z.object({ month: z.string() }) }).safeParse(point);
+    if (selected.success && values(selected.data.datum.month)) emit('select', selected.data.datum.month, 'EXPENSE');
+    return;
+  }
   const parsed = z
     .object({ datum: z.object({ x: z.string(), category: z.enum(['income', 'expense']) }) })
     .safeParse(point);
@@ -38,23 +57,38 @@ function select(point: unknown) {
 </script>
 <template>
   <UChart
-    type="bar"
+    v-if="!amountsMasked()"
+    :type="chart === 'ring' ? 'donut' : 'bar'"
     :data="data"
     index="month"
-    :categories="categories"
+    :categories="chart === 'ring' ? ['expense'] : categories"
+    :colors="
+      chart === 'ring'
+        ? ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--chart-6)']
+        : undefined
+    "
     :format="axis"
     :height="300"
-    aria-label="Einnahmen und Ausgaben im Monatsverlauf"
-    aria-description="Monatliche exakte Werte und Buchungslinks stehen in der Tabelle. Leere Monate belegen keine vollständige Bankhistorie."
+    :aria-label="
+      chart === 'ring' ? tr('Ausgabenanteile im Monatsverlauf') : tr('Einnahmen und Ausgaben im Monatsverlauf')
+    "
+    :aria-description="
+      tr(
+        'Monatliche exakte Werte und Buchungslinks stehen in der Tabelle. Leere Monate belegen keine vollständige Bankhistorie.',
+      )
+    "
     @select="select"
   >
-    <template #tooltip="{ title }"
-      ><div v-if="title && values(title)">
-        <strong>{{ monthName(title) }}</strong>
-        <p>Einnahmen: {{ money(values(title)!.incomeCents) }}</p>
-        <p>Ausgaben: {{ money(values(title)!.expenseCents) }}</p>
-        <p>{{ values(title)!.count }} Buchungen</p>
-      </div></template
+    <template #tooltip="{ title, rows }"
+      ><template v-for="month in tooltipMonths(title, rows)" :key="month">
+        <div v-if="values(month)">
+          <strong>{{ monthName(month) }}</strong>
+          <p>{{ tr('Einnahmen:') }} {{ money(values(month)!.incomeCents) }}</p>
+          <p>{{ tr('Ausgaben:') }} {{ money(values(month)!.expenseCents) }}</p>
+          <p>{{ values(month)!.count }} {{ tr('Buchungen') }}</p>
+        </div>
+      </template></template
     >
   </UChart>
+  <p v-else role="status">{{ tr('Diagramm bei ausgeblendeten Beträgen verborgen.') }}</p>
 </template>

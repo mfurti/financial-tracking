@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { passwordChangeSchema } from '@financial-tracking/contracts';
 const api = useApi();
-const { validation, formError } = useFormFeedback();
+const { validation, formError, formInvalid } = useFormFeedback();
 const form = reactive({ currentPassword: '', newPassword: '' });
 const busy = ref(false);
 const error = ref('');
@@ -34,40 +34,26 @@ onBeforeUnmount(
 </script>
 
 <template>
+  <UButton to="/settings" variant="link">{{ tr('Zurück zu Einstellungen') }}</UButton>
   <div class="page-heading">
-    <div>
-      <h1>Einstellungen</h1>
-    </div>
+    <h1>{{ tr('Passwort ändern') }}</h1>
   </div>
-  <AppearanceSettings />
-  <section class="panel">
-    <dl class="detail-list">
-      <dt>Benutzer</dt>
-      <dd>{{ api.session.value?.username }}</dd>
-      <dt>Währung</dt>
-      <dd>EUR</dd>
-      <dt>Zeitzone</dt>
-      <dd>Europe/Berlin</dd>
-      <dt>Bankabruf</dt>
-      <dd>Manuell · keine dauerhaft gespeicherte Bank-PIN</dd>
-      <dt>Datensicherung</dt>
-      <dd>Verschlüsselt auf dem Server; Status hier nicht verfügbar.</dd>
-      <dt>Zugang</dt>
-      <dd>Ausschließlich Heimnetz/VPN mit HTTPS.</dd>
-    </dl>
-  </section>
-  <SectionPanel title="Passwort ändern" icon="settings" class="mt-6">
+  <p>{{ tr('Die Änderung meldet alle bestehenden Sitzungen ab. Anmeldename und Finanzdaten bleiben erhalten.') }}</p>
+  <SectionPanel :title="tr('Passwort ändern')" icon="settings" class="mt-6">
     <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><UForm
       ref="validation"
-      :schema="passwordChangeSchema"
+      :schema="translatedSchema(passwordChangeSchema)"
       :state="form"
+      :validate-on="[]"
+      :disabled="busy"
       class="form-row"
       @submit="changePassword"
-      ><UFormField label="Aktuelles Passwort" name="currentPassword"
+      @error="formInvalid"
+      ><UFormField :label="tr('Aktuelles Passwort')" name="currentPassword"
         ><UInput v-model="form.currentPassword" type="password" autocomplete="current-password" /></UFormField
-      ><UFormField label="Neues Passwort (mindestens 12 Zeichen)" name="newPassword"
+      ><UFormField :label="tr('Neues Passwort (mindestens 12 Zeichen)')" name="newPassword"
         ><UInput v-model="form.newPassword" type="password" autocomplete="new-password" /></UFormField
-      ><UButton type="submit" :loading="busy">Passwort ändern & abmelden</UButton></UForm
+      ><UButton type="submit" :loading="busy">{{ tr('Passwort ändern & abmelden') }}</UButton></UForm
     >
   </SectionPanel>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod';
 import { userErrorMessage } from '../../utils/api-error';
+import { financeReturnTarget } from '../../utils/finance-return';
 import {
   accountSchema,
   categorySchema,
@@ -22,6 +23,10 @@ const detail = ref<Transaction | null>(null);
 const accounts = ref<Account[]>([]);
 const categories = ref<Category[]>([]);
 const selected = ref<string[]>([]);
+const returnTarget = computed(
+  /** Restore only an explicitly supported, validated local financial view. */ () =>
+    financeReturnTarget(route.query.returnTo),
+);
 const bulkCategory = ref('');
 /** Keep a Nuxt UI checkbox selection explicit and stable across refreshes. */
 function selectTransaction(id: string, checked: boolean | 'indeterminate') {
@@ -37,6 +42,7 @@ let loadGeneration = 0;
 let disposed = false;
 const filter = reactive({
   accountId: route.query.unassigned === 'true' ? 'UNASSIGNED' : String(route.query.accountId ?? ''),
+  groupId: String(route.query.groupId ?? ''),
   from: String(route.query.from ?? ''),
   to: String(route.query.to ?? ''),
   search: String(route.query.search ?? ''),
@@ -44,6 +50,7 @@ const filter = reactive({
   categoryId: String(route.query.categoryId ?? ''),
   direction: String(route.query.direction ?? ''),
   classification: String(route.query.classification ?? ''),
+  merchantKey: String(route.query.merchantKey ?? ''),
   uncategorized: route.query.uncategorized === 'true',
   excludeTransfers: route.query.excludeTransfers === 'true',
 });
@@ -59,8 +66,12 @@ const unassignedSelection = computed(
 /** Label genuine accountless records without inventing an account entry. */
 function accountLabel(id: string | null) {
   return (
-    accounts.value.find(/** Match only a real account UUID. */ (account) => account.id === id)?.name ?? 'Ohne Konto'
+    accounts.value.find(/** Match only a real account UUID. */ (account) => account.id === id)?.name ?? tr('Ohne Konto')
   );
+}
+/** Preserve the current filtered list when entering an individual booking without broadening the return scope. */
+function bookingLink(id: string) {
+  return `/transactions/${id}?${new URLSearchParams({ returnTo: route.fullPath })}`;
 }
 /** Serialize only nonempty filter values before schema validation. */
 function query(cursor?: string) {
@@ -111,7 +122,7 @@ async function search() {
     });
     await load(false);
   } catch {
-    error.value = 'Bitte Filter und Zeitraum prüfen.';
+    error.value = tr('Bitte Filter und Zeitraum prüfen.');
   }
 }
 /** Request the next cursor page without resetting existing rows. */
@@ -167,7 +178,8 @@ async function transfer() {
 /** Resolve category labels including deleted assignments. */
 function categoryName(id: string | null) {
   return (
-    categories.value.find(/** Match by stable ID. */ (category) => category.id === id)?.name ?? 'Nicht kategorisiert'
+    categories.value.find(/** Match by stable ID. */ (category) => category.id === id)?.name ??
+    tr('Nicht kategorisiert')
   );
 }
 /** Follow the surviving logical transaction after a merge, or refresh the current list. */
@@ -207,51 +219,58 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <div>
-      <h1>{{ route.params.id ? 'Umsatzdetails' : 'Deine Umsätze' }}</h1>
+      <h1>{{ route.params.id ? tr('Umsatzdetails') : tr('Deine Umsätze') }}</h1>
     </div>
-    <UButton :to="route.params.id ? '/transactions' : '/imports/csv'" variant="soft">{{
-      route.params.id ? 'Alle Umsätze' : 'CSV importieren'
+    <UButton :to="route.params.id ? (returnTarget ?? '/transactions') : '/imports/csv'" variant="soft">{{
+      route.params.id
+        ? returnTarget?.startsWith('/analytics/details?')
+          ? tr('Zur Analyse zurück')
+          : tr('Alle Umsätze')
+        : tr('CSV importieren')
     }}</UButton>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
-  <section v-if="detail" class="panel">
-    <p class="eyebrow">{{ detail.status === 'PENDING' ? 'VORGEMERKT' : 'GEBUCHT' }}</p>
-    <h2 class="mt-3">{{ detail.description }}</h2>
-    <p class="detail-amount">{{ money(detail.amountCents) }}</p>
+  <SectionPanel v-if="detail" :title="detail.description" icon="transactions" compact>
+    <FinanceTile
+      variant="stat"
+      :label="detail.status === 'PENDING' ? tr('Vorgemerkt') : tr('Gebucht')"
+      :value="money(detail.amountCents)"
+      financial
+    />
     <dl class="detail-list">
-      <dt>Buchungsdatum</dt>
+      <dt>{{ tr('Buchungsdatum') }}</dt>
       <dd>{{ calendarDate(detail.bookingDate) }}</dd>
-      <dt>Konto</dt>
+      <dt>{{ tr('Konto') }}</dt>
       <dd>{{ accountLabel(detail.accountId) }}</dd>
-      <dt>Wertstellung</dt>
-      <dd>{{ detail.valueDate ? calendarDate(detail.valueDate) : 'Nicht geliefert' }}</dd>
-      <dt>Gegenpartei</dt>
-      <dd>{{ detail.counterpartyName || 'Nicht geliefert' }}</dd>
-      <dt>Gegenkonto</dt>
-      <dd>{{ detail.counterpartyIban || 'Nicht geliefert' }}</dd>
-      <dt>Kategorie</dt>
+      <dt>{{ tr('Wertstellung') }}</dt>
+      <dd>{{ detail.valueDate ? calendarDate(detail.valueDate) : tr('Nicht geliefert') }}</dd>
+      <dt>{{ tr('Gegenpartei') }}</dt>
+      <dd>{{ detail.counterpartyName || tr('Nicht geliefert') }}</dd>
+      <dt>{{ tr('Gegenkonto') }}</dt>
+      <dd>{{ detail.counterpartyIban || tr('Nicht geliefert') }}</dd>
+      <dt>{{ tr('Kategorie') }}</dt>
       <dd>{{ categoryName(detail.categoryId) }}</dd>
     </dl>
     <UButton v-if="detail.contract" :to="`/contracts/${detail.contract.id}`" size="sm" variant="soft" class="mt-4"
-      >Vertrag: {{ detail.contract.name }}</UButton
+      >{{ tr('Vertrag:') }} {{ detail.contract.name }}</UButton
     >
     <div class="toolbar mt-5">
       <ChoiceSelect
         :model-value="detail.categoryId ?? ''"
-        aria-label="Kategorie zuordnen"
+        :aria-label="tr('Kategorie zuordnen')"
         :searchable="true"
         :items="[
-          { label: `Nicht kategorisiert`, value: '' },
+          { label: tr('Nicht kategorisiert'), value: '' },
           ...categories.map(
             /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
           ),
         ]"
         @update:model-value="assign(detail.id, $event)"
       /><UButton variant="soft" @click="mark(detail)">{{
-        detail.isTransfer ? 'Umbuchung aufheben' : 'Als Umbuchung markieren'
+        detail.isTransfer ? tr('Umbuchung aufheben') : tr('Als Umbuchung markieren')
       }}</UButton>
     </div>
-  </section>
+  </SectionPanel>
   <ClassificationEditor v-if="detail" :ids="[detail.id]" :value="detail.classification" @changed="load()" />
   <AccountAssignment
     v-if="detail?.accountId === null"
@@ -269,113 +288,119 @@ onBeforeUnmount(
     @complete="assigned"
   />
   <template v-if="!route.params.id"
-    ><section class="panel mb-5">
+    ><SectionPanel :title="tr('Umsätze filtern')" icon="transactions" class="mb-5" compact>
+      <p v-if="filter.merchantKey" class="data-context">
+        {{ tr('Exakter Händlerfilter aktiv. Die Suche erweitert diesen Filter nicht.') }}
+      </p>
       <form class="filter-grid" @submit.prevent="search">
         <label
-          >Suche<UInput
+          >{{ tr('Suche')
+          }}<UInput
             v-model="filter.search"
-            placeholder="Text oder Gegenpartei"
-            aria-label="Umsätze durchsuchen" /></label
+            :placeholder="tr('Text oder Gegenpartei')"
+            :aria-label="tr('Umsätze durchsuchen')" /></label
         ><label
-          >Konto<ChoiceSelect
-            v-model="filter.accountId"
-            :searchable="true"
-            :items="[
-              { label: `Alle Konten`, value: '' },
-              { label: `Ohne Konto`, value: 'UNASSIGNED' },
-              ...accounts.map(
-                /** Build a persisted choice. */ (account) => ({ label: `${account.name}`, value: account.id }),
-              ),
-            ]" /></label
-        ><label>Von<DatePicker v-model="filter.from" label="Von" /></label
-        ><label>Bis<DatePicker v-model="filter.to" label="Bis" /></label
+          >{{ tr('Konto') }}<!-- Build a persisted choice. --><AccountScopeSelect
+            v-model:account-id="filter.accountId"
+            v-model:group-id="filter.groupId"
+            searchable
+            :accounts="accounts" /></label
+        ><label>{{ tr('Von') }}<DatePicker v-model="filter.from" :label="tr('Von')" /></label
+        ><label>{{ tr('Bis') }}<DatePicker v-model="filter.to" :label="tr('Bis')" /></label
         ><label
-          >Kategorie<ChoiceSelect
+          >{{ tr('Kategorie')
+          }}<ChoiceSelect
             v-model="filter.categoryId"
             :searchable="true"
             :items="[
-              { label: `Alle Kategorien`, value: '' },
+              { label: tr('Alle Kategorien'), value: '' },
               ...categories.map(
                 /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
               ),
             ]" /></label
         ><label
-          >Status<ChoiceSelect
+          >{{ tr('Status')
+          }}<ChoiceSelect
             v-model="filter.status"
             :searchable="false"
             :items="[
-              { label: `Alle Buchungen`, value: '' },
-              { label: `Gebucht`, value: 'BOOKED' },
-              { label: `Vorgemerkt`, value: 'PENDING' },
+              { label: tr('Alle Buchungen'), value: '' },
+              { label: tr('Gebucht'), value: 'BOOKED' },
+              { label: tr('Vorgemerkt'), value: 'PENDING' },
             ]" /></label
         ><label
-          >Richtung<ChoiceSelect
+          >{{ tr('Richtung')
+          }}<ChoiceSelect
             v-model="filter.direction"
             :searchable="false"
             :items="[
-              { label: `Einnahmen & Ausgaben`, value: '' },
-              { label: `Einnahmen`, value: 'INCOME' },
-              { label: `Ausgaben`, value: 'EXPENSE' },
+              { label: tr('Einnahmen & Ausgaben'), value: '' },
+              { label: tr('Einnahmen'), value: 'INCOME' },
+              { label: tr('Ausgaben'), value: 'EXPENSE' },
             ]"
         /></label>
-        <UFormField label="Fix/Variabel"
+        <UFormField :label="tr('Fix/Variabel')"
           ><ChoiceSelect
             v-model="filter.classification"
             :searchable="false"
             :items="[
-              { label: 'Alle Kennzeichnungen', value: '' },
-              { label: 'Fix', value: 'FIXED' },
-              { label: 'Variabel', value: 'VARIABLE' },
-              { label: 'Nicht eingeordnet', value: 'UNCLASSIFIED' },
+              { label: tr('Alle Kennzeichnungen'), value: '' },
+              { label: tr('Fix'), value: 'FIXED' },
+              { label: tr('Variabel'), value: 'VARIABLE' },
+              { label: tr('Nicht eingeordnet'), value: 'UNCLASSIFIED' },
             ]"
         /></UFormField>
         <div class="toolbar">
-          <UCheckbox v-model="filter.uncategorized" label="Ohne Kategorie" /><UCheckbox
+          <UCheckbox v-model="filter.uncategorized" :label="tr('Ohne Kategorie')" /><UCheckbox
             v-model="filter.excludeTransfers"
-            label="Ohne Umbuchungen"
+            :label="tr('Ohne Umbuchungen')"
           />
         </div>
-        <UButton type="submit" :loading="busy">Filtern</UButton>
+        <UButton type="submit" :loading="busy">{{ tr('Filtern') }}</UButton>
       </form>
-    </section>
-    <section class="panel">
+    </SectionPanel>
+    <SectionPanel :title="tr('Buchungen')" icon="transactions" compact>
       <div v-if="selected.length" class="toolbar mb-5">
-        <span>{{ selected.length }} ausgewählt</span
+        <span>{{ selected.length }} {{ tr('ausgewählt') }}</span
         ><ChoiceSelect
           v-model="bulkCategory"
-          aria-label="Kategorie für Auswahl"
+          :aria-label="tr('Kategorie für Auswahl')"
           :searchable="true"
           :items="[
-            { label: `Nicht kategorisiert`, value: '' },
+            { label: tr('Nicht kategorisiert'), value: '' },
             ...categories.map(
               /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
             ),
           ]"
-        /><UButton @click="bulk">Kategorie zuweisen</UButton
-        ><UButton :disabled="selected.length > 2" variant="soft" @click="transfer">Umbuchung verknüpfen</UButton>
+        /><UButton @click="bulk">{{ tr('Kategorie zuweisen') }}</UButton
+        ><UButton :disabled="selected.length > 2" variant="soft" @click="transfer">{{
+          tr('Umbuchung verknüpfen')
+        }}</UButton>
       </div>
       <ClassificationEditor v-if="selected.length" :ids="selected" @changed="load()" />
-      <p role="status" class="ledger-load-status">{{ busy ? 'Umsätze werden geladen …' : '' }}</p>
+      <p role="status" class="ledger-load-status">{{ busy ? tr('Umsätze werden geladen …') : '' }}</p>
       <p v-if="!busy && !rows.length" class="empty-copy">
-        Keine Umsätze gefunden. Passe deine Filter an oder importiere Buchungen.
+        {{ tr('Keine Umsätze gefunden. Passe deine Filter an oder importiere Buchungen.') }}
       </p>
       <div v-for="row in rows" :key="row.id" class="ledger-row">
         <UCheckbox
           :model-value="selected.includes(row.id)"
-          :aria-label="`${row.description} auswählen`"
+          :aria-label="tr('{0} auswählen', [row.description])"
           @update:model-value="selectTransaction(row.id, $event)"
         />
         <div class="ledger-description">
-          <NuxtLink :to="`/transactions/${row.id}`"
+          <NuxtLink :to="bookingLink(row.id)"
             ><strong>{{ row.description }}</strong
             ><small
-              >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || 'Keine Gegenpartei'
-              }}<span v-if="row.isTransfer"> · Umbuchung</span><span v-if="row.accountId === null"> · Ohne Konto</span
-              ><span v-if="row.status === 'PENDING'"> · Vorgemerkt</span
-              ><span v-if="row.categoryOrigin === 'RULE'"> · Regel: {{ row.categoryRuleName }}</span
-              ><span v-if="row.categoryRuleConflict"> · Kategorie klären: gleichrangige Regeln widersprechen sich</span
+              >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName || tr('Keine Gegenpartei')
+              }}<span v-if="row.isTransfer"> {{ tr('· Umbuchung') }}</span
+              ><span v-if="row.accountId === null"> {{ tr('· Ohne Konto') }}</span
+              ><span v-if="row.status === 'PENDING'"> {{ tr('· Vorgemerkt') }}</span
+              ><span v-if="row.categoryOrigin === 'RULE'"> {{ tr('· Regel:') }} {{ row.categoryRuleName }}</span
+              ><span v-if="row.categoryRuleConflict">
+                {{ tr('· Kategorie klären: gleichrangige Regeln widersprechen sich') }}</span
               ><span v-if="row.effectiveClassification !== 'UNCLASSIFIED'">
-                · {{ row.effectiveClassification === 'FIXED' ? 'Fix' : 'Variabel' }}</span
+                · {{ row.effectiveClassification === 'FIXED' ? tr('Fix') : tr('Variabel') }}</span
               ></small
             ></NuxtLink
           ><UButton v-if="row.contract" :to="`/contracts/${row.contract.id}`" size="xs" variant="soft" class="mt-1">{{
@@ -384,20 +409,23 @@ onBeforeUnmount(
         </div>
         <ChoiceSelect
           :model-value="row.categoryId ?? ''"
-          :aria-label="`Kategorie für ${row.description}`"
+          :aria-label="tr('Kategorie für {0}', [row.description])"
           :searchable="true"
           :items="[
-            { label: `Nicht kategorisiert`, value: '' },
+            { label: tr('Nicht kategorisiert'), value: '' },
             ...categories.map(
               /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
             ),
           ]"
           @update:model-value="assign(row.id, $event)"
-        /><strong :class="BigInt(row.amountCents) > 0n ? 'positive' : ''">{{ money(row.amountCents) }}</strong>
+        /><strong data-financial :class="BigInt(row.amountCents) > 0n ? 'positive' : ''"
+          ><template v-if="!amountsMasked()">{{ money(row.amountCents) }}</template
+          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+        >
       </div>
-      <UButton v-if="nextCursor" :loading="busy" variant="soft" class="mt-5" @click="more"
-        >Weitere Umsätze laden</UButton
-      >
-    </section>
+      <UButton v-if="nextCursor" :loading="busy" variant="soft" class="mt-5" @click="more">{{
+        tr('Weitere Umsätze laden')
+      }}</UButton>
+    </SectionPanel>
   </template>
 </template>

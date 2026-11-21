@@ -1,3 +1,4 @@
+import { tr } from '../composables/useWorkspaceLocale.js';
 import { parse } from 'csv-parse/browser/esm/sync';
 import { z } from 'zod';
 import { csvEncodingSchema, csvDelimiterSchema, type CsvMapping } from '@financial-tracking/contracts';
@@ -12,7 +13,7 @@ export class CsvFileError extends Error {}
 
 /** Decode a transient upload without silently replacing invalid characters. */
 export function decodeCsv(bytes: Uint8Array, requested: CsvEncoding | 'auto') {
-  if (!bytes.length) throw new CsvFileError('Die Datei ist leer. Bitte exportiere die Umsätze erneut als CSV.');
+  if (!bytes.length) throw new CsvFileError(tr('Die Datei ist leer. Bitte exportiere die Umsätze erneut als CSV.'));
   let encoding: CsvEncoding = requested === 'auto' ? 'utf-8' : requested;
   if (requested === 'auto') {
     if (bytes[0] === 0xff && bytes[1] === 0xfe) encoding = 'utf-16le';
@@ -30,7 +31,9 @@ export function decodeCsv(bytes: Uint8Array, requested: CsvEncoding | 'auto') {
     content = new TextDecoder(encoding, { fatal: true }).decode(bytes);
   } catch {
     throw new CsvFileError(
-      'Die Datei ist in einem anderen Textformat gespeichert, zum Beispiel Windows-1252 statt UTF-8. Wähle unter „Dateiformat anpassen“ Automatisch oder eine andere Kodierung. Erneutes Auswählen ist nicht nötig.',
+      tr(
+        'Die Datei ist in einem anderen Textformat gespeichert, zum Beispiel Windows-1252 statt UTF-8. Wähle unter „Dateiformat anpassen“ Automatisch oder eine andere Kodierung. Erneutes Auswählen ist nicht nötig.',
+      ),
     );
   }
   let binary = content.startsWith('PK\u0003\u0004') || content.startsWith('%PDF-');
@@ -40,7 +43,9 @@ export function decodeCsv(bytes: Uint8Array, requested: CsvEncoding | 'auto') {
   }
   if (binary)
     throw new CsvFileError(
-      'Die Datei enthält kein lesbares CSV-Textformat. Wähle im Online-Banking den CSV-Export statt Excel oder PDF. Bei UTF-16 ohne Erkennungsmarkierung kannst du die Kodierung manuell auswählen.',
+      tr(
+        'Die Datei enthält kein lesbares CSV-Textformat. Wähle im Online-Banking den CSV-Export statt Excel oder PDF. Bei UTF-16 ohne Erkennungsmarkierung kannst du die Kodierung manuell auswählen.',
+      ),
     );
   return { content, encoding };
 }
@@ -58,7 +63,9 @@ export function csvHeaders(content: string, requested: CsvDelimiter | 'auto') {
         new Set(headers).size !== headers.length
       )
         throw new CsvFileError(
-          'Spaltenüberschriften fehlen oder kommen doppelt vor. Bitte exportiere die Datei mit einer eindeutigen Kopfzeile.',
+          tr(
+            'Spaltenüberschriften fehlen oder kommen doppelt vor. Bitte exportiere die Datei mit einer eindeutigen Kopfzeile.',
+          ),
         );
       return { headers, delimiter };
     } catch (cause) {
@@ -66,7 +73,9 @@ export function csvHeaders(content: string, requested: CsvDelimiter | 'auto') {
     }
   }
   throw new CsvFileError(
-    'Es wurden keine getrennten Spalten erkannt. Prüfe unter „Dateiformat anpassen“ das Trennzeichen (Semikolon, Komma oder Tabulator). Die erste Zeile muss die Spaltennamen enthalten.',
+    tr(
+      'Es wurden keine getrennten Spalten erkannt. Prüfe unter „Dateiformat anpassen“ das Trennzeichen (Semikolon, Komma oder Tabulator). Die erste Zeile muss die Spaltennamen enthalten.',
+    ),
   );
 }
 
@@ -85,6 +94,7 @@ export function suggestCsvMapping(headers: string[]): CsvMapping {
     bookingDate: ['Buchungstag', 'Buchungsdatum', 'Datum'],
     amount: ['Betrag', 'Umsatz', 'Betrag (EUR)'],
     description: ['Verwendungszweck', 'Buchungstext', 'Text'],
+    descriptionFallback: [],
     valueDate: ['Wertstellung', 'Valutadatum', 'Valuta'],
     counterpartyName: [
       'Beguenstigter/Zahlungspflichtiger',
@@ -110,7 +120,14 @@ export function suggestCsvMapping(headers: string[]): CsvMapping {
         /** Prefer payment purpose over the bank's generic booking-type column. */ (heading) =>
           headingKey(heading) === 'verwendungszweck',
       );
-      if (purpose) result.description = purpose;
+      if (purpose) {
+        result.description = purpose;
+        const alternatives = matches.filter(
+          /** Suggest a fallback only when exactly one other recognized text column exists. */ (heading) =>
+            heading !== purpose,
+        );
+        if (alternatives.length === 1) result.descriptionFallback = alternatives[0]!;
+      }
     }
   }
   return result;

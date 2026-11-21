@@ -1,6 +1,7 @@
 import { choose } from './controls.js';
 import { test, expect } from './fixtures.js';
 import { appearanceChoices, appearanceThemes, choiceTone } from '../../apps/web/app/utils/appearance.js';
+import { verifyContrast } from './appearance-checks.js';
 
 /** Convert opaque catalog swatches to the browser's computed-color representation. */
 function rgb(hex: string) {
@@ -15,7 +16,7 @@ test('theme tiles apply, retain Ayu brightness/borders and restore before reload
   await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Finanzieller Überblick' })).toBeVisible();
-  await page.goto('/settings');
+  await page.goto('/settings/appearance');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.getByRole('radio')).toHaveCount(23);
   for (const choice of appearanceChoices) {
@@ -26,6 +27,7 @@ test('theme tiles apply, retain Ayu brightness/borders and restore before reload
     if (choice.ayu) {
       await expect(page.locator('body')).toHaveCSS('background-color', rgb(choiceTone(choice, 'light')[0]));
       await expect(page.locator('html')).toHaveAttribute('data-ayu-border', choice.ayu.bordered ? 'visible' : 'none');
+      await verifyContrast(page);
     } else {
       const family = appearanceThemes.find(
         /** Match the exact bundled family. */ (theme) => theme.id === choice.family,
@@ -33,6 +35,7 @@ test('theme tiles apply, retain Ayu brightness/borders and restore before reload
       for (const mode of ['light', 'dark'] as const) {
         await choose(page, page.getByLabel('Helligkeit', { exact: true }), mode === 'light' ? 'Hell' : 'Dunkel');
         await expect(page.locator('body')).toHaveCSS('background-color', rgb(family[mode][0]));
+        await verifyContrast(page);
       }
     }
   }
@@ -52,6 +55,8 @@ test('theme tiles apply, retain Ayu brightness/borders and restore before reload
   await dracula.focus();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('radio', { name: 'Nord', exact: true })).toBeFocused();
+  await expect(page.getByRole('radio', { name: 'Nord', exact: true })).toHaveCSS('outline-style', 'solid');
+  await expect(page.getByRole('radio', { name: 'Nord', exact: true })).toHaveCSS('outline-offset', '3px');
   await page.keyboard.press('Space');
   await expect(page.getByRole('radio', { name: 'Nord', exact: true })).toBeChecked();
   await dracula.click();

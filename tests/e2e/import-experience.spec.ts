@@ -63,6 +63,7 @@ test('upload alone opens full-period analytics and recovers a lost commit respon
     .filter({ has: page.getByText('22 neu · 0 bekannt · 0 prüfen', { exact: true }) });
   await entry.getByRole('button', { name: 'Import rückgängig machen', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Import rückgängig machen?', exact: true });
+  await expect(dialog).toHaveClass(/finance-dialog/);
   await expect(dialog).toContainText('22 Buchungen werden gelöscht.');
   await dialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
   expect(
@@ -87,6 +88,113 @@ test('upload alone opens full-period analytics and recovers a lost commit respon
   expect(
     (await (await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`)).json()).items,
   ).toHaveLength(22);
+});
+
+test('compact import reviews retain explicit candidate drafts across failures', /** Expand/collapse real duplicate comparisons without losing selection or silently replacing bookings. */ async ({
+  page,
+}, info) => {
+  await signIn(page);
+  const label = `Compact review ${info.project.name}`;
+  const buffer = Buffer.from(`Datum;Betrag;Text\n17.02.2034;-717,37;${label}\n`);
+  for (let repeat = 0; repeat < 2; repeat++) {
+    await page.goto('/imports/csv');
+    await page
+      .getByLabel('CSV-Datei', { exact: true })
+      .setInputFiles({ name: 'review.csv', mimeType: 'text/csv', buffer });
+    await expect(page).toHaveURL(repeat ? /\/imports\?run=/ : /month=2034-02/);
+  }
+  const review = page.locator('[data-import-issue]').filter({ hasText: label });
+  await expect(review).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: 'Mögliche Doppelbuchungen', exact: true })).toBeVisible();
+  await choose(page, review.getByRole('button', { name: 'Bekannte Buchung auswählen', exact: true }), { index: 1 });
+  const selected = await review.getByRole('button', { name: 'Bekannte Buchung auswählen', exact: true }).textContent();
+  const disclosure = review.locator('summary');
+  await disclosure.focus();
+  await page.keyboard.press('Enter');
+  await expect(review.getByRole('button', { name: 'Vorhandene Daten behalten', exact: true })).toBeHidden();
+  await page.keyboard.press('Enter');
+  await expect(review.getByRole('button', { name: 'Bekannte Buchung auswählen', exact: true })).toHaveText(selected!);
+  await page.route(
+    '**/api/v1/imports/*/resolutions',
+    /** Reject a deliberate mutation without losing the displayed draft. */ async (route) =>
+      route.fulfill({
+        status: 503,
+        json: { error: { code: 'TEMPORARY', message: 'Prüfung später erneut versuchen.' } },
+      }),
+  );
+  await review.getByRole('button', { name: 'Vorhandene Daten behalten', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText(
+    'Der Dienst ist gerade nicht verfügbar. Bitte versuche es später erneut.',
+  );
+  await expect(review.getByRole('button', { name: 'Bekannte Buchung auswählen', exact: true })).toHaveText(selected!);
+  expect(
+    (await (await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`)).json()).items,
+  ).toHaveLength(1);
+  await page.unroute('**/api/v1/imports/*/resolutions');
+  await page.screenshot({ path: `.local/concept-import-review-${info.project.name}.png`, fullPage: true });
+  await review.getByRole('button', { name: 'Vorhandene Daten behalten', exact: true }).click();
+  await expect(page.getByText('Keine offenen Hinweise für diesen Import.', { exact: true })).toBeVisible();
+  expect(
+    (await (await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`)).json()).items,
+  ).toHaveLength(1);
+});
+
+test('mixed purpose and booking text imports once and empty pairs require consent', /** Keep source text, stable reimport identities and explicit manual fallback choices. */ async ({
+  page,
+}, info) => {
+  await signIn(page);
+  const label = `Fallback ${info.project.name}`;
+  const target = (await (await page.request.get('/api/v1/accounts')).json())[0] as { id: string; name: string };
+  const buffer = Buffer.from(
+    `Datum;Betrag;Verwendungszweck;Buchungstext\n09.11.2026;-1,00;${label} Zweck;SEPA\n10.11.2026;-2,00; ;${label} Karte\n11.11.2026;-3,00; ; \n`,
+  );
+  for (let repeat = 0; repeat < 2; repeat++) {
+    await page.goto('/imports/csv');
+    await page.getByRole('button', { name: 'Importoptionen (nur bei Bedarf)', exact: true }).click();
+    await choose(page, page.getByLabel('Zielkonto (optional)', { exact: true }), target.name);
+    const fileChoice = page.waitForEvent('filechooser');
+    const upload = page.getByRole('button', { name: /CSV-Datei auswählen/ });
+    if (info.project.name === 'mobile') await upload.tap();
+    else {
+      await upload.focus();
+      await page.keyboard.press('Enter');
+    }
+    await (await fileChoice).setFiles({ name: 'mixed.csv', mimeType: 'text/csv', buffer });
+    await expect(page.getByRole('heading', { name: 'Einmal kurz prüfen' })).toBeVisible();
+    await expect(page.getByText('3 Zeilen · 1 fehlerhaft', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Gültige Buchungen übernehmen' })).toBeDisabled();
+    await page.getByRole('checkbox', { name: 'Nur gültige Zeilen übernehmen; fehlerhafte Zeilen auslassen.' }).check();
+    await page.getByRole('button', { name: 'Gültige Buchungen übernehmen' }).click();
+    await expect(page).toHaveURL(/month=2026-11/);
+  }
+  const records = await (await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label)}`)).json();
+  expect(records.items).toHaveLength(2);
+  expect(
+    records.items
+      .map(
+        /** Reimport must preserve the useful original texts without creating duplicate payments. */ (row: {
+          description: string;
+        }) => row.description,
+      )
+      .sort(),
+  ).toEqual([`${label} Karte`, `${label} Zweck`]);
+  await page.goto('/imports/csv');
+  await page.getByLabel('CSV-Datei', { exact: true }).setInputFiles({
+    name: 'manual-fallback.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(`Tag;Summe;Hinweis;Ersatz\n12.11.2026;-4,00;;${label} manuell\n`),
+  });
+  await choose(page, page.getByRole('button', { name: /^Buchungsdatum/ }), 'Tag');
+  await choose(page, page.getByRole('button', { name: /^Betrag/ }), 'Summe');
+  await choose(page, page.getByRole('button', { name: /^Buchungstext/ }), 'Hinweis');
+  await page.getByRole('button', { name: 'Weitere Angaben zuordnen (optional)', exact: true }).click();
+  await choose(page, page.getByRole('button', { name: /^Buchungstext bei leerer Beschreibung/ }), 'Ersatz');
+  await page.getByRole('button', { name: 'Jetzt auswerten' }).click();
+  await expect(page).toHaveURL(/month=2026-11/);
+  expect(
+    (await (await page.request.get(`/api/v1/transactions?search=${encodeURIComponent(label + ' manuell')}`)).json())
+      .items,
+  ).toHaveLength(1);
 });
 
 test('only real format, mapping and invalid-row exceptions need input; abandoned previews cannot navigate later', /** Preserve consent and lifecycle ownership while simplifying the normal workflow. */ async ({
@@ -164,9 +272,9 @@ test('only real format, mapping and invalid-row exceptions need input; abandoned
       buffer: Buffer.from(`Datum;Betrag;Text\n08.11.2026;-35,00;${label} verlassen\n`),
     });
     await staged;
-    if (info.project.name === 'mobile') await page.getByRole('link', { name: 'Mehr', exact: true }).click();
+    await page.getByRole('link', { name: 'Mehr', exact: true }).click();
     await page
-      .getByRole('navigation', { name: info.project.name === 'mobile' ? 'Weitere Seiten' : 'Verwaltung', exact: true })
+      .getByRole('navigation', { name: 'Weitere Seiten', exact: true })
       .getByRole('link', { name: 'Einstellungen', exact: true })
       .click();
     await expect(page.getByRole('heading', { name: 'Einstellungen', exact: true })).toBeVisible();

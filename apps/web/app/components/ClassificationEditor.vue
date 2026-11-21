@@ -7,6 +7,7 @@ const api = useApi();
 const choice = ref(props.value ?? '');
 const busy = ref(false);
 const error = ref('');
+let disposed = false;
 watch(
   /** Follow a newly loaded transaction without submitting a change. */ () => props.value,
   /** Keep null as the explicit automatic fallback. */ (value) => {
@@ -15,6 +16,7 @@ watch(
 );
 /** Persist only the explicit selected transaction identities, preserving categories and amounts. */
 async function save() {
+  if (busy.value || !props.ids.length) return;
   busy.value = true;
   error.value = '';
   try {
@@ -22,35 +24,43 @@ async function save() {
       method: 'POST',
       body: bulkClassificationSchema.parse({ ids: props.ids, classification: choice.value || null }),
     });
-    emit('changed');
+    if (!disposed) emit('changed');
   } catch (cause) {
-    error.value = userErrorMessage(cause);
+    if (!disposed) error.value = userErrorMessage(cause);
   } finally {
-    busy.value = false;
+    if (!disposed) busy.value = false;
   }
 }
+onBeforeUnmount(
+  /** Ignore late annotation feedback after the owning selection is gone. */ () => {
+    disposed = true;
+  },
+);
 </script>
 <template>
-  <div class="my-4">
+  <SectionPanel :title="tr('Kennzeichnung')" icon="transactions" compact>
     <UFormField
-      label="Fix oder variabel"
-      help="Manuelle Auswahl hat Vorrang. Automatisch: bestätigte Vertragszahlung = fix, sonst nicht eingeordnet."
+      :label="tr('Fix oder variabel')"
+      :help="
+        tr('Manuelle Auswahl hat Vorrang. Automatisch: bestätigte Vertragszahlung = fix, sonst nicht eingeordnet.')
+      "
     >
       <div class="toolbar">
         <ChoiceSelect
           v-model="choice"
-          aria-label="Fix oder variabel"
+          :aria-label="tr('Fix oder variabel')"
           :searchable="false"
+          :disabled="busy"
           :items="[
-            { label: 'Automatisch / nicht eingeordnet', value: '' },
-            { label: 'Fix', value: 'FIXED' },
-            { label: 'Variabel', value: 'VARIABLE' },
+            { label: tr('Automatisch / nicht eingeordnet'), value: '' },
+            { label: tr('Fix'), value: 'FIXED' },
+            { label: tr('Variabel'), value: 'VARIABLE' },
           ]"
-        /><UButton variant="soft" :loading="busy" :disabled="!ids.length" @click="save"
-          >Kennzeichnung speichern</UButton
-        >
+        /><UButton variant="soft" :loading="busy" :disabled="!ids.length" @click="save">{{
+          tr('Kennzeichnung speichern')
+        }}</UButton>
       </div>
     </UFormField>
     <UAlert v-if="error" role="alert" color="error" :description="error" class="mt-3" />
-  </div>
+  </SectionPanel>
 </template>

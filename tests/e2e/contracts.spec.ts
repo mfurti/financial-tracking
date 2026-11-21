@@ -14,21 +14,43 @@ test('confirmed recurring payments keep real bookings, expose contract badges an
   await page.goto('/contracts');
   await page.getByRole('button', { name: 'Vertrag anlegen', exact: true }).click();
   const costDialog = page.getByRole('dialog', { name: 'Vertrag anlegen', exact: true });
+  await expect(costDialog).toHaveClass(/finance-dialog/);
   await costDialog.getByLabel('Vertragsname', { exact: true }).fill(`Jahreskosten ${info.project.name}`);
   await costDialog.getByLabel('Anbieter / Gegenpartei', { exact: true }).fill(`Jahresanbieter ${info.project.name}`);
   await costDialog.getByLabel('Betrag in Euro', { exact: true }).fill('120,00');
   await choose(page, costDialog.getByLabel('Zahlungsrhythmus', { exact: true }), 'Jährlich');
   await costDialog.getByRole('button', { name: 'Vertrag bestätigen', exact: true }).click();
   await expect(page).toHaveURL(/\/contracts\/[a-f0-9-]+$/);
+  const originalContract = await (await page.request.get(`/api/v1${new URL(page.url()).pathname}`)).json();
   await page.getByRole('button', { name: 'Vertrag bearbeiten', exact: true }).click();
   const editDialog = page.getByRole('dialog', { name: 'Vertrag bearbeiten', exact: true });
   await expect(editDialog.getByLabel('Betrag in Euro', { exact: true })).toHaveCount(0);
   const editedName = `Jahreskosten ${info.project.name} geprüft`;
   await editDialog.getByLabel('Vertragsname', { exact: true }).fill(editedName);
+  await page.route(
+    '**/api/v1/contracts/*',
+    /** Reject an explicit metadata save without changing historical rules or the local draft. */ async (route) =>
+      route.request().method() === 'PATCH'
+        ? route.fulfill({
+            status: 503,
+            json: { error: { code: 'INTERNAL_ERROR', message: 'synthetic', requestId: 'synthetic' } },
+          })
+        : route.continue(),
+  );
+  await editDialog.getByRole('button', { name: 'Vertrag speichern', exact: true }).click();
+  await expect(editDialog.getByRole('alert')).toBeVisible();
+  await expect(editDialog.getByLabel('Vertragsname', { exact: true })).toHaveValue(editedName);
+  expect((await (await page.request.get(`/api/v1/contracts/${originalContract.id}`)).json()).name).toBe(
+    originalContract.name,
+  );
+  await page.unroute('**/api/v1/contracts/*');
   await editDialog.getByRole('button', { name: 'Vertrag speichern', exact: true }).click();
   await expect(editDialog).not.toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: editedName, exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/v1/contracts/${originalContract.id}`)).json()).revisions).toEqual(
+    originalContract.revisions,
+  );
   await page.goto('/contracts');
   const costCard = page.getByRole('link', { name: /Durchschnittliche Fixkosten \/ Monat/ });
   await expect(costCard).toContainText('10,00');

@@ -1,128 +1,87 @@
-# Haushaltsbuch bedienen
+# Using the household ledger
 
-## Dein Überblick
+This guide describes the integrated source version in [issue #13](https://github.com/mfurti/financial-tracking/issues/13). It does not imply deployment; [status.md](status.md) distinguishes source checks from production.
 
-Die App sammelt deine Buchungen und zeigt, wie viel im ausgewählten Monat eingenommen und ausgegeben wurde. Die große **Monatsbilanz** ist die Differenz dieser Geldflüsse. Sie ist kein verfügbarer Kontostand und keine Prognose. Darunter siehst du die Ausgabenverteilung und die letzten Buchungen; tatsächliche Bank-Kontostände stehen getrennt daneben.
+## Overview and navigation
 
-Am Computer findest du die Seiten links. Auf dem Telefon stehen **Übersicht**, **Umsätze**, **Analysen** und **Verträge** unten. Unter **Mehr** erreichst du Konten, Importhistorie, Bankverbindungen und Einstellungen. Kategorien und Regeln gehören zu **Analysen**. CSV hochladen bleibt auf Übersicht und Umsätzen direkt erreichbar. Mehr öffnet eine eigene Übersichtsseite. Das Zahnrad oben öffnet die Einstellungen direkt.
+The monthly balance is income minus expenses for the selected booking month, not an available bank balance or forecast. Booked transactions without an account count globally; pending transactions and own transfers do not. Positive refunds remain income. All monetary calculations use exact cents.
 
-## Erste Buchungen
+Previous/next, the month picker and This month retain the selected month in the URL. Desktop, tablet and phone arrange the same bookings, planned payments, accounts and categories in responsive columns. Bottom navigation opens Overview, Transactions, Accounts, Analyses, Contracts and More. More links to wealth, imports, connections and settings; the header opens settings and the contract calendar.
 
-Mit **CSV hochladen** oder **CSV importieren** wählst du deine Datei aus. Die App erkennt Format und bekannte Spalten, übernimmt vollständig gültige Buchungen automatisch und öffnet die echte Monatsauswertung. Eine Bankverbindung oder Kontoanlage ist nicht nötig. Bei Dateien mit mehreren Monaten wird der letzte enthaltene Monat geöffnet; die übrigen Buchungen bleiben in ihren tatsächlichen Monaten sichtbar. Die Erfolgsmeldung zeigt neue und bereits bekannte Buchungen.
+Bank balances are separate dated observations. Missing is not zero; observations older than 48 hours are marked stale. Imported transaction sums cannot reconstruct a reliable bank balance.
 
-Nur bei unklaren Spalten, fehlerhaften Zeilen oder möglichen Dubletten ist eine Entscheidung nötig. Unter **Importoptionen** kannst du bei Bedarf ein bestehendes Zielkonto oder ein anderes Dateiformat wählen. Ohne Konto zählen Buchungen trotzdem sofort; eine spätere Zuordnung bleibt möglich. Es werden keine Platzhalterkonten angelegt.
+## Importing a CSV
 
-Sparkasse-Daten wie **07.11.26** werden automatisch als **07.11.2026** gelesen, auch bei der Wertstellung. Zweistellige Jahre stehen ausdrücklich für 2000–2099. Für ältere Buchungen verwende ein vierstelliges Jahr. `TT.MM.JJJJ` und `JJJJ-MM-TT` funktionieren weiterhin; ungültige Kalendertage werden zurückgewiesen.
+Use Upload CSV or Import CSV and the visible file-selection area, or drop a file onto it. Fully valid files process automatically without requiring an account or bank connection. Several booking months open the last imported month while retaining every actual booking date. Import options can choose an existing account or override the detected format.
 
-**Kodierung** beschreibt, wie Dateibytes zu Buchstaben und Sonderzeichen werden. Eine Bankdatei kann beispielsweise Windows-1252 statt UTF-8 verwenden; der bisherige UTF-8-Fehler bedeutet nicht, dass deine Buchungen kaputt sind. Die automatische Erkennung prüft UTF-8 und UTF-16 mit Erkennungsmarkierung; andernfalls versucht sie Windows-1252. Ältere Einbyte-Kodierungen sind nicht immer eindeutig unterscheidbar. Prüfe daher die angezeigten Umlaute. Unter **Dateiformat anpassen** kannst du UTF-8, Windows-1252/ANSI, ISO-8859-15/Latin-9 und UTF-16 LE/BE auswählen. Latin-9 kann bei einem falsch dargestellten Eurozeichen helfen. Eine Änderung liest dieselbe Datei erneut; du musst sie nicht noch einmal auswählen.
+Required columns are booking date, signed amount and transaction text. Optional columns preserve source details/references. Bank references must identify one transaction; mandate/customer references usually do not. Missing currency defaults to EUR, without conversion. Nonempty explicitly mapped purpose/alternative text columns can supply the booking text; all-empty mapped text still requires a decision.
 
-**Trennzeichen** trennt die Spalten: Semikolon, Komma oder Tabulator. Bei einer langen statt mehrerer einzelner Spalten wähle das passende Zeichen manuell. **Spaltenüberschriften** sind die Namen in der ersten CSV-Zeile, etwa Buchungstag, Betrag und Verwendungszweck. Die Anwendung schlägt bekannte Namen vor; bei mehreren passenden Spalten entscheidest du selbst.
+Supported dates include DD.MM.YYYY, YYYY-MM-DD and Sparkasse short years such as 07.11.26. Short years mean 2000–2099; use four digits for older dates. Impossible dates reject. Negative amounts are expenses.
 
-Für den Import brauchst du **Buchungsdatum**, **Betrag** und **Buchungstext**. Verwende gültige Daten als TT.MM.JJJJ oder JJJJ-MM-TT und Beträge mit Dezimalkomma; negative Beträge sind Ausgaben. Unter **Weitere Angaben zuordnen** findest du optionale Informationen mit Erklärungen. Eine Bankreferenz darf nur genau eine Buchung identifizieren; Mandats- oder Kundenreferenzen besser leer lassen. Ohne Währungsspalte wird EUR angenommen; es findet keine Währungsumrechnung statt.
+Automatic decoding recognizes UTF-8 and marked UTF-16, with Windows-1252 fallback. Check umlauts because legacy single-byte encodings can be ambiguous. File format explicitly supports UTF-8, Windows-1252/ANSI, ISO-8859-15/Latin-9 and UTF-16 LE/BE, plus semicolon/comma/tab delimiters. Changing it rereads the selected file. Ambiguous headings remain your choice.
 
-Bei ungültigen Zeilen bleibt die Übernahme stehen und zeigt das konkrete Problem, etwa Datum, Betrag oder fehlenden Text. Korrigiere den Export oder bestätige ausdrücklich, nur gültige Buchungen zu übernehmen. Ohne diese Zustimmung wird kein Teilimport ausgeführt. Mögliche Dubletten landen unter **Buchungen klären** und werden nicht still doppelt gezählt.
+Only genuine format, mapping, invalid-row or duplicate exceptions interrupt the automatic path. Invalid rows are grouped with expandable details. Confirm explicitly before importing only valid rows; missing text is never fabricated. Duplicate review compares source fields and offered candidates before retaining existing data, accepting incoming data, keeping separate transactions or skipping a new row.
 
-Fehlt nach der Übernahme die Serverantwort, prüft die App denselben Importstatus. Es wird nicht automatisch eine zweite Übernahme erzeugt. Mit **Importstatus prüfen** lässt sich der bestehende Vorgang erneut lesen. Beim Verlassen einer noch nicht übernommenen Vorschau wird sie abgebrochen; eine bereits laufende Übernahme wird nicht durch einen späten Seitenwechsel zurückgesetzt.
+A lost commit response checks the same import instead of duplicating it. Leaving an uncommitted preview cancels it; late responses cannot navigate away from a newer page. History currently lists the latest 100 runs; historical paging remains open in [todo.md](todo.md).
 
-Gebuchte kontolose Umsätze zählen sofort in der Monatsübersicht. Unter **Umsätze → Konto → Ohne Konto** findest du sie wieder und kannst Kategorien vergeben. Der Filter für ein bestimmtes Konto enthält sie erst nach einer Zuordnung.
+## Assignment, categories and transfers
 
-## Später einem Konto zuordnen
+The Without account filter finds accountless imports. Select transactions and a target account, then compare date, amount, text, source, references, status and category before confirming. Existing/incoming values can survive a merge; Keep separate retains both transactions, and Skip leaves the source unassigned. Conflicting manual categories require a choice. Changed comparisons require a fresh preview; identical retries cannot count a transaction twice.
 
-Wähle einzelne Buchungen oder mehrere Kontrollkästchen und anschließend das Zielkonto. Prüfe bei möglichen Überschneidungen Datum, Betrag, Text, Quelle, Referenzen, Status und Kategorie.
+Link own transfers by selecting the two transaction rows. Transfers remain in history but not income/expense reports. Resolve conflicting existing payment/transfer links explicitly before merging sources. Browsing or filtering never changes imported amounts.
 
-- **Bank-/Zieldaten übernehmen:** eine bestehende Buchung mit den ausgewählten Zieldaten behalten; die zusätzliche CSV-Buchung geht darin auf.
-- **CSV-Daten übernehmen:** zusammenführen und die finanziellen Daten aus der CSV behalten.
-- **Separat behalten:** beide tatsächlichen Buchungen erhalten. Beide zählen weiterhin, sofern sie gebucht und keine eigenen Umbuchungen sind.
-- **Überspringen:** die Buchung bleibt ohne Konto und kann später zugeordnet werden.
+Uncategorised means included but not assigned. Category maintenance can add, rename, deactivate or delete categories without deleting transactions. Templates reuse suitable existing categories and preserve your names.
 
-Abweichende manuelle Kategorien musst du ausdrücklich auswählen. Veränderte Vergleichsdaten erfordern eine neue Vorschau. Eine wiederholte identische Bestätigung zählt die Buchung nicht erneut.
+Rules match a complete counterparty or a deliberate literal text fragment, case-insensitively. Direction can restrict income/expenses; smaller priority numbers win. Contradictory equal-priority matches remain unresolved. Rules apply to new imports; reapplying to existing transactions requires confirmation. Manual categories, including deliberately empty choices, remain protected. Removing a rule does not rewrite old transactions.
 
-Die Importhistorie zeigt zusätzliche Prüfungen aus wiederholten oder überlappenden Dateien. Dort kannst du vorhandene Daten behalten, Importdaten übernehmen, separat behalten oder die neue Zeile überspringen. Ähnliche Buchungen werden nicht allein wegen ihres Aussehens zusammengeführt.
+Set Fixed, Variable or Automatic/unclassified on one or several transactions. Confirmed contract payments automatically count as fixed; otherwise unclassified stays unclassified. Amounts never change.
 
-## Zahlen richtig lesen
+## Analysis and account groups
 
-**Bekannte Kontostände** stammen aus einer Bankabfrage. Fehlende oder alte Salden sind entsprechend gekennzeichnet; CSV-Umsätze ergeben keinen verlässlichen Kontostand.
+Analyses starts with twelve closed months. Choose three/six/twelve months or an inclusive range up to 36 calendar months. Account, saved account-group and category scopes survive reload and carry into contributing transaction pages. Accountless scope is separate. Empty groups remain empty; deleted groups fail instead of showing global totals. Inactive group members retain historical transactions.
 
-**Einnahmen, Ausgaben und Monatssaldo** beziehen sich auf das Buchungsdatum im ausgewählten Monat, einschließlich gebuchter Umsätze ohne Konto. Vorgemerkte Umsätze und als eigene Umbuchungen markierte Buchungen bleiben außerhalb dieser Auswertung. Erstattungen mit positivem Betrag erscheinen als Einnahmen. Alle Beträge werden centgenau berechnet.
+Averages include fully selected past months with relevant bookings. Income-only months contribute zero expenses; empty months do not contribute. Current/future/partial months can affect actual totals while being excluded from the average, with reasons shown. No eligible month means not calculable. Trend requires the last eligible month and its immediately preceding eligible calendar month; it never skips a gap. A zero base has no percentage, while the cent difference remains available. Rounding occurs only at the final display boundary.
 
-## Kategorien verstehen
+Category, fixed/variable, merchant and monthly detail links retain exact scopes. Merchants use exact trimmed source names and an explicit unknown bucket. Equivalent tables preserve exact values independently of approximate chart geometry.
 
-**Kategorien** zeigt die monatlichen Einnahmen, Ausgaben und noch nicht zugeordneten Buchungen. Im Diagramm erscheinen ausschließlich Ausgaben; klicke eine Gruppe an, um genau die zugehörigen gebuchten Ausgaben dieses Monats zu sehen. Die Gruppen „Lebensmittel“ oder „Wohnen“ helfen beim Vergleichen, verändern aber keine Beträge.
+Customise selects/orders six modules and bar/ring charts on this device. Cancel preserves saved choices. Recorded wealth, reserve and contract-cost modules explicitly retain global/source/planned scope independently of transaction filters. Imported account/category/merchant/contract names retain their spelling when language changes.
 
-**Nicht kategorisiert** heißt: Die Buchung ist bereits übernommen und mitgerechnet. Über **Buchungen zuordnen** öffnest du die betroffenen Umsätze und wählst ihre Kategorie. Sichere aktive Regeln können neue Buchungen automatisch kategorisieren; widersprüchliche Treffer werden nicht geraten. Unter **Kategorien verwalten** kannst du eigene Gruppen anlegen, umbenennen oder deaktivieren. Löschen entfernt nur die Kategorie und ihre Zuordnungen, keine Buchungen.
+## Contracts and calendar
 
-## Darstellung und Fehler
+Two or more matching recurring payments can suggest a contract. Review amount, rhythm and first due date, then Confirm and continue, Later for this review, or Not a contract to dismiss the pattern. Hidden proposals can be restored. Same-pattern payments do not undo dismissal; changed amounts/rhythms can create a new proposal. Swipes/previous/next only navigate; dirty changes require a decision. A lost save response can be safely retried.
 
-Ein einzelner **kreisrunder Sonne/Mond-Button** wechselt auf der Anmeldeseite und in der Anwendung zwischen Hell und Dunkel. Ohne eigene Auswahl folgt die Darstellung deinem Gerät. Ein Klick speichert die gewünschte Helligkeit auf diesem Gerät, auch nach Neuladen. Symbol und Farben wechseln weich; bei „Bewegung reduzieren“ erfolgt der Wechsel ohne Animation. Der Button ist per Tabulator und Leertaste bedienbar; „Dunkelmodus gedrückt“ bedeutet, dass Dunkel aktiv ist.
+Confirmed contracts can link an unambiguous real payment with the same amount/counterparty within five days of its due date. Optional account scope narrows matching. Ambiguity stays open; missing attribution does not prove nonpayment. Future revisions start on an existing future due date. Historical rules/links remain. Month-end anchors survive short months, contract end is inclusive, and a cancellation deadline sends no cancellation.
 
-Unter **Einstellungen → Farben & Darstellung** wählst du aus 18 Farbwelten, darunter VS Code Modern, GitHub, One Dark Pro, Dracula, Nord, Monokai, Solarized und Catppuccin. Die Farben sind für die App mit hellen und dunklen Gegenstücken angepasst. Auch diese Auswahl bleibt auf diesem Gerät gespeichert und gilt auf der Anmeldeseite. Über **Helligkeit → Wie mein Gerät** stellst du die automatische Systemwahl wieder her.
+Manual assignment compares a real expense to a due occurrence, requiring extra confirmation for discrepancies. One payment per occurrence and one contract per transaction are supported; split/combined payments are not. Unlink preserves the booking and blocks immediate automatic relinking, while later explicit assignment remains possible. Contract deletion preserves transactions/manual categories.
 
-Fehlerhafte Formularfelder werden markiert. Bei Servervalidierung springt der Tastaturfokus zum ersten betroffenen Feld. Korrigiere die Eingabe und sende erneut; gewöhnliche Formulare behalten ihren Entwurf. Passwörter, PIN und TAN werden nach einem Versuch gelöscht. Bei abgelaufener Sitzung ist eine neue Anmeldung erforderlich.
+Cost analysis prorates forecasts: an annual EUR 120 averages EUR 10/month. The calendar separately shows the planned EUR 120 in its due month, with monthly totals, effective revisions and linked observed payments. Plans never create bookings or increase actual spending. Account/group scope applies; unbound contracts contribute only globally.
 
-Der Link **Zum Inhalt springen** ist per Tabulator erreichbar. Er überspringt die Navigation und setzt den Fokus auf den Seiteninhalt.
+## Reserve and recorded wealth
 
-## Bankabruf
+Explicitly designate active EUR accounts for the reserve and save a positive target. Only latest BOOKED observations contribute. AVAILABLE never substitutes; missing/stale/negative sources remain visible. The default EUR 3,000 target is not a bank balance.
 
-CSV bleibt jederzeit unabhängig nutzbar. Ein echter Sparkasse-Abruf benötigt zunächst die eigene FinTS-Produktregistrierung, einen bestätigten Bankendpunkt und die separate Prüfung deines Zugangs. Die aktuelle Anleitung und der belegte Kompatibilitätsstatus stehen in [banking.md](banking.md). Eine synthetische Prüfung bestätigt keine reale Bankkompatibilität.
+Wealth separates current observations, explicitly recorded immutable snapshots and the synthetic demo. Review coverage/timestamps before recording. Retrying a lost response returns the same frozen record. Later imports/account changes cannot rewrite captured labels, amounts or observation dates. Entirely unknown sources remain labelled unknown despite a mathematical known-component sum of zero. Earlier wealth history is never invented.
 
-## Datum und Auswahlfelder
+## Synthetic investments and local roles
 
-Datumsfelder erlauben direkte Eingabe, Kalenderauswahl und Löschen. Der Monatsfilter öffnet eine Monatsauswahl. Lange Auswahllisten lassen sich durchsuchen; mit Escape schließt du die Liste. Unter **Buchungen klären** unterscheiden die Hinweise fehlerhafte Zeilen von möglichen Doppelbuchungen. Die angezeigten Ursachen und Vergleichswerte erklären die erforderliche Entscheidung. Das Löschen einer Kategorie verlangt eine Bestätigung und erhält die Buchungen.
+Demo cash, securities, whole-share orders, transfers, scenario prices, activity and savings plans use synthetic device data. They never write real financial records or contact brokers/banks. Plans execute only for an explicitly selected month; repeated execution of the same period is safe. Unknown securities, insufficient cash/holdings and invalid quantities reject atomically.
 
-## Theme-Kacheln
+Settings → Local demo roles edits display entries only. Owner/viewer labels create no users, invitations or permissions. Confirmed demo reset clears portfolio, plans, activity/history and roles together, preserving real records and independent preferences. Corrupt/unsupported/conflicting storage needs explicit recovery. Visible memory-only operation lasts for the session and can be lost on reload.
 
-Unter Einstellungen wählst du eine der 23 Vorschaukacheln. Die Markierung zeigt die aktive Farbwelt; Pfeiltasten bewegen den Fokus, die Leertaste wählt. Ayu Light, Dark und Mirage gibt es jeweils mit und ohne Kartenrahmen. Die Ayu-Auswahl setzt auch Hell oder Dunkel. Der Kreis wechselt zu Light und zurück zum zuletzt gewählten Dark oder Mirage; die Rahmenwahl bleibt erhalten. Vorhandene gespeicherte Farbwelten bleiben gültig.
+## Settings and notifications
 
-## Automatische Kategorien und Fix/Variabel
+Profile/contact metadata and named account groups persist on the server. Contact email changes neither login nor recovery identity. Removing a group removes memberships, not financial records. Password change verifies the current password and revokes every real session. Password/PIN/TAN fields clear after attempts.
 
-Unter **Kategorien & Regeln** legst du Regeln an: Die Gegenpartei muss vollständig passen oder der Buchungstext einen bewusst gewählten Text enthalten. Groß-/Kleinschreibung spielt keine Rolle. Begrenze eine Regel bei Bedarf auf Ausgaben oder Einnahmen. Kleinere Prioritätszahlen greifen zuerst. Widersprechen sich gleichrangige Treffer, bleibt die Buchung mit Hinweis ungeklärt; es wird keine Kategorie geraten.
+Language (Deutsch/English), amount masking, modules/chart style, notification-kind filters and appearance belong to this device. Money/dates follow German or British English conventions without floating-point monetary rounding. Masking replaces financial text and accessible chart information from first render; it is presentation, not an access boundary.
 
-Neue Regeln gelten für neue Buchungen. Mit **Regeln auf Bestandsbuchungen anwenden** kannst du vorhandene automatische/ungeklärte Zuordnungen ausdrücklich neu bewerten. Die Bestätigung erklärt, dass alte automatische Zuordnungen ersetzt oder entfernt werden können. Manuelle Kategorien und bewusst leere Auswahl bleiben geschützt. Die Umsatzliste zeigt den Namen einer automatisch angewendeten Regel. Löschen einer Regel entfernt keine Buchung und ändert keine bisherige Kategorie.
+Appearance offers 23 preset tiles from 18 families, six explicit Ayu variants, paired custom colors and system/light/dark brightness. The circular control preserves family/Ayu borders. Invalid custom contrast cannot replace a working palette. Reduced motion removes decorative transitions; tiles stay stationary. See [appearance.md](appearance.md). Blocked/quota-limited storage shows a session-only notice; reload can restore the last durable choices.
 
-Die Vorlagen ergänzen Alltagskategorien, etwa Mode, Technik und Essen gehen. Passende vorhandene Kategorien werden wiederverwendet, eigene Namen nicht verändert. In einem Umsatz oder nach Auswahl mehrerer Umsätze kannst du **Fix** oder **Variabel** festlegen. **Automatisch / nicht eingeordnet** entfernt diese manuelle Festlegung. Bestätigte Vertragszahlungen gelten dann als fix, alle anderen bleiben nicht eingeordnet. Diese Kennzeichnung verändert keine Beträge.
+Notifications link unresolved import issues and confirmed planned occurrences from today through the next 30 Berlin calendar days. Booked links suppress due events; pending links do not prove payment. Mark read saves only a receipt; it never resolves imports or changes contracts/payments. Revised sources can become unread. Removed sources/stale acknowledgements require reload. Device filters only change visibility. There is no email/push delivery.
 
-## Verträge und wiederkehrende Zahlungen
+## Recovery and access
 
-Unter **Verträge** findest du Abos, Miete, Versicherungen und andere laufende Ausgaben. Mindestens zwei passende Zahlungen mit gleichem Betrag und Gegenpartei erzeugen einen **Vorschlag**. Öffne **Vorschläge prüfen · N**, kontrolliere Betrag, Rhythmus und erste Fälligkeit und bestätige den Vertrag. Alternativ legst du ihn selbst an. Anbieter und Gegenpartei müssen für automatische Zuordnung vollständig übereinstimmen; ein optionales Konto begrenzt die Treffer.
+Import history → Undo import previews removable import-owned transactions/identities. Other-source/uncertain ownership is protected. Explicitly choose whether to keep linked bookings or remove eligible import-owned bookings and links; removing links needs extra confirmation. Annotations belonging to removed bookings are removed with them. Contracts/opposite transfer entries survive. Retained rows are not reverted to earlier values. Refresh changed previews before confirming; retained sources remain duplicate-protected on reupload.
 
-Ein bestätigter Vertrag markiert eindeutige tatsächliche Zahlungen automatisch, wenn Betrag und Gegenpartei passen und der Termin höchstens fünf Tage abweicht. Mehrere passende Verträge oder Buchungen bleiben offen. In den Umsätzen öffnet der Vertragsname die Details. Die Vertragsliste sortiert die nächste heutige oder zukünftige offene Fälligkeit zuerst und wird regelmäßig aktualisiert. Frühere nicht zugeordnete Termine bleiben in der Historie; fehlende Zuordnung beweist keinen Zahlungsausfall.
+Date/month controls support keyboard entry, selection and clearing. Searchable lists support Escape. Help, Skip to content and modal focus are keyboard-accessible. Ordinary drafts survive failed saves; sensitive inputs clear. Expired/revoked sessions require sign-in. Dedicated field feedback for legacy revision/payment forms and richer proposal evidence remain in [todo.md](todo.md).
 
-Prognosen erzeugen keine Buchungen und erhöhen deine tatsächlichen Ausgaben nicht. Monatsenden bleiben verankert: Auf den 31. Januar folgen der letzte Februartag und der 31. März. Eine Änderung von Betrag/Rhythmus beginnt an einer gewählten zukünftigen bestehenden Fälligkeit. Frühere Regeln und Zahlungen bleiben nachvollziehbar. Das optionale Vertragsende gilt einschließlich; dein Kündigungsdatum ist eine eigene Fristangabe und versendet keine Kündigung.
-
-Bei **Buchung manuell zuordnen** suchst du eine echte Ausgabe. Prüfe deren Datum, Betrag und Gegenpartei neben der Vertragsfälligkeit. Abweichungen erfordern eine sichtbare gesonderte Bestätigung. Weder die Buchung noch die Prognose ändern dadurch ihren Betrag. Pro Fälligkeit ist eine Zahlung möglich, pro Buchung ein Vertrag; Teil- und Sammelzahlungen sind nicht vorgesehen.
-
-**Zuordnung entfernen** erhält die Bankbuchung und sperrt sofortiges automatisches Neuverknüpfen. Eine spätere ausdrückliche manuelle Zuordnung bleibt möglich. Auch das Löschen des Vertrags erhält alle Bankbuchungen und manuellen Kategorien. Falls zwei zusammenzuführende Buchungen bereits unterschiedliche Vertragslinks besitzen, prüfe und löse zuerst die betreffenden Zahlungszuordnungen. Bestätigte Vertragszahlungen gelten automatisch als fix, sofern du sie nicht manuell anders eingeordnet hast.
-
-## Analysen über mehrere Monate
-
-**Analysen** startet mit den letzten zwölf abgeschlossenen Monaten. Wähle drei, sechs oder zwölf Monate oder einen eigenen inklusiven Zeitraum bis höchstens 36 Kalendermonate. Konto- und Kategoriefilter gelten gleichermaßen für Kennzahlen, Diagramme, Tabellen und die verknüpften Umsätze. Standardmäßig zählen gebuchte Umsätze ohne Konto mit; Vormerkungen und eigene Umbuchungen bleiben ausgeschlossen. Positive Erstattungen bleiben Einnahmen.
-
-Der **Durchschnitt** verwendet ausschließlich vollständig ausgewählte, vergangene Kalendermonate mit mindestens einer relevanten Buchung. Ein Monat mit ausschließlich Einnahmen zählt mit null Ausgaben; ein Monat ohne Buchung zählt nicht. Laufende, zukünftige und nur teilweise gewählte Monate zählen zu den tatsächlichen Summen, aber nicht zum Durchschnitt. Die Tabelle nennt für jeden Monat den Ausschlussgrund und zeigt die Anzahl berücksichtigter Monate. Ohne geeignete Monate steht **Noch nicht berechenbar**. Die Anwendung kann aus vorhandenen Buchungen keine vollständige Bankhistorie ableiten.
-
-Der **Trend** vergleicht den letzten geeigneten Monat mit seinem direkten Kalendervormonat, wenn beide geeignet sind. Eine Lücke wird nicht übersprungen. Bei einer Nullbasis fehlt ausdrücklich der Prozentwert; der Cent-Unterschied bleibt verfügbar. Durchschnittswerte werden erst bei der Ausgabe auf Cent gerundet.
-
-Die Kategorienansicht zeigt Ausgabenanteile. **Fix oder variabel?** unterscheidet manuell feste/variable Ausgaben, bestätigte Vertragszahlungen als automatische Fixkosten und den noch nicht eingeordneten Rest. Diagrammauswahl und die beschrifteten Links öffnen die jeweils zugrunde liegenden Buchungen mit denselben Filtern; keine Buchung wird gesplittet. Die Tabelle enthält alle exakten Centwerte unabhängig vom Diagramm. Vertragsplanwerte pro Monat/Jahr sind getrennt beschriftete Hochrechnungen und gehören nicht zu tatsächlichen Ausgaben oder deren Durchschnitt.
-
-## Import zum erneuten Testen entfernen
-
-Öffne **Importhistorie → Import rückgängig machen**. Die Vorschau zeigt, welche Buchungen entfernt werden und welche wegen weiterer Quellen oder unklarer Herkunft erhalten bleiben. Manuelle Zuordnungen gelöschter Buchungen gehen verloren.
-
-Bei Vertrags- oder Umbuchungszuordnungen wählst du im Dialog zwischen **Verknüpfte Buchungen behalten** und **Verknüpfungen und import-eigene Buchungen entfernen**. Die zweite Auswahl verlangt eine zusätzliche Bestätigung. Verträge selbst und Gegenbuchungen bleiben erhalten. Weitere Quellen und unklare Herkunft sind bei beiden Optionen geschützt.
-
-Nach **Import zurücknehmen** kannst du dieselbe Datei erneut hochladen. Entfernte Buchungen werden neu eingelesen; erhaltene Buchungen bleiben dem Dublettenschutz unterworfen. Änderungen an erhaltenen Buchungen werden nicht auf frühere Werte zurückgesetzt. Hat sich seit der Vorschau etwas geändert, lade die Vorschau neu.
-
-## Fixkosten und Vertragsanalyse
-
-Die Kachel **Durchschnittliche Fixkosten / Monat** unter **Verträge** öffnet die **Vertragsanalyse**. Jahres- und Quartalszahlungen werden anteilig auf Monate verteilt; pro Vertrag wird auf Cent gerundet. Gesamtsumme und Gruppen addieren dieselben Monatswerte. Es zählen nur heute gültige bestätigte Verträge und heute geltende Preise, keine Vorschläge oder zukünftigen Preisänderungen. **Planwert** bedeutet eine Hochrechnung, keine zusätzliche Bankbuchung.
-
-Wechsle zwischen **Kategorien** und **Vertragsarten**. Die Kategorie ist die ausdrücklich am Vertrag gewählte Kategorie; fehlt sie, steht **Ohne Kategorie**. Auswahl einer Gruppe zeigt deren Verträge mit Monatskosten, tatsächlichem Rhythmus und Detailverknüpfung.
-
-## Vertragsvorschläge einzeln prüfen
-
-**Vorschläge prüfen · N** öffnet eine Karte je Vorschlag. Bearbeite die Angaben und wähle **Bestätigen & weiter**. **Später** überspringt nur diese Prüfrunde; **Kein Vertrag** blendet dieses Muster dauerhaft aus. Unter **Ausgeblendete Vorschläge** kannst du es wiederherstellen. Eine neue Zahlung desselben Musters hebt die Ablehnung nicht auf; geänderte Beträge oder Rhythmen können neue Vorschläge ergeben.
-
-Wischen und Vor-/Zurück-Buttons wechseln ausschließlich die Karte. Ungespeicherte Änderungen werden erst nach deiner Entscheidung verworfen. Eingabefelder lösen kein Wischen aus. Geht nach dem Speichern die Antwort verloren, kannst du sicher erneut bestätigen; derselbe Vorschlag erzeugt keinen zweiten Vertrag.
-
-## Navigation und kurze Hilfen
-
-Am Desktop stehen Verwaltungslinks dauerhaft links. Mobil öffnet **Mehr** eine eigene Seite für Konten, Importe, Bankverbindungen und Einstellungen. Erklärungen sind über die mit **Hilfe** beschrifteten Fragezeichen per Klick oder Tastatur erreichbar. Wichtige Kennzeichnungen, Fehler und Löschfolgen bleiben direkt sichtbar.
+CSV is independent of FinTS. Real banking still requires your own registration, an officially confirmed endpoint and separately approved supervised testing. Synthetic tests do not establish live compatibility. See [banking.md](banking.md) and [fints-registration.md](fints-registration.md).

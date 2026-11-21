@@ -123,7 +123,9 @@ export const appearanceThemes = [
 ] as const satisfies readonly AppearanceTheme[];
 
 /** Known device-local theme identity, never an arbitrary CSS or extension input. */
-export type AppearanceThemeId = (typeof appearanceThemes)[number]['id'];
+export type AppearanceThemeId = (typeof appearanceThemes)[number]['id'] | 'custom';
+/** A custom family contains validated paired tones, never arbitrary CSS or real account data. */
+export type CustomAppearance = { light: ThemeTone; dark: ThemeTone };
 
 /** Remember which dark Ayu tone and panel treatment a device last selected. */
 export type AyuPreference = { tone: 'dark' | 'mirage'; bordered: boolean };
@@ -169,13 +171,19 @@ export function resolveAyuPreference(value: unknown): AyuPreference {
 }
 
 /** Resolve the tile preview to exactly the same bundled tones used by the application. */
-export function choiceTone(choice: AppearanceChoice, mode: 'light' | 'dark'): ThemeTone {
+export function choiceTone(
+  choice: AppearanceChoice,
+  mode: 'light' | 'dark',
+  custom?: CustomAppearance | null,
+): ThemeTone {
   if (choice.family === 'ayu' && choice.mode === 'dark' && choice.ayu?.tone === 'mirage') return ayuMirage;
-  return resolveAppearanceTheme(choice.family)[choice.mode ?? mode];
+  return resolveAppearanceTheme(choice.family, custom)[choice.mode ?? mode];
 }
 
 /** Invalid or missing stored preferences fall back to the default family. */
-export function resolveAppearanceTheme(value: unknown) {
+export function resolveAppearanceTheme(value: unknown, custom?: unknown) {
+  const pair = value === 'custom' ? resolveCustomAppearance(custom) : null;
+  if (pair) return { id: 'custom' as const, name: 'Eigene Farben', ...pair };
   return (
     appearanceThemes.find(/** Accept only a bundled family. */ (theme) => theme.id === value) ?? appearanceThemes[0]
   );
@@ -186,7 +194,7 @@ export function appearanceVariables(theme: AppearanceTheme, mode: 'light' | 'dar
   const [canvas, surface, ink, muted, accent, onAccent] = theme[mode];
   const contrast = theme.id === 'high-contrast';
   const line = contrast ? (mode === 'dark' ? '#ffffff' : '#000000') : `color-mix(in srgb, ${ink} 14%, ${surface})`;
-  const soft = `color-mix(in srgb, ${accent} 7%, ${surface})`;
+  const soft = `color-mix(in srgb, ${accent} 3%, ${surface})`;
   return {
     '--canvas': canvas,
     '--surface': surface,
@@ -194,7 +202,8 @@ export function appearanceVariables(theme: AppearanceTheme, mode: 'light' | 'dar
     '--ink': ink,
     '--muted': muted,
     '--line': line,
-    '--control-border': contrast ? line : `color-mix(in srgb, ${ink} 48%, ${surface})`,
+    '--control-border': muted,
+    '--focus': accent,
     '--green': accent,
     '--on-accent': onAccent,
     '--positive': mode === 'dark' ? '#65d9ae' : '#137453',
@@ -215,11 +224,11 @@ export function appearanceVariables(theme: AppearanceTheme, mode: 'light' | 'dar
     '--ui-text-highlighted': ink,
     '--ui-border': line,
     '--chart-1': accent,
-    '--chart-2': '#10b7a2',
-    '--chart-3': '#e4a652',
-    '--chart-4': '#e4829b',
-    '--chart-5': '#6a9bdb',
-    '--chart-6': '#9b91ad',
+    '--chart-2': mode === 'dark' ? '#62d9c5' : '#08786c',
+    '--chart-3': mode === 'dark' ? '#f0be70' : '#956018',
+    '--chart-4': mode === 'dark' ? '#f7a5bb' : '#aa4163',
+    '--chart-5': mode === 'dark' ? '#9cc5ff' : '#3b68a3',
+    '--chart-6': mode === 'dark' ? '#c2b0dc' : '#746087',
   };
 }
 
@@ -249,5 +258,137 @@ export function appearanceBootstrap() {
   const ids = JSON.stringify(
     appearanceThemes.map(/** Stored values cannot introduce new styles. */ (theme) => theme.id),
   );
-  return `(()=>{let id='default',tone='dark',border='visible';try{const value=localStorage.getItem('${appearanceStorageKey}');if(${ids}.includes(value))id=value;const ayu=JSON.parse(localStorage.getItem('${ayuStorageKey}')||'null');if(ayu&&typeof ayu==='object'){if(ayu.tone==='mirage')tone='mirage';if(ayu.bordered===false)border='none';}}catch{}const d=document.documentElement.dataset;d.theme=id;d.ayuTone=tone;d.ayuBorder=border;})();`;
+  return `(()=>{let id='default',tone='dark',border='visible',selected=null;try{selected=localStorage.getItem('${appearanceStorageKey}');if(${ids}.includes(selected))id=selected;const ayu=JSON.parse(localStorage.getItem('${ayuStorageKey}')||'null');if(ayu&&typeof ayu==='object'){if(ayu.tone==='mirage')tone='mirage';if(ayu.bordered===false)border='none';}}catch{}try{const variables=${appearanceVariables.toString()};const validate=${resolveCustomAppearance.toString()};const styles=${customAppearanceStyleSheet.toString()};const saved=JSON.parse(localStorage.getItem('haushaltsbuch-workspace-v1')||'null');const pair=saved&&saved.version===1?validate(saved.custom,variables):null;if(pair){const style=document.createElement('style');style.id='haushaltsbuch-custom-palette';style.textContent=styles(pair,validate,variables);document.head.appendChild(style);if(selected==='custom')id='custom';}}catch{}const d=document.documentElement.dataset;d.theme=id;d.ayuTone=tone;d.ayuBorder=border;})();`;
+}
+
+/** Validate paired opaque sRGB tones against actual semantic backgrounds, text, controls and chart marks. */
+export function resolveCustomAppearance(
+  value: unknown,
+  variables: typeof appearanceVariables = appearanceVariables,
+): CustomAppearance | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  if (Object.keys(record).length !== 2 || !Object.hasOwn(record, 'light') || !Object.hasOwn(record, 'dark'))
+    return null;
+  const pair: Partial<CustomAppearance> = {};
+  for (const mode of ['light', 'dark'] as const) {
+    const tone = record[mode];
+    if (
+      !Array.isArray(tone) ||
+      tone.length !== 6 ||
+      !tone.every(
+        /** Only full opaque hex colors may become CSS. */ (color) =>
+          typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color),
+      )
+    )
+      return null;
+    pair[mode] = tone.map(
+      /** Canonical serialization excludes every alternate CSS syntax. */ (color: string) => color.toLowerCase(),
+    ) as unknown as ThemeTone;
+  }
+  /** Resolve the exact opaque color-mix expressions emitted by the shared semantic palette. */
+  function rgb(color: string): number[] | null {
+    if (/^#[0-9a-f]{6}$/i.test(color))
+      return [1, 3, 5].map(
+        /** Parse display channels, never financial values. */ (offset) =>
+          parseInt(color.slice(offset, offset + 2), 16),
+      );
+    const mix = /^color-mix\(in srgb, (#[0-9a-f]{6}) (\d+)%, (#[0-9a-f]{6})\)$/i.exec(color);
+    if (!mix) return null;
+    const first = rgb(mix[1]!)!,
+      second = rgb(mix[3]!)!,
+      weight = Number(mix[2]) / 100;
+    return first.map(
+      /** Preserve fractional compositor channels until luminance calculation. */ (channel, index) =>
+        channel * weight + second[index]! * (1 - weight),
+    );
+  }
+  /** Compute WCAG luminance from resolved opaque sRGB channels. */
+  function luminance(color: string): number | null {
+    const channels = rgb(color);
+    if (!channels) return null;
+    const linear = channels.map(
+      /** Linearize display colors before measuring readability. */ (channel) => {
+        const value = channel / 255;
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      },
+    );
+    return linear[0]! * 0.2126 + linear[1]! * 0.7152 + linear[2]! * 0.0722;
+  }
+  /** Reject unresolvable colors instead of treating an unsupported CSS expression as readable. */
+  function ratio(first: string, second: string) {
+    const a = luminance(first),
+      b = luminance(second);
+    return a === null || b === null ? 0 : (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  }
+  const normalized = pair as CustomAppearance;
+  for (const mode of ['light', 'dark'] as const) {
+    const palette = variables({ id: 'custom', name: 'Custom', ...normalized }, mode);
+    for (const background of ['--canvas', '--surface', '--soft']) {
+      for (const foreground of ['--ink', '--muted', '--green', '--positive', '--negative'])
+        if (ratio(palette[foreground]!, palette[background]!) < 4.5) return null;
+      for (const foreground of [
+        '--control-border',
+        '--focus',
+        '--chart-1',
+        '--chart-2',
+        '--chart-3',
+        '--chart-4',
+        '--chart-5',
+        '--chart-6',
+      ])
+        if (ratio(palette[foreground]!, palette[background]!) < 3) return null;
+    }
+    if (
+      ratio(palette['--on-accent']!, palette['--green']!) < 4.5 ||
+      ratio(palette['--on-balance']!, palette['--balance']!) < 4.5 ||
+      ratio(palette['--balance-muted']!, palette['--balance']!) < 4.5
+    )
+      return null;
+  }
+  return normalized;
+}
+
+/** Emit only validated semantic property names and paired colors; stored CSS syntax is never interpolated. */
+export function customAppearanceStyleSheet(
+  value: unknown,
+  validate: typeof resolveCustomAppearance = resolveCustomAppearance,
+  variables: typeof appearanceVariables = appearanceVariables,
+) {
+  const pair = validate(value, variables);
+  if (!pair) return '';
+  return (['light', 'dark'] as const)
+    .map(
+      /** Both brightness modes are available before and after a circle toggle. */ (mode) =>
+        `html${mode === 'dark' ? '.dark' : ''}[data-theme="custom"]{${Object.entries(
+          variables({ id: 'custom', name: 'Custom', ...pair }, mode),
+        )
+          .map(
+            /** Serialize trusted token names and validated derived colors only. */ ([key, color]) => `${key}:${color}`,
+          )
+          .join(';')}}`,
+    )
+    .join('\n');
+}
+
+/** Update the one owned style element without replacing any working palette on invalid input. */
+export function applyCustomAppearance(doc: Document, value: unknown) {
+  const css = customAppearanceStyleSheet(value),
+    current = doc.getElementById('haushaltsbuch-custom-palette');
+  if (!css) {
+    if (value === null) current?.remove();
+    return;
+  }
+  const style = current ?? doc.createElement('style');
+  style.id = 'haushaltsbuch-custom-palette';
+  style.textContent = css;
+  if (!current) doc.head.appendChild(style);
+}
+
+/** Provide fresh contrast-safe editor defaults without applying them or reading real financial data. */
+export function defaultCustomAppearance(): CustomAppearance {
+  return {
+    light: ['#f6f6fc', '#ffffff', '#1c1d2e', '#545969', '#4935a5', '#ffffff'],
+    dark: ['#10131a', '#151822', '#f4f6ff', '#bdc1d1', '#c2b0ff', '#151329'],
+  };
 }

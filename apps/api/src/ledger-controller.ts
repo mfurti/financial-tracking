@@ -29,6 +29,14 @@ export class LedgerController {
   @Get('analytics/overview') overview(@Query() query: unknown) {
     return this.analytics.overview(c.analyticsOverviewQuerySchema.parse(query));
   }
+  /** Read reconcilable merchant buckets with the same effective account/category/date scope as their details. */
+  @Get('analytics/merchants') merchants(@Query() query: unknown) {
+    return this.analytics.merchants(c.merchantAnalyticsQuerySchema.parse(query));
+  }
+  /** Read exact selected-month actuals, honest completeness metadata and reconcilable direction queries. */
+  @Get('analytics/review') review(@Query() query: unknown) {
+    return this.analytics.review(c.monthlyReviewQuerySchema.parse(query));
+  }
   /** List bank connections. */
   @Get('bank-connections') connections() {
     return this.ledger.connections();
@@ -109,7 +117,7 @@ export class LedgerController {
   /** Produce an exact monthly report. */
   @Get('analytics/monthly') @ApiOkResponse({ type: Monthly }) monthly(@Query() query: unknown) {
     const input = c.monthlyQuerySchema.parse(query);
-    return this.ledger.monthly(input.month, input.accountId);
+    return this.ledger.monthly(input.month, input.accountId, input.groupId);
   }
   /** Link transfer sides. */
   @Post('transfers') transfer(@Body() body: unknown) {

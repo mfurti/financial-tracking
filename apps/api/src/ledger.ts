@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { resolveAccountScope } from './account-scope.js';
 import { z } from 'zod';
 import {
   accountInputSchema,
@@ -20,6 +21,7 @@ import type { Db } from './db.js';
 import type { Prisma, Transaction } from './generated/prisma/client.js';
 import { AppError } from './errors.js';
 import { classificationWhere } from './analytics.js';
+import { merchantWhere } from './merchant-identity.js';
 
 /** Serialize dates and BIGINT without exposing persistence metadata. */
 export function publicTransaction(
@@ -65,7 +67,7 @@ export class LedgerService {
     const records = await this.db.account.findMany({
       where: id ? { id } : {},
       orderBy: { name: 'asc' },
-      include: { balances: { orderBy: { observedAt: 'desc' }, distinct: ['balanceType'] } },
+      include: { balances: { orderBy: [{ observedAt: 'desc' }, { id: 'desc' }], distinct: ['balanceType'] } },
     });
     return records.map(
       /** Convert database timestamps and amounts at the boundary. */ (row) =>
@@ -151,8 +153,8 @@ export class LedgerService {
   /** Search transactions with a stable date/id cursor and bounded pages. */
   async transactions(query: z.infer<typeof transactionQuerySchema>) {
     const where: Prisma.TransactionWhereInput = {
-      AND: classificationWhere(query.classification),
-      accountId: query.unassigned === 'true' ? null : query.accountId,
+      AND: [classificationWhere(query.classification), await merchantWhere(this.db, query.merchantKey)],
+      accountId: await resolveAccountScope(this.db, query),
       categoryId: query.uncategorized === 'true' ? null : query.categoryId,
       status: query.status,
       isTransfer: query.excludeTransfers === 'true' ? false : undefined,
@@ -314,14 +316,19 @@ export class LedgerService {
     return { ok: true };
   }
   /** Aggregate exact cents using booking dates, excluding pending and own transfers. */
-  async monthly(month: string, accountId?: string) {
+  async monthly(month: string, accountId?: string, groupId?: string) {
     const start = new Date(`${month}-01T00:00:00Z`);
     const end = new Date(start);
     end.setUTCMonth(end.getUTCMonth() + 1);
     const previous = new Date(start);
     previous.setUTCMonth(previous.getUTCMonth() - 1);
     const rows = await this.db.transaction.findMany({
-      where: { accountId, bookingDate: { gte: previous, lt: end }, status: 'BOOKED', isTransfer: false },
+      where: {
+        accountId: await resolveAccountScope(this.db, { accountId, groupId }),
+        bookingDate: { gte: previous, lt: end },
+        status: 'BOOKED',
+        isTransfer: false,
+      },
       include: { category: true },
     });
     let income = 0n,

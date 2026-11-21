@@ -3,16 +3,34 @@ import { z } from 'zod';
 import * as c from '@financial-tracking/contracts';
 import { contractKinds } from '../../utils/contract-presentation';
 const api = useApi();
+const route = useRoute();
+const router = useRouter();
+const accountId = ref(String(route.query.accountId ?? '')),
+  groupId = ref(String(route.query.groupId ?? ''));
+const accounts = ref<c.Account[]>([]);
 const summary = ref<z.infer<typeof c.contractSummarySchema> | null>(null);
 const grouping = ref<'category' | 'kind'>('category');
 const selected = ref<string | null>(null);
 const loading = ref(true);
 const error = ref('');
 let disposed = false;
+let generation = 0;
 let timer: ReturnType<typeof setInterval> | undefined;
 const groups = computed(
   /** Both groupings sum exactly the same rounded contract costs. */ () =>
-    summary.value ? (grouping.value === 'category' ? summary.value.categories : summary.value.kinds) : [],
+    summary.value
+      ? (grouping.value === 'category' ? summary.value.categories : summary.value.kinds).map(
+          /** Translate only generated kind/sentinel names, preserving real category names. */ (group) => ({
+            ...group,
+            name:
+              grouping.value === 'kind'
+                ? (contractKinds[group.key as keyof typeof contractKinds]?.label ?? group.name)
+                : group.key === 'uncategorized'
+                  ? tr('Ohne Kategorie')
+                  : group.name,
+          }),
+        )
+      : [],
 );
 const chart = computed(
   /** Reuse accessible Nuxt chart geometry without treating forecasts as actual expenditure. */ () =>
@@ -36,25 +54,44 @@ const contracts = computed(
 );
 /** Read a fresh server-day snapshot without retaining stale success after an error. */
 async function load() {
+  const request = ++generation;
   loading.value = true;
+  summary.value = null;
   error.value = '';
   try {
-    const result = await api.request('/contracts/summary', c.contractSummarySchema);
-    if (!disposed) summary.value = result;
+    const query = c.accountScopeQuerySchema.parse({
+      accountId: accountId.value || undefined,
+      groupId: groupId.value || undefined,
+    });
+    const result = await api.request('/contracts/summary', c.contractSummarySchema, { query });
+    if (!disposed && request === generation) summary.value = result;
   } catch (cause) {
-    if (!disposed) {
+    if (!disposed && request === generation) {
       summary.value = null;
       error.value = userErrorMessage(cause);
     }
   } finally {
-    if (!disposed) loading.value = false;
+    if (!disposed && request === generation) loading.value = false;
+  }
+}
+/** Publish an explicitly selected account/group scope before reloading its planned costs. */
+async function applyScope() {
+  try {
+    const query = c.accountScopeQuerySchema.parse({
+      accountId: accountId.value || undefined,
+      groupId: groupId.value || undefined,
+    });
+    await router.replace({ query });
+    await load();
+  } catch (caught) {
+    error.value = userErrorMessage(caught);
   }
 }
 /** Calculate a display percentage from exact cents; never feed it back into money. */
 function share(cents: string) {
   const total = BigInt(summary.value?.monthlyCents ?? '0');
   return total
-    ? (Number((BigInt(cents) * 10000n) / total) / 100).toLocaleString('de-DE', { maximumFractionDigits: 2 })
+    ? financialPercentage(Number((BigInt(cents) * 10000n) / total) / 100, { maximumFractionDigits: 2 })
     : '0';
 }
 watch(
@@ -65,6 +102,11 @@ watch(
 );
 onMounted(
   /** Keep the active-day cost snapshot fresh without another contract write. */ async () => {
+    try {
+      accounts.value = await api.request('/accounts', z.array(c.accountSchema));
+    } catch (caught) {
+      error.value = userErrorMessage(caught);
+    }
     await load();
     timer = setInterval(
       /** Hidden pages do not need automatic reads. */ () => {
@@ -77,6 +119,7 @@ onMounted(
 onBeforeUnmount(
   /** Release owned timer and ignore late reads. */ () => {
     disposed = true;
+    generation++;
     if (timer) clearInterval(timer);
   },
 );
@@ -84,48 +127,64 @@ onBeforeUnmount(
 
 <template>
   <div class="page-heading">
-    <h1>Vertragsanalyse</h1>
-    <UButton to="/contracts" variant="soft">Alle Verträge</UButton>
+    <h1>{{ tr('Vertragsanalyse') }}</h1>
+    <UButton to="/contracts" variant="soft">{{ tr('Alle Verträge') }}</UButton>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
-  <UButton v-if="error" @click="load">Erneut laden</UButton>
-  <p v-if="loading" role="status">Fixkosten werden geladen …</p>
+  <div class="contract-account-scope">
+    <AccountScopeSelect
+      v-model:account-id="accountId"
+      v-model:group-id="groupId"
+      :accounts="accounts"
+      :allow-unassigned="false"
+      :label="tr('Vertragskonto')"
+      @change="applyScope"
+    />
+  </div>
+  <UButton v-if="error" @click="load">{{ tr('Erneut laden') }}</UButton>
+  <p v-if="loading" role="status">{{ tr('Fixkosten werden geladen …') }}</p>
   <template v-if="summary && !loading">
     <SectionPanel
-      title="Monatliche Fixkosten"
+      :title="tr('Monatliche Fixkosten')"
       icon="contracts"
-      help="Planwert der heute gültigen bestätigten Verträge. Jahres- und Quartalszahlungen werden auf Monate verteilt und je Vertrag auf Cent gerundet. Zukünftige Verträge und Preisänderungen zählen noch nicht. Tatsächliche Ausgaben bleiben getrennt."
+      :help="
+        tr(
+          'Planwert der heute gültigen bestätigten Verträge. Jahres- und Quartalszahlungen werden auf Monate verteilt und je Vertrag auf Cent gerundet. Zukünftige Verträge und Preisänderungen zählen noch nicht. Tatsächliche Ausgaben bleiben getrennt.',
+        )
+      "
       class="mb-6"
     >
-      <strong class="fixed-cost-value amount-expense">{{ money(summary.monthlyCents) }}</strong
+      <strong data-financial class="fixed-cost-value amount-expense"
+        ><template v-if="!amountsMasked()">{{ money(summary.monthlyCents) }}</template
+        ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
       ><span class="muted"
-        >{{ summary.count }} {{ summary.count === 1 ? 'Vertrag' : 'Verträge' }} · Planwert ·
+        >{{ summary.count }} {{ summary.count === 1 ? tr('Vertrag') : tr('Verträge') }} {{ tr('· Planwert ·') }}
         {{ calendarDate(summary.asOf) }}</span
       >
     </SectionPanel>
     <URadioGroup
       v-model="grouping"
-      legend="Gruppieren nach"
+      :legend="tr('Gruppieren nach')"
       orientation="horizontal"
       variant="card"
       class="mb-6"
       :items="[
-        { label: 'Kategorien', value: 'category' },
-        { label: 'Vertragsarten', value: 'kind' },
+        { label: tr('Kategorien'), value: 'category' },
+        { label: tr('Vertragsarten'), value: 'kind' },
       ]"
     />
-    <div class="dashboard-grid">
-      <SectionPanel title="Aufteilung" icon="categories">
+    <div class="contract-analysis-grid">
+      <SectionPanel :title="tr('Aufteilung')" icon="categories">
         <ExpenseChart
           v-if="BigInt(summary.monthlyCents) > 0n"
           :groups="chart"
           :total-cents="summary.monthlyCents"
-          label="Monatliche Fixkosten nach Gruppe"
-          center-label="Planwert / Monat"
-          description="Exakte monatliche Vertragskosten und Gruppen stehen in der Liste."
+          :label="tr('Monatliche Fixkosten nach Gruppe')"
+          :center-label="tr('Planwert / Monat')"
+          :description="tr('Exakte monatliche Vertragskosten und Gruppen stehen in der Liste.')"
           @select="selected = $event"
         />
-        <p v-if="!groups.length" class="empty-copy">Noch keine laufenden Verträge.</p>
+        <p v-if="!groups.length" class="empty-copy">{{ tr('Noch keine laufenden Verträge.') }}</p>
         <UButton
           v-for="(group, index) in groups"
           :key="group.key"
@@ -143,23 +202,26 @@ onBeforeUnmount(
                 aria-hidden="true"
               />{{ group.name }}</strong
             ><small
-              >{{ group.count }} {{ group.count === 1 ? 'Vertrag' : 'Verträge' }} ·
+              >{{ group.count }} {{ group.count === 1 ? tr('Vertrag') : tr('Verträge') }} ·
               {{ share(group.monthlyCents) }} %</small
             ></span
-          ><strong class="amount-expense">{{ money(group.monthlyCents) }}</strong>
+          ><strong data-financial class="amount-expense"
+            ><template v-if="!amountsMasked()">{{ money(group.monthlyCents) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
+          >
         </UButton>
       </SectionPanel>
       <SectionPanel
         :title="
           selected
             ? (groups.find(/** Resolve the exact selected group label. */ (group) => group.key === selected)?.name ??
-              'Verträge')
-            : 'Laufende Verträge'
+              tr('Verträge'))
+            : tr('Laufende Verträge')
         "
         icon="contracts"
       >
         <template v-if="selected" #actions
-          ><UButton variant="ghost" @click="selected = null">Alle zeigen</UButton></template
+          ><UButton variant="ghost" @click="selected = null">{{ tr('Alle zeigen') }}</UButton></template
         >
         <UButton
           v-for="contract in contracts"
@@ -174,15 +236,40 @@ onBeforeUnmount(
               ><FinanceIcon :name="contractKinds[contract.kind].icon" /></span
             ><span
               ><strong>{{ contract.name }}</strong
-              ><small>{{ money(contract.amountCents) }} · alle {{ contract.intervalMonths }} Monate</small></span
+              ><small
+                >{{ money(contract.amountCents) }} {{ tr('· alle') }} {{ contract.intervalMonths }}
+                {{ tr('Monate') }}</small
+              ></span
             ></span
           ><span
             ><strong class="amount-expense">{{ money(contract.monthlyCents) }}</strong
-            ><small>/ Monat</small></span
+            ><small>{{ tr('/ Monat') }}</small></span
           >
         </UButton>
-        <UButton v-if="!summary.count" to="/contracts" variant="soft">Vertrag anlegen</UButton>
+        <UButton v-if="!summary.count" to="/contracts" variant="soft">{{ tr('Vertrag anlegen') }}</UButton>
       </SectionPanel>
     </div>
   </template>
 </template>
+
+<style scoped>
+.contract-account-scope {
+  max-width: 320px;
+  margin-bottom: 20px;
+}
+.contract-analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 24px;
+}
+.contract-analysis-grid > * {
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .contract-analysis-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+</style>
