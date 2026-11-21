@@ -1,5 +1,13 @@
 # Concept comparison and local verification
 
+## T001 — Checkout and adoption baseline
+
+Issue [#17](https://github.com/mfurti/financial-tracking/issues/17) uses its linked feature branch in a separate checkout created from `main` at `c06e7cc`. Planning commit `80c4745` adds only feature documents. The prior deployment checkout is the source of the reviewed local corrections. Its deployment commits and pending acceptance edit remain in that checkout.
+
+The adoption allowlist covers the modified and new files under `apps/web/app/` and `tests/e2e/` only. Their base files match the corresponding application and test files on `main`. Paths and baseline hashes are recorded locally so subsequent scoped commits can be compared with the original correction pass. The earlier 21 browser passes and synthetic comparison are baseline evidence; candidate verification remains a separate step.
+
+## Baseline visual comparison
+
 The review compares the final integrated HTML with a locally built application and disposable PostgreSQL data. Width × height: 1440 × 1000, 768 × 1024 and 390 × 844. Use the local `.local/concept-parity/index.html` viewer for the paired captures. The comparison uses dark appearance as in the owner’s marks. Application and concept fixture values differ.
 
 The final run passed 15 Chromium cases across the three widths and six desktop/mobile regression cases. These include navigation fit, stationary tile highlight, the theme reveal and reduced-motion fallback, calendar scope, confirmed wealth records, and keyboard dialog dismissal with focus return. The local production build, Vue/root type checks and lint of the affected source passed. No public production data was captured.
