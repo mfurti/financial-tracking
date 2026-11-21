@@ -51,3 +51,7 @@ The direct review confirmed some visible differences. Accounts keeps one observe
 Three additional browser cases verified populated, empty and cleared account groups from the dashboard through reload and scoped reading. The candidate therefore had 37 passing browser cases across the targeted batches.
 
 The full local Vitest run passed 224 of 225 cases and identified two missing message keys in the analytics dialog. Both locale dictionaries now include them. The focused post-fix run passed all 38 localization, appearance and preference cases. No full-suite pass is inferred from that rerun. The corrected candidate passed the local build, root and Vue types, lint, and format checks. Hosted CI verifies the published candidate independently.
+
+## T018 — Feature handover
+
+[Pull request #18](https://github.com/mfurti/financial-tracking/pull/18) is the single review candidate for [issue #17](https://github.com/mfurti/financial-tracking/issues/17). It targets `main` and includes only the scoped concept corrections, their tests, and this feature's planning and validation records. The issue records each verified and pushed task commit. The dark and light comparison viewers remain local. Owner acceptance, merge, and production rollout are separate decisions.
