@@ -109,7 +109,7 @@ async function load() {
       api.request('/transactions', transactionPageSchema, {
         query: {
           status: 'BOOKED',
-          limit: 10,
+          limit: 5,
           ...monthRangeQuery(selectedMonth),
         },
       }),
@@ -161,13 +161,18 @@ onBeforeUnmount(
     </div>
     <div class="toolbar finance-month-controls">
       <UButton variant="ghost" color="neutral" :aria-label="tr('Vorheriger Monat')" @click="shiftMonth(-1)">‹</UButton>
-      <MonthPicker v-model="month" @change="load" />
+      <MonthPicker v-model="month" compact @change="load" />
       <UButton variant="ghost" color="neutral" :aria-label="tr('Nächster Monat')" @click="shiftMonth(1)">›</UButton>
+    </div>
+  </div>
+  <details class="finance-overview-actions">
+    <summary>{{ tr('Weitere Aktionen') }}</summary>
+    <div class="toolbar">
       <UButton variant="ghost" @click="currentMonth">{{ tr('Dieser Monat') }}</UButton>
       <UButton variant="ghost" :loading="busy" @click="load">{{ tr('Aktualisieren') }}</UButton
       ><UButton to="/imports/csv">{{ tr('CSV hochladen') }}</UButton>
     </div>
-  </div>
+  </details>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <UButton v-if="error && !busy" variant="soft" class="mb-5" @click="load">{{ tr('Erneut versuchen') }}</UButton>
   <UAlert
@@ -221,7 +226,7 @@ onBeforeUnmount(
       >
       <FinanceTile :label="tr('Ausgaben')" variant="stat"
         ><template #value
-          ><span data-financial
+          ><span class="negative" data-financial
             ><template v-if="!amountsMasked()">{{ money(report.expenseCents) }}</template
             ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></span
           ></template
@@ -259,11 +264,7 @@ onBeforeUnmount(
             ><span class="transaction-icon"><FinanceIcon name="transactions" /></span>
             <div>
               <strong>{{ row.counterpartyName?.trim() || row.description }}</strong>
-              <small v-if="row.counterpartyName?.trim() && row.description.trim() !== row.counterpartyName.trim()">{{
-                row.description
-              }}</small>
-              <small
-                >{{ calendarDate(row.bookingDate) }} ·
+              <small>
                 {{
                   row.isTransfer
                     ? tr('Eigene Umbuchung')

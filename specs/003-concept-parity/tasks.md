@@ -20,7 +20,7 @@
 **Independent check**: On the three reference widths, switch month, confirm at most five recent bookings, open and close both context dialogs, navigate directly to Wealth, and switch themes with and without reduced motion.
 
 - [x] T004 [P] [US1] Reconcile the header account-management dialog, notification placement and direct Wealth navigation in apps/web/app/layouts/default.vue (comments 5, 6, 11, 27, 30). Verify focus return, active tab, discovery of all four account-management destinations and fit of all navigation items at tablet and phone widths.
-- [ ] T005 [P] [US1] Reconcile the pointer- or keyboard-origin theme reveal in apps/web/app/components/ThemeToggle.vue (comment 4 and FR-07). Verify the reference timing, immediate reduced-motion fallback and preference persistence across immediate navigation.
+- [x] T005 [P] [US1] Reconcile the pointer- or keyboard-origin theme reveal in apps/web/app/components/ThemeToggle.vue (comment 4 and FR-07). Verify the reference timing, immediate reduced-motion fallback and preference persistence across immediate navigation.
 - [ ] T006 [US1] Reconcile compact Berlin month controls, the separate secondary actions, red expense value and at most five recent bookings in apps/web/app/pages/index.vue (comments 1–3, 19–20). Compare compact row hierarchy with the prototype, retain access to the full list, and preserve exact cents and masked amounts.
 - [ ] T007 [US1] Reconcile account-group dialog and scoped refresh/link behavior in apps/web/app/pages/index.vue (comment 28). Verify All Accounts, a populated group and an empty group through selection and reload, link scope and Escape/focus return; disclose any intentionally workspace-wide data.
 
