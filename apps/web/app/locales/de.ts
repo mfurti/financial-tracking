@@ -1554,4 +1554,6 @@ export const de = {
   '{start}–{end} von {total}': '{start}–{end} von {total}',
   'Einträge pro Seite': 'Einträge pro Seite',
   'Keine Buchungen für diese Auswahl.': 'Keine Buchungen für diese Auswahl.',
+  'Einzelne Konten': 'Einzelne Konten',
+  'Konto {0}': 'Konto {0}',
 } as const;

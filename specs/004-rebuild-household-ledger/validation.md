@@ -74,3 +74,8 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 
 - The transaction list uses Querry Kit for resource paging, table ordering and stale-response handling. Date/account/category bookmarks, stable details links and the existing edit actions keep their validated domain behavior.
 - Nuxt typecheck, lint, production build and the return-target test passed. All six browser cases passed on desktop and mobile, including production-shaped pagination, a malformed-response retry, exact amount ordering, out-of-range page recovery, focus restoration, and existing classification flows.
+
+## T011: Scoped financial overview
+
+- The scope control supports all accounts, a saved group, or one account. The visible report and observed balances use that scope. Income and expense cards open the corresponding booked, transfer-excluding transaction list for the same month.
+- Nuxt typecheck, lint and production build passed. All 16 Chromium overview, group, and locale/privacy cases passed at 390 px and 1440 px, including the account-scoped keyboard drill-down.

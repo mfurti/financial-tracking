@@ -1534,4 +1534,6 @@ export const en: Record<keyof typeof de, string> = {
   '{start}–{end} von {total}': '{start}–{end} of {total}',
   'Einträge pro Seite': 'Items per page',
   'Keine Buchungen für diese Auswahl.': 'No transactions match these filters.',
+  'Einzelne Konten': 'Individual accounts',
+  'Konto {0}': 'Account {0}',
 };
