@@ -70,7 +70,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
     },
   );
   await page.route(
-    '**/api/v1/transactions?**',
+    '**/api/v1/transactions/table?**',
     /** Keep real response data but deliver it after the user enters a detail. */ async (route) => {
       const response = await route.fetch();
       refreshStarted();
@@ -87,7 +87,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
     await expect(page.getByRole('heading', { name: 'Umsatzdetails' })).toBeVisible();
     const delivered = page.waitForResponse(
       /** Observe completion of the old list response without arbitrary delays. */ (response) =>
-        new URL(response.url()).pathname === '/api/v1/transactions',
+        new URL(response.url()).pathname === '/api/v1/transactions/table',
     );
     releaseRefresh();
     await delivered;
@@ -95,7 +95,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
     expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe(href);
   } finally {
     releaseRefresh();
-    await page.unroute('**/api/v1/transactions?**');
+    await page.unroute('**/api/v1/transactions/table?**');
   }
   await expect(page.getByText(`Lebensmittel ${info.project.name}`, { exact: true }).first()).toBeVisible();
   await page.route(
@@ -126,4 +126,42 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
   expect(errors).toEqual([]);
   await page.getByRole('button', { name: 'Abmelden', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
+});
+
+test('transaction table bookmarks recover paging, ordering, errors and focus', /** Exercise the real Querry Kit resource and a recoverable invalid response. */ async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
+  await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
+  const sort = encodeURIComponent(JSON.stringify([{ id: 'amountCents', desc: true }]));
+  const listUrl = `/transactions?from=2026-11-01&to=2026-11-30&perPage=1&sort=${sort}`;
+  await page.route(
+    '**/api/v1/transactions/table?**',
+    /** A mismatched payload is handled by the real shared response decoder. */ (route) =>
+      route.fulfill({ json: { items: [] } }),
+    { times: 1 },
+  );
+  await page.goto(listUrl);
+  await expect(page.getByRole('alert')).toContainText('Serverantwort');
+  await page.getByRole('button', { name: 'Erneut versuchen' }).click();
+  const first = page.getByRole('link', { name: /Gehalt November/ });
+  await expect(first).toBeVisible();
+  const bookings = page.getByRole('region', { name: 'Buchungen', exact: true });
+  await bookings.locator('button[data-slot=next]').click();
+  await expect(page).toHaveURL(/(?:\?|&)page=2(?:&|$)/);
+  const second = bookings.locator('a[id^=booking-]');
+  await expect(second).toHaveCount(1);
+  await expect(first).toHaveCount(0);
+  await second.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Umsatzdetails' })).toBeVisible();
+  await page.getByRole('link', { name: 'Alle Umsätze', exact: true }).click();
+  await expect(page).toHaveURL(/page=2.*#booking-/);
+  await expect(second).toBeFocused();
+  await page.goto(listUrl + '&page=999');
+  await expect(page).not.toHaveURL(/page=999/);
+  await expect(bookings.locator('a[id^=booking-]')).toHaveCount(1);
 });

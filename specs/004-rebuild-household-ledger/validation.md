@@ -69,3 +69,8 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 - The populated restore retained every archived row and exact total after using authenticated monthly and Querry Kit transaction reads. The application denied anonymous reads and invalid-CSRF mutations, and the bank connection response omitted its stored protocol metadata.
 - Both archived APIs, the historical feature baseline and rebuild base `740f210`, compiled and exercised their real legacy contracts against the same schema. Nine compatibility, reconciliation, migration, and authorization tests passed.
 - Eight Chromium Overview and ledger tests passed across 390 px, 1440 px, and the regular desktop/mobile projects.
+
+## T010: Transaction table journeys
+
+- The transaction list uses Querry Kit for resource paging, table ordering and stale-response handling. Date/account/category bookmarks, stable details links and the existing edit actions keep their validated domain behavior.
+- Nuxt typecheck, lint, production build and the return-target test passed. All six browser cases passed on desktop and mobile, including production-shaped pagination, a malformed-response retry, exact amount ordering, out-of-range page recovery, focus restoration, and existing classification flows.

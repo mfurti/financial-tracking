@@ -1525,4 +1525,13 @@ export const en: Record<keyof typeof de, string> = {
   'Keine Verträge in dieser Zahlungsrichtung.': 'No contracts in this payment direction.',
   'Noch keine Verträge.': 'No contracts yet.',
   'Keine anstehenden Vertragszahlungen.': 'No upcoming contract payments.',
+  Sortieren: 'Sort',
+  'Sortierfeld wählen': 'Select sort field',
+  'Sortierung hinzufügen': 'Add sort',
+  'Sortierung zurücksetzen': 'Clear sorting',
+  'Sortierung entfernen': 'Remove sort',
+  'Sortierrichtung wechseln': 'Toggle sort direction',
+  '{start}–{end} von {total}': '{start}–{end} of {total}',
+  'Einträge pro Seite': 'Items per page',
+  'Keine Buchungen für diese Auswahl.': 'No transactions match these filters.',
 };

@@ -1545,4 +1545,13 @@ export const de = {
   'Keine Verträge in dieser Zahlungsrichtung.': 'Keine Verträge in dieser Zahlungsrichtung.',
   'Noch keine Verträge.': 'Noch keine Verträge.',
   'Keine anstehenden Vertragszahlungen.': 'Keine anstehenden Vertragszahlungen.',
+  Sortieren: 'Sortieren',
+  'Sortierfeld wählen': 'Sortierfeld wählen',
+  'Sortierung hinzufügen': 'Sortierung hinzufügen',
+  'Sortierung zurücksetzen': 'Sortierung zurücksetzen',
+  'Sortierung entfernen': 'Sortierung entfernen',
+  'Sortierrichtung wechseln': 'Sortierrichtung wechseln',
+  '{start}–{end} von {total}': '{start}–{end} von {total}',
+  'Einträge pro Seite': 'Einträge pro Seite',
+  'Keine Buchungen für diese Auswahl.': 'Keine Buchungen für diese Auswahl.',
 } as const;
