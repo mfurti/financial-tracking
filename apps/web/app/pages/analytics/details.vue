@@ -154,32 +154,36 @@ onBeforeUnmount(
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" />
   <UButton v-if="error" :disabled="busy" @click="load">{{ tr('Erneut versuchen') }}</UButton>
   <template v-if="report && applied && !busy">
-    <p class="data-context">{{ calendarDate(applied.from) }} – {{ calendarDate(applied.to) }} · {{ scopeLabel }}</p>
-    <div class="toolbar mb-5" role="group" :aria-label="tr('Buchungsrichtung')">
-      <UButton
-        :aria-pressed="applied.direction === 'EXPENSE'"
-        :variant="applied.direction === 'EXPENSE' ? 'soft' : 'ghost'"
-        @click="direction('EXPENSE')"
-        >{{ tr('Ausgaben anzeigen') }}</UButton
+    <div class="analysis-detail-summary">
+      <FinanceTile
+        :label="applied.direction === 'INCOME' ? tr('Gebuchte Einnahmen') : tr('Gebuchte Ausgaben')"
+        variant="stat"
+        :context="tr('Ohne Umbuchungen und Vormerkungen. Erstattungen zählen als Einnahmen.')"
+        ><template #value
+          ><span data-analysis-total data-financial
+            ><template v-if="!amountsMasked()">{{ money(total!) }}</template
+            ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></span
+          ></template
+        ></FinanceTile
       >
-      <UButton
-        :aria-pressed="applied.direction === 'INCOME'"
-        :variant="applied.direction === 'INCOME' ? 'soft' : 'ghost'"
-        @click="direction('INCOME')"
-        >{{ tr('Einnahmen anzeigen') }}</UButton
-      >
+      <div class="panel analysis-scope-panel">
+        <p class="data-context">{{ calendarDate(applied.from) }} – {{ calendarDate(applied.to) }} · {{ scopeLabel }}</p>
+        <div class="toolbar mb-5" role="group" :aria-label="tr('Buchungsrichtung')">
+          <UButton
+            :aria-pressed="applied.direction === 'EXPENSE'"
+            :variant="applied.direction === 'EXPENSE' ? 'soft' : 'ghost'"
+            @click="direction('EXPENSE')"
+            >{{ tr('Ausgaben anzeigen') }}</UButton
+          >
+          <UButton
+            :aria-pressed="applied.direction === 'INCOME'"
+            :variant="applied.direction === 'INCOME' ? 'soft' : 'ghost'"
+            @click="direction('INCOME')"
+            >{{ tr('Einnahmen anzeigen') }}</UButton
+          >
+        </div>
+      </div>
     </div>
-    <FinanceTile
-      :label="applied.direction === 'INCOME' ? tr('Gebuchte Einnahmen') : tr('Gebuchte Ausgaben')"
-      variant="stat"
-      :context="tr('Ohne Umbuchungen und Vormerkungen. Erstattungen zählen als Einnahmen.')"
-      ><template #value
-        ><span data-analysis-total data-financial
-          ><template v-if="!amountsMasked()">{{ money(total!) }}</template
-          ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></span
-        ></template
-      ></FinanceTile
-    >
     <SectionPanel :title="tr('Zugehörige Buchungen')" icon="transactions" class="mt-6" compact>
       <NuxtLink v-for="row in rows" :key="row.id" :to="bookingLink(row.id)" class="transaction-row"
         ><FinanceIcon name="transactions" />
@@ -212,3 +216,24 @@ onBeforeUnmount(
     </p>
   </template>
 </template>
+
+<style scoped>
+.analysis-detail-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 18px;
+  align-items: stretch;
+}
+.analysis-scope-panel .data-context {
+  margin: 0 0 16px;
+}
+.analysis-scope-panel .toolbar {
+  margin-bottom: 0;
+}
+@media (max-width: 700px) {
+  .analysis-detail-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+</style>

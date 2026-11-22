@@ -97,3 +97,8 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 
 - Querry Kit applies payment direction and account/group scope before counting and selecting contracts. Rules and due dates are mapped by the existing recurrence engine. The calendar preview retains the complete source list independently of the visible table page.
 - Root and Nuxt typechecks, scoped lint, and production build passed. Ten contract resource and payment tests passed, plus all four calendar and contract workflow browser cases.
+
+## T016: Analysis, reserve, and recorded wealth
+
+- Analysis now uses focused summary panels. The detail view places its date and account scope alongside the exact total. Wealth navigation exposes dated records, reserve and the separate synthetic portfolio as distinct destinations within the page.
+- Lint, Nuxt types and production build passed. All 18 analytics, reserve, recorded-wealth and demo unit cases and all 18 targeted Chromium cases passed.

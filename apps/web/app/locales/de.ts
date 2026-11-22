@@ -1559,4 +1559,7 @@ export const de = {
   'Keine Konten für diese Auswahl.': 'Keine Konten für diese Auswahl.',
   Anbieter: 'Anbieter',
   Vertragsbeginn: 'Vertragsbeginn',
+  Vermögensbereiche: 'Vermögensbereiche',
+  Aufzeichnungen: 'Aufzeichnungen',
+  'Demo-Depot': 'Demo-Depot',
 } as const;

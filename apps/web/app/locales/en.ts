@@ -1539,4 +1539,7 @@ export const en: Record<keyof typeof de, string> = {
   'Keine Konten für diese Auswahl.': 'No accounts match this selection.',
   Anbieter: 'Provider',
   Vertragsbeginn: 'Contract start date',
+  Vermögensbereiche: 'Wealth sections',
+  Aufzeichnungen: 'Recorded wealth',
+  'Demo-Depot': 'Demo portfolio',
 };

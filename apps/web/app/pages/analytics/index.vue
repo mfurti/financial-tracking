@@ -325,7 +325,7 @@ onBeforeUnmount(
   <p v-if="busy" role="status">{{ tr('Auswertung wird geladen …') }}</p>
   <template v-if="report && !busy">
     <div class="finance-analysis-hub">
-      <SectionPanel :title="tr('Monatsrückblick')" class="finance-analysis-top finance-month-review" :bare="true">
+      <SectionPanel :title="tr('Monatsrückblick')" class="finance-analysis-top finance-month-review" compact>
         <FinanceTile
           v-if="latestMonth"
           :label="monthName(latestMonth.month)"
@@ -348,7 +348,7 @@ onBeforeUnmount(
           ></FinanceTile
         >
       </SectionPanel>
-      <SectionPanel :title="tr('Einnahmen und Ausgaben')" class="finance-analysis-top" :bare="true">
+      <SectionPanel :title="tr('Einnahmen und Ausgaben')" class="finance-analysis-top" compact>
         <div class="analytics-metrics finance-analysis-insights">
           <FinanceTile
             :label="tr('Durchschnittliche Ausgaben')"
@@ -410,7 +410,7 @@ onBeforeUnmount(
         </FinanceTile>
       </div>
     </SectionPanel>
-    <SectionPanel :title="tr('Deine Analysen')" bare>
+    <SectionPanel :title="tr('Deine Analysen')" compact>
       <template #actions><AnalysisModulePicker :available="availableModules" /></template>
       <AnalysisModuleGrid
         :report="report"
