@@ -31,6 +31,8 @@ import { WealthService } from './wealth.js';
 import { WorkspaceService } from './workspace.js';
 import { AccountGroupsService } from './account-groups.js';
 import { NotificationsService } from './notifications.js';
+import { BudgetsController } from './budgets-controller.js';
+import { BudgetsService } from './budgets.js';
 
 /** Create an application with injectable persistence for integration tests. */
 export async function createApp(
@@ -44,6 +46,7 @@ export async function createApp(
       LedgerController,
       AssignmentController,
       CategoryRulesController,
+      BudgetsController,
       ContractsController,
       WorkspaceController,
     ],
@@ -56,6 +59,7 @@ export async function createApp(
       SyncService,
       AssignmentService,
       CategoryRulesService,
+      BudgetsService,
       ContractsService,
       ReservesService,
       WealthService,

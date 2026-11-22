@@ -14,6 +14,7 @@ import type { Prisma } from './generated/prisma/client.js';
 import { publicTransaction } from './ledger.js';
 import { AppError } from './errors.js';
 import { assertTransferPlacement, linkAccountIdentities } from './transaction-invariants.js';
+import { mergeSplits } from './transaction-splits.js';
 
 const details = {
   contractPayment: { include: { contract: { select: { id: true, name: true } } } },
@@ -218,6 +219,11 @@ export class AssignmentService {
             input.accountId,
             chosen.amountCents,
           );
+          await mergeSplits(tx, source, candidate, {
+            amountCents: chosen.amountCents,
+            status: chosen.status,
+            isTransfer: source.isTransfer || candidate.isTransfer,
+          });
           await linkAccountIdentities(tx, input.accountId, candidate.id, source.identities);
           await tx.transactionIdentity.updateMany({
             where: { transactionId: source.id },

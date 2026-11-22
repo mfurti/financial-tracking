@@ -20,7 +20,11 @@ export class ImportRollbackService {
       throw new AppError('IMPORT_STATE', 'Nur abgeschlossene CSV-Importe können zurückgenommen werden.', 409);
     const rows = await tx.transaction.findMany({
       where: { OR: [{ createdByImportRunId: id }, { identities: { some: { importRunId: id } } }] },
-      include: { identities: { orderBy: { id: 'asc' } }, contractPayment: { include: { contract: true } } },
+      include: {
+        identities: { orderBy: { id: 'asc' } },
+        contractPayment: { include: { contract: true } },
+        splits: { orderBy: { position: 'asc' } },
+      },
       orderBy: { id: 'asc' },
     });
     const groups = await tx.transferGroup.findMany({
@@ -56,7 +60,7 @@ export class ImportRollbackService {
           protection: shared ? ('SHARED' as const) : uncertain ? ('UNCERTAIN' as const) : null,
           contractName: row.contractPayment?.contract.name ?? null,
           transfer: row.isTransfer || row.transferGroupId !== null,
-          manual: row.categoryOrigin === 'MANUAL' || row.classification !== null,
+          manual: row.categoryOrigin === 'MANUAL' || row.classification !== null || row.splits.length > 0,
         };
       },
     );

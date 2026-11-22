@@ -181,18 +181,24 @@ onBeforeUnmount(
       ></FinanceTile
     >
     <SectionPanel :title="tr('Zugehörige Buchungen')" icon="transactions" class="mt-6" compact>
-      <NuxtLink v-for="row in rows" :key="row.id" :to="bookingLink(row.id)" class="transaction-row"
+      <FinancePopupLink
+        v-for="row in rows"
+        :key="row.id"
+        :to="bookingLink(row.id)"
+        class="transaction-row"
+        :dialog-title="tr('Umsatzdetails')"
         ><FinanceIcon name="transactions" />
         <div>
           <strong>{{ row.description }}</strong
           ><small
-            >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName?.trim() || tr('Keine Gegenpartei') }}</small
+            >{{ calendarDate(row.bookingDate) }} · {{ row.counterpartyName?.trim() || tr('Keine Gegenpartei')
+            }}<template v-if="row.categoryAmountCents !== undefined"> · {{ tr('Teilbetrag') }}</template></small
           >
         </div>
         <strong :class="BigInt(row.amountCents) < 0n ? 'negative' : 'positive'" data-financial
-          ><template v-if="!amountsMasked()">{{ money(row.amountCents) }}</template
+          ><template v-if="!amountsMasked()">{{ money(row.categoryAmountCents ?? row.amountCents) }}</template
           ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
-        ></NuxtLink
+        ></FinancePopupLink
       >
       <p v-if="!rows.length" class="empty-copy">{{ tr('Keine zugehörigen Buchungen im gewählten Zeitraum.') }}</p>
       <p v-if="moreError" role="alert">{{ moreError }}</p>
