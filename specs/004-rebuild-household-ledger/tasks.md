@@ -12,7 +12,7 @@ description: 'Dependency-ordered implementation tasks for the household ledger r
 
 ## Phase 1: Setup
 
-- [ ] T001 Record the target base SHA, status of PRs #16 and #20, exposed routes, supported journeys, preserved docs, and baseline verification in `specs/004-rebuild-household-ledger/validation.md`. Use `docs/user-guide.md`, `docs/api.md`, `docs/recovery.md`, and `.github/workflows/ci.yml`. Record baseline failures separately. If either PR landed, extend the baseline with its shipped behavior and migrations before changing code.
+- [x] T001 Record the target base SHA, status of PRs #16 and #20, exposed routes, supported journeys, preserved docs, and baseline verification in `specs/004-rebuild-household-ledger/validation.md`. Use `docs/user-guide.md`, `docs/api.md`, `docs/recovery.md`, and `.github/workflows/ci.yml`. Record baseline failures separately. If either PR landed, extend the baseline with its shipped behavior and migrations before changing code.
 - [ ] T002 Pin `@querry-kit/nest@1.1.2` in `apps/api/package.json` and `@querry-kit/nuxt@0.2.10` and `@querry-kit/nuxt-ui@3.3.10` in `apps/web/package.json`. Resolve actual peers and update `pnpm-lock.yaml` with pnpm 11.25.0. Prove frozen install, Prisma generation, typecheck and both app builds on Node 24.22.1. Record resolved versions and smoke results in `specs/004-rebuild-household-ledger/validation.md`.
 
 ## Phase 2: Foundational
