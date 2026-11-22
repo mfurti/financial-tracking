@@ -107,3 +107,9 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 
 - The settings hub groups account/access tasks and device choices. Profile and appearance links sit in the page header. Categories and Notifications use the shared visual hierarchy while retaining their existing persistence and permission boundaries.
 - Scoped lint, Nuxt types, production build and all 22 Chromium cases passed, covering profile, permissions and revoked sessions, device settings, categories, notification receipts, appearance and local demo roles.
+
+## T018: Runtime cleanup
+
+- Removed 25 obsolete sidebar, brand, workspace badge and previous mobile navigation CSS rules (161 lines). The active navigation, shared brand mark, focus states and layout utilities still have live consumers.
+- Checked Nuxt pages, auto-imported components, scripts and E2E fixtures. The concept capture script, fixtures and reference index still support visual acceptance and reproducibility. Existing cursor clients, calendar reads, deployment and recovery keep their current assets and API contracts.
+- Production web build and all 12 overview, shell and shared-surface browser checks passed at 390 px and 1440 px.
