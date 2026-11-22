@@ -4,7 +4,6 @@ dist
 .nuxt
 .output
 apps/api/src/generated
-docs/haushaltsbuch-implementierungsspezifikation.md
 playwright-report
 test-results
 .local

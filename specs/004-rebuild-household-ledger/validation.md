@@ -113,3 +113,9 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 - Removed 25 obsolete sidebar, brand, workspace badge and previous mobile navigation CSS rules (161 lines). The active navigation, shared brand mark, focus states and layout utilities still have live consumers.
 - Checked Nuxt pages, auto-imported components, scripts and E2E fixtures. The concept capture script, fixtures and reference index still support visual acceptance and reproducibility. Existing cursor clients, calendar reads, deployment and recovery keep their current assets and API contracts.
 - Production web build and all 12 overview, shell and shared-surface browser checks passed at 390 px and 1440 px.
+
+## T019: Documentation cleanup
+
+- Retired ten superseded plans and checklists: the original plan, implementation checklist and specification, expansion and supplied stage plans, the Finanzfluss and usability plans, the archived audit backlog, and the concept-parity plan and tasks. Historical references now link to the pinned base revision. Operational, recovery and bank instructions remain in their current docs.
+- README links to the rebuild plan and tasks. The user guide covers the shell and bookmarked tables, API guidance covers all three resources, and Vue attribute-order guidance matches the effective ESLint rule. The integrated issue #13 artifacts and reference tooling still support historical acceptance and review.
+- Prettier, both diff checks and 52 changed local Markdown links passed. No local link or non-document consumer refers to a deleted path.

@@ -1,6 +1,6 @@
 # Household ledger
 
-Private, single-user household bookkeeping. NestJS/Fastify, Nuxt UI, PostgreSQL/Prisma, and shared Zod contracts.
+Private, single-user household bookkeeping. NestJS/Fastify, Nuxt UI, Querry Kit, PostgreSQL/Prisma, and shared Zod contracts.
 
 ## Development
 
@@ -21,4 +21,4 @@ Load environment variables in the invoking shell (for example `node --env-file=.
 
 Run `pnpm --filter api dev:compile` in another terminal for incremental API recompilation. `api dev` runs the compiled API with Node's watcher. The web server's internal destination is configured by NUXT_API_INTERNAL_URL.
 
-See [user guide](docs/user-guide.md), [expansion plan](docs/ausbauplan.md), [binding user plan](docs/HAUSHALTSBUCH_CODEX_PLAN.md), [checklist](docs/todo.md), [coding guidelines](docs/coding-guidelines.md), [API contracts](docs/api.md), [deployment](docs/deployment.md), [recovery](docs/recovery.md), [FinTS registration](docs/fints-registration.md), and [Stage 1 acceptance](docs/stage-one-acceptance.md). External bank compatibility is a separate acceptance gate; CI uses synthetic data only. Production uses only a deployment bundle and registry images; source and builds stay off the server.
+See [user guide](docs/user-guide.md), [rebuild plan](specs/004-rebuild-household-ledger/plan.md), [implementation tasks](specs/004-rebuild-household-ledger/tasks.md), [backlog](docs/todo.md), [coding guidelines](docs/coding-guidelines.md), [API contracts](docs/api.md), [deployment](docs/deployment.md), [recovery](docs/recovery.md), [FinTS registration](docs/fints-registration.md), and [Stage 1 acceptance](docs/stage-one-acceptance.md). External bank compatibility is a separate acceptance gate; CI uses synthetic data only. Production uses only a deployment bundle and registry images; source and builds stay off the server.

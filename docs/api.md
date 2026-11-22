@@ -87,7 +87,7 @@ Response includes exact integer-cent totals/monthly series, category expenditure
 
 Transaction queries accept `classification=FIXED|VARIABLE|UNCLASSIFIED` with the same manual-first contract fallback as analytics. All chart/table links retain the report's applied range/account/category, booked-only and transfer-exclusion filters. Unsubmitted filter drafts do not change links under an already displayed report.
 
-## Querry Kit transaction table
+## Querry Kit table endpoints
 
 Authenticated GET `/transactions/table` runs a server-scoped page query. `page` defaults to 1 and `perPage` defaults to 25 with a limit of 100. The `where` JSON object accepts existing transaction filters, including date range, classification, direction, category, text search, and account/group/accountless scope. It accepts neither cursor nor limit. `orderBy` is an optional JSON array containing up to three single-key entry objects. Supported sort keys are `bookingDate`, `amountCents`, and `description`. The default order is booking date descending. Every order adds a descending ID tie-breaker.
 

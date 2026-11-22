@@ -2,6 +2,8 @@
 
 Updated 2026-11-20. [Status/evidence](status.md), [integrated issue #13](https://github.com/mfurti/financial-tracking/issues/13), related [issue #3](https://github.com/mfurti/financial-tracking/issues/3). Production remains the last verified d193639 delivery from PR #11. An open item is not automatic implementation or deployment approval.
 
+The [rebuild task list](../specs/004-rebuild-household-ledger/tasks.md) tracks issue #21. This backlog retains the other open product and operating items.
+
 ## Integrated delivery and external gates
 
 The approved 39-view concept and its ordered source tasks are recorded in [the feature tasks](../specs/001-integrated-household-concept/tasks.md). All local gates passed: 225 tests, 428 browser passes plus 12 intentional skips, full types/lint/format/Prisma and production builds. [Validation](../specs/001-integrated-household-concept/validation.md) distinguishes local proof from Linux CI and production.
@@ -11,7 +13,7 @@ The approved 39-view concept and its ordered source tasks are recorded in [the f
 
 ## R — UI delivery and retained detail backlog
 
-The approved integrated concept supersedes the earlier R1 layout proposal, using its documented 700/1100 px composition boundaries and nine-width acceptance instead of silently claiming old prototype pixel rules. Original browser comments remain in the [usability plan](vertragsanalyse-usability-plan.md#nutzerfeedback-app-charakter-und-import--8-november-2026). Human acceptance stays E6.
+The approved integrated concept supersedes the earlier R1 layout proposal, using its documented 700/1100 px composition boundaries and nine-width acceptance instead of silently claiming old prototype pixel rules. Original browser comments remain in the [usability plan](https://github.com/mfurti/financial-tracking/blob/740f2103a068c9401d9c1e194b3986a12983eeae/docs/vertragsanalyse-usability-plan.md#nutzerfeedback-app-charakter-und-import--8-november-2026). Human acceptance stays E6.
 
 - [x] **K1 — Preparatory code cleanup.** The prior cleanup removed unused CSS/proposal code and consolidated existing metadata with before/after proof. See [code audit](code-audit.md); it is distinct from the later integrated source delivery.
 - [x] **R1 — Compact integrated application UI.** Delivered responsive composition, shared sections/tiles/dialogs, compact search/filters and month navigation, contextual help, focused settings and stable light/dark/reduced-motion behavior through issue #13. Actual five-dimension visual evidence and accepted adaptations are in the feature validation. This is technical source delivery, not user acceptance or deployment.
@@ -60,7 +62,7 @@ These are not automatically authorized corrections to the integrated feature.
 
 ## Documentation and historical delivery
 
-- [x] **D1 — Current status reconciliation.** The earlier audit retained stable IDs and archived previous requirements. This integrated follow-up now distinguishes source delivery, unexecuted Linux acceptance and unchanged production. Historical materials remain in [the archive](archive/todo-2026-11-08-before-audit.md).
+- [x] **D1 — Current status reconciliation.** The earlier audit retained stable IDs and archived previous requirements. This integrated follow-up now distinguishes source delivery, unexecuted Linux acceptance and unchanged production. Historical materials remain in [the archive](https://github.com/mfurti/financial-tracking/blob/740f2103a068c9401d9c1e194b3986a12983eeae/docs/archive/todo-2026-11-08-before-audit.md).
 
 Previously delivered: CSV automation/encodings/short years/accountless assignment/deduplication/rollback; categories/rules/classifications; contracts/payment links/history/forecasts; actual multi-month analytics; theme controls/navigation; image-only deployment, .33, health checks, daily encrypted seven-day backups and the separately approved d193639 rollout. The new integrated source extends those features without claiming a newer production deployment.
 
