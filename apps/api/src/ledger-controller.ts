@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
@@ -86,6 +86,10 @@ export class LedgerController {
   /** Change only user-owned annotations. */
   @Patch('transactions/:id') patchTransaction(@Param('id') id: string, @Body() body: unknown) {
     return this.ledger.patchTransaction(c.idSchema.parse(id), c.transactionPatchSchema.parse(body));
+  }
+  /** Replace or clear category allocations on the original booking. */
+  @Put('transactions/:id/splits') setSplits(@Param('id') id: string, @Body() body: unknown) {
+    return this.ledger.setSplits(c.idSchema.parse(id), c.transactionSplitsInputSchema.parse(body));
   }
   /** Assign a category to selected transactions. */
   @Post('transactions/bulk-category') bulk(@Body() body: unknown) {

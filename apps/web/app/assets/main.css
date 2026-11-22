@@ -1889,6 +1889,9 @@ html[data-amounts-masked='true']
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--finance-tile-gap);
 }
+.finance-overview-stats--forecast {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 .finance-overview-stats .month-balance {
   --ink: var(--ui-text);
   grid-column: auto;
@@ -1969,6 +1972,9 @@ html[data-amounts-masked='true']
 @media (max-width: 700px) {
   .finance-overview-stats {
     gap: 7px;
+  }
+  .finance-overview-stats--forecast {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .finance-overview-stats .stat-card strong {
     font-size: 16px;
@@ -2094,6 +2100,22 @@ html[data-theme='ayu'][data-ayu-border='none'] .finance-shell :is(.panel, .finan
 }
 .finance-dialog--calendar {
   max-height: min(760px, calc(100dvh - 36px));
+}
+.finance-dialog.finance-dialog--page {
+  width: min(1060px, calc(100vw - 28px));
+  max-width: none;
+}
+.finance-dialog--page > [data-slot='header'] {
+  position: sticky;
+  z-index: 2;
+  inset-block-start: 0;
+  min-height: 46px;
+  padding: 0;
+  border: 0;
+  background: var(--finance-surface);
+}
+.finance-dialog--page .finance-dialog__body {
+  padding-block-start: 0;
 }
 .finance-dialog--profile .finance-account-menu > a {
   min-height: 64px;

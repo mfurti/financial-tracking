@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { userErrorMessage } from '../utils/api-error';
 const api = useApi();
 const route = useRoute();
+const popup = useFinancePopup();
+const displayedRoute = computed(() => popup?.background.value ?? route);
 const error = ref('');
 const accountMenuOpen = ref(false);
 const primaryLinks = [
@@ -29,21 +31,22 @@ const currentPage = computed(
   /** Keep the toolbar anchored to the actual page. */ () =>
     [...primaryLinks, ...secondaryLinks].find(
       /** Exact import history must not shadow the upload route. */ (link) =>
-        link.to === '/' ? route.path === '/' : route.path === link.to,
-    )?.label ?? (route.path === '/more' ? tr('Mehr') : tr('Mein Haushaltsbuch')),
+        link.to === '/' ? displayedRoute.value.path === '/' : displayedRoute.value.path === link.to,
+    )?.label ?? (displayedRoute.value.path === '/more' ? tr('Mehr') : tr('Mein Haushaltsbuch')),
 );
 const moreActive = computed(
   /** Preserve the management section marker on its nested forms and import upload. */ () =>
-    route.path === '/more' ||
-    route.path.startsWith('/imports/') ||
+    displayedRoute.value.path === '/more' ||
+    displayedRoute.value.path.startsWith('/imports/') ||
     secondaryLinks.some(/** Mark the management destination on its child pages. */ (link) => active(link.to)),
 );
 /** Match nested ledger/detail routes without marking both import entries active. */
 function active(path: string) {
-  if (path === '/') return route.path === '/';
-  if (path === '/analytics') return route.path.startsWith('/analytics') || route.path.startsWith('/categories');
-  if (path === '/imports') return route.path === '/imports';
-  return route.path.startsWith(path);
+  const displayed = displayedRoute.value.path;
+  if (path === '/') return displayed === '/';
+  if (path === '/analytics') return displayed.startsWith('/analytics') || displayed.startsWith('/categories');
+  if (path === '/imports') return displayed === '/imports';
+  return displayed.startsWith(path);
 }
 /** Revoke the cookie session before navigating to login. */
 async function logout() {

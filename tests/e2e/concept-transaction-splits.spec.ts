@@ -1,0 +1,48 @@
+import { test, expect } from './fixtures.js';
+import { choose } from './controls.js';
+import { categorySchema } from '../../packages/contracts/src/index.js';
+
+test('splits a booking in its popup and reconciles the category drill-down', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-22T11:00:00Z'));
+  await page.goto('/login');
+  await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
+  await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
+  await page.waitForURL((url) => url.pathname === '/');
+  const range = 'from=2026-11-01&to=2026-11-30';
+  const categories = categorySchema.array().parse(await (await page.request.get('/api/v1/categories')).json());
+  const housing = categories.find((category) => category.name === 'Wohnen')!;
+  await page.goto(`/transactions?${range}`);
+  await page.getByRole('link', { name: /Miete November/ }).click();
+  const popup = page.getByRole('dialog', { name: 'Umsatzdetails', exact: true });
+  await expect(popup.getByText('−1.050,00 €', { exact: true })).toBeVisible();
+  await popup.getByRole('button', { name: 'Betrag aufteilen', exact: true }).click();
+  await choose(page, popup.getByRole('button', { name: 'Kategorie für Teil 2', exact: true }), 'Lebensmittel Konzept');
+  await popup.getByRole('textbox', { name: 'Teilbetrag 1 in Euro', exact: true }).fill('800');
+  const second = popup.getByRole('textbox', { name: 'Teilbetrag 2 in Euro', exact: true });
+  await second.fill('249,99');
+  const save = popup.getByRole('button', { name: 'Aufteilung speichern', exact: true });
+  await save.click();
+  await expect(popup.getByText('Die Teilbeträge müssen zusammen dem Originalbetrag entsprechen.')).toBeVisible();
+  await second.fill('250');
+  await save.click();
+  await expect(popup.getByText('−800,00 €', { exact: true })).toBeVisible();
+  await expect(popup.getByText('−250,00 €', { exact: true })).toBeVisible();
+  await expect(popup.getByText('−1.050,00 €', { exact: true })).toBeVisible();
+  expect(await popup.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(popup).toBeHidden();
+  await expect(page.getByRole('link', { name: /Miete November.*Aufgeteilt/ })).toBeVisible();
+
+  await page.goto(`/analytics/details?${range}&categoryId=${housing.id}&direction=EXPENSE`);
+  await expect(page.locator('[data-analysis-total]')).toHaveText('800,00 €');
+  const booking = page.getByRole('link', { name: /Miete November/ });
+  await expect(booking).toContainText('Teilbetrag');
+  await expect(booking).toContainText('−800,00 €');
+  await booking.click();
+  await popup.getByRole('button', { name: 'Aufteilung aufheben', exact: true }).click();
+  await expect(popup.getByRole('button', { name: 'Betrag aufteilen', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(popup).toBeHidden();
+  await expect(page.locator('[data-analysis-total]')).toHaveText('1.050,00 €');
+});

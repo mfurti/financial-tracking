@@ -10,6 +10,7 @@ export function useApi() {
   const config = useRuntimeConfig();
   const route = useRoute();
   const router = useRouter();
+  const popup = useFinancePopup();
   /** Submit an authenticated request and validate the JSON boundary. */
   async function request<T>(
     path: string,
@@ -20,14 +21,17 @@ export function useApi() {
       query?: Record<string, string | number | undefined>;
     } = {},
   ): Promise<T> {
+    const method = options.method ?? 'GET';
+    const finishMutation = method === 'GET' ? undefined : popup?.trackMutation();
     try {
       const response = await $fetch<unknown>(`${config.public.apiBase}${path}`, {
-        method: options.method ?? 'GET',
+        method,
         body: options.body as Record<string, unknown> | undefined,
         query: options.query,
         credentials: 'same-origin',
         headers: session.value ? { 'x-csrf-token': session.value.csrfToken } : {},
       });
+      finishMutation?.();
       return schema.parse(response);
     } catch (error: unknown) {
       if (error instanceof z.ZodError)

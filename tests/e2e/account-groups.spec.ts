@@ -94,11 +94,16 @@ test('groups retain exact report, detail and calendar scope through failure, rel
   await expect(page.locator('[data-analysis-total]')).toHaveText('99,99 €');
   await expect(page.getByText(/Kontogruppe: Gemeinsame Haushaltskonten/)).toBeVisible();
   await page.getByRole('link', { name: /Einkauf Oktober/ }).click();
-  await page.getByRole('link', { name: 'Zur Analyse zurück', exact: true }).click();
+  const booking = page.getByRole('dialog', { name: 'Umsatzdetails', exact: true });
+  await expect(booking).toBeVisible();
+  await booking.getByRole('button', { name: 'Zur Analyse zurück', exact: true }).click();
+  await expect(booking).toBeHidden();
   await expect(page.locator('[data-analysis-total]')).toHaveText('99,99 €');
   await expect(page).toHaveURL(new RegExp(`groupId=${primary.id}`));
   await page.getByRole('link', { name: 'Alle zugehörigen Umsätze', exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`groupId=${primary.id}`));
+  await expect(page).toHaveURL(
+    (url) => url.pathname === '/transactions' && url.searchParams.get('groupId') === primary.id,
+  );
   await expect(page.getByText('Kontolose CSV Ausgabe', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Einkauf Oktober', { exact: true })).toBeVisible();
   await page.goto(`/analytics/details?from=2026-10-01&to=2026-10-31&groupId=${empty.id}`);

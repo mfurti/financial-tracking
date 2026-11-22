@@ -16,6 +16,7 @@ import { AppError } from './errors.js';
 import { publicTransaction } from './ledger.js';
 import { createHash } from 'node:crypto';
 import { assertTransferPlacement, linkAccountIdentities } from './transaction-invariants.js';
+import { assertSplitsPreserved } from './transaction-splits.js';
 
 /** Account-scoped verified identities never rely on nullable-key uniqueness. */
 export function identityScope(accountId: string | null, runId: string) {
@@ -447,6 +448,7 @@ export class ImportService {
               resolution.action === 'INCOMING' ? BigInt(row.amountCents) : candidate.amountCents,
             );
             if (resolution.action === 'INCOMING') {
+              await assertSplitsPreserved(tx, candidate, { amountCents: BigInt(row.amountCents), status: row.status });
               await assertContractPaymentPreserved(tx, candidate, {
                 amountCents: BigInt(row.amountCents),
                 bookingDate: new Date(row.bookingDate),

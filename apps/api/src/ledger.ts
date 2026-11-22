@@ -12,6 +12,7 @@ import {
   connectionSchema,
   transactionQuerySchema,
   transactionPatchSchema,
+  transactionSplitsInputSchema,
   transactionSchema,
   transactionPageSchema,
   monthlySchema,
@@ -22,10 +23,26 @@ import type { Prisma, Transaction } from './generated/prisma/client.js';
 import { AppError } from './errors.js';
 import { classificationWhere } from './analytics.js';
 import { merchantWhere } from './merchant-identity.js';
+import {
+  categoryAmount,
+  categoryParts,
+  categoryScope,
+  categoryWhere,
+  splitCategories,
+  splitConflict,
+} from './transaction-splits.js';
+
+const bookingRelations = {
+  contractPayment: { include: { contract: { select: { id: true, name: true } } } },
+  splits: { orderBy: { position: 'asc' } },
+} as const;
 
 /** Serialize dates and BIGINT without exposing persistence metadata. */
 export function publicTransaction(
-  row: Transaction & { contractPayment?: { dueDate: Date; contract: { id: string; name: string } } | null },
+  row: Transaction & {
+    contractPayment?: { dueDate: Date; contract: { id: string; name: string } } | null;
+    splits?: { categoryId: string | null; amountCents: bigint }[];
+  },
 ) {
   return transactionSchema.parse({
     ...row,
@@ -38,6 +55,9 @@ export function publicTransaction(
         }
       : null,
     amountCents: String(row.amountCents),
+    splits: row.splits?.length
+      ? row.splits.map(({ categoryId, amountCents }) => ({ categoryId, amountCents: String(amountCents) }))
+      : undefined,
     bookingDate: row.bookingDate.toISOString().slice(0, 10),
     valueDate: row.valueDate?.toISOString().slice(0, 10) ?? null,
   });
@@ -152,10 +172,10 @@ export class LedgerService {
   }
   /** Search transactions with a stable date/id cursor and bounded pages. */
   async transactions(query: z.infer<typeof transactionQuerySchema>) {
+    const category = categoryScope(query);
     const where: Prisma.TransactionWhereInput = {
       AND: [classificationWhere(query.classification), await merchantWhere(this.db, query.merchantKey)],
       accountId: await resolveAccountScope(this.db, query),
-      categoryId: query.uncategorized === 'true' ? null : query.categoryId,
       status: query.status,
       isTransfer: query.excludeTransfers === 'true' ? false : undefined,
       bookingDate: {
@@ -171,8 +191,8 @@ export class LedgerService {
         : undefined,
     };
     const rows = await this.db.transaction.findMany({
-      where,
-      include: { contractPayment: { include: { contract: { select: { id: true, name: true } } } } },
+      where: { AND: [where, categoryWhere(category)] },
+      include: bookingRelations,
       orderBy: [{ bookingDate: 'desc' }, { id: 'desc' }],
       cursor: query.cursor ? { id: query.cursor } : undefined,
       skip: query.cursor ? 1 : 0,
@@ -181,7 +201,11 @@ export class LedgerService {
     const more = rows.length > query.limit;
     if (more) rows.pop();
     return transactionPageSchema.parse({
-      items: rows.map(publicTransaction),
+      items: rows.map((row) => ({
+        ...publicTransaction(row),
+        categoryAmountCents:
+          category !== undefined && row.splits.length ? String(categoryAmount(row, category)) : undefined,
+      })),
       nextCursor: more ? rows.at(-1)!.id : null,
     });
   }
@@ -189,10 +213,46 @@ export class LedgerService {
   async transaction(id: string) {
     const row = await this.db.transaction.findUnique({
       where: { id },
-      include: { contractPayment: { include: { contract: { select: { id: true, name: true } } } } },
+      include: bookingRelations,
     });
     if (!row) throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden.', 404);
     return publicTransaction(row);
+  }
+  /** Replace the allocations in one transaction while preserving every original booking value. */
+  async setSplits(id: string, input: z.infer<typeof transactionSplitsInputSchema>) {
+    return this.db.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "Transaction" WHERE "id" = ${id}::uuid FOR UPDATE`;
+        const row = await tx.transaction.findUnique({ where: { id } });
+        if (!row) throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden.', 404);
+        const parts = input.splits.map((part, position) => ({
+          ...part,
+          position,
+          amountCents: BigInt(part.amountCents),
+        }));
+        if (parts.length) {
+          if (row.status !== 'BOOKED' || row.isTransfer || row.amountCents === 0n)
+            throw new AppError('SPLIT_INELIGIBLE', 'Nur gebuchte Einnahmen und Ausgaben lassen sich aufteilen.', 409);
+          const amount = row.amountCents < 0n ? -row.amountCents : row.amountCents;
+          if (parts.reduce((sum, part) => sum + part.amountCents, 0n) !== amount)
+            throw new AppError('SPLIT_TOTAL', 'Die Teilbeträge müssen zusammen dem Originalbetrag entsprechen.');
+          const ids = parts.flatMap((part) => (part.categoryId ? [part.categoryId] : []));
+          if ((await tx.category.count({ where: { id: { in: ids } } })) !== ids.length)
+            throw new AppError('NOT_FOUND', 'Kategorie nicht gefunden.', 404);
+        }
+        await tx.transactionSplit.deleteMany({ where: { transactionId: id } });
+        if (parts.length)
+          await tx.transactionSplit.createMany({ data: parts.map((part) => ({ ...part, transactionId: id })) });
+        return publicTransaction(
+          await tx.transaction.update({
+            where: { id },
+            data: { updatedAt: new Date() },
+            include: bookingRelations,
+          }),
+        );
+      },
+      { isolationLevel: 'Serializable' },
+    );
   }
   /** Preserve transfer group consistency when annotations change. */
   async patchTransaction(id: string, input: z.infer<typeof transactionPatchSchema>) {
@@ -200,6 +260,11 @@ export class LedgerService {
       /** Validate and update the group, counterpart, and annotation as one atomic change. */ async (tx) => {
         const previous = await tx.transaction.findUnique({ where: { id } });
         if (!previous) throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden.', 404);
+        if (
+          ('categoryId' in input || input.isTransfer) &&
+          (await tx.transactionSplit.count({ where: { transactionId: id } }))
+        )
+          throw splitConflict();
         if (input.isTransfer && (await tx.contractPayment.findUnique({ where: { transactionId: id } })))
           throw new AppError(
             'CONTRACT_CONFLICT',
@@ -220,7 +285,7 @@ export class LedgerService {
         return publicTransaction(
           await tx.transaction.update({
             where: { id },
-            include: { contractPayment: { include: { contract: { select: { id: true, name: true } } } } },
+            include: bookingRelations,
             data: {
               ...input,
               ...('categoryId' in input
@@ -243,18 +308,25 @@ export class LedgerService {
     if (categoryId && !(await this.db.category.findUnique({ where: { id: categoryId } })))
       throw new AppError('NOT_FOUND', 'Kategorie nicht gefunden.', 404);
     const unique = [...new Set(ids)];
-    if ((await this.db.transaction.count({ where: { id: { in: unique } } })) !== unique.length)
-      throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden.', 404);
-    await this.db.transaction.updateMany({
-      where: { id: { in: unique } },
-      data: {
-        categoryId,
-        categoryOrigin: 'MANUAL',
-        categoryRuleId: null,
-        categoryRuleName: null,
-        categoryRuleConflict: false,
+    const where = { id: { in: unique } };
+    await this.db.$transaction(
+      async (tx) => {
+        if ((await tx.transaction.count({ where })) !== unique.length)
+          throw new AppError('NOT_FOUND', 'Umsatz nicht gefunden.', 404);
+        if (await tx.transactionSplit.count({ where: { transactionId: where.id } })) throw splitConflict();
+        await tx.transaction.updateMany({
+          where,
+          data: {
+            categoryId,
+            categoryOrigin: 'MANUAL',
+            categoryRuleId: null,
+            categoryRuleName: null,
+            categoryRuleConflict: false,
+          },
+        });
       },
-    });
+      { isolationLevel: 'Serializable' },
+    );
     return { updated: unique.length };
   }
   /** Apply a manual fixed/variable override to explicitly selected rows without changing amounts. */
@@ -282,6 +354,8 @@ export class LedgerService {
           throw new AppError('INVALID_TRANSFER', 'Umbuchungszuordnung ungültig.', 409);
         if (await tx.contractPayment.count({ where: { transactionId: { in: input.transactionIds } } }))
           throw new AppError('CONTRACT_CONFLICT', 'Vertragszahlungen zuerst ausdrücklich vom Vertrag lösen.', 409);
+        if (await tx.transactionSplit.count({ where: { transactionId: { in: input.transactionIds } } }))
+          throw splitConflict();
         if (
           rows.length === 2 &&
           (rows[0]!.accountId === rows[1]!.accountId ||
@@ -329,11 +403,12 @@ export class LedgerService {
         status: 'BOOKED',
         isTransfer: false,
       },
-      include: { category: true },
+      include: { category: true, splits: splitCategories },
     });
     let income = 0n,
       expense = 0n,
-      previousNet = 0n;
+      previousNet = 0n,
+      bookedCount = 0;
     const categories = new Map<
       string,
       { categoryId: string | null; name: string; income: bigint; expense: bigint; count: number }
@@ -343,25 +418,27 @@ export class LedgerService {
         previousNet += row.amountCents;
         continue;
       }
-      const incoming = row.amountCents > 0n ? row.amountCents : 0n,
-        outgoing = row.amountCents < 0n ? -row.amountCents : 0n;
-      income += incoming;
-      expense += outgoing;
-      const key = row.categoryId ?? '';
-      const category = categories.get(key) ?? {
-        categoryId: row.categoryId,
-        name: row.category?.name ?? 'Nicht kategorisiert',
-        income: 0n,
-        expense: 0n,
-        count: 0,
-      };
-      category.income += incoming;
-      category.expense += outgoing;
-      category.count++;
-      categories.set(key, category);
+      bookedCount++;
+      if (row.amountCents > 0n) income += row.amountCents;
+      else expense -= row.amountCents;
+      for (const part of categoryParts(row)) {
+        const key = part.categoryId ?? '';
+        const category = categories.get(key) ?? {
+          categoryId: part.categoryId,
+          name: part.category?.name ?? 'Nicht kategorisiert',
+          income: 0n,
+          expense: 0n,
+          count: 0,
+        };
+        if (part.amountCents > 0n) category.income += part.amountCents;
+        else category.expense -= part.amountCents;
+        category.count++;
+        categories.set(key, category);
+      }
     }
     return monthlySchema.parse({
       month,
+      bookedCount,
       incomeCents: String(income),
       expenseCents: String(expense),
       netCents: String(income - expense),

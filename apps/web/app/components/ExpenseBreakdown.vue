@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { Monthly } from '@financial-tracking/contracts';
 const props = withDefaults(
-  defineProps<{ report: Monthly; title?: string; compact?: boolean; chart?: 'bar' | 'ring' }>(),
+  defineProps<{ report: Monthly; title?: string; compact?: boolean; chart?: 'bar' | 'ring'; groupId?: string }>(),
   {
     title: 'Ausgaben nach Kategorien',
     compact: false,
     chart: 'ring',
+    groupId: undefined,
   },
 );
 const groups = computed(
@@ -23,7 +24,7 @@ const groups = computed(
 );
 /** Link a segment to the same month's real booked expense records. */
 function categoryLink(id: string | null) {
-  return `/transactions?${new URLSearchParams({ ...monthRangeQuery(props.report.month), ...(id ? { categoryId: id } : { uncategorized: 'true' }), direction: 'EXPENSE', status: 'BOOKED', excludeTransfers: 'true' })}`;
+  return `/transactions?${new URLSearchParams({ ...monthRangeQuery(props.report.month), ...(id ? { categoryId: id } : { uncategorized: 'true' }), ...(props.groupId ? { groupId: props.groupId } : {}), direction: 'EXPENSE', status: 'BOOKED', excludeTransfers: 'true' })}`;
 }
 </script>
 

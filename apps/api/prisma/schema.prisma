@@ -157,6 +157,18 @@ model Category {
   transactions Transaction[]
   rules CategoryRule[]
   contracts Contract[]
+  budgets CategoryBudget[]
+  transactionSplits TransactionSplit[]
+}
+
+model CategoryBudget {
+  id String @id @default(uuid()) @db.Uuid
+  month String @db.VarChar(7)
+  categoryId String @db.Uuid
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  limitCents BigInt
+  @@unique([month, categoryId])
+  @@index([categoryId])
 }
 
 model CategoryRule {
@@ -199,12 +211,24 @@ model Transaction {
   transferGroupId String? @db.Uuid
   transferGroup TransferGroup? @relation(fields: [transferGroupId], references: [id], onDelete: SetNull)
   identities TransactionIdentity[]
+  splits TransactionSplit[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([accountId, bookingDate(sort: Desc), id(sort: Desc)])
   @@index([bookingDate, amountCents])
   @@index([categoryId])
   @@index([createdByImportRunId])
+}
+
+model TransactionSplit {
+  transactionId String @db.Uuid
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  position Int
+  categoryId String? @db.Uuid
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  amountCents BigInt
+  @@id([transactionId, position])
+  @@index([categoryId])
 }
 
 model TransactionIdentity {

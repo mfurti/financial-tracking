@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { z } from 'zod';
 import { userErrorMessage } from '../utils/api-error';
+import type { BudgetList } from '../utils/category-budget';
 import {
   accountSchema,
   monthlySchema,
   transactionPageSchema,
   runSchema,
   accountGroupSchema,
+  categoryBudgetSummarySchema,
   type Account,
   type Monthly,
   type Transaction,
@@ -16,11 +18,17 @@ import {
 const api = useApi();
 const route = useRoute();
 const router = useRouter();
+/** Use the same Berlin month boundary for the picker and the forecast. */
+function berlinMonth() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7);
+}
 const month = ref(
   typeof route.query.month === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(route.query.month)
     ? route.query.month
-    : new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7),
+    : berlinMonth(),
 );
+const currentBerlinMonth = ref(berlinMonth());
+const showForecast = computed(() => month.value >= currentBerlinMonth.value);
 const accounts = ref<Account[]>([]);
 const groupId = ref(typeof route.query.groupId === 'string' ? route.query.groupId : '');
 const groupDialog = ref(false);
@@ -41,6 +49,7 @@ async function selectGroup(value: string) {
   await load();
 }
 const report = ref<Monthly | null>(null);
+const budgetList = ref<BudgetList>({ state: 'loading' });
 const recent = ref<Transaction[]>([]);
 const error = ref('');
 const busy = ref(true);
@@ -48,13 +57,16 @@ const reviews = ref(0);
 const unassigned = ref(false);
 const importResult = ref<ImportRun | null>(null);
 let loadVersion = 0;
+let budgetVersion = 0;
 let disposed = false;
 const transactionCount = computed(
   /** Reports count only booked records excluding own transfers. */ () =>
+    report.value?.bookedCount ??
     report.value?.categories.reduce(
       /** Sum the server's category counts. */ (total, category) => total + category.count,
       0,
-    ) ?? 0,
+    ) ??
+    0,
 );
 const uncategorizedCount = computed(
   /** Keep unknown classifications visible rather than inventing a category. */ () =>
@@ -71,7 +83,7 @@ const uncategorizedLink = computed(
 );
 const monthPhase = computed(
   /** A month selector does not establish complete bank coverage, especially for current or future periods. */ () => {
-    const current = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7);
+    const current = currentBerlinMonth.value;
     return month.value === current
       ? tr('Laufender Monat · gebuchte Umsätze')
       : month.value > current
@@ -110,18 +122,34 @@ async function shiftMonth(offset: number) {
 }
 /** Return to the current Berlin month through the same versioned data-loading path. */
 async function currentMonth() {
-  month.value = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7);
+  month.value = berlinMonth();
   await load();
+}
+/** Keep budget cards and the forecast on the same month snapshot, independently of other overview data. */
+async function loadBudgets() {
+  if (disposed) return;
+  const version = ++budgetVersion;
+  budgetList.value = { state: 'loading' };
+  try {
+    const budgets = await api.request('/budgets', z.array(categoryBudgetSummarySchema), {
+      query: { month: month.value },
+    });
+    if (!disposed && version === budgetVersion) budgetList.value = { state: 'ready', budgets };
+  } catch (cause) {
+    if (!disposed && version === budgetVersion) budgetList.value = { state: 'error', message: userErrorMessage(cause) };
+  }
 }
 /** Fetch dashboard data for the selected month and keep it bookmarkable. */
 async function load() {
   if (disposed || route.path !== '/') return;
+  currentBerlinMonth.value = berlinMonth();
   const version = ++loadVersion;
   const selectedMonth = month.value;
   const selectedGroup = groupId.value;
   const requestedImport = typeof route.query.import === 'string' ? route.query.import : null;
   busy.value = true;
   error.value = '';
+  void loadBudgets();
   try {
     const [a, r, t, runs, standalone] = await Promise.all([
       api.request('/accounts', z.array(accountSchema)),
@@ -173,6 +201,7 @@ onMounted(load);
 onBeforeRouteLeave(
   /** A pending navigation already owns the URL before its lazy component resolves; late overview reads must not cancel it. */ () => {
     loadVersion++;
+    budgetVersion++;
   },
 );
 onBeforeUnmount(
@@ -270,7 +299,12 @@ onBeforeUnmount(
     class="mb-5"
   />
   <p v-if="busy" role="status" class="muted">{{ tr('Dein Monat wird geladen …') }}</p>
-  <div v-if="busy" class="stats-grid finance-overview-stats" aria-busy="true">
+  <div
+    v-if="busy"
+    class="stats-grid finance-overview-stats"
+    :class="{ 'finance-overview-stats--forecast': showForecast }"
+    aria-busy="true"
+  >
     <FinanceTile
       v-for="label in ['Monatsbilanz', 'Einnahmen', 'Ausgaben']"
       :key="label"
@@ -278,9 +312,10 @@ onBeforeUnmount(
       variant="stat"
       state="loading"
     />
+    <FinanceTile v-if="showForecast" :label="tr('Bis Monatsende frei')" variant="stat" state="loading" />
   </div>
   <template v-else-if="report && !error">
-    <div class="stats-grid finance-overview-stats">
+    <div class="stats-grid finance-overview-stats" :class="{ 'finance-overview-stats--forecast': showForecast }">
       <FinanceTile :label="tr('Monatsbilanz')" variant="stat" class="month-balance">
         <template #value
           ><span class="overview-net" data-financial
@@ -305,7 +340,21 @@ onBeforeUnmount(
           ></template
         ></FinanceTile
       >
+      <MonthForecastTile
+        v-if="showForecast"
+        :month="month"
+        :group-id="groupId"
+        :booked-net-cents="report.netCents"
+        :budget-list="budgetList"
+        :refresh-budgets="loadBudgets"
+      />
     </div>
+    <CategoryBudgets
+      :month="month"
+      :show-all-accounts="Boolean(groupId)"
+      :budget-list="budgetList"
+      :refresh-budgets="loadBudgets"
+    />
     <OverviewColumns>
       <template #bookings>
         <SectionPanel :title="tr('Letzte Buchungen')" compact data-overview-section="bookings">
@@ -316,7 +365,12 @@ onBeforeUnmount(
               )
             }}
           </p>
-          <NuxtLink v-for="row in recent" :key="row.id" :to="`/transactions/${row.id}`" class="transaction-row"
+          <FinancePopupLink
+            v-for="row in recent"
+            :key="row.id"
+            :to="`/transactions/${row.id}`"
+            :dialog-title="tr('Umsatzdetails')"
+            class="transaction-row"
             ><span class="transaction-icon" aria-hidden="true">{{
               Array.from(row.counterpartyName?.trim() || row.description.trim())[0]?.toLocaleUpperCase(
                 displayLocale(),
@@ -328,17 +382,19 @@ onBeforeUnmount(
                 {{
                   row.isTransfer
                     ? tr('Eigene Umbuchung')
-                    : row.categoryId === null
-                      ? tr('Nicht kategorisiert')
-                      : (report.categories.find((c) => c.categoryId === row.categoryId)?.name ??
-                        tr('Nicht kategorisiert'))
+                    : row.splits?.length
+                      ? tr('Aufgeteilt')
+                      : row.categoryId === null
+                        ? tr('Nicht kategorisiert')
+                        : (report.categories.find((c) => c.categoryId === row.categoryId)?.name ??
+                          tr('Nicht kategorisiert'))
                 }}</small
               >
             </div>
             <strong :class="BigInt(row.amountCents) > 0n ? 'positive' : 'negative'" data-financial
               ><template v-if="!amountsMasked()">{{ money(row.amountCents) }}</template
               ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
-            ></NuxtLink
+            ></FinancePopupLink
           >
           <div class="section-action">
             <UButton :to="transactionsLink" variant="soft">{{ tr('Alle Umsätze') }}</UButton>
@@ -394,7 +450,9 @@ onBeforeUnmount(
           </div>
         </SectionPanel>
       </template>
-      <template #categories><ExpenseBreakdown :report="report" compact data-overview-section="categories" /></template>
+      <template #categories
+        ><ExpenseBreakdown :report="report" :group-id="groupId" compact data-overview-section="categories"
+      /></template>
     </OverviewColumns>
     <UButton to="/analytics" variant="soft" class="mt-5">{{ tr('Mehrmonatsanalyse öffnen') }}</UButton>
   </template>

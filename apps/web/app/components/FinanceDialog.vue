@@ -4,7 +4,7 @@ withDefaults(
     title: string;
     description?: string;
     dismissible?: boolean;
-    panel?: 'profile' | 'groups' | 'calendar';
+    panel?: 'profile' | 'groups' | 'calendar' | 'page';
   }>(),
   {
     description: undefined,
@@ -26,6 +26,7 @@ const open = defineModel<boolean>('open', { default: false });
       content: ['finance-dialog finance-dialog-motion', panel && 'finance-dialog--' + panel].filter(Boolean).join(' '),
       overlay: 'finance-overlay finance-dialog-motion',
       body: 'finance-dialog__body',
+      title: panel === 'page' ? 'hidden' : undefined,
     }"
   >
     <template v-if="$slots.trigger" #default><slot name="trigger" /></template>

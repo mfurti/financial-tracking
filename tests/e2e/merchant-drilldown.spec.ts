@@ -42,7 +42,9 @@ test('merchant and category details retain exact scope, refunds and return navig
   await expect(page.locator('[data-analysis-total]')).toHaveText('2,99 €');
   await page.getByRole('link', { name: /Erstattung Oktober/ }).click();
   await expect(page.getByRole('heading', { name: 'Umsatzdetails', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Zur Analyse zurück', exact: true }).click();
+  const booking = page.getByRole('dialog', { name: 'Umsatzdetails', exact: true });
+  await booking.getByRole('button', { name: 'Zur Analyse zurück', exact: true }).click();
+  await expect(booking).toBeHidden();
   await expect(page.locator('[data-analysis-total]')).toHaveText('2,99 €');
   await page.goto(detailUrl);
   await page.getByRole('link', { name: 'Alle zugehörigen Umsätze', exact: true }).click();

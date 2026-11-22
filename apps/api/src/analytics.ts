@@ -7,12 +7,20 @@ import type { Prisma, Transaction } from './generated/prisma/client.js';
 import { anchoredMonth, berlinToday, isoDay } from './contract-schedule.js';
 import { AppError } from './errors.js';
 import { merchantIdentity, merchantKey, merchantWhere } from './merchant-identity.js';
+import {
+  categoryAmount,
+  categoryParts,
+  categoryScope,
+  categoryWhere,
+  splitCategories,
+  type CategorizedBooking,
+} from './transaction-splits.js';
 
 /** Actual relevant bookings with optional presentation labels and confirmed payment ownership. */
-export type AnalyticsRow = Pick<Transaction, 'amountCents' | 'bookingDate' | 'categoryId' | 'classification'> & {
-  category?: { name: string } | null;
-  contractPayment?: unknown;
-};
+export type AnalyticsRow = Pick<Transaction, 'bookingDate' | 'classification'> &
+  CategorizedBooking & {
+    contractPayment?: unknown;
+  };
 /** The transaction drill-down uses the exact same manual-first classification as aggregation. */
 export function classificationWhere(value?: z.infer<typeof c.classificationSchema>): Prisma.TransactionWhereInput {
   if (value === 'VARIABLE') return { classification: 'VARIABLE' };
@@ -37,7 +45,13 @@ function share(part: bigint, total: bigint) {
   return total === 0n ? 0 : Number((part * 10000n) / total) / 10000;
 }
 /** Aggregate exact actual amounts, disclose gaps and derive averages only from complete past months containing data. */
-export function calculateAnalytics(rows: AnalyticsRow[], from: string, to: string, today = berlinToday()) {
+export function calculateAnalytics(
+  rows: AnalyticsRow[],
+  from: string,
+  to: string,
+  today = berlinToday(),
+  categoryId?: string | null,
+) {
   const range = analyticsRange({ from, to }, today);
   const monthly = Array.from(
     { length: range.months },
@@ -74,23 +88,26 @@ export function calculateAnalytics(rows: AnalyticsRow[], from: string, to: strin
       /** Each calendar date belongs to one selected bucket. */ (entry) => entry.month === day.slice(0, 7),
     )!;
     month.count++;
-    if (row.amountCents > 0n) {
-      income += row.amountCents;
-      month.income += row.amountCents;
-    } else if (row.amountCents < 0n) {
-      const amount = -row.amountCents;
+    const signed = categoryAmount(row, categoryId);
+    if (signed > 0n) {
+      income += signed;
+      month.income += signed;
+    } else if (signed < 0n) {
+      const amount = -signed;
       expense += amount;
       month.expense += amount;
-      const key = row.categoryId ?? '',
-        category = categories.get(key) ?? {
-          categoryId: row.categoryId,
-          name: row.category?.name ?? 'Nicht kategorisiert',
-          expense: 0n,
-          count: 0,
-        };
-      category.expense += amount;
-      category.count++;
-      categories.set(key, category);
+      for (const part of categoryParts(row, categoryId)) {
+        const key = part.categoryId ?? '',
+          category = categories.get(key) ?? {
+            categoryId: part.categoryId,
+            name: part.category?.name ?? 'Nicht kategorisiert',
+            expense: 0n,
+            count: 0,
+          };
+        category.expense -= part.amountCents;
+        category.count++;
+        categories.set(key, category);
+      }
       const classification = row.classification ?? (row.contractPayment ? 'FIXED' : 'UNCLASSIFIED');
       const bucket = classifications.get(classification as 'FIXED' | 'VARIABLE' | 'UNCLASSIFIED')!;
       bucket.expense += amount;
@@ -233,17 +250,17 @@ export class AnalyticsService {
   /** Aggregate booked non-transfer expenses by exact trimmed source identity, preserving effective query provenance. */
   async merchants(input: z.infer<typeof c.merchantAnalyticsQuerySchema>, today = berlinToday()) {
     const { from, to } = analyticsRange(input, today);
+    const category = categoryScope(input);
     const rows = await this.db.transaction.findMany({
       where: {
-        AND: await merchantWhere(this.db, input.merchantKey),
+        AND: [await merchantWhere(this.db, input.merchantKey), categoryWhere(category)],
         status: 'BOOKED',
         isTransfer: false,
         amountCents: { lt: 0n },
         accountId: await resolveAccountScope(this.db, input),
-        categoryId: input.uncategorized === 'true' ? null : input.categoryId,
         bookingDate: { gte: new Date(from), lte: new Date(to) },
       },
-      select: { counterpartyName: true, amountCents: true },
+      select: { counterpartyName: true, amountCents: true, categoryId: true, splits: true },
     });
     const buckets = new Map<
       string,
@@ -254,9 +271,10 @@ export class AnalyticsService {
       const name = merchantIdentity(row.counterpartyName),
         key = merchantKey(name);
       const bucket = buckets.get(key) ?? { key, name, label: name ?? 'Unbekannter Händler', expense: 0n, count: 0 };
-      bucket.expense -= row.amountCents;
+      const amount = categoryAmount(row, category);
+      bucket.expense -= amount;
       bucket.count++;
-      total -= row.amountCents;
+      total -= amount;
       buckets.set(key, bucket);
     }
     return c.merchantAnalyticsSchema.parse({
@@ -290,17 +308,21 @@ export class AnalyticsService {
   /** Apply account/category filters before aggregation; accountless bookings count by default. */
   async overview(input: z.infer<typeof c.analyticsOverviewQuerySchema>, today = berlinToday()) {
     const { from, to } = analyticsRange(input, today);
+    const category = categoryScope(input);
     const rows = await this.db.transaction.findMany({
       where: {
-        AND: await merchantWhere(this.db, input.merchantKey),
+        AND: [await merchantWhere(this.db, input.merchantKey), categoryWhere(category)],
         status: 'BOOKED',
         isTransfer: false,
         accountId: await resolveAccountScope(this.db, input),
-        categoryId: input.uncategorized === 'true' ? null : input.categoryId,
         bookingDate: { gte: new Date(from), lte: new Date(to) },
       },
-      include: { category: { select: { name: true } }, contractPayment: { select: { id: true } } },
+      include: {
+        category: { select: { name: true } },
+        contractPayment: { select: { id: true } },
+        splits: splitCategories,
+      },
     });
-    return calculateAnalytics(rows, from, to, today);
+    return calculateAnalytics(rows, from, to, today, category);
   }
 }

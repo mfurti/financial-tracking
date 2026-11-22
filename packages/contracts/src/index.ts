@@ -115,6 +115,21 @@ export const centsSchema = z
     'Betrag außerhalb des zulässigen Bereichs.',
   );
 export const categoryKindSchema = z.enum(['INCOME', 'EXPENSE', 'BOTH']);
+export const positiveCentsSchema = centsSchema.refine(
+  /** Validate positive magnitudes without parsing malformed values as BIGINT. */ (value) => /^[1-9]\d*$/.test(value),
+  'Betrag muss größer als null sein.',
+);
+export const transactionSplitSchema = z.object({ categoryId: idSchema.nullable(), amountCents: positiveCentsSchema });
+export const transactionSplitLimit = 20;
+export const transactionSplitsInputSchema = z
+  .object({ splits: z.array(transactionSplitSchema).max(transactionSplitLimit) })
+  .strict()
+  .refine(
+    ({ splits }) =>
+      splits.length === 0 ||
+      (splits.length >= 2 && new Set(splits.map((part) => part.categoryId)).size === splits.length),
+    { path: ['splits'], message: 'Wähle mindestens zwei unterschiedliche Kategorien.' },
+  );
 export const transactionStatusSchema = z.enum(['BOOKED', 'PENDING']);
 export const runStatusSchema = z.enum([
   'CREATED',
@@ -225,6 +240,9 @@ export const transactionSchema = z.object({
   contract: z.object({ id: idSchema, name: z.string(), dueDate: dateSchema }).nullable().default(null),
   isTransfer: z.boolean(),
   transferGroupId: idSchema.nullable(),
+  splits: z.array(transactionSplitSchema).optional(),
+  /** A category-filtered list can show its contribution while retaining the original amount. */
+  categoryAmountCents: centsSchema.optional(),
 });
 export const transactionPatchSchema = z.object({
   categoryId: idSchema.nullable().optional(),
@@ -285,12 +303,6 @@ export const suggestionKeySchema = z.string().regex(/^[a-f0-9]{64}$/);
 export const suggestionQuerySchema = z.object({ dismissed: z.enum(['true', 'false']).optional() });
 export const suggestionDecisionSchema = z.object({ decision: z.literal('DISMISSED') });
 export const contractIntervalSchema = z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]);
-export const positiveCentsSchema = centsSchema.refine(
-  /** Contract forecasts are positive expense magnitudes; invalid syntax must reject without throwing during refinement. */ (
-    value,
-  ) => /^[1-9]\d*$/.test(value),
-  'Betrag muss größer als null sein.',
-);
 export const contractInputSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
@@ -379,6 +391,18 @@ export const contractSuggestionSchema = z.object({
 });
 /** Aggregated totals can exceed a single PostgreSQL BIGINT while retaining integer-cent precision. */
 export const aggregateCentsSchema = z.string().regex(/^-?(0|[1-9]\d*)$/);
+export const categoryBudgetQuerySchema = z.object({
+  month: z.string().regex(/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/),
+});
+export const categoryBudgetInputSchema = categoryBudgetQuerySchema
+  .extend({ categoryId: idSchema, limitCents: positiveCentsSchema })
+  .strict();
+export const categoryBudgetSchema = categoryBudgetInputSchema.extend({ id: idSchema });
+export const categoryBudgetSummarySchema = categoryBudgetSchema.extend({
+  categoryName: z.string(),
+  spentCents: aggregateCentsSchema,
+});
+export const categoryBudgetDeleteSchema = z.object({ confirm: z.literal(true) }).strict();
 export const accountPresentationInputSchema = z.object({ reserveEligible: z.boolean() }).strict();
 export const accountPresentationSchema = accountPresentationInputSchema.extend({ accountId: idSchema });
 export const reserveGoalInputSchema = z.object({ targetCents: positiveCentsSchema }).strict();
@@ -731,6 +755,7 @@ export const monthlyReviewSchema = z.object({
 });
 export const monthlySchema = z.object({
   month: z.string(),
+  bookedCount: z.number().int().nonnegative().optional(),
   incomeCents: z.string(),
   expenseCents: z.string(),
   netCents: z.string(),
@@ -970,7 +995,7 @@ export interface ApiContract {
   status: number;
   public?: boolean;
 }
-const okSchema = z.object({ ok: z.boolean() });
+export const okSchema = z.object({ ok: z.boolean() });
 /** Operation inventory shared with generated OpenAPI and contract tests. */
 export const apiContracts: Record<string, ApiContract> = {
   monthlyReview: {
@@ -1275,6 +1300,13 @@ export const apiContracts: Record<string, ApiContract> = {
     response: transactionSchema,
     status: 200,
   },
+  setTransactionSplits: {
+    method: 'put',
+    path: '/transactions/{id}/splits',
+    request: transactionSplitsInputSchema,
+    response: transactionSchema,
+    status: 200,
+  },
   bulkCategory: {
     method: 'post',
     path: '/transactions/bulk-category',
@@ -1283,6 +1315,27 @@ export const apiContracts: Record<string, ApiContract> = {
     status: 201,
   },
   categories: { method: 'get', path: '/categories', response: z.array(categorySchema), status: 200 },
+  categoryBudgets: {
+    method: 'get',
+    path: '/budgets',
+    query: categoryBudgetQuerySchema,
+    response: z.array(categoryBudgetSummarySchema),
+    status: 200,
+  },
+  setCategoryBudget: {
+    method: 'put',
+    path: '/budgets',
+    request: categoryBudgetInputSchema,
+    response: categoryBudgetSchema,
+    status: 200,
+  },
+  deleteCategoryBudget: {
+    method: 'delete',
+    path: '/budgets/{id}',
+    request: categoryBudgetDeleteSchema,
+    response: okSchema,
+    status: 200,
+  },
   createCategory: {
     method: 'post',
     path: '/categories',

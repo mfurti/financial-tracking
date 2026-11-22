@@ -16,6 +16,7 @@ import {
 } from '@financial-tracking/contracts';
 
 const api = useApi();
+const popup = useFinancePopup();
 const route = useRoute();
 const router = useRouter();
 const rows = ref<Transaction[]>([]);
@@ -23,6 +24,9 @@ const detail = ref<Transaction | null>(null);
 const accounts = ref<Account[]>([]);
 const categories = ref<Category[]>([]);
 const selected = ref<string[]>([]);
+const selectionHasSplits = computed(() =>
+  rows.value.some((row) => row.splits?.length && selected.value.includes(row.id)),
+);
 const returnTarget = computed(
   /** Restore only an explicitly supported, validated local financial view. */ () =>
     financeReturnTarget(route.query.returnTo),
@@ -311,6 +315,15 @@ onBeforeUnmount(
         >›</UButton
       >
     </div>
+    <UButton v-else-if="popup?.background.value" variant="soft" @click="popup.close()">
+      {{
+        popup.background.value.path === '/analytics/details'
+          ? tr('Zur Analyse zurück')
+          : popup.background.value.path === '/transactions'
+            ? tr('Alle Umsätze')
+            : tr('Schließen')
+      }}
+    </UButton>
     <UButton v-else :to="returnTarget ?? '/transactions'" variant="soft">{{
       route.params.id
         ? returnTarget?.startsWith('/analytics/details?')
@@ -339,12 +352,12 @@ onBeforeUnmount(
       <dt>{{ tr('Gegenkonto') }}</dt>
       <dd>{{ detail.counterpartyIban || tr('Nicht geliefert') }}</dd>
       <dt>{{ tr('Kategorie') }}</dt>
-      <dd>{{ categoryName(detail.categoryId) }}</dd>
+      <dd>{{ detail.splits?.length ? tr('Aufgeteilt') : categoryName(detail.categoryId) }}</dd>
     </dl>
     <UButton v-if="detail.contract" :to="`/contracts/${detail.contract.id}`" size="sm" variant="soft" class="mt-4"
       >{{ tr('Vertrag:') }} {{ detail.contract.name }}</UButton
     >
-    <div class="toolbar mt-5">
+    <div v-if="!detail.splits?.length" class="toolbar mt-5">
       <ChoiceSelect
         :model-value="detail.categoryId ?? ''"
         :aria-label="tr('Kategorie zuordnen')"
@@ -360,6 +373,13 @@ onBeforeUnmount(
         detail.isTransfer ? tr('Umbuchung aufheben') : tr('Als Umbuchung markieren')
       }}</UButton>
     </div>
+    <TransactionSplitEditor
+      v-if="detail.status === 'BOOKED' && !detail.isTransfer && detail.amountCents !== '0'"
+      :key="detail.id"
+      :transaction="detail"
+      :categories="categories"
+      @changed="detail = $event"
+    />
   </SectionPanel>
   <ClassificationEditor v-if="detail" :ids="[detail.id]" :value="detail.classification" @changed="load()" />
   <AccountAssignment
@@ -496,6 +516,7 @@ onBeforeUnmount(
       <div v-if="selected.length" class="toolbar mb-5">
         <span>{{ selected.length }} {{ tr('ausgewählt') }}</span
         ><ChoiceSelect
+          v-if="!selectionHasSplits"
           v-model="bulkCategory"
           :aria-label="tr('Kategorie für Auswahl')"
           :searchable="true"
@@ -505,8 +526,8 @@ onBeforeUnmount(
               /** Build a persisted choice. */ (category) => ({ label: `${category.name}`, value: category.id }),
             ),
           ]"
-        /><UButton @click="bulk">{{ tr('Kategorie zuweisen') }}</UButton
-        ><UButton :disabled="selected.length > 2" variant="soft" @click="transfer">{{
+        /><UButton v-if="!selectionHasSplits" @click="bulk">{{ tr('Kategorie zuweisen') }}</UButton
+        ><UButton :disabled="selected.length > 2 || selectionHasSplits" variant="soft" @click="transfer">{{
           tr('Umbuchung verknüpfen')
         }}</UButton>
       </div>
@@ -524,11 +545,11 @@ onBeforeUnmount(
             @update:model-value="selectTransaction(row.id, $event)"
           />
           <div class="ledger-description">
-            <NuxtLink :to="bookingLink(row.id)"
+            <FinancePopupLink :to="bookingLink(row.id)" :dialog-title="tr('Umsatzdetails')"
               ><strong>{{ row.description }}</strong
               ><small
-                >{{ categoryName(row.categoryId) }} · {{ accountLabel(row.accountId)
-                }}<span v-if="row.isTransfer"> {{ tr('· Umbuchung') }}</span
+                >{{ row.splits?.length ? tr('Aufgeteilt') : categoryName(row.categoryId) }} ·
+                {{ accountLabel(row.accountId) }}<span v-if="row.isTransfer"> {{ tr('· Umbuchung') }}</span
                 ><span v-if="row.status === 'PENDING'"> {{ tr('· Vorgemerkt') }}</span
                 ><span v-if="row.categoryOrigin === 'RULE'"> {{ tr('· Regel:') }} {{ row.categoryRuleName }}</span
                 ><span v-if="row.categoryRuleConflict">
@@ -536,12 +557,13 @@ onBeforeUnmount(
                 ><span v-if="row.effectiveClassification !== 'UNCLASSIFIED'">
                   · {{ row.effectiveClassification === 'FIXED' ? tr('Fix') : tr('Variabel') }}</span
                 ></small
-              ></NuxtLink
+              ></FinancePopupLink
             ><UButton v-if="row.contract" :to="`/contracts/${row.contract.id}`" size="xs" variant="soft" class="mt-1">{{
               row.contract.name
             }}</UButton>
           </div>
           <ChoiceSelect
+            v-if="!row.splits?.length"
             :model-value="row.categoryId ?? ''"
             :aria-label="tr('Kategorie für {0}', [row.description])"
             :searchable="true"
@@ -555,7 +577,7 @@ onBeforeUnmount(
           /><strong
             data-financial
             :class="BigInt(row.amountCents) > 0n ? 'positive' : BigInt(row.amountCents) < 0n ? 'negative' : ''"
-            ><template v-if="!amountsMasked()">{{ money(row.amountCents) }}</template
+            ><template v-if="!amountsMasked()">{{ money(row.categoryAmountCents ?? row.amountCents) }}</template
             ><template v-else>{{ tr('Betrag ausgeblendet') }}</template></strong
           >
         </div>
