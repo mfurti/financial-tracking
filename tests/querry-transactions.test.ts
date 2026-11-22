@@ -80,7 +80,7 @@ describe('Querry Kit transaction read', /** Check the migration boundary against
     expect(transactionPageSchema.parse(next.json())).toMatchObject({ items: [{ id: smallId }], nextCursor: null });
   });
 
-  it.skip('applies scope before counting and returns deterministic exact pages', /** Exercise the pinned browser client's URL serializer and all page metadata. */ async () => {
+  it('applies scope before counting and returns deterministic exact pages', /** Exercise the pinned browser client's URL serializer and all page metadata. */ async () => {
     const where = JSON.stringify({ groupId, from: '2026-10-15', to: '2026-10-15', direction: 'EXPENSE' });
     const orderBy = JSON.stringify([{ bookingDate: 'desc' }]);
     const response = await app.inject({
@@ -147,7 +147,7 @@ describe('Querry Kit transaction read', /** Check the migration boundary against
     expect(numericText.json()).toMatchObject({ items: [{ id: exactId }], meta: { itemCount: 1 } });
   });
 
-  it.skip('denies anonymous reads and rejects undeclared inputs without returning rows', /** Validate errors from the public route with a disposable fixture. */ async () => {
+  it('denies anonymous reads and rejects undeclared inputs without returning rows', /** Validate errors from the public route with a disposable fixture. */ async () => {
     const denied = await app.inject({ method: 'GET', url });
     expect(denied.statusCode).toBe(401);
     expect(denied.json()).not.toHaveProperty('meta');

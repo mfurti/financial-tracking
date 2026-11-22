@@ -11,6 +11,7 @@ import {
   connectionInputSchema,
   connectionSchema,
   transactionQuerySchema,
+  transactionTableFilterSchema,
   transactionPatchSchema,
   transactionSchema,
   transactionPageSchema,
@@ -41,6 +42,31 @@ export function publicTransaction(
     bookingDate: row.bookingDate.toISOString().slice(0, 10),
     valueDate: row.valueDate?.toISOString().slice(0, 10) ?? null,
   });
+}
+
+/** Build the same scoped predicate for both legacy and table transaction reads. */
+export async function transactionListWhere(
+  db: Pick<Prisma.TransactionClient, 'accountGroup' | '$queryRaw'>,
+  query: z.infer<typeof transactionTableFilterSchema>,
+): Promise<Prisma.TransactionWhereInput> {
+  return {
+    AND: [classificationWhere(query.classification), await merchantWhere(db, query.merchantKey)],
+    accountId: await resolveAccountScope(db, query),
+    categoryId: query.uncategorized === 'true' ? null : query.categoryId,
+    status: query.status,
+    isTransfer: query.excludeTransfers === 'true' ? false : undefined,
+    bookingDate: {
+      gte: query.from ? new Date(query.from) : undefined,
+      lte: query.to ? new Date(query.to) : undefined,
+    },
+    amountCents: query.direction === 'INCOME' ? { gt: 0n } : query.direction === 'EXPENSE' ? { lt: 0n } : undefined,
+    OR: query.search
+      ? [
+          { description: { contains: query.search, mode: 'insensitive' } },
+          { counterpartyName: { contains: query.search, mode: 'insensitive' } },
+        ]
+      : undefined,
+  };
 }
 
 /** Account management, user annotations, and exact monthly analytics. */
@@ -152,24 +178,7 @@ export class LedgerService {
   }
   /** Search transactions with a stable date/id cursor and bounded pages. */
   async transactions(query: z.infer<typeof transactionQuerySchema>) {
-    const where: Prisma.TransactionWhereInput = {
-      AND: [classificationWhere(query.classification), await merchantWhere(this.db, query.merchantKey)],
-      accountId: await resolveAccountScope(this.db, query),
-      categoryId: query.uncategorized === 'true' ? null : query.categoryId,
-      status: query.status,
-      isTransfer: query.excludeTransfers === 'true' ? false : undefined,
-      bookingDate: {
-        gte: query.from ? new Date(query.from) : undefined,
-        lte: query.to ? new Date(query.to) : undefined,
-      },
-      amountCents: query.direction === 'INCOME' ? { gt: 0n } : query.direction === 'EXPENSE' ? { lt: 0n } : undefined,
-      OR: query.search
-        ? [
-            { description: { contains: query.search, mode: 'insensitive' } },
-            { counterpartyName: { contains: query.search, mode: 'insensitive' } },
-          ]
-        : undefined,
-    };
+    const where = await transactionListWhere(this.db, query);
     const rows = await this.db.transaction.findMany({
       where,
       include: { contractPayment: { include: { contract: { select: { id: true, name: true } } } } },

@@ -31,6 +31,7 @@ import { WealthService } from './wealth.js';
 import { WorkspaceService } from './workspace.js';
 import { AccountGroupsService } from './account-groups.js';
 import { NotificationsService } from './notifications.js';
+import { TransactionTableModule } from './modules/transactions/transaction-table.module.js';
 
 /** Create an application with injectable persistence for integration tests. */
 export async function createApp(
@@ -38,6 +39,7 @@ export async function createApp(
   recover = true,
 ): Promise<{ app: NestFastifyApplication; db: Db; openapi: OpenAPIObject }> {
   @Module({
+    imports: [TransactionTableModule.register(db)],
     controllers: [
       RootController,
       ImportController,

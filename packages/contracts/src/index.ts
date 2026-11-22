@@ -673,8 +673,8 @@ export const merchantAnalyticsSchema = z.object({
     }),
   ),
 });
-export const transactionQuerySchema = z
-  .object({
+export const transactionTableFilterSchema = z
+  .strictObject({
     classification: classificationSchema.optional(),
     merchantKey: merchantKeySchema.optional(),
     accountId: idSchema.optional(),
@@ -688,8 +688,6 @@ export const transactionQuerySchema = z
     direction: z.enum(['INCOME', 'EXPENSE']).optional(),
     uncategorized: z.enum(['true', 'false']).optional(),
     excludeTransfers: z.enum(['true', 'false']).optional(),
-    cursor: idSchema.optional(),
-    limit: z.coerce.number().int().min(1).max(100).default(50),
   })
   .refine(
     /** A specific account and the unassigned-only view are mutually exclusive. */
@@ -701,6 +699,70 @@ export const transactionQuerySchema = z
     (query) => !query.from || !query.to || query.from <= query.to,
     'Ungültiger Zeitraum.',
   );
+export const transactionQuerySchema = transactionTableFilterSchema
+  .safeExtend({
+    cursor: idSchema.optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+  })
+  .strip();
+
+/** Public envelope for the paginated table client. Nested domain filters are JSON strings. */
+export const tablePageQuerySchema = z.strictObject({
+  page: z.coerce.number().int().min(1).max(1_000_000).default(1),
+  perPage: z.coerce.number().int().min(1).max(100).default(25),
+  where: z.string().min(1).max(4096).optional().describe('JSON object of documented resource filters.'),
+  orderBy: z.string().min(1).max(256).optional().describe('JSON array of documented resource sort keys.'),
+  fields: z.string().trim().min(1).max(512).optional(),
+});
+
+/** Validated paging and bounded JSON query parts supplied to a table resource. */
+export type TablePageQuery = z.infer<typeof tablePageQuerySchema>;
+
+export const tablePageMetaSchema = z.object({
+  page: z.number().int().positive(),
+  perPage: z.number().int().min(1).max(100),
+  itemCount: z.number().int().nonnegative(),
+  pageCount: z.number().int().nonnegative(),
+  hasPrevPage: z.boolean(),
+  hasNextPage: z.boolean(),
+});
+
+const tableSummarySchema = z.object({ id: idSchema, name: z.string() }).partial();
+const orderDirectionSchema = z.enum(['asc', 'desc']);
+export const transactionTableOrderSchema = z
+  .array(
+    z.union([
+      z.strictObject({ bookingDate: orderDirectionSchema }),
+      z.strictObject({ amountCents: orderDirectionSchema }),
+      z.strictObject({ description: orderDirectionSchema }),
+    ]),
+  )
+  .min(1)
+  .max(3);
+
+/** Matches the detail schema except private bank identifiers and permits projected fields. */
+export const transactionTableRowSchema = transactionSchema
+  .omit({ counterpartyIban: true })
+  .extend({
+    categoryOrigin: transactionSchema.shape.categoryOrigin.removeDefault(),
+    categoryRuleId: transactionSchema.shape.categoryRuleId.removeDefault(),
+    categoryRuleName: transactionSchema.shape.categoryRuleName.removeDefault(),
+    categoryRuleConflict: transactionSchema.shape.categoryRuleConflict.removeDefault(),
+    classification: transactionSchema.shape.classification.removeDefault(),
+    effectiveClassification: transactionSchema.shape.effectiveClassification.removeDefault(),
+    contractAutoBlocked: transactionSchema.shape.contractAutoBlocked.removeDefault(),
+    contract: transactionSchema.shape.contract.removeDefault(),
+    account: tableSummarySchema.nullable(),
+    category: tableSummarySchema.nullable(),
+  })
+  .partial()
+  .required({ id: true });
+
+export const transactionTablePageSchema = z.object({
+  items: z.array(transactionTableRowSchema),
+  meta: tablePageMetaSchema,
+});
+
 export const transactionPageSchema = z.object({ items: z.array(transactionSchema), nextCursor: idSchema.nullable() });
 export const monthlyQuerySchema = z
   .object({
@@ -1266,6 +1328,13 @@ export const apiContracts: Record<string, ApiContract> = {
     request: assignmentInputSchema,
     response: assignmentResultSchema,
     status: 201,
+  },
+  transactionTable: {
+    method: 'get',
+    path: '/transactions/table',
+    query: tablePageQuerySchema,
+    response: transactionTablePageSchema,
+    status: 200,
   },
   transaction: { method: 'get', path: '/transactions/{id}', response: transactionSchema, status: 200 },
   patchTransaction: {

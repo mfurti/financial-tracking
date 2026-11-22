@@ -51,3 +51,10 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 - The migration history still matches the selected main revision. A two-database synthetic logical backup/restore round trip reconciled canonical rows in 22 tables, including exact values above JavaScript's safe integer range, scoped monthly totals, identities, imports, transfers, payment links, observations, wealth, and owner settings.
 - The archived API compatibility test initially failed on an entire-lockfile equality assertion after adding Querry Kit. The check now compares the archived API and compiler's effective locked dependency closure and integrity, then still boots the actual older app. Both the old-application test and the restore test passed.
 - This fixture exercises a PostgreSQL logical export and restore in isolation. The encrypted pg_dump/age container procedure retains its separate operations gate.
+
+## T007: Scoped transaction resource
+
+- The new protected route uses validated resource filters, repeatable-read counting and row selection, Querry Kit projection and paging, and exact scoped date/cents semantics. Legacy cursor reads still use the same predicate.
+- All 3 transaction resource cases and 22 existing ledger, monthly review, auth boundary, and archived app cases passed. API build, root TypeScript, and scoped ESLint passed.
+- On 10,000 disposable transactions scoped to one account, an authenticated 25-row first page took about 5.0 ms on the legacy cursor route and 7.1 ms on the table route (middle warm samples, Windows workstation). Both row-select shapes used a limiting index-only scan on the account/date/ID index. The full-scope count used an aggregate over a sequential scan. The measurement is local fixture evidence.
+- Prisma's PostgreSQL adapter emitted a pg concurrency deprecation notice when loading relations in a transaction. The pinned driver completed the reads successfully.
