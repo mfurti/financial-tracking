@@ -3,6 +3,7 @@ import type { RouteLocationNormalizedLoaded, RouteLocationRaw } from 'vue-router
 
 type FinancePopup = {
   background: ShallowRef<RouteLocationNormalizedLoaded | undefined>;
+  close: () => void;
   destination: (to: RouteLocationRaw, title: string) => RouteLocationRaw;
   trackMutation: () => (() => void) | undefined;
 };
@@ -79,6 +80,7 @@ export function provideFinancePopup() {
 
   provide(financePopupKey, {
     background,
+    close,
     destination(to, caption) {
       const { path, query, hash } = router.resolve(to);
       return {

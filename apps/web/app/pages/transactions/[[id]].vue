@@ -16,6 +16,7 @@ import {
 } from '@financial-tracking/contracts';
 
 const api = useApi();
+const popup = useFinancePopup();
 const route = useRoute();
 const router = useRouter();
 const rows = ref<Transaction[]>([]);
@@ -314,6 +315,15 @@ onBeforeUnmount(
         >›</UButton
       >
     </div>
+    <UButton v-else-if="popup?.background.value" variant="soft" @click="popup.close()">
+      {{
+        popup.background.value.path === '/analytics/details'
+          ? tr('Zur Analyse zurück')
+          : popup.background.value.path === '/transactions'
+            ? tr('Alle Umsätze')
+            : tr('Schließen')
+      }}
+    </UButton>
     <UButton v-else :to="returnTarget ?? '/transactions'" variant="soft">{{
       route.params.id
         ? returnTarget?.startsWith('/analytics/details?')
