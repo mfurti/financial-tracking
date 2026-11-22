@@ -41,3 +41,7 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 
 - The rebuilt shell uses a centered 1120 px content column, compact sticky desktop navigation with Imports and Settings, and bottom navigation on small screens. It reuses the existing translated destination labels.
 - Nuxt typecheck, lint, and production build passed. Playwright passed all 18 shell, surface, concept coverage, and locale/privacy cases at 390 px and 1440 px. The earlier browser run loaded the previous build; the evidence is from the rebuilt artifacts.
+
+## T006: Transaction table contract cases
+
+- The pinned client serializer, scoped pagination and projection cases reject the baseline's missing route as expected. The real authenticated legacy cursor test passes. The two new-route cases are recorded as pending until T007 adds the endpoint. Scoped ESLint passed.
