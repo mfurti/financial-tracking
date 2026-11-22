@@ -79,3 +79,7 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 
 - The scope control supports all accounts, a saved group, or one account. The visible report and observed balances use that scope. Income and expense cards open the corresponding booked, transfer-excluding transaction list for the same month.
 - Nuxt typecheck, lint and production build passed. All 16 Chromium overview, group, and locale/privacy cases passed at 390 px and 1440 px, including the account-scoped keyboard drill-down.
+
+## T012: Account table compatibility cases
+
+- The new authenticated resource case failed against the baseline's absent table route as expected. The existing routes passed their compatibility case. Scoped lint passed. The new case is pending until the matching implementation task.
