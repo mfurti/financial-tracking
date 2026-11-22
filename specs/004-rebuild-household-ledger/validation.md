@@ -102,3 +102,8 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 
 - Analysis now uses focused summary panels. The detail view places its date and account scope alongside the exact total. Wealth navigation exposes dated records, reserve and the separate synthetic portfolio as distinct destinations within the page.
 - Lint, Nuxt types and production build passed. All 18 analytics, reserve, recorded-wealth and demo unit cases and all 18 targeted Chromium cases passed.
+
+## T017: Settings and supporting views
+
+- The settings hub groups account/access tasks and device choices. Profile and appearance links sit in the page header. Categories and Notifications use the shared visual hierarchy while retaining their existing persistence and permission boundaries.
+- Scoped lint, Nuxt types, production build and all 22 Chromium cases passed, covering profile, permissions and revoked sessions, device settings, categories, notification receipts, appearance and local demo roles.

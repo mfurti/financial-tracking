@@ -131,15 +131,7 @@ onBeforeUnmount(
 </script>
 
 <template>
-  <UNavigationMenu
-    :items="[
-      { label: tr('Analysen'), to: '/analytics', exact: true },
-      { label: tr('Kategorien & Regeln'), to: '/categories' },
-    ]"
-    class="mb-5"
-    :aria-label="tr('Analysebereiche')"
-  />
-  <div class="page-heading">
+  <div class="page-heading flex-wrap">
     <div>
       <h1>{{ tr('Kategorien & Auswertung') }}</h1>
     </div>
@@ -148,6 +140,14 @@ onBeforeUnmount(
       ><UButton variant="soft" :loading="loading" @click="load">{{ tr('Aktualisieren') }}</UButton>
     </div>
   </div>
+  <UNavigationMenu
+    :items="[
+      { label: tr('Analysen'), to: '/analytics', exact: true },
+      { label: tr('Kategorien & Regeln'), to: '/categories' },
+    ]"
+    class="mb-5"
+    :aria-label="tr('Analysebereiche')"
+  />
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <p v-if="loading" role="status" class="muted mb-5">{{ tr('Deine Auswertung wird geladen …') }}</p>
   <template v-if="report && !loading && !error">

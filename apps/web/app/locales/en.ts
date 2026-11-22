@@ -1542,4 +1542,6 @@ export const en: Record<keyof typeof de, string> = {
   Vermögensbereiche: 'Wealth sections',
   Aufzeichnungen: 'Recorded wealth',
   'Demo-Depot': 'Demo portfolio',
+  'Konto & Zugang': 'Account & access',
+  'Auf diesem Gerät': 'On this device',
 };

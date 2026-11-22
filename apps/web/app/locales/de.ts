@@ -1562,4 +1562,6 @@ export const de = {
   Vermögensbereiche: 'Vermögensbereiche',
   Aufzeichnungen: 'Aufzeichnungen',
   'Demo-Depot': 'Demo-Depot',
+  'Konto & Zugang': 'Konto & Zugang',
+  'Auf diesem Gerät': 'Auf diesem Gerät',
 } as const;

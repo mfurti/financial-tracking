@@ -65,11 +65,11 @@ onBeforeUnmount(
 );
 </script>
 <template>
-  <UButton to="/settings" variant="link">{{ tr('Zurück zu Einstellungen') }}</UButton>
-  <div class="page-heading">
+  <div class="page-heading flex-wrap">
     <h1>{{ tr('Mein Profil') }}</h1>
+    <UButton to="/settings" variant="link">{{ tr('Zurück zu Einstellungen') }}</UButton>
   </div>
-  <p>
+  <p class="muted mb-4">
     {{
       tr(
         'Persönliche Anzeige- und Kontaktdaten des bestehenden Eigentümers. Die Kontakt-E-Mail ändert weder Anmeldung noch Passwortwiederherstellung.',
@@ -81,7 +81,7 @@ onBeforeUnmount(
     <p>{{ loadError }}</p>
     <UButton variant="soft" @click="load">{{ tr('Profil erneut laden') }}</UButton>
   </div>
-  <SectionPanel v-if="ready" :title="tr('Eigentümerprofil')"
+  <SectionPanel v-if="ready" :title="tr('Eigentümerprofil')" compact
     ><p>{{ tr('Anmeldename:') }} {{ api.session.value?.username }}</p>
     <p v-if="notice" role="status">{{ notice }}</p>
     <UAlert v-if="error" role="alert" color="error" :description="error" />

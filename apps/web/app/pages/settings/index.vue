@@ -25,50 +25,56 @@ function setNotification(kind: 'imports' | 'payments', checked: boolean | 'indet
       )
     }}
   </p>
-  <div class="settings-links">
-    <FinanceTile
-      :label="tr('Mein Profil')"
-      :value="tr('Anzeige & Kontakt')"
-      :context="tr('Eigentümerprofil · Anmeldung bleibt unverändert')"
-      to="/settings/profile"
-    />
-    <FinanceTile
-      :label="tr('Kontogruppen')"
-      :value="tr('Konten ordnen')"
-      :context="tr('Dauerhafte Gruppen für gemeinsame Auswertungen')"
-      to="/settings/account-groups"
-    />
-    <FinanceTile
-      :label="tr('Darstellung')"
-      :value="tr('Farben & Helligkeit')"
-      :context="tr('Vorhandene Themen und Hell/Dunkel auf diesem Gerät')"
-      to="/settings/appearance"
-    />
-    <FinanceTile
-      :label="tr('Passwort')"
-      :value="tr('Zugang ändern')"
-      :context="tr('Aktuelles Passwort nötig · meldet alle Sitzungen ab')"
-      to="/settings/password"
-    />
-    <FinanceTile
-      :label="tr('Analysen')"
-      :value="tr('{0} ausgewählte Module', [preferences.analysisModules.length])"
-      :context="tr('Über Anpassen in der Analyse ändern · dieses Gerät')"
-      to="/analytics"
-    />
-    <FinanceTile
-      :label="tr('Benachrichtigungen')"
-      :value="tr('Importe & Fälligkeiten')"
-      :context="tr('Hinweise ausschließlich innerhalb dieser App')"
-      to="/notifications"
-    />
-    <FinanceTile
-      :label="tr('Lokale Demo-Rollen')"
-      :value="tr('Synthetische Anzeigeeinträge')"
-      :context="tr('Keine echten Nutzer oder Berechtigungen · dieses Gerät')"
-      to="/settings/users"
-    />
-  </div>
+  <SectionPanel :title="tr('Konto & Zugang')" class="settings-group" compact>
+    <div class="settings-links">
+      <FinanceTile
+        :label="tr('Mein Profil')"
+        :value="tr('Anzeige & Kontakt')"
+        :context="tr('Eigentümerprofil · Anmeldung bleibt unverändert')"
+        to="/settings/profile"
+      />
+      <FinanceTile
+        :label="tr('Kontogruppen')"
+        :value="tr('Konten ordnen')"
+        :context="tr('Dauerhafte Gruppen für gemeinsame Auswertungen')"
+        to="/settings/account-groups"
+      />
+      <FinanceTile
+        :label="tr('Passwort')"
+        :value="tr('Zugang ändern')"
+        :context="tr('Aktuelles Passwort nötig · meldet alle Sitzungen ab')"
+        to="/settings/password"
+      />
+    </div>
+  </SectionPanel>
+  <SectionPanel :title="tr('Auf diesem Gerät')" class="settings-group" compact>
+    <div class="settings-links settings-links--device">
+      <FinanceTile
+        :label="tr('Darstellung')"
+        :value="tr('Farben & Helligkeit')"
+        :context="tr('Vorhandene Themen und Hell/Dunkel auf diesem Gerät')"
+        to="/settings/appearance"
+      />
+      <FinanceTile
+        :label="tr('Analysen')"
+        :value="tr('{0} ausgewählte Module', [preferences.analysisModules.length])"
+        :context="tr('Über Anpassen in der Analyse ändern · dieses Gerät')"
+        to="/analytics"
+      />
+      <FinanceTile
+        :label="tr('Benachrichtigungen')"
+        :value="tr('Importe & Fälligkeiten')"
+        :context="tr('Hinweise ausschließlich innerhalb dieser App')"
+        to="/notifications"
+      />
+      <FinanceTile
+        :label="tr('Lokale Demo-Rollen')"
+        :value="tr('Synthetische Anzeigeeinträge')"
+        :context="tr('Keine echten Nutzer oder Berechtigungen · dieses Gerät')"
+        to="/settings/users"
+      />
+    </div>
+  </SectionPanel>
   <p v-if="storageState !== 'ready'" role="status">
     {{
       tr(
@@ -155,11 +161,17 @@ function setNotification(kind: 'imports' | 'payments', checked: boolean | 'indet
   margin-bottom: 24px;
   color: var(--muted);
 }
+.settings-group {
+  margin-bottom: 24px;
+}
 .settings-links {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
-  margin-bottom: 28px;
+  margin-block: 12px;
+}
+.settings-links--device {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .settings-sections {
   display: grid;
