@@ -1168,6 +1168,7 @@ export const de = {
   Saldo: 'Saldo',
   'Saldo der Geldflüsse': 'Saldo der Geldflüsse',
   'Saldo älter als 48 Stunden': 'Saldo älter als 48 Stunden',
+  Schließen: 'Schließen',
   'Schlüssel darf nicht leer sein.': 'Schlüssel darf nicht leer sein.',
   'Schnellwahl: abgeschlossene Monate. Eigener Zeitraum: maximal 36 Monate. Laufende Monate zählen zu den Summen, aber nicht zum Durchschnitt.':
     'Schnellwahl: abgeschlossene Monate. Eigener Zeitraum: maximal 36 Monate. Laufende Monate zählen zu den Summen, aber nicht zum Durchschnitt.',

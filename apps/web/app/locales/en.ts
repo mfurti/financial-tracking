@@ -1355,6 +1355,7 @@ export const en: Record<keyof typeof de, string> = {
   'Betrag außerhalb des zulässigen Bereichs.': 'Amount is outside the permitted range.',
   'Betrag muss größer als null sein.': 'Amount must be greater than zero.',
   'Ende liegt vor Beginn.': 'End precedes start.',
+  Schließen: 'Close',
   'Schlüssel darf nicht leer sein.': 'Key must not be empty.',
   'Gültigen Zeitraum mit höchstens 36 Kalendermonaten wählen.': 'Choose a valid period of at most 36 calendar months.',
   'Konto und Ohne-Konto-Filter nicht gleichzeitig auswählen.':
