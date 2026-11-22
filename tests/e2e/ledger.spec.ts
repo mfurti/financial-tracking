@@ -150,6 +150,14 @@ test('transaction table bookmarks recover paging, ordering, errors and focus', /
   const first = page.getByRole('link', { name: /Gehalt November/ });
   await expect(first).toBeVisible();
   const bookings = page.getByRole('region', { name: 'Buchungen', exact: true });
+  expect(
+    await bookings
+      .locator('footer')
+      .evaluate(
+        /** The page-size picker and every navigation button must fit at narrow widths. */ (footer) =>
+          footer.scrollWidth <= footer.clientWidth,
+      ),
+  ).toBe(true);
   await bookings.locator('button[data-slot=next]').click();
   await expect(page).toHaveURL(/(?:\?|&)page=2(?:&|$)/);
   const second = bookings.locator('a[id^=booking-]');

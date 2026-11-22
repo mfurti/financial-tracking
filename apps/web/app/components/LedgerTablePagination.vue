@@ -18,6 +18,7 @@ const texts = { pagination: { summary: tr('{start}–{end} von {total}') } };
     :total-items="total"
     :shortcuts="false"
     :texts="texts"
+    :ui="{ right: 'min-w-0 max-w-full flex-wrap' }"
   >
     <template #page-size>
       <ChoiceSelect
@@ -26,6 +27,15 @@ const texts = { pagination: { summary: tr('{start}–{end} von {total}') } };
         :aria-label="tr('Einträge pro Seite')"
         :searchable="false"
         @update:model-value="emit('page-size', Number($event))"
+      />
+    </template>
+    <template #pagination>
+      <UPagination
+        v-model:page="page"
+        :items-per-page="perPage"
+        :total="total"
+        :sibling-count="1"
+        :ui="{ list: 'flex-wrap' }"
       />
     </template>
   </QTablePagination>
