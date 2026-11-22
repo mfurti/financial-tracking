@@ -1,6 +1,6 @@
 # Current tasks
 
-Updated 2026-11-20. [Status/evidence](status.md), [integrated issue #13](https://github.com/mfurti/financial-tracking/issues/13), related [issue #3](https://github.com/mfurti/financial-tracking/issues/3). Production remains the last verified d193639 delivery from PR #11. An open item is not automatic implementation or deployment approval.
+Updated 2026-11-21. [Status/evidence](status.md), [integrated issue #13](https://github.com/mfurti/financial-tracking/issues/13), related [issue #3](https://github.com/mfurti/financial-tracking/issues/3). Production remains the last verified d193639 delivery from PR #11. An open item is not automatic implementation or deployment approval.
 
 The [rebuild task list](../specs/004-rebuild-household-ledger/tasks.md) tracks issue #21. This backlog retains the other open product and operating items.
 
@@ -19,6 +19,7 @@ The approved integrated concept supersedes the earlier R1 layout proposal, using
 - [x] **R1 — Compact integrated application UI.** Delivered responsive composition, shared sections/tiles/dialogs, compact search/filters and month navigation, contextual help, focused settings and stable light/dark/reduced-motion behavior through issue #13. Actual five-dimension visual evidence and accepted adaptations are in the feature validation. This is technical source delivery, not user acceptance or deployment.
 - [ ] **R2 — Field-level feedback for all legacy forms.** Future contract revisions and manual payment assignment still need consistently named fields/shared validation/field feedback for invalid amounts/dates and server conflicts, preserving drafts, focusing the relevant field and retaining financial values. Other delivered forms do not close this entire older requirement.
 - [ ] **R3 — Rich proposal payment evidence.** Replace indistinguishable booking links with compact date/amount/counterparty-or-text evidence while retaining linked detail, active-card state, dirty decisions and navigation-only swipes. Existing proposal decisions/carousel are delivered; per-payment previews remain open.
+- [ ] **R4 — Installable Progressive Web App (PWA).** Requested by the user on 2026-11-21 as future work. Plan installability, offline behavior and cache/update handling of private financial data in a separate increment. Recording this requirement does not extend the current deployment tasks or implement PWA support.
 
 Use existing Nuxt UI/shared Zod/exact cents and preserve history. Future increments retain scoped checks and their own approval/commit boundaries.
 
