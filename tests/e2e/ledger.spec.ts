@@ -69,6 +69,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
       refreshStarted = resolve;
     },
   );
+  const booking = page.getByRole('dialog', { name: 'Umsatzdetails', exact: true });
   await page.route(
     '**/api/v1/transactions?**',
     /** Keep real response data but deliver it after the user enters a detail. */ async (route) => {
@@ -84,7 +85,7 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
     const link = page.getByRole('link', { name: new RegExp(label) });
     const href = await link.getAttribute('href');
     await link.click();
-    await expect(page.getByRole('heading', { name: 'Umsatzdetails' })).toBeVisible();
+    await expect(booking).toBeVisible();
     const delivered = page.waitForResponse(
       /** Observe completion of the old list response without arbitrary delays. */ (response) =>
         new URL(response.url()).pathname === '/api/v1/transactions',
@@ -97,7 +98,9 @@ test('private ledger: login, CSV import, categorization, filters, responsive vie
     releaseRefresh();
     await page.unroute('**/api/v1/transactions?**');
   }
-  await expect(page.getByText(`Lebensmittel ${info.project.name}`, { exact: true }).first()).toBeVisible();
+  await expect(booking.getByLabel('Kategorie zuordnen', { exact: true })).toHaveText(
+    `Lebensmittel ${info.project.name}`,
+  );
   await page.route(
     '**/api/v1/transactions/bulk-classification',
     /** A rejected annotation must preserve the chosen draft and the original amount. */ async (route) =>
