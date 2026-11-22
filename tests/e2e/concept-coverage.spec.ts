@@ -133,7 +133,7 @@ async function capture(page: Page, info: TestInfo, language: 'de' | 'en', id: st
   );
   evidence.push({ id, path: new URL(page.url()).pathname, viewport: page.viewportSize(), surfaces });
   if (id !== 'seite-02') {
-    await expect(page.locator('.page-content')).toHaveCSS('max-width', '1480px');
+    await expect(page.locator('.page-content')).toHaveCSS('max-width', '1120px');
     await expect(page.locator('.page-content')).toHaveCSS(
       'padding-left',
       page.viewportSize()!.width <= 700 ? '17px' : '32px',

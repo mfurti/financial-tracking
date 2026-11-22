@@ -36,3 +36,8 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 
 - Querry Kit UI module loads in Nuxt. Table clients are made within the current Nuxt app, delegate only relative table reads to the existing same-origin transport, and validate each response using the caller's Zod schema. Existing commands keep the session and CSRF handling in the app transport.
 - Nuxt typecheck and scoped ESLint passed. The proxy and authorization boundary suites passed 7 tests in total. End-to-end table use is verified with the actual resource routes.
+
+## T004: Responsive shell
+
+- The rebuilt shell uses a centered 1120 px content column, compact sticky desktop navigation with Imports and Settings, and bottom navigation on small screens. It reuses the existing translated destination labels.
+- Nuxt typecheck, lint, and production build passed. Playwright passed all 18 shell, surface, concept coverage, and locale/privacy cases at 390 px and 1440 px. The earlier browser run loaded the previous build; the evidence is from the rebuilt artifacts.

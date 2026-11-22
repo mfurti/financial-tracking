@@ -12,7 +12,7 @@ test('shared financial surfaces use responsive gutters, restrained depth and sta
   );
   await expect(page.locator('.finance-overview-stats > section[data-state=ready]').first()).toBeVisible();
   const content = page.locator('.page-content');
-  await expect(content).toHaveCSS('max-width', '1480px');
+  await expect(content).toHaveCSS('max-width', '1120px');
   await expect(content).toHaveCSS('padding-left', info.project.use.viewport!.width <= 700 ? '17px' : '32px');
   const tile = page.locator('.finance-overview-stats > section[data-state=ready]').first();
   await expect(tile).toHaveCSS('border-radius', '22px');

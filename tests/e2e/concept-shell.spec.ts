@@ -13,7 +13,14 @@ test('shared concept navigation stays compact and marks existing destinations co
   await expect(page.locator('.sidebar')).toHaveCount(0);
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation', exact: true });
   await expect(navigation).toHaveCount(1);
-  await expect(navigation).toHaveCSS('position', 'fixed');
+  const directSettings = navigation.getByRole('link', { name: 'Einstellungen', exact: true });
+  const expanded = info.project.use.viewport!.width >= 901;
+  await expect(directSettings).toHaveCount(expanded ? 1 : 0);
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: 'Zum Inhalt springen' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#main-content')).toBeFocused();
+  await expect(navigation).toHaveCSS('position', info.project.use.viewport!.width <= 700 ? 'fixed' : 'sticky');
   for (const label of ['Umsätze', 'Konten', 'Analysen', 'Verträge', 'Vermögen', 'Übersicht', 'Mehr']) {
     await navigation.getByRole('link', { name: label, exact: true }).click();
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -24,7 +31,10 @@ test('shared concept navigation stays compact and marks existing destinations co
     .getByRole('navigation', { name: 'Verwalten', exact: true })
     .getByRole('link', { name: 'Einstellungen', exact: true })
     .click();
-  await expect(navigation.getByRole('link', { name: 'Mehr', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(expanded ? directSettings : navigation.getByRole('link', { name: 'Mehr', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
   expect(
     await page.evaluate(
       /** Navigation cannot establish document overflow at boundary widths. */ () =>
