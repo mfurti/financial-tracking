@@ -92,3 +92,8 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 
 - Account type and optional bookmarked group scope filter both rows and counts. The paginated public list shows exact latest observations, including missing and negative amounts. Existing account details retain private configuration and the bank connection workflow.
 - Typecheck, scoped lint and web build passed. Both account API cases and eight account, group and synthetic bank Chromium cases passed across 390 px, 1440 px and desktop/mobile.
+
+## T015: Contract table
+
+- Querry Kit applies payment direction and account/group scope before counting and selecting contracts. Rules and due dates are mapped by the existing recurrence engine. The calendar preview retains the complete source list independently of the visible table page.
+- Root and Nuxt typechecks, scoped lint, and production build passed. Ten contract resource and payment tests passed, plus all four calendar and contract workflow browser cases.

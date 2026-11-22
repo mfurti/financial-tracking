@@ -66,7 +66,7 @@ describe('Querry Kit contract read', /** Run resource and compatibility paths ov
     }
   });
 
-  it.skip('validates projection, date-only output, scoped counts and paging', /** Check client-facing pages alongside anonymous denial. */ async () => {
+  it('validates projection, date-only output, scoped counts and paging', /** Check client-facing pages alongside anonymous denial. */ async () => {
     const denied = await app.inject({ method: 'GET', url: route });
     expect(denied.statusCode).toBe(401);
     expect(denied.json()).not.toHaveProperty('meta');

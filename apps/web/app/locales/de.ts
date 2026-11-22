@@ -1557,4 +1557,6 @@ export const de = {
   'Einzelne Konten': 'Einzelne Konten',
   'Konto {0}': 'Konto {0}',
   'Keine Konten für diese Auswahl.': 'Keine Konten für diese Auswahl.',
+  Anbieter: 'Anbieter',
+  Vertragsbeginn: 'Vertragsbeginn',
 } as const;

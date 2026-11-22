@@ -784,6 +784,33 @@ export const accountTablePageSchema = z.object({
   meta: tablePageMetaSchema,
 });
 
+export const contractTableFilterSchema = z
+  .strictObject({
+    accountId: idSchema.optional(),
+    groupId: idSchema.optional(),
+    direction: contractDirectionSchema.optional(),
+    search: z.string().trim().max(200).optional(),
+  })
+  .refine(
+    /** A report cannot combine individual-account and group scopes. */ (filter) => validAccountScope(filter),
+    'Konto und Kontogruppe nicht gleichzeitig auswählen.',
+  );
+export const contractTableOrderSchema = z
+  .array(
+    z.union([
+      z.strictObject({ name: orderDirectionSchema }),
+      z.strictObject({ provider: orderDirectionSchema }),
+      z.strictObject({ startDate: orderDirectionSchema }),
+    ]),
+  )
+  .min(1)
+  .max(3);
+export const contractTableItemSchema = contractSchema.extend({ direction: contractDirectionSchema });
+export const contractTablePageSchema = z.object({
+  items: z.array(contractTableItemSchema.partial().required({ id: true })),
+  meta: tablePageMetaSchema,
+});
+
 export const monthlyQuerySchema = z
   .object({
     month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
@@ -1074,6 +1101,13 @@ export const apiContracts: Record<string, ApiContract> = {
     path: '/analytics/overview',
     query: analyticsOverviewQuerySchema,
     response: analyticsOverviewSchema,
+    status: 200,
+  },
+  contractTable: {
+    method: 'get',
+    path: '/contracts/table',
+    query: tablePageQuerySchema,
+    response: contractTablePageSchema,
     status: 200,
   },
   contracts: { method: 'get', path: '/contracts', response: z.array(contractSchema), status: 200 },

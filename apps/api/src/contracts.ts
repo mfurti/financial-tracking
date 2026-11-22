@@ -17,13 +17,14 @@ import {
   type ScheduledContract,
 } from './contract-schedule.js';
 
-const contractDetails = { revisions: { orderBy: { effectiveDate: 'asc' as const } }, payments: true };
+/** Keep ordered rule history and payment links available for both contract reads. */
+export const contractDetails = { revisions: { orderBy: { effectiveDate: 'asc' as const } }, payments: true };
 /** Serialize actual links separately from forecast occurrences. */
 function publicPayment(payment: ContractPayment) {
   return c.contractPaymentSchema.parse({ ...payment, dueDate: isoDay(payment.dueDate) });
 }
 /** Roll the next date forward past historical gaps and explicitly prepaid occurrences. */
-function publicContract(contract: ScheduledContract & { payments: ContractPayment[] }, today = berlinToday()) {
+export function publicContract(contract: ScheduledContract & { payments: ContractPayment[] }, today = berlinToday()) {
   const paid = new Set(
     contract.payments.map(/** Only actual links close an occurrence. */ (payment) => isoDay(payment.dueDate)),
   );

@@ -1537,4 +1537,6 @@ export const en: Record<keyof typeof de, string> = {
   'Einzelne Konten': 'Individual accounts',
   'Konto {0}': 'Account {0}',
   'Keine Konten für diese Auswahl.': 'No accounts match this selection.',
+  Anbieter: 'Provider',
+  Vertragsbeginn: 'Contract start date',
 };
