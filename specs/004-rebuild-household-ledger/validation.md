@@ -63,3 +63,9 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 
 - Import history now has direct CSV and bank connection actions, compact separated rows, and a dedicated review panel. CSV upload keeps the existing state machine and presents the file stage and preview as distinct regions.
 - Nuxt typecheck, lint, build, all 10 desktop/mobile and empty-ledger import browser cases, and all 9 rollback tests passed. An initial duplicate accessibility label was corrected before the passing run.
+
+## T009: Rebuilt-app restore compatibility
+
+- The populated restore retained every archived row and exact total after using authenticated monthly and Querry Kit transaction reads. The application denied anonymous reads and invalid-CSRF mutations, and the bank connection response omitted its stored protocol metadata.
+- Both archived APIs, the historical feature baseline and rebuild base `740f210`, compiled and exercised their real legacy contracts against the same schema. Nine compatibility, reconciliation, migration, and authorization tests passed.
+- Eight Chromium Overview and ledger tests passed across 390 px, 1440 px, and the regular desktop/mobile projects.

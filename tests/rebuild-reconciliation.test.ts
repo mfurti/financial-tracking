@@ -1,5 +1,7 @@
 import { expect, it } from 'vitest';
 import { Client } from 'pg';
+import { createApp } from '../apps/api/src/app.js';
+import { transactionPageSchema, transactionTablePageSchema } from '../packages/contracts/src/index.js';
 import { passwordHash } from '../apps/api/src/auth.js';
 import { testDatabase } from './database.js';
 
@@ -38,7 +40,12 @@ async function seed(db: Awaited<ReturnType<typeof testDatabase>>['db']) {
   await db.ownerProfile.create({ data: { userId: owner.id, displayName: 'Synthetic owner' } });
   await db.notificationAcknowledgement.create({ data: { userId: owner.id, sourceKey: 'synthetic-source' } });
   const connection = await db.bankConnection.create({
-    data: { name: 'Synthetic source', bankCode: '69050001', connectorType: 'CSV' },
+    data: {
+      name: 'Synthetic source',
+      bankCode: '69050001',
+      connectorType: 'CSV',
+      metadata: { fixture: 'stored-bank-settings' },
+    },
   });
   const account = await db.account.create({
     data: { name: 'Synthetic account', bankConnectionId: connection.id },
@@ -178,6 +185,60 @@ async function periodTotals(client: Client) {
   return rows;
 }
 
+/** Check the same synthetic restore through authenticated HTTP contracts. */
+async function verifyRestoredApp(db: Awaited<ReturnType<typeof testDatabase>>['db'], accountId: string) {
+  const { app } = await createApp(db, false);
+  try {
+    expect((await app.inject({ method: 'GET', url: '/api/v1/transactions/table' })).statusCode).toBe(401);
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      headers: { origin: 'http://localhost:3000' },
+      payload: { username: 'rebuild-restore-owner', password: 'rebuild-fixture-password-only' },
+    });
+    expect(login.statusCode).toBe(201);
+    const headers = { cookie: String(login.headers['set-cookie']).split(';')[0]! };
+    const blocked = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/accounts/${accountId}`,
+      headers: { ...headers, origin: 'http://localhost:3000', 'x-csrf-token': 'invalid' },
+      payload: { name: 'Rejected account rename' },
+    });
+    expect(blocked.statusCode).toBe(403);
+    const table = await app.inject({ method: 'GET', url: '/api/v1/transactions/table', headers });
+    expect(table.statusCode).toBe(200);
+    expect(table.json()).toMatchObject({ meta: { itemCount: 4 } });
+    const old = await app.inject({ method: 'GET', url: '/api/v1/transactions', headers });
+    const oldRows = transactionPageSchema.parse(old.json()).items;
+    const newRows = transactionTablePageSchema.parse(table.json()).items;
+    expect(
+      newRows.map(
+        /** Compare the durable list fields with the prior cursor contract. */ (row) => [
+          row.id,
+          row.accountId,
+          row.amountCents,
+        ],
+      ),
+    ).toEqual(
+      oldRows.map(
+        /** Keep routing-only projections out of the comparison. */ (row) => [row.id, row.accountId, row.amountCents],
+      ),
+    );
+    const connections = await app.inject({ method: 'GET', url: '/api/v1/bank-connections', headers });
+    expect(connections.statusCode).toBe(200);
+    expect(connections.json()[0]).not.toHaveProperty('metadata');
+    const totals = await app.inject({ method: 'GET', url: '/api/v1/analytics/monthly?month=2026-10', headers });
+    expect(totals.statusCode).toBe(200);
+    expect(totals.json()).toMatchObject({
+      incomeCents: '99',
+      expenseCents: '9007199254740993',
+      netCents: '-9007199254740894',
+    });
+  } finally {
+    await app.close();
+  }
+}
+
 it('restores the populated baseline and reconciles every captured row and exact scoped total', /** Use two disposable databases and keep numeric JSON inside PostgreSQL. */ async () => {
   const source = await testDatabase({ isolated: true });
   const original = new Client({ connectionString: source.url });
@@ -205,6 +266,7 @@ it('restores the populated baseline and reconciles every captured row and exact 
       ]);
     await restored.query('COMMIT');
 
+    await verifyRestoredApp(target.db, ids.accountId);
     expect(await snapshot(restored)).toEqual(archive);
     expect(await periodTotals(restored)).toEqual(totals);
   } finally {
