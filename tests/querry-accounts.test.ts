@@ -68,7 +68,7 @@ describe('Querry Kit account read', /** Exercise a disposable account and balanc
     });
   });
 
-  it.skip('enforces selection, projection and page counts without exposing bank settings', /** Prefer the static route and keep counts below the scoped filter. */ async () => {
+  it('enforces selection, projection and page counts without exposing bank settings', /** Prefer the static route and keep counts below the scoped filter. */ async () => {
     const denied = await app.inject({ method: 'GET', url: route });
     expect(denied.statusCode).toBe(401);
     expect(denied.json()).not.toHaveProperty('meta');

@@ -69,6 +69,26 @@ export async function transactionListWhere(
   };
 }
 
+/** Read the latest observation per type with deterministic timestamp ties. */
+export const accountReadInclude = {
+  balances: { orderBy: [{ observedAt: 'desc' }, { id: 'desc' }], distinct: ['balanceType'] },
+} satisfies Prisma.AccountInclude;
+
+/** Convert exact observed balances and timestamps into the existing public account contract. */
+export function publicAccount(row: Prisma.AccountGetPayload<{ include: typeof accountReadInclude }>) {
+  return accountSchema.parse({
+    ...row,
+    lastSuccessfulSyncAt: row.lastSuccessfulSyncAt?.toISOString() ?? null,
+    balances: row.balances.map(
+      /** Preserve the source observation time. */ (balance) => ({
+        ...balance,
+        amountCents: String(balance.amountCents),
+        observedAt: balance.observedAt.toISOString(),
+      }),
+    ),
+  });
+}
+
 /** Account management, user annotations, and exact monthly analytics. */
 @Injectable()
 export class LedgerService {
@@ -93,22 +113,9 @@ export class LedgerService {
     const records = await this.db.account.findMany({
       where: id ? { id } : {},
       orderBy: { name: 'asc' },
-      include: { balances: { orderBy: [{ observedAt: 'desc' }, { id: 'desc' }], distinct: ['balanceType'] } },
+      include: accountReadInclude,
     });
-    return records.map(
-      /** Convert database timestamps and amounts at the boundary. */ (row) =>
-        accountSchema.parse({
-          ...row,
-          lastSuccessfulSyncAt: row.lastSuccessfulSyncAt?.toISOString() ?? null,
-          balances: row.balances.map(
-            /** Preserve the source observation time. */ (balance) => ({
-              ...balance,
-              amountCents: String(balance.amountCents),
-              observedAt: balance.observedAt.toISOString(),
-            }),
-          ),
-        }),
-    );
+    return records.map(publicAccount);
   }
   /** Read one account or return a public not-found error. */
   async account(id: string) {

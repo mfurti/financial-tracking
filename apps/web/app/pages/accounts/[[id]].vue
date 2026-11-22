@@ -2,6 +2,8 @@
 import { z } from 'zod';
 import {
   accountSchema,
+  accountTableItemSchema,
+  accountTablePageSchema,
   accountPatchSchema,
   connectionSchema,
   idSchema,
@@ -11,11 +13,43 @@ import {
 const api = useApi();
 const { validation, formError, formInvalid } = useFormFeedback();
 const route = useRoute();
+const router = useRouter();
 const accounts = ref<Account[]>([]);
-const accountType = ref('');
-const visibleAccounts = computed(() =>
-  accounts.value.filter((account) => !accountType.value || account.accountType === accountType.value),
+const accountType = computed({
+  /** Restore the account type filter from the list bookmark. */
+  get: () => (typeof route.query.accountType === 'string' ? route.query.accountType : ''),
+  /** Changing account type starts a new first page. */
+  set: (value) => {
+    void router.push({ query: { ...route.query, accountType: value || undefined, page: undefined } });
+  },
+});
+const listing = useLedgerTable({
+  endpoint: 'accounts/table',
+  schema: accountTablePageSchema.extend({ items: z.array(accountTableItemSchema) }),
+  fields: Object.keys(accountTableItemSchema.shape),
+  sortable: ['name', 'accountType'],
+  /** Pass account type and bookmarked group scope to the backend before paging. */
+  filters: () => ({
+    accountType: accountType.value || undefined,
+    groupId: typeof route.query.groupId === 'string' ? route.query.groupId : undefined,
+  }),
+});
+const {
+  items: visibleAccounts,
+  page: tablePage,
+  sorting: tableSorting,
+  itemsPerPage: tableSize,
+  totalItems: tableTotal,
+} = listing;
+const sortFields = [
+  { value: 'name', label: tr('Name') },
+  { value: 'accountType', label: tr('Kontotyp') },
+];
+const tableError = computed(
+  /** Keep the list error independent of account details and the latest balance summary. */ () =>
+    listing.error.value ? userErrorMessage(listing.error.value) : '',
 );
+
 const connections = ref<Connection[]>([]);
 const loadError = ref('');
 const error = ref('');
@@ -74,7 +108,7 @@ const availableBalances = computed(
 const accountTypes = { CHECKING: tr('Girokonto'), SAVINGS: tr('Sparkonto'), OTHER: tr('Sonstiges Konto') };
 
 /** Resolve an actual booked balance; available credit is never substituted for missing booked observations. */
-function booked(row: Account) {
+function booked(row: Pick<Account, 'balances'>) {
   return row.balances.find(
     /** Match the explicit source balance type. */ (balance) => balance.balanceType === 'BOOKED',
   );
@@ -102,6 +136,8 @@ async function load() {
     if (disposed || current !== generation) return;
     accounts.value = records;
     connections.value = choices;
+    if (!route.params.id) await listing.start();
+    if (disposed || current !== generation) return;
     const selected = records.find(
       /** Initialize drafts from a confirmed persisted identity only. */ (row) => row.id === route.params.id,
     );
@@ -200,6 +236,16 @@ onBeforeUnmount(
           variant="stat"
         />
       </div>
+      <LedgerTableSorting v-if="accounts.length" v-model="tableSorting" :fields="sortFields" />
+      <UAlert v-if="tableError" role="alert" color="error" :description="tableError" class="mb-4" />
+      <UButton v-if="tableError" variant="soft" @click="listing.refresh">{{ tr('Erneut versuchen') }}</UButton>
+      <p v-if="listing.loading.value" role="status" class="muted">{{ tr('Wird geladen …') }}</p>
+      <p
+        v-else-if="listing.loaded.value && accounts.length && !visibleAccounts.length && !tableError"
+        class="empty-copy"
+      >
+        {{ tr('Keine Konten für diese Auswahl.') }}
+      </p>
       <div class="finance-account-grid mt-5">
         <FinanceTile
           v-for="row in visibleAccounts"
@@ -217,6 +263,13 @@ onBeforeUnmount(
           ><template #graphic><FinanceIcon name="accounts" /></template
         ></FinanceTile>
       </div>
+      <LedgerTablePagination
+        v-if="tableTotal > 0"
+        v-model:page="tablePage"
+        :per-page="tableSize"
+        :total="tableTotal"
+        @page-size="listing.setPageSize"
+      />
       <div v-if="!accounts.length" class="empty-state">
         <h2>{{ tr('Noch keine Konten vorhanden.') }}</h2>
         <UButton to="/accounts/add" variant="soft">{{ tr('Erstes Konto hinzufügen') }}</UButton

@@ -764,6 +764,26 @@ export const transactionTablePageSchema = z.object({
 });
 
 export const transactionPageSchema = z.object({ items: z.array(transactionSchema), nextCursor: idSchema.nullable() });
+export const accountTableFilterSchema = z.strictObject({
+  groupId: idSchema.optional(),
+  isActive: z.boolean().optional(),
+  accountType: accountInputSchema.shape.accountType.removeDefault().optional(),
+  search: z.string().trim().max(200).optional(),
+});
+export const accountTableOrderSchema = z
+  .array(
+    z.union([z.strictObject({ name: orderDirectionSchema }), z.strictObject({ accountType: orderDirectionSchema })]),
+  )
+  .min(1)
+  .max(2);
+export const accountTableItemSchema = accountSchema
+  .omit({ iban: true, bankConnectionId: true })
+  .extend({ accountType: accountInputSchema.shape.accountType.removeDefault() });
+export const accountTablePageSchema = z.object({
+  items: z.array(accountTableItemSchema.partial().required({ id: true })),
+  meta: tablePageMetaSchema,
+});
+
 export const monthlyQuerySchema = z
   .object({
     month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
@@ -1216,6 +1236,13 @@ export const apiContracts: Record<string, ApiContract> = {
     path: '/bank-connections/{id}',
     request: connectionInputSchema.partial().extend({ status: z.enum(['ACTIVE', 'DISABLED', 'BLOCKED']).optional() }),
     response: connectionSchema,
+    status: 200,
+  },
+  accountTable: {
+    method: 'get',
+    path: '/accounts/table',
+    query: tablePageQuerySchema,
+    response: accountTablePageSchema,
     status: 200,
   },
   accounts: { method: 'get', path: '/accounts', response: z.array(accountSchema), status: 200 },

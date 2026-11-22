@@ -87,3 +87,8 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 ## T013: Contract table compatibility cases
 
 - The new authenticated resource case failed against the baseline's absent table route as expected. The existing routes passed their compatibility case. Scoped lint passed. The new case is pending until the matching implementation task.
+
+## T014: Account table
+
+- Account type and optional bookmarked group scope filter both rows and counts. The paginated public list shows exact latest observations, including missing and negative amounts. Existing account details retain private configuration and the bank connection workflow.
+- Typecheck, scoped lint and web build passed. Both account API cases and eight account, group and synthetic bank Chromium cases passed across 390 px, 1440 px and desktop/mobile.

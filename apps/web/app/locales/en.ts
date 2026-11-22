@@ -1536,4 +1536,5 @@ export const en: Record<keyof typeof de, string> = {
   'Keine Buchungen für diese Auswahl.': 'No transactions match these filters.',
   'Einzelne Konten': 'Individual accounts',
   'Konto {0}': 'Account {0}',
+  'Keine Konten für diese Auswahl.': 'No accounts match this selection.',
 };

@@ -1556,4 +1556,5 @@ export const de = {
   'Keine Buchungen für diese Auswahl.': 'Keine Buchungen für diese Auswahl.',
   'Einzelne Konten': 'Einzelne Konten',
   'Konto {0}': 'Konto {0}',
+  'Keine Konten für diese Auswahl.': 'Keine Konten für diese Auswahl.',
 } as const;
