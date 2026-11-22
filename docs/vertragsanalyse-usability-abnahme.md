@@ -4,7 +4,7 @@
 
 ## Candidate and scope
 
-Implementation baseline: `3b990ecaba356c0bfe85a79bb87915c41eac0967`. Approved plan: [contract usability](vertragsanalyse-usability-plan.md), issue #3, former branch `codex/3-contracts-import-usability`. Audit `392d988` remains in ancestry. PR #11 was subsequently merged and separately approved rollout `d193639` completed. This record distinguishes that technical delivery from incomplete R1/R3 details and outstanding user acceptance.
+Implementation baseline: `3b990ecaba356c0bfe85a79bb87915c41eac0967`. Approved plan: [contract usability](https://github.com/mfurti/financial-tracking/blob/740f2103a068c9401d9c1e194b3986a12983eeae/docs/vertragsanalyse-usability-plan.md), issue #3, former branch `codex/3-contracts-import-usability`. Audit `392d988` remains in ancestry. PR #11 was subsequently merged and separately approved rollout `d193639` completed. This record distinguishes that technical delivery from incomplete R1/R3 details and outstanding user acceptance.
 
 | Package | Source commit / result                                                                                             |
 | ------- | ------------------------------------------------------------------------------------------------------------------ |

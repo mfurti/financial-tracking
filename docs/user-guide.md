@@ -1,12 +1,12 @@
 # Using the household ledger
 
-This guide describes the integrated source version in [issue #13](https://github.com/mfurti/financial-tracking/issues/13). It does not imply deployment; [status.md](status.md) distinguishes source checks from production.
+This guide covers the ledger rebuild in [issue #21](https://github.com/mfurti/financial-tracking/issues/21). See [project status](status.md) for production history.
 
 ## Overview and navigation
 
 The monthly balance is income minus expenses for the selected booking month, not an available bank balance or forecast. Booked transactions without an account count globally; pending transactions and own transfers do not. Positive refunds remain income. All monetary calculations use exact cents.
 
-Previous/next, the month picker and This month retain the selected month in the URL. Desktop, tablet and phone arrange the same bookings, planned payments, accounts and categories in responsive columns. Bottom navigation opens Overview, Transactions, Accounts, Analyses, Contracts and More. More links to wealth, imports, connections and settings; the header opens settings and the contract calendar.
+Previous/next, the month picker and This month retain the selected month in the URL. Choose an account, a saved group or all accounts. Select Income or Expenses to open the corresponding booked transactions and keep the selected month and scope. Desktop uses a header navigation with direct links to Imports and Settings. Narrow screens use bottom navigation and More for secondary destinations. The Contracts page links to the calendar.
 
 Bank balances are separate dated observations. Missing is not zero; observations older than 48 hours are marked stale. Imported transaction sums cannot reconstruct a reliable bank balance.
 
@@ -23,6 +23,10 @@ Automatic decoding recognizes UTF-8 and marked UTF-16, with Windows-1252 fallbac
 Only genuine format, mapping, invalid-row or duplicate exceptions interrupt the automatic path. Invalid rows are grouped with expandable details. Confirm explicitly before importing only valid rows; missing text is never fabricated. Duplicate review compares source fields and offered candidates before retaining existing data, accepting incoming data, keeping separate transactions or skipping a new row.
 
 A lost commit response checks the same import instead of duplicating it. Leaving an uncommitted preview cancels it; late responses cannot navigate away from a newer page. History currently lists the latest 100 runs; historical paging remains open in [todo.md](todo.md).
+
+## Lists and details
+
+Transactions, Accounts and Contracts load one page at a time. Use the filter bar, column sort controls and page navigation to narrow a list. The URL preserves the applied filters, sort and page for reloads and bookmarks. Open a row for details. The contract calendar includes all planned payments in its applied scope.
 
 ## Assignment, categories and transfers
 

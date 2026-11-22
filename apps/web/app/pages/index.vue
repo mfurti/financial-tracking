@@ -22,7 +22,9 @@ const month = ref(
     : new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date()).slice(0, 7),
 );
 const accounts = ref<Account[]>([]);
+const allAccounts = ref<Account[]>([]);
 const groupId = ref(typeof route.query.groupId === 'string' ? route.query.groupId : '');
+const accountId = ref(!groupId.value && typeof route.query.accountId === 'string' ? route.query.accountId : '');
 const groupDialog = ref(false);
 const groups = ref<z.infer<typeof accountGroupSchema>[]>([]);
 const groupError = ref('');
@@ -37,9 +39,46 @@ watch(groupDialog, async (open) => {
 });
 async function selectGroup(value: string) {
   groupId.value = value;
+  accountId.value = '';
   groupDialog.value = false;
   await load();
 }
+const scopeLabel = computed(
+  /** Keep the selected account or group visible in the scope control. */ () =>
+    accountId.value
+      ? (allAccounts.value.find(/** Resolve the account's visible name. */ (account) => account.id === accountId.value)
+          ?.name ?? tr('Konto'))
+      : groupId.value
+        ? (groups.value.find(/** Resolve the group's visible name. */ (group) => group.id === groupId.value)?.name ??
+          tr('Kontogruppe'))
+        : tr('Alle Konten'),
+);
+
+/** Select one account and keep groups mutually exclusive. */
+async function selectAccount(value: string) {
+  accountId.value = value;
+  groupId.value = '';
+  groupDialog.value = false;
+  await load();
+}
+
+/** Pass the same explicit scope to reports and their drill-downs. */
+function scopeQuery(): Record<string, string> {
+  if (groupId.value) return { groupId: groupId.value };
+  return accountId.value ? { accountId: accountId.value } : {};
+}
+
+/** Drill into exactly the booked, non-transfer income or expense behind the tile. */
+function flowLink(direction: 'INCOME' | 'EXPENSE') {
+  return `/transactions?${new URLSearchParams({
+    ...monthRangeQuery(month.value),
+    ...scopeQuery(),
+    direction,
+    status: 'BOOKED',
+    excludeTransfers: 'true',
+  })}`;
+}
+
 const report = ref<Monthly | null>(null);
 const recent = ref<Transaction[]>([]);
 const error = ref('');
@@ -64,7 +103,7 @@ const uncategorizedCount = computed(
 );
 const transactionsLink = computed(
   /** Keep navigation in the displayed month. */ () =>
-    `/transactions?${new URLSearchParams({ ...monthRangeQuery(month.value), ...(groupId.value ? { groupId: groupId.value } : {}) })}`,
+    `/transactions?${new URLSearchParams({ ...monthRangeQuery(month.value), ...scopeQuery() })}`,
 );
 const uncategorizedLink = computed(
   /** Open real records awaiting a category. */ () => `${transactionsLink.value}&uncategorized=true`,
@@ -119,6 +158,8 @@ async function load() {
   const version = ++loadVersion;
   const selectedMonth = month.value;
   const selectedGroup = groupId.value;
+  const selectedAccount = accountId.value;
+  const scope = scopeQuery();
   const requestedImport = typeof route.query.import === 'string' ? route.query.import : null;
   busy.value = true;
   error.value = '';
@@ -126,13 +167,13 @@ async function load() {
     const [a, r, t, runs, standalone] = await Promise.all([
       api.request('/accounts', z.array(accountSchema)),
       api.request('/analytics/monthly', monthlySchema, {
-        query: { month: selectedMonth, groupId: selectedGroup || undefined },
+        query: { month: selectedMonth, ...scope },
       }),
       api.request('/transactions', transactionPageSchema, {
         query: {
           status: 'BOOKED',
           limit: 5,
-          groupId: selectedGroup || undefined,
+          ...scope,
           ...monthRangeQuery(selectedMonth),
         },
       }),
@@ -146,7 +187,11 @@ async function load() {
       groups.value = loaded;
     }
     const members = groups.value.find((group) => group.id === selectedGroup)?.accountIds ?? [];
-    accounts.value = selectedGroup ? a.filter((account) => members.includes(account.id)) : a;
+    allAccounts.value = a;
+    accounts.value = a.filter(
+      /** Apply the same scope to source-provided observations. */ (account) =>
+        selectedGroup ? members.includes(account.id) : !selectedAccount || account.id === selectedAccount,
+    );
     report.value = r;
     recent.value = t.items;
     importResult.value =
@@ -160,7 +205,7 @@ async function load() {
       0,
     );
     unassigned.value = standalone.items.length > 0;
-    await router.replace({ query: { month: selectedMonth, ...(selectedGroup ? { groupId: selectedGroup } : {}) } });
+    await router.replace({ query: { month: selectedMonth, ...scope } });
   } catch (cause) {
     if (disposed || version !== loadVersion) return;
     report.value = null;
@@ -187,6 +232,7 @@ onBeforeUnmount(
   <div class="page-heading finance-period-heading">
     <div>
       <h1>{{ tr('Übersicht') }}</h1>
+      <p class="muted">{{ monthPhase }}</p>
     </div>
     <div class="toolbar finance-month-controls">
       <UButton
@@ -211,13 +257,11 @@ onBeforeUnmount(
   <div class="finance-overview-tools">
     <FinanceDialog v-model:open="groupDialog" :title="tr('Kontogruppen')" panel="groups">
       <template #trigger
-        ><UButton variant="soft" size="sm" :aria-label="tr('Kontogruppen wählen')">{{
-          groupId ? (groups.find((group) => group.id === groupId)?.name ?? tr('Kontogruppe')) : tr('Alle Konten')
-        }}</UButton></template
+        ><UButton variant="soft" size="sm" :aria-label="tr('Kontogruppen wählen')">{{ scopeLabel }}</UButton></template
       >
       <div class="finance-dialog-options">
         <UAlert v-if="groupError" role="alert" color="error" :description="groupError" />
-        <UButton variant="outline" color="neutral" :aria-pressed="!groupId" @click="selectGroup('')">{{
+        <UButton variant="outline" color="neutral" :aria-pressed="!groupId && !accountId" @click="selectGroup('')">{{
           tr('Alle Konten')
         }}</UButton>
         <UButton
@@ -229,6 +273,17 @@ onBeforeUnmount(
           @click="selectGroup(group.id)"
           >{{ group.name }}</UButton
         >
+        <h3 v-if="allAccounts.length">{{ tr('Einzelne Konten') }}</h3>
+        <UButton
+          v-for="account in allAccounts"
+          :key="account.id"
+          variant="outline"
+          color="neutral"
+          :aria-label="tr('Konto {0}', [account.name])"
+          :aria-pressed="accountId === account.id"
+          @click="selectAccount(account.id)"
+          >{{ account.name }}</UButton
+        >
         <UButton variant="ghost" to="/settings/account-groups">{{ tr('Gruppen verwalten') }}</UButton>
       </div>
     </FinanceDialog>
@@ -238,7 +293,6 @@ onBeforeUnmount(
       /></UButton>
       <template #content
         ><div class="finance-overview-actions">
-          <p class="muted">{{ monthPhase }}</p>
           <UButton variant="ghost" @click="currentMonth">{{ tr('Dieser Monat') }}</UButton>
           <UButton variant="ghost" :loading="busy" @click="load">{{ tr('Aktualisieren') }}</UButton>
           <UButton to="/imports/csv">{{ tr('CSV hochladen') }}</UButton>
@@ -289,7 +343,7 @@ onBeforeUnmount(
           ></template
         >
       </FinanceTile>
-      <FinanceTile :label="tr('Einnahmen')" variant="stat"
+      <FinanceTile :label="tr('Einnahmen')" variant="stat" :to="flowLink('INCOME')"
         ><template #value
           ><span class="positive" data-financial
             ><template v-if="!amountsMasked()">{{ money(report.incomeCents) }}</template
@@ -297,7 +351,7 @@ onBeforeUnmount(
           ></template
         ></FinanceTile
       >
-      <FinanceTile :label="tr('Ausgaben')" variant="stat"
+      <FinanceTile :label="tr('Ausgaben')" variant="stat" :to="flowLink('EXPENSE')"
         ><template #value
           ><span class="negative" data-financial
             ><template v-if="!amountsMasked()">{{ money(report.expenseCents) }}</template

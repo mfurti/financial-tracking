@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { z } from 'zod';
+import { useMediaQuery } from '@vueuse/core';
 import { userErrorMessage } from '../utils/api-error';
 const api = useApi();
 const route = useRoute();
 const error = ref('');
 const accountMenuOpen = ref(false);
+const hasExpandedNavigation = useMediaQuery('(min-width: 901px)');
 const primaryLinks = [
   { to: '/', label: tr('Übersicht'), icon: 'home' },
   { to: '/transactions', label: tr('Umsätze'), icon: 'transactions' },
@@ -12,6 +14,10 @@ const primaryLinks = [
   { to: '/analytics', label: tr('Analysen'), icon: 'categories' },
   { to: '/contracts', label: tr('Verträge'), icon: 'contracts' },
   { to: '/wealth', label: tr('Vermögen'), icon: 'wealth' },
+] as const;
+const expandedLinks = [
+  { to: '/imports', label: tr('Importe'), icon: 'history' },
+  { to: '/settings', label: tr('Einstellungen'), icon: 'settings' },
 ] as const;
 const accountMenu = [
   { to: '/settings/profile', label: 'Persönliche Angaben' },
@@ -33,17 +39,23 @@ const currentPage = computed(
     )?.label ?? (route.path === '/more' ? tr('Mehr') : tr('Mein Haushaltsbuch')),
 );
 const moreActive = computed(
-  /** Preserve the management section marker on its nested forms and import upload. */ () =>
-    route.path === '/more' ||
-    route.path.startsWith('/imports/') ||
-    secondaryLinks.some(/** Mark the management destination on its child pages. */ (link) => active(link.to)),
+  /** Group secondary destinations unless they already have a visible desktop tab. */ () => {
+    if (route.path === '/more') return true;
+    const section = secondaryLinks.find(/** Find the current secondary destination. */ (link) => active(link.to));
+    return (
+      !!section &&
+      !(
+        hasExpandedNavigation.value &&
+        expandedLinks.some(/** A visible tab owns its matching nested route. */ (link) => link.to === section.to)
+      )
+    );
+  },
 );
-/** Match nested ledger/detail routes without marking both import entries active. */
+/** Match destination roots and their own detail routes. */
 function active(path: string) {
   if (path === '/') return route.path === '/';
-  if (path === '/analytics') return route.path.startsWith('/analytics') || route.path.startsWith('/categories');
-  if (path === '/imports') return route.path === '/imports';
-  return route.path.startsWith(path);
+  if (path === '/analytics' && route.path === '/categories') return true;
+  return route.path === path || route.path.startsWith(path + '/');
 }
 /** Revoke the cookie session before navigating to login. */
 async function logout() {
@@ -102,29 +114,29 @@ async function logout() {
           >
         </div>
       </header>
+      <nav class="finance-nav" :aria-label="tr('Hauptnavigation')">
+        <UButton
+          v-for="link in hasExpandedNavigation ? [...primaryLinks, ...expandedLinks] : primaryLinks"
+          :key="link.to"
+          variant="link"
+          color="neutral"
+          :to="link.to"
+          :class="{ active: active(link.to) }"
+          :aria-current="active(link.to) ? 'page' : undefined"
+          ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
+        >
+        <UButton
+          to="/more"
+          variant="link"
+          color="neutral"
+          :class="{ active: moreActive }"
+          :aria-current="moreActive ? 'page' : undefined"
+          ><FinanceIcon name="more" /><span>{{ tr('Mehr') }}</span></UButton
+        >
+      </nav>
       <main id="main-content" tabindex="-1" class="page-content">
         <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-4" /><slot />
       </main>
     </div>
-    <nav class="finance-nav" :aria-label="tr('Hauptnavigation')">
-      <UButton
-        v-for="link in primaryLinks"
-        :key="link.to"
-        variant="link"
-        color="neutral"
-        :to="link.to"
-        :class="{ active: active(link.to) }"
-        :aria-current="active(link.to) ? 'page' : undefined"
-        ><FinanceIcon :name="link.icon" /><span>{{ link.label }}</span></UButton
-      >
-      <UButton
-        to="/more"
-        variant="link"
-        color="neutral"
-        :class="{ active: moreActive }"
-        :aria-current="moreActive ? 'page' : undefined"
-        ><FinanceIcon name="more" /><span>{{ tr('Mehr') }}</span></UButton
-      >
-    </nav>
   </div>
 </template>

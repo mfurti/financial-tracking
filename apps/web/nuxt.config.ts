@@ -3,7 +3,7 @@ import { workspacePreferencesBootstrap } from './app/utils/workspace-preferences
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-11-06',
-  modules: ['@nuxt/ui'],
+  modules: ['@nuxt/ui', '@querry-kit/nuxt-ui'],
   ssr: false,
   devtools: { enabled: false },
   telemetry: false,

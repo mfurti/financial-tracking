@@ -157,7 +157,7 @@ onBeforeUnmount(
 );
 </script>
 <template>
-  <div class="page-heading">
+  <div class="page-heading flex-wrap">
     <h1>{{ tr('Benachrichtigungen') }}</h1>
     <UButton variant="soft" :disabled="Boolean(savingKey)" :loading="loading" @click="load()">{{
       tr('Hinweise aktualisieren')
@@ -170,7 +170,7 @@ onBeforeUnmount(
       )
     }}
   </p>
-  <div class="notification-filter">
+  <div class="panel notification-filter">
     <p class="notification-count">
       {{ tr('Gerätefilter:') }} {{ deviceScope }} · <NuxtLink to="/settings">{{ tr('Einstellungen') }}</NuxtLink>
     </p>
@@ -192,8 +192,8 @@ onBeforeUnmount(
     <p>{{ error }}</p>
     <UButton variant="soft" @click="load()">{{ tr('Hinweise erneut laden') }}</UButton>
   </div>
-  <SectionPanel v-if="ready" :title="tr('Aktuelle Hinweise')"
-    ><p class="notification-count">{{ unread }} {{ tr('ungelesene Hinweise im gewählten Typ') }}</p>
+  <SectionPanel v-if="ready" :title="tr('Aktuelle Hinweise')" compact
+    ><p class="notification-count" aria-live="polite">{{ unread }} {{ tr('ungelesene Hinweise im gewählten Typ') }}</p>
     <p v-if="effectiveKind() === null">{{ tr('Hinweise dieses Typs sind auf diesem Gerät ausgeblendet.') }}</p>
     <p v-else-if="!items.length">{{ tr('Keine aktuellen Hinweise im gewählten Typ.') }}</p>
     <article
@@ -252,8 +252,15 @@ onBeforeUnmount(
   margin-bottom: 20px;
 }
 .notification-filter {
-  max-width: 320px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 24px;
+}
+.notification-filter .notification-count {
+  margin-bottom: 0;
 }
 .notification-count {
   color: var(--muted);

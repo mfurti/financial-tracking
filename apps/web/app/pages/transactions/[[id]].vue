@@ -2,12 +2,13 @@
 import { z } from 'zod';
 import { userErrorMessage } from '../../utils/api-error';
 import { financeReturnTarget } from '../../utils/finance-return';
+import { transactionSortFields } from '../../utils/ledger-table-route';
 import {
   accountSchema,
   categorySchema,
   transactionSchema,
-  transactionPageSchema,
-  transactionQuerySchema,
+  transactionTablePageSchema,
+  transactionTableFilterSchema,
   bulkCategorySchema,
   assignmentResultSchema,
   type Account,
@@ -18,7 +19,6 @@ import {
 const api = useApi();
 const route = useRoute();
 const router = useRouter();
-const rows = ref<Transaction[]>([]);
 const detail = ref<Transaction | null>(null);
 const accounts = ref<Account[]>([]);
 const categories = ref<Category[]>([]);
@@ -35,7 +35,6 @@ function selectTransaction(id: string, checked: boolean | 'indeterminate') {
       ? [...new Set([...selected.value, id])]
       : selected.value.filter(/** Remove only the deselected transaction. */ (value) => value !== id);
 }
-const nextCursor = ref<string | null>(null);
 const error = ref('');
 const busy = ref(false);
 let loadGeneration = 0;
@@ -47,7 +46,50 @@ const month = ref(currentMonth);
 const monthCaption = ref<string>();
 const advancedFilters = ref(false);
 let scopeSearchQueued = false;
-const days = computed(() => Object.entries(Object.groupBy(rows.value, (row) => row.bookingDate)));
+const listRowSchema = transactionSchema.omit({ counterpartyIban: true });
+const listing = useLedgerTable({
+  endpoint: 'transactions/table',
+  schema: transactionTablePageSchema.extend({ items: z.array(listRowSchema) }),
+  fields: Object.keys(listRowSchema.shape),
+  sortable: transactionSortFields,
+  /** Apply only the current bookmark, keeping unsubmitted filter drafts out of fetches. */
+  filters: () => {
+    const applied = readRouteFilters();
+    return serializeFilters(applied, !(route.query.period === 'all' && !applied.from && !applied.to));
+  },
+  afterLoad: restoreBookingFocus,
+});
+const {
+  items: rows,
+  page: tablePage,
+  sorting: tableSorting,
+  itemsPerPage: tableSize,
+  totalItems: tableTotal,
+} = listing;
+const sortFields = [
+  { value: 'bookingDate', label: tr('Buchungsdatum') },
+  { value: 'amountCents', label: tr('Betrag') },
+  { value: 'description', label: tr('Buchungstext') },
+];
+const listError = computed(
+  /** Show only normalized errors from the table transport. */ () =>
+    !route.params.id && listing.error.value ? userErrorMessage(listing.error.value) : '',
+);
+const listBusy = computed(
+  /** Distinguish an unfinished first read from an empty result. */ () =>
+    listing.loading.value || (!listing.loaded.value && !listing.error.value && !error.value),
+);
+const groupByDate = computed(
+  /** Preserve the actual sort order when amounts or labels take precedence. */ () =>
+    !tableSorting.value.length || tableSorting.value[0]?.id === 'bookingDate',
+);
+const days = computed(
+  /** Group date-sorted pages, keeping every other sort in server order. */ () =>
+    groupByDate.value
+      ? Object.entries(Object.groupBy(rows.value, (row) => row.bookingDate))
+      : rows.value.map((row) => [row.bookingDate, [row]] as const),
+);
+let lastFocus = '';
 syncMonth();
 
 /** Read URL filters independently of the effective default month. */
@@ -116,78 +158,87 @@ function accountLabel(id: string | null) {
     accounts.value.find(/** Match only a real account UUID. */ (account) => account.id === id)?.name ?? tr('Ohne Konto')
   );
 }
-/** Preserve the current filtered list when entering an individual booking without broadening the return scope. */
+/** Return to the current scope, sort and page with focus on the row that opened the detail. */
 function bookingLink(id: string) {
-  return `/transactions/${id}?${new URLSearchParams({ returnTo: route.fullPath })}`;
+  const target = route.fullPath.split('#')[0] + '#booking-' + id;
+  return `/transactions/${id}?${new URLSearchParams({ returnTo: target })}`;
 }
-/** Serialize only nonempty filter values before schema validation. */
-function query(cursor?: string, includeDefaultMonth = true) {
-  const value: Record<string, string | undefined> = {};
-  for (const [key, field] of Object.entries(filter)) {
-    if (key === 'accountId' && field === 'UNASSIGNED') value.unassigned = 'true';
-    else if (field) value[key] = String(field);
+
+/** Focus the original row once it is ready, falling back to the table heading if it was removed. */
+async function restoreBookingFocus() {
+  if (!/^#booking-[a-f0-9-]{36}$/i.test(route.hash) || lastFocus === route.fullPath) return;
+  lastFocus = route.fullPath;
+  await nextTick();
+  (document.getElementById(route.hash.slice(1)) ?? document.getElementById('ledger-transactions-title'))?.focus();
+}
+
+/** Serialize supported ledger filters and the default Berlin month for server-side querying. */
+function serializeFilters(values: ReturnType<typeof readRouteFilters>, includeDefaultMonth: boolean) {
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (key === 'accountId' && value === 'UNASSIGNED') result.unassigned = 'true';
+    else if (value) result[key] = String(value);
   }
-  if (includeDefaultMonth && !filter.from && !filter.to && !allMonths.value)
-    Object.assign(value, monthRangeQuery(currentMonth));
-  if (cursor) value.cursor = cursor;
-  return transactionQuerySchema.parse(value);
+  if (includeDefaultMonth && !values.from && !values.to) Object.assign(result, monthRangeQuery(currentMonth));
+  return result;
 }
-/** Fetch one stable page or a selected transaction detail. */
-async function load(append = false) {
+
+/** Refresh the current table or reload the selected detail. */
+async function load() {
   if (disposed) return;
+  error.value = '';
+  if (!route.params.id) {
+    selected.value = [];
+    await listing.refresh();
+    return;
+  }
   const generation = ++loadGeneration;
   const requestedPath = route.path;
   busy.value = true;
-  error.value = '';
   try {
-    if (route.params.id) {
-      const transaction = await api.request(`/transactions/${route.params.id}`, transactionSchema);
-      if (!disposed && generation === loadGeneration && route.path === requestedPath) detail.value = transaction;
-    } else {
-      const q = query(append ? (nextCursor.value ?? undefined) : undefined);
-      const page = await api.request('/transactions', transactionPageSchema, { query: q });
-      if (disposed || generation !== loadGeneration || route.path !== requestedPath) return;
-      rows.value = append ? [...rows.value, ...page.items] : page.items;
-      nextCursor.value = page.nextCursor;
-      if (!append) selected.value = [];
-    }
+    const transaction = await api.request(`/transactions/${route.params.id}`, transactionSchema);
+    if (!disposed && generation === loadGeneration && route.path === requestedPath) detail.value = transaction;
   } catch (cause) {
     if (!disposed && generation === loadGeneration) error.value = userErrorMessage(cause);
   } finally {
     if (!disposed && generation === loadGeneration) busy.value = false;
   }
 }
-/** Start a fresh filtered page from a form submission. */
+
+/** Validate the draft and bookmark the applied first page. */
 async function search() {
   try {
     if (allMonths.value) Object.assign(filter, { from: '', to: '' });
-    const q = Object.fromEntries(
-      Object.entries(query(undefined, false)).filter(
-        ([key, value]) => key !== 'limit' && key !== 'cursor' && value !== undefined,
-      ),
-    );
-    const next = { query: { ...q, period: allMonths.value ? 'all' : undefined, mode: route.query.mode } };
+    const q = transactionTableFilterSchema.parse(serializeFilters(filter, false));
+    const next = {
+      query: {
+        ...q,
+        period: allMonths.value ? 'all' : undefined,
+        mode: route.query.mode,
+        sort: route.query.sort,
+        perPage: route.query.perPage,
+      },
+    };
     if (router.resolve(next).fullPath === route.fullPath) {
       syncMonth();
-      await load(false);
-    } else await router.replace(next);
+      await load();
+    } else await router.push(next);
   } catch {
     error.value = tr('Bitte Filter und Zeitraum prüfen.');
   }
 }
 watch(
-  () => route.fullPath,
-  () => {
+  /** Restore the form from its canonical bookmark. */ () => route.fullPath,
+  /** A route change scopes new results and clears stale selection. */ () => {
     if (route.path !== '/transactions') return;
     Object.assign(filter, readRouteFilters());
     allMonths.value = route.query.period === 'all' && !filter.from && !filter.to;
     syncMonth();
-    rows.value = [];
     selected.value = [];
-    nextCursor.value = null;
-    void load();
+    error.value = '';
   },
 );
+
 /** The account picker updates group and account together; submit the combined scope once. */
 async function searchScope() {
   if (scopeSearchQueued) return;
@@ -195,10 +246,6 @@ async function searchScope() {
   await nextTick();
   scopeSearchQueued = false;
   await search();
-}
-/** Request the next cursor page without resetting existing rows. */
-async function more() {
-  await load(true);
 }
 /** Save a category chosen in either transaction view. */
 async function assign(id: string, categoryId: string) {
@@ -266,19 +313,21 @@ async function assigned(result: z.infer<typeof assignmentResultSchema>) {
   }
   await load();
 }
-onMounted(
-  /** Load reference choices and the initial financial view. */ async () => {
-    try {
-      [accounts.value, categories.value] = await Promise.all([
-        api.request('/accounts', z.array(accountSchema)),
-        api.request('/categories', z.array(categorySchema)),
-      ]);
-      await load();
-    } catch (cause) {
-      error.value = userErrorMessage(cause);
-    }
-  },
-);
+/** Load reference choices before the adapter begins its initial table request. */
+async function initialize() {
+  error.value = '';
+  try {
+    [accounts.value, categories.value] = await Promise.all([
+      api.request('/accounts', z.array(accountSchema)),
+      api.request('/categories', z.array(categorySchema)),
+    ]);
+    if (route.params.id) await load();
+    else await listing.start();
+  } catch (cause) {
+    error.value = userErrorMessage(cause);
+  }
+}
+onMounted(initialize);
 onBeforeUnmount(
   /** Ignore results owned by the previous list/detail after the user navigates away. */ () => {
     disposed = true;
@@ -290,7 +339,7 @@ onBeforeUnmount(
 <template>
   <div class="page-heading finance-period-heading">
     <div>
-      <h1>{{ route.params.id ? tr('Umsatzdetails') : tr('Umsätze') }}</h1>
+      <h1 id="ledger-transactions-title" tabindex="-1">{{ route.params.id ? tr('Umsatzdetails') : tr('Umsätze') }}</h1>
     </div>
     <div v-if="!route.params.id" class="toolbar finance-month-controls">
       <UButton
@@ -319,7 +368,7 @@ onBeforeUnmount(
         : tr('CSV importieren')
     }}</UButton>
   </div>
-  <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
+  <UAlert v-if="error || listError" role="alert" color="error" :description="error || listError" class="mb-5" />
   <SectionPanel v-if="detail" :title="detail.description" icon="transactions" compact>
     <FinanceTile
       variant="stat"
@@ -492,7 +541,11 @@ onBeforeUnmount(
         </template>
       </UPopover>
     </div>
-    <SectionPanel :title="tr('Buchungen')" bare>
+    <SectionPanel :title="tr('Buchungen')" compact :aria-busy="listBusy">
+      <LedgerTableSorting v-model="tableSorting" :fields="sortFields" />
+      <UButton v-if="listError || error" variant="soft" class="mb-4" @click="initialize">{{
+        tr('Erneut versuchen')
+      }}</UButton>
       <div v-if="selected.length" class="toolbar mb-5">
         <span>{{ selected.length }} {{ tr('ausgewählt') }}</span
         ><ChoiceSelect
@@ -511,12 +564,16 @@ onBeforeUnmount(
         }}</UButton>
       </div>
       <ClassificationEditor v-if="selected.length" :ids="selected" @changed="load()" />
-      <p role="status" class="ledger-load-status">{{ busy ? tr('Umsätze werden geladen …') : '' }}</p>
-      <p v-if="!busy && !rows.length" class="empty-copy">
-        {{ tr('Keine Umsätze gefunden. Passe deine Filter an oder importiere Buchungen.') }}
+      <p role="status" class="ledger-load-status">{{ listBusy ? tr('Umsätze werden geladen …') : '' }}</p>
+      <p v-if="listing.loaded.value && !listBusy && !listError && !rows.length" class="empty-copy">
+        {{
+          route.query.search || route.query.categoryId || route.query.direction || route.query.groupId
+            ? tr('Keine Buchungen für diese Auswahl.')
+            : tr('Keine Umsätze gefunden. Passe deine Filter an oder importiere Buchungen.')
+        }}
       </p>
-      <div v-for="[day, bookings] in days" :key="day" class="finance-booking-day">
-        <h3>{{ bookingDate(day) }}</h3>
+      <div v-for="[day, bookings] in days" :key="`${day}:${bookings?.[0]?.id}`" class="finance-booking-day">
+        <h3 v-if="groupByDate">{{ bookingDate(day) }}</h3>
         <div v-for="row in bookings" :key="row.id" class="ledger-row finance-booking-row">
           <UCheckbox
             :model-value="selected.includes(row.id)"
@@ -524,9 +581,10 @@ onBeforeUnmount(
             @update:model-value="selectTransaction(row.id, $event)"
           />
           <div class="ledger-description">
-            <NuxtLink :to="bookingLink(row.id)"
+            <NuxtLink :id="`booking-${row.id}`" :to="bookingLink(row.id)"
               ><strong>{{ row.description }}</strong
               ><small
+                ><template v-if="!groupByDate">{{ calendarDate(row.bookingDate) }} · </template
                 >{{ categoryName(row.categoryId) }} · {{ accountLabel(row.accountId)
                 }}<span v-if="row.isTransfer"> {{ tr('· Umbuchung') }}</span
                 ><span v-if="row.status === 'PENDING'"> {{ tr('· Vorgemerkt') }}</span
@@ -560,9 +618,13 @@ onBeforeUnmount(
           >
         </div>
       </div>
-      <UButton v-if="nextCursor" :loading="busy" variant="soft" class="mt-5" @click="more">{{
-        tr('Weitere Umsätze laden')
-      }}</UButton>
+      <LedgerTablePagination
+        v-if="tableTotal > 0"
+        v-model:page="tablePage"
+        :per-page="tableSize"
+        :total="tableTotal"
+        @page-size="listing.setPageSize"
+      />
     </SectionPanel>
   </template>
 </template>

@@ -1,5 +1,4 @@
 import { merchantKeySchema } from '@financial-tracking/contracts';
-import type { Db } from './db.js';
 import type { Prisma } from './generated/prisma/client.js';
 import { AppError } from './errors.js';
 
@@ -32,7 +31,10 @@ export function merchantName(key: string) {
 }
 
 /** Resolve exact source variants in PostgreSQL before applying the existing bounded cursor pagination. */
-export async function merchantWhere(db: Db, key?: string): Promise<Prisma.TransactionWhereInput> {
+export async function merchantWhere(
+  db: Pick<Prisma.TransactionClient, '$queryRaw'>,
+  key?: string,
+): Promise<Prisma.TransactionWhereInput> {
   if (key === undefined) return {};
   const identity = merchantName(key);
   const rows = await db.$queryRaw<{ counterpartyName: string | null }[]>`

@@ -4,10 +4,50 @@ import * as c from '@financial-tracking/contracts';
 import { contractKinds, contractIntervalOptions } from '../../utils/contract-presentation';
 const api = useApi();
 const route = useRoute();
-const records = ref<z.infer<typeof c.contractSchema>[]>([]);
+const router = useRouter();
+const calendarRecords = ref<z.infer<typeof c.contractSchema>[]>([]);
 const reviewing = ref(false);
 const contractActionsOpen = ref(false);
-const directionFilter = ref<'EXPENSE' | 'INCOME' | 'ALL'>('EXPENSE');
+const directionFilter = computed({
+  /** Reopen the same payment-direction section on navigation or reload. */
+  get: () =>
+    route.query.direction === 'INCOME' || route.query.direction === 'ALL' ? route.query.direction : 'EXPENSE',
+  /** Switch direction and reset the table page together. */
+  set: (value: 'EXPENSE' | 'INCOME' | 'ALL') => {
+    void router.push({
+      query: { ...route.query, direction: value === 'EXPENSE' ? undefined : value, page: undefined },
+    });
+  },
+});
+const listing = useLedgerTable({
+  endpoint: 'contracts/table',
+  schema: c.contractTablePageSchema.extend({ items: z.array(c.contractTableItemSchema) }),
+  fields: Object.keys(c.contractTableItemSchema.shape),
+  sortable: ['name', 'provider', 'startDate'],
+  /** Forward the active view scope before server paging. */
+  filters: () => ({
+    direction: directionFilter.value === 'ALL' ? undefined : directionFilter.value,
+    accountId: typeof route.query.accountId === 'string' ? route.query.accountId : undefined,
+    groupId: typeof route.query.groupId === 'string' ? route.query.groupId : undefined,
+  }),
+});
+const {
+  items: records,
+  page: tablePage,
+  sorting: tableSorting,
+  itemsPerPage: tableSize,
+  totalItems: tableTotal,
+} = listing;
+const sortFields = [
+  { value: 'name', label: tr('Name') },
+  { value: 'provider', label: tr('Anbieter') },
+  { value: 'startDate', label: tr('Vertragsbeginn') },
+];
+const tableError = computed(
+  /** The table can independently retry without losing the loaded overview. */ () =>
+    listing.error.value ? userErrorMessage(listing.error.value) : '',
+);
+
 const directions = [
   { value: 'EXPENSE', label: 'Ausgaben' },
   { value: 'INCOME', label: 'Einnahmen' },
@@ -53,27 +93,42 @@ const nextRule = computed(
       )
       .at(-1),
 );
+/** Use the effective payment rule for the visible planned date. */
+function effectiveInterval(contract: z.infer<typeof c.contractTableItemSchema>) {
+  return contract.revisions
+    .filter(
+      /** Later changes do not rewrite earlier obligations. */ (rule) =>
+        rule.effectiveDate <= (contract.nextDueDate ?? '9999-12-31'),
+    )
+    .at(-1)?.intervalMonths;
+}
+
 const contractGroups = computed(
-  /** Group the already next-due-ordered records by their effective payment rhythm, preserving order within each group. */ () =>
-    contractIntervalOptions
+  /** Keep an explicit order flat and group the default view by payment rhythm. */ () => {
+    if (!records.value.length) return [];
+    if (tableSorting.value.length) return [{ label: tr('Deine Verträge'), interval: 0, contracts: records.value }];
+    const groups = contractIntervalOptions
       .map(
-        /** Label only rhythms supported by the existing recurrence contract. */ (option) => ({
+        /** Include each supported rhythm once. */ (option) => ({
           label: option.label,
           interval: option.value,
           contracts: records.value.filter(
-            /** Keep direction and effective rhythm in the same visible scope. */ (contract) =>
-              (directionFilter.value === 'ALL' || contract.direction === directionFilter.value) &&
-              contract.revisions
-                .filter(
-                  /** Keep later price/rhythm changes out of earlier dues. */ (rule) =>
-                    rule.effectiveDate <= (contract.nextDueDate ?? '9999-12-31'),
-                )
-                .at(-1)?.intervalMonths === option.value,
+            /** Verify the rhythm effective on the next planned date. */ (contract) =>
+              effectiveInterval(contract) === option.value,
           ),
         }),
       )
-      .filter(/** Empty rhythms do not become invented obligations. */ (group) => group.contracts.length),
+      .filter(/** Suppress empty rhythm sections. */ (group) => group.contracts.length);
+    const unscheduled = records.value.filter(
+      /** Even a historical record without an eligible rule remains reachable. */ (contract) =>
+        effectiveInterval(contract) === undefined,
+    );
+    return unscheduled.length
+      ? [...groups, { label: tr('Deine Verträge'), interval: 0, contracts: unscheduled }]
+      : groups;
+  },
 );
+
 const selected = computed(
   /** Show the chosen actual booking beside the expected forecast. */ () =>
     candidates.value.find(/** Match an offered identity only. */ (row) => row.id === selectedTransaction.value),
@@ -95,7 +150,7 @@ async function load() {
       api.request('/contracts/summary', c.contractSummarySchema),
     ]);
     if (current !== generation) return;
-    records.value = all;
+    calendarRecords.value = all;
     summary.value = costs;
     suggestions.value = proposed;
     detail.value = target;
@@ -113,11 +168,14 @@ async function load() {
       });
       if (current !== generation) return;
       history.value = result;
-    } else history.value = null;
+    } else {
+      history.value = null;
+      await listing.start();
+    }
   } catch (cause) {
     if (current === generation) {
       detail.value = null;
-      records.value = [];
+      calendarRecords.value = [];
       history.value = null;
       summary.value = null;
       suggestions.value = [];
@@ -276,7 +334,7 @@ onBeforeUnmount(
       <h1>{{ detail?.name ?? tr('Verträge') }}</h1>
     </div>
     <div class="toolbar">
-      <ContractCalendarPreview :contracts="records" />
+      <ContractCalendarPreview :contracts="calendarRecords" />
       <UPopover v-if="!route.params.id" v-model:open="contractActionsOpen">
         <UButton variant="ghost" color="neutral" :aria-label="tr('Weitere Aktionen')"
           ><FinanceIcon name="filter"
@@ -488,9 +546,18 @@ onBeforeUnmount(
       <UBadge variant="outline" color="neutral">{{ tr('Planwerte') }}</UBadge>
       <UButton to="/contracts/analysis" variant="ghost" size="sm">{{ tr('Geplante Vertragskosten') }} ↗</UButton>
     </div>
-    <SectionPanel v-if="!contractGroups.length" :title="tr('Deine Verträge')" class="mb-5" compact>
+    <LedgerTableSorting v-if="calendarRecords.length" v-model="tableSorting" :fields="sortFields" />
+    <UAlert v-if="tableError" role="alert" color="error" :description="tableError" class="mb-4" />
+    <UButton v-if="tableError" variant="soft" @click="listing.refresh">{{ tr('Erneut versuchen') }}</UButton>
+    <p v-if="listing.loading.value" role="status" class="muted">{{ tr('Wird geladen …') }}</p>
+    <SectionPanel
+      v-if="listing.loaded.value && !listing.loading.value && !tableError && !contractGroups.length"
+      :title="tr('Deine Verträge')"
+      class="mb-5"
+      compact
+    >
       <p class="empty-copy">
-        {{ tr(records.length ? 'Keine Verträge in dieser Zahlungsrichtung.' : 'Noch keine Verträge.') }}
+        {{ tr(calendarRecords.length ? 'Keine Verträge in dieser Zahlungsrichtung.' : 'Noch keine Verträge.') }}
       </p>
       <UButton :disabled="loading || reviewing" variant="soft" @click="openEditor()">{{
         tr('Vertrag anlegen')
@@ -542,6 +609,13 @@ onBeforeUnmount(
         ></UButton
       >
     </SectionPanel>
+    <LedgerTablePagination
+      v-if="tableTotal > 0"
+      v-model:page="tablePage"
+      :per-page="tableSize"
+      :total="tableTotal"
+      @page-size="listing.setPageSize"
+    />
     <SectionPanel :title="tr('Vertragsvorschläge')" icon="contracts"
       ><ContractReview
         :suggestions="suggestions"

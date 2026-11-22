@@ -160,3 +160,34 @@ test('overview reserves loading tiles, hides stale amounts on failure and recove
   await expect(page.locator('[data-overview-section="bookings"]')).toContainText('noch keine Buchungen');
   await expect(page.locator('[data-overview-section="categories"]')).toContainText('Noch keine Ausgaben');
 });
+
+test('overview income drill-down keeps its period, account and booking scope', /** Check the visible summary against its real server-backed transaction list. */ async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.getByLabel('Benutzername', { exact: true }).fill('e2e');
+  await page.getByLabel('Passwort', { exact: true }).fill('e2e-test-password-only');
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Übersicht' })).toBeVisible();
+  await page.goto('/?month=2026-11');
+  await expect(page.locator('.overview-net')).toBeVisible();
+  await page.getByRole('button', { name: 'Kontogruppen wählen' }).click();
+  await page.getByRole('button', { name: 'Konto Sparkasse Giro', exact: true }).click();
+  await expect(page).toHaveURL(/accountId=/);
+  const selected = new URL(page.url()).searchParams.get('accountId');
+  const income = page.getByRole('region', { name: 'Einnahmen', exact: true }).getByRole('link');
+  await income.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Umsätze' })).toBeVisible();
+  const scope = new URL(page.url()).searchParams;
+  expect(Object.fromEntries(scope)).toMatchObject({
+    accountId: selected,
+    from: '2026-11-01',
+    to: '2026-11-30',
+    direction: 'INCOME',
+    status: 'BOOKED',
+    excludeTransfers: 'true',
+  });
+  await expect(page.getByRole('link', { name: /Gehalt November/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Miete November/ })).toHaveCount(0);
+});
