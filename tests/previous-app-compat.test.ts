@@ -1,6 +1,7 @@
 import { it, expect } from 'vitest';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { parse } from 'yaml';
 import { mkdir, mkdtemp, readFile, realpath, symlink } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -12,6 +13,50 @@ import * as currentContracts from '../packages/contracts/src/index.js';
 /** The approved feature base, before either additive integrated-concept migration. */
 const baseline = '1f8d113bfa9294707bcd3b6ea6a3a03e8e12ec62';
 const run = promisify(execFile);
+
+/** Lockfile records needed to rebuild the old API against installed immutable resolutions. */
+type RuntimeLock = {
+  importers: Record<
+    string,
+    { dependencies?: Record<string, { version: string }>; devDependencies?: Record<string, { version: string }> }
+  >;
+  packages: Record<string, unknown>;
+  snapshots: Record<string, { dependencies?: Record<string, string>; optionalDependencies?: Record<string, string> }>;
+};
+
+/** Compare the archived API and compiler dependency closures while allowing additive app packages. */
+function assertPreviousRuntime(previous: RuntimeLock, current: RuntimeLock) {
+  const verified = new Set<string>();
+  /** Compare every reachable snapshot, including optional resolutions and package integrity. */
+  function verify(name: string, version: string) {
+    if (version.startsWith('link:')) return;
+    const key = `${name}@${version}`;
+    if (verified.has(key)) return;
+    verified.add(key);
+    const oldSnapshot = previous.snapshots[key];
+    expect(oldSnapshot, key).toBeDefined();
+    expect(current.snapshots[key], key).toEqual(oldSnapshot);
+    const packageKey = key.split('(')[0]!;
+    expect(current.packages[packageKey], packageKey).toEqual(previous.packages[packageKey]);
+    for (const [name, version] of Object.entries({
+      ...oldSnapshot?.dependencies,
+      ...oldSnapshot?.optionalDependencies,
+    }))
+      verify(name, version);
+  }
+  for (const path of ['apps/api', 'packages/contracts'] as const) {
+    const archived = previous.importers[path]?.dependencies ?? {};
+    const installed = current.importers[path]?.dependencies ?? {};
+    for (const [name, dependency] of Object.entries(archived)) {
+      expect(installed[name], name).toEqual(dependency);
+      verify(name, dependency.version);
+    }
+  }
+  const compiler = previous.importers['.']?.devDependencies?.typescript;
+  expect(compiler).toBeDefined();
+  expect(current.importers['.']?.devDependencies?.typescript).toEqual(compiler);
+  verify('typescript', compiler!.version);
+}
 
 /** Rebuild actual baseline sources, contracts and generated Prisma client without changing this checkout. */
 async function previousApplication() {
@@ -37,8 +82,10 @@ async function previousApplication() {
   const manifest = JSON.parse(await readFile(resolve(api, 'package.json'), 'utf8')) as {
     dependencies: Record<string, string>;
   };
-  // Identical pinned runtime dependencies and lockfile make this a baseline application rebuild, not a dependency upgrade.
-  expect(await readFile(resolve(root, 'pnpm-lock.yaml'), 'utf8')).toBe(await readFile('pnpm-lock.yaml', 'utf8'));
+  assertPreviousRuntime(
+    parse(await readFile(resolve(root, 'pnpm-lock.yaml'), 'utf8')) as RuntimeLock,
+    parse(await readFile('pnpm-lock.yaml', 'utf8')) as RuntimeLock,
+  );
   for (const name of Object.keys(manifest.dependencies)) {
     const destination = resolve(api, 'node_modules', name);
     await mkdir(dirname(destination), { recursive: true });

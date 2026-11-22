@@ -45,3 +45,9 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 ## T006: Transaction table contract cases
 
 - The pinned client serializer, scoped pagination and projection cases reject the baseline's missing route as expected. The real authenticated legacy cursor test passes. The two new-route cases are recorded as pending until T007 adds the endpoint. Scoped ESLint passed.
+
+## T005: Restore and exact-data baseline
+
+- The migration history still matches the selected main revision. A two-database synthetic logical backup/restore round trip reconciled canonical rows in 22 tables, including exact values above JavaScript's safe integer range, scoped monthly totals, identities, imports, transfers, payment links, observations, wealth, and owner settings.
+- The archived API compatibility test initially failed on an entire-lockfile equality assertion after adding Querry Kit. The check now compares the archived API and compiler's effective locked dependency closure and integrity, then still boots the actual older app. Both the old-application test and the restore test passed.
+- This fixture exercises a PostgreSQL logical export and restore in isolation. The encrypted pg_dump/age container procedure retains its separate operations gate.
