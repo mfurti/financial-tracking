@@ -1,6 +1,6 @@
 # Quickstart: Validate the Rebuilt Ledger
 
-Run the following after implementation from the repository root. Use the pinned Node 24.22.1 and pnpm 11.25.0 versions with disposable PostgreSQL 17 and Chromium. Use the README and recovery guide for local setup and backup restoration. Select a disposable database for every migration and test.
+Run the following after implementation from the repository root. Use the Node and pnpm versions pinned in CI with disposable PostgreSQL 17 and Chromium. Use the README and recovery guide for local setup and backup restoration. Select a disposable database for every migration and test.
 
 ## Build and Contract Checks
 

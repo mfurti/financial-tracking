@@ -4,7 +4,7 @@ Private, single-user household bookkeeping. NestJS/Fastify, Nuxt UI, Querry Kit,
 
 ## Development
 
-Requires Node 24.22.1+, pnpm 11.25.0, and PostgreSQL 17+. Copy `.env.example` to `.env` and provide a disposable/local database. Never use production credentials for tests.
+Requires Node 26.13.1 or a later Node 26 release, pnpm 11.25.0, and PostgreSQL 17+. Copy `.env.example` to `.env` and provide a disposable/local database. Never use production credentials for tests.
 
 ```sh
 pnpm install --frozen-lockfile
