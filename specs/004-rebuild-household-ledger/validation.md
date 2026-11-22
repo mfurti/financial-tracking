@@ -83,3 +83,7 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 ## T012: Account table compatibility cases
 
 - The new authenticated resource case failed against the baseline's absent table route as expected. The existing routes passed their compatibility case. Scoped lint passed. The new case is pending until the matching implementation task.
+
+## T013: Contract table compatibility cases
+
+- The new authenticated resource case failed against the baseline's absent table route as expected. The existing routes passed their compatibility case. Scoped lint passed. The new case is pending until the matching implementation task.
