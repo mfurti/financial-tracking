@@ -31,3 +31,8 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 - Node 24.22.1 and pnpm 11.25.0: frozen install with strict peer checking, Prisma generation, root typecheck, and the production API/web build all passed on Windows.
 - Resolved Querry Kit Nest 1.1.2, Nuxt 0.2.10, and Nuxt UI 3.3.10. The web package pins VueUse core/router 14.4.0 and Vue Router 5.4.0 to match the existing Nuxt dependency graph. The existing Vue 3.5.45 resolution and NestJS runtime versions are unchanged.
 - The web build emitted an informational Vite plugin timing warning. The build completed successfully. Runtime integration is covered by later tasks.
+
+## T003: Web transport
+
+- Querry Kit UI module loads in Nuxt. Table clients are made within the current Nuxt app, delegate only relative table reads to the existing same-origin transport, and validate each response using the caller's Zod schema. Existing commands keep the session and CSRF handling in the app transport.
+- Nuxt typecheck and scoped ESLint passed. The proxy and authorization boundary suites passed 7 tests in total. End-to-end table use is verified with the actual resource routes.
