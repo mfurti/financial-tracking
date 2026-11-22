@@ -58,7 +58,7 @@ description: 'Dependency-ordered implementation tasks for the household ledger r
 
 ## Phase 6: Polish and Cross-Cutting Verification
 
-- [ ] T020 Run `specs/004-rebuild-household-ledger/quickstart.md` from a clean checkout and record each result in `specs/004-rebuild-household-ledger/validation.md`. Include frozen Node 24 install, format/lint/type, Prisma, Vitest, build, Chromium, and Docker operations checks from `.github/workflows/ci.yml`. Re-run reconciliation after cleanup, verify runtime/OpenAPI/client consistency and all primary journeys in both locales, and check JSDoc and effective Vue rules on touched declarations. Separate local results, remote CI, and any pending production-only evidence.
+- [x] T020 Run `specs/004-rebuild-household-ledger/quickstart.md` from a clean checkout and record each result in `specs/004-rebuild-household-ledger/validation.md`. Include frozen Node 24 install, format/lint/type, Prisma, Vitest, build, Chromium, and Docker operations checks from `.github/workflows/ci.yml`. Re-run reconciliation after cleanup, verify runtime/OpenAPI/client consistency and all primary journeys in both locales, and check JSDoc and effective Vue rules on touched declarations. Separate local results, remote CI, and any pending production-only evidence.
 
 ## Dependencies and Execution Order
 
