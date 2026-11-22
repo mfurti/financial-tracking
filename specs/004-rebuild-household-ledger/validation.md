@@ -58,3 +58,8 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 - All 3 transaction resource cases and 22 existing ledger, monthly review, auth boundary, and archived app cases passed. API build, root TypeScript, and scoped ESLint passed.
 - On 10,000 disposable transactions scoped to one account, an authenticated 25-row first page took about 5.0 ms on the legacy cursor route and 7.1 ms on the table route (middle warm samples, Windows workstation). Both row-select shapes used a limiting index-only scan on the account/date/ID index. The full-scope count used an aggregate over a sequential scan. The measurement is local fixture evidence.
 - Prisma's PostgreSQL adapter emitted a pg concurrency deprecation notice when loading relations in a transaction. The pinned driver completed the reads successfully.
+
+## T008: Import experience
+
+- Import history now has direct CSV and bank connection actions, compact separated rows, and a dedicated review panel. CSV upload keeps the existing state machine and presents the file stage and preview as distinct regions.
+- Nuxt typecheck, lint, build, all 10 desktop/mobile and empty-ledger import browser cases, and all 9 rollback tests passed. An initial duplicate accessibility label was corrected before the passing run.

@@ -170,18 +170,17 @@ onBeforeUnmount(
 </script>
 
 <template>
-  <div class="page-heading">
-    <div>
-      <h1>{{ tr('Importhistorie') }}</h1>
-    </div>
+  <div class="page-heading import-heading">
+    <h1>{{ tr('Importhistorie') }}</h1>
     <div class="toolbar">
-      <UButton :loading="busy" variant="ghost" @click="load">{{ tr('Neu laden') }}</UButton
-      ><UButton to="/imports/csv">{{ tr('CSV importieren') }}</UButton>
+      <UButton color="neutral" variant="ghost" :loading="busy" @click="load">{{ tr('Neu laden') }}</UButton>
+      <UButton color="neutral" variant="outline" to="/connections">{{ tr('Bankverbindungen') }}</UButton>
+      <UButton to="/imports/csv">{{ tr('CSV importieren') }}</UButton>
     </div>
   </div>
   <UAlert v-if="error" role="alert" color="error" :description="error" class="mb-5" />
   <p v-if="busy" role="status" class="muted mb-4">{{ tr('Importdaten werden geladen …') }}</p>
-  <div class="import-workspace">
+  <div class="import-workspace" :aria-busy="busy">
     <SectionPanel :title="tr('Letzte Importe')" icon="history" compact>
       <p v-if="!runs.length && !busy && !error" class="empty-copy">
         {{ tr('Noch keine Importe. Starte mit einer CSV-Datei oder deiner Bankverbindung.') }}
@@ -204,7 +203,7 @@ onBeforeUnmount(
               }}<span v-if="run.errorCode"> {{ tr('· Nicht abgeschlossen; bitte Hinweise prüfen') }}</span></small
             >
           </div>
-          <span
+          <span class="import-row-counts"
             >{{ run.importedCount }} {{ tr('neu ·') }} {{ run.knownCount }} {{ tr('bekannt ·') }}
             {{ run.reviewRequiredCount }} {{ tr('prüfen') }}</span
           >
@@ -213,10 +212,6 @@ onBeforeUnmount(
           <summary>{{ tr('Importdetails') }}</summary>
           <p>{{ tr('Begonnen:') }} {{ observedTime(run.startedAt) }}</p>
           <p v-if="run.finishedAt">{{ tr('Beendet:') }} {{ observedTime(run.finishedAt) }}</p>
-          <p>
-            {{ labels[run.status] }} · {{ run.importedCount }} {{ tr('neu ·') }} {{ run.knownCount }}
-            {{ tr('bekannt ·') }} {{ run.reviewRequiredCount }} {{ tr('prüfen') }}
-          </p>
         </details>
         <ImportRollback
           v-if="run.source === 'CSV' && ['COMPLETED', 'PARTIAL_SUCCESS'].includes(run.status)"
@@ -333,7 +328,7 @@ onBeforeUnmount(
 }
 .import-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.35fr);
   gap: 24px;
   align-items: start;
 }
@@ -341,7 +336,10 @@ onBeforeUnmount(
   min-width: 0;
 }
 .import-entry {
-  padding: 4px 0 12px;
+  padding: 7px 0 12px;
+}
+.import-entry + .import-entry {
+  border-top: 1px solid var(--finance-line);
 }
 .import-row {
   padding: 12px;
@@ -350,6 +348,11 @@ onBeforeUnmount(
   min-height: 56px;
   border-radius: 12px;
   flex-wrap: wrap;
+}
+.import-row-counts {
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 .import-metadata {
   margin: 8px 12px;
@@ -378,7 +381,11 @@ summary {
   display: block;
   margin-top: 12px;
 }
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
+  .import-heading {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
   .import-workspace {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;

@@ -333,7 +333,10 @@ onBeforeUnmount(
 <template>
   <div class="page-heading">
     <div>
-      <h1>{{ tr('CSV importieren') }}</h1>
+      <h1 id="csv-import-title">{{ tr('CSV importieren') }}</h1>
+      <p class="muted">
+        {{ tr('CSV-Dateien liefern Umsätze. Bankgemeldete Kontostände bleiben von der Monatsbilanz getrennt.') }}
+      </p>
     </div>
     <UButton to="/imports" variant="ghost">{{ tr('Importhistorie') }}</UButton>
   </div>
@@ -347,7 +350,12 @@ onBeforeUnmount(
           : tr('Datei wird ausgewertet …')
     }}</strong>
   </div>
-  <section v-if="!preview" class="panel import-upload">
+  <section
+    v-if="!preview"
+    class="panel import-upload"
+    aria-labelledby="csv-import-title"
+    :aria-busy="readingFile || busy"
+  >
     <form class="space-y-6" @submit.prevent="makePreview">
       <UFormField :label="tr('CSV-Datei')" name="file"
         ><UFileUpload
@@ -476,7 +484,7 @@ onBeforeUnmount(
       </template>
     </form>
   </section>
-  <section v-else-if="!busy" class="panel">
+  <section v-else-if="!busy" class="panel" :aria-label="tr('Vorschau')">
     <div class="panel-heading">
       <h2>{{ tr('Einmal kurz prüfen') }}</h2>
       <span class="subtle-tag"
