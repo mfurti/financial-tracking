@@ -25,3 +25,9 @@ Route methods, shapes, and errors remain grounded in [the API documentation](../
 - Remote: [CI run 44961490715](https://github.com/mfurti/financial-tracking/actions/runs/44961490715) passed verification and operations at the exact target SHA. The verification job includes pinned Node/pnpm, Prisma, format, lint, type, unit/database tests, build and Chromium. The operations job includes the Linux/Docker checks. Its publish job also succeeded for that main revision.
 - Local: Spec Kit prerequisites, issue checklist agreement, package/ignore configuration and repository status inspected before product changes. The Windows host defaults to Node 26.13.0 and has no Docker CLI on PATH. Node 24.22.1 is available as an isolated npm runtime for T002. This baseline records remote Docker evidence separately from local checks.
 - Baseline failures: no failures reported by the exact-revision CI. No production access or acceptance was performed.
+
+## T002: Pinned runtime and library compatibility
+
+- Node 24.22.1 and pnpm 11.25.0: frozen install with strict peer checking, Prisma generation, root typecheck, and the production API/web build all passed on Windows.
+- Resolved Querry Kit Nest 1.1.2, Nuxt 0.2.10, and Nuxt UI 3.3.10. The web package pins VueUse core/router 14.4.0 and Vue Router 5.4.0 to match the existing Nuxt dependency graph. The existing Vue 3.5.45 resolution and NestJS runtime versions are unchanged.
+- The web build emitted an informational Vite plugin timing warning. The build completed successfully. Runtime integration is covered by later tasks.
